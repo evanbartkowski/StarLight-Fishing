@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Seven Seas Fishing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Polished Loading Screen -->
+    <div id="loading-screen">
+      <div class="loading-content">
+        <div class="loading-icon">🌊</div>
+        <h1 class="loading-title">SEVEN SEAS FISHING</h1>
+        <p class="loading-subtitle">Sounding oceanic depths and discovering mythical titans...</p>
+        <div class="loading-bar-track">
+          <div class="loading-bar-fill" id="loading-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Small Screen Welcome Popup (Appears on Load Before You Play) -->
+    <div id="welcome-popup" class="welcome-overlay">
+      <div class="welcome-card">
+        <div class="welcome-icon">🌊🎣</div>
+        <h1 class="welcome-title">Seven Seas Fishing</h1>
+        <p class="welcome-tagline">Embark across 7 unique ocean depths, uncover prehistoric fossils, and reel in legendary titans!</p>
+        
+        <div class="welcome-stats-preview">
+          <div class="wstat-box">
+            <span class="wstat-lbl">Angler Level</span>
+            <span class="wstat-val" id="welcome-level">Lv. 1</span>
+          </div>
+          <div class="wstat-box">
+            <span class="wstat-lbl">Treasury</span>
+            <span class="wstat-val" id="welcome-coins">$0</span>
+          </div>
+          <div class="wstat-box">
+            <span class="wstat-lbl">Species Found</span>
+            <span class="wstat-val" id="welcome-species">0 / 28</span>
+          </div>
+        </div>
+
+        <div class="welcome-features">
+          <div class="wfeat"><span>🎯</span> Cast on both sides of the boat</div>
+          <div class="wfeat"><span>⭐</span> Level up to unlock new Seas & Tackle</div>
+          <div class="wfeat"><span>🦴</span> Unearth rare prehistoric fossils</div>
+        </div>
+
+        <button class="btn btn-primary btn-welcome-start" id="btn-welcome-start">
+          Set Sail ⛵
+        </button>
+      </div>
+    </div>
+
+    <!-- Game canvas -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Main script -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+

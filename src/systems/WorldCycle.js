@@ -1,0 +1,322 @@
+// Atmospheric World Cycle System: Day/Night Cycle & Dynamic Weather
+// Transitions naturally every 10 minutes (600 seconds) for a cozy, relaxing ambiance
+
+export class WorldCycle {
+  constructor() {
+    this.cycleDuration = 600; // 10 minutes total cycle
+    this.timer = 60; // Start at Day (e.g. 60s into cycle)
+
+    this.weatherTimer = 0;
+    this.weatherDuration = 180; // Weather shifts every ~3 minutes
+    this.weather = 'CLEAR'; // 'CLEAR' | 'FOG' | 'RAIN'
+    this.targetWeather = 'CLEAR';
+    this.weatherTransition = 1.0;
+
+    // Visual particles for weather
+    this.rainDrops = [];
+    this.fogBanks = [];
+    this.bioPlankton = [];
+    this.surfaceRipples = [];
+
+    this.initFog();
+    this.initPlankton();
+  }
+
+  initFog() {
+    this.fogBanks = [];
+    for (let i = 0; i < 8; i++) {
+      this.fogBanks.push({
+        x: Math.random() * 1600,
+        y: 190 + Math.random() * 60,
+        radiusX: 120 + Math.random() * 100,
+        radiusY: 25 + Math.random() * 20,
+        speed: 6 + Math.random() * 8,
+        alpha: 0.15 + Math.random() * 0.2,
+      });
+    }
+  }
+
+  initPlankton() {
+    this.bioPlankton = [];
+    for (let i = 0; i < 40; i++) {
+      this.bioPlankton.push({
+        x: Math.random() * 1600,
+        y: 220 + Math.random() * 500,
+        size: 1.5 + Math.random() * 2.5,
+        speedY: -3 - Math.random() * 5,
+        speedX: (Math.random() - 0.5) * 4,
+        pulseOffset: Math.random() * Math.PI * 2,
+        alpha: 0.2 + Math.random() * 0.7,
+      });
+    }
+  }
+
+  update(dt, worldWidth, surfaceY) {
+    const deltaSec = dt / 1000;
+    this.timer = (this.timer + deltaSec) % this.cycleDuration;
+    this.weatherTimer += deltaSec;
+
+    // Weather change routine
+    if (this.weatherTimer >= this.weatherDuration) {
+      this.weatherTimer = 0;
+      const roll = Math.random();
+      if (roll < 0.55) {
+        this.weather = 'CLEAR';
+      } else if (roll < 0.80) {
+        this.weather = 'RAIN';
+      } else {
+        this.weather = 'FOG';
+      }
+    }
+
+    // Update Rain particles if raining
+    if (this.weather === 'RAIN') {
+      const targetCount = 90;
+      while (this.rainDrops.length < targetCount) {
+        this.rainDrops.push({
+          x: Math.random() * worldWidth,
+          y: -20 - Math.random() * 100,
+          speed: 480 + Math.random() * 140,
+          len: 12 + Math.random() * 14,
+        });
+      }
+
+      for (let i = this.rainDrops.length - 1; i >= 0; i--) {
+        const drop = this.rainDrops[i];
+        drop.y += drop.speed * deltaSec;
+        drop.x -= 40 * deltaSec; // gentle wind slant
+
+        if (drop.y >= surfaceY) {
+          // Splash ripple on water surface
+          this.surfaceRipples.push({
+            x: drop.x,
+            y: surfaceY + (Math.random() * 6 - 3),
+            radius: 2,
+            maxRadius: 10 + Math.random() * 8,
+            alpha: 0.6,
+          });
+          this.rainDrops.splice(i, 1);
+        }
+      }
+    } else {
+      // Drain existing rain drops
+      for (let i = this.rainDrops.length - 1; i >= 0; i--) {
+        const drop = this.rainDrops[i];
+        drop.y += drop.speed * deltaSec;
+        if (drop.y >= surfaceY) {
+          this.rainDrops.splice(i, 1);
+        }
+      }
+    }
+
+    // Update surface ripples
+    for (let i = this.surfaceRipples.length - 1; i >= 0; i--) {
+      const rip = this.surfaceRipples[i];
+      rip.radius += 20 * deltaSec;
+      rip.alpha -= 1.8 * deltaSec;
+      if (rip.alpha <= 0) {
+        this.surfaceRipples.splice(i, 1);
+      }
+    }
+
+    // Update Fog banks
+    this.fogBanks.forEach((fog) => {
+      fog.x += fog.speed * deltaSec;
+      if (fog.x > worldWidth + 200) {
+        fog.x = -200;
+      }
+    });
+
+    // Update Bioluminescent plankton motes
+    this.bioPlankton.forEach((mote) => {
+      mote.y += mote.speedY * deltaSec;
+      mote.x += mote.speedX * deltaSec;
+      mote.pulseOffset += deltaSec * 1.5;
+
+      if (mote.y < surfaceY + 20) {
+        mote.y = surfaceY + 600;
+        mote.x = Math.random() * worldWidth;
+      }
+    });
+  }
+
+  // Time of Day state: 'DAWN' (0-90s) | 'DAY' (90-360s) | 'DUSK' (360-450s) | 'NIGHT' (450-600s)
+  getTimeOfDay() {
+    if (this.timer < 90) return 'DAWN';
+    if (this.timer < 360) return 'DAY';
+    if (this.timer < 450) return 'DUSK';
+    return 'NIGHT';
+  }
+
+  getWeather() {
+    return this.weather;
+  }
+
+  getTimeLabel() {
+    const t = this.getTimeOfDay();
+    switch (t) {
+      case 'DAWN': return '🌅 Dawn Twilight';
+      case 'DAY': return '☀️ Sunlit Noon';
+      case 'DUSK': return '🌆 Golden Sunset';
+      case 'NIGHT': return '🌙 Biolum Night';
+      default: return '☀️ Day';
+    }
+  }
+
+  getWeatherLabel() {
+    const w = this.getWeather();
+    switch (w) {
+      case 'CLEAR': return '✨ Clear Waters';
+      case 'FOG': return '🌫️ Gentle Sea Mist';
+      case 'RAIN': return '🌧️ Calming Rain';
+      default: return '✨ Clear';
+    }
+  }
+
+  getSkyColors() {
+    const t = this.getTimeOfDay();
+    const progress = this.timer;
+
+    if (t === 'DAWN') {
+      // Soft rose gold and pastel amber
+      return {
+        top: '#3b82f6',
+        middle: '#f472b6',
+        horizon: '#fef08a',
+        sunColor: '#fef08a',
+        sunGlow: '#fde047',
+        isNight: false,
+        ambientLight: 0.9,
+      };
+    } else if (t === 'DAY') {
+      // Azure sky
+      return {
+        top: '#0284c7',
+        middle: '#38bdf8',
+        horizon: '#bae6fd',
+        sunColor: '#fef08a',
+        sunGlow: '#facc15',
+        isNight: false,
+        ambientLight: 1.0,
+      };
+    } else if (t === 'DUSK') {
+      // Deep sunset violet, crimson, warm gold
+      return {
+        top: '#312e81',
+        middle: '#b91c1c',
+        horizon: '#f97316',
+        sunColor: '#fdba74',
+        sunGlow: '#ea580c',
+        isNight: false,
+        ambientLight: 0.85,
+      };
+    } else {
+      // Bioluminescent night with moon and stars
+      return {
+        top: '#020617',
+        middle: '#090d23',
+        horizon: '#171a3d',
+        sunColor: '#e0e7ff',
+        sunGlow: '#818cf8',
+        isNight: true,
+        ambientLight: 0.65,
+      };
+    }
+  }
+
+  renderWeatherEffects(ctx, cameraY, screenWidth, screenHeight, surfaceY) {
+    const isNight = this.getTimeOfDay() === 'NIGHT';
+
+    // 1. Night Stars & Moon
+    if (isNight && cameraY < surfaceY) {
+      ctx.save();
+      // Draw subtle twinkling stars in the sky
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 35; i++) {
+        const sx = ((i * 127 + 53) % screenWidth);
+        const sy = ((i * 91 + 17) % (surfaceY - cameraY));
+        const twinkle = 0.4 + Math.sin(this.timer * 2 + i) * 0.4;
+        ctx.globalAlpha = twinkle;
+        ctx.fillRect(sx, sy, 2, 2);
+      }
+      ctx.restore();
+    }
+
+    // 2. Gentle Rain
+    if (this.rainDrops.length > 0 && cameraY < surfaceY + 150) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(186, 230, 253, 0.45)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      this.rainDrops.forEach((drop) => {
+        const dy = drop.y - cameraY;
+        if (dy > -20 && dy < screenHeight + 20) {
+          ctx.moveTo(drop.x, dy);
+          ctx.lineTo(drop.x - 3, dy + drop.len);
+        }
+      });
+      ctx.stroke();
+
+      // Rain ripples on water
+      this.surfaceRipples.forEach((rip) => {
+        const ry = rip.y - cameraY;
+        if (ry > -20 && ry < screenHeight + 20) {
+          ctx.strokeStyle = `rgba(224, 242, 254, ${rip.alpha * 0.7})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.ellipse(rip.x, ry, rip.radius, rip.radius * 0.35, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      });
+      ctx.restore();
+    }
+
+    // 3. Fog / Sea Mist
+    if (this.weather === 'FOG' && cameraY < surfaceY + 150) {
+      ctx.save();
+      this.fogBanks.forEach((fog) => {
+        const fy = fog.y - cameraY;
+        if (fy > -50 && fy < screenHeight + 50) {
+          try {
+            const fogGrad = ctx.createRadialGradient(fog.x, fy, 10, fog.x, fy, fog.radiusX);
+            fogGrad.addColorStop(0, `rgba(241, 245, 249, ${fog.alpha * 0.5})`);
+            fogGrad.addColorStop(1, 'rgba(241, 245, 249, 0)');
+            ctx.fillStyle = fogGrad;
+            ctx.beginPath();
+            ctx.ellipse(fog.x, fy, fog.radiusX, fog.radiusY, 0, 0, Math.PI * 2);
+            ctx.fill();
+          } catch (e) {}
+        }
+      });
+      ctx.restore();
+    }
+
+    // 4. Night Bioluminescent Plankton (High performance dual-arc glow, zero shadowBlur lag)
+    if (isNight) {
+      ctx.save();
+      for (let i = 0; i < this.bioPlankton.length; i++) {
+        const mote = this.bioPlankton[i];
+        const my = mote.y - cameraY;
+        if (my > surfaceY - cameraY && my < screenHeight + 40) {
+          const pulse = 0.4 + Math.sin(mote.pulseOffset) * 0.5;
+          const a = mote.alpha * pulse;
+
+          // Outer soft glow halo
+          ctx.fillStyle = `rgba(56, 189, 248, ${a * 0.25})`;
+          ctx.beginPath();
+          ctx.arc(mote.x, my, mote.size * 2.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Bright inner core
+          ctx.fillStyle = `rgba(224, 242, 254, ${a * 0.9})`;
+          ctx.beginPath();
+          ctx.arc(mote.x, my, mote.size * 0.9, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+  }
+}
+
+export const worldCycle = new WorldCycle();
