@@ -525,8 +525,13 @@ const update = (dt) => {
   // Camera vertical dampening
   if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
     targetCameraY = 0;
+  } else if (gameState === 'REELING') {
+    // Keep hook lower on screen (~74% down) so player has a wide view of hazards and fish above
+    const verticalOffset = screenHeight * 0.74;
+    targetCameraY = Math.max(0, hook.y - verticalOffset);
   } else {
-    const verticalOffset = screenHeight * 0.45;
+    // CASTING or DESCENDING: Keep hook at ~38% down so player can see deeper waters below
+    const verticalOffset = screenHeight * 0.38;
     targetCameraY = Math.max(0, hook.y - verticalOffset);
   }
   cameraY += (targetCameraY - cameraY) * 7.5 * deltaSec;

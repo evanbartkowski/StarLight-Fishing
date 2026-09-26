@@ -11,7 +11,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 240,
     maxDepth: 550,
     rarity: 'legendary',
-    baseValue: 3500,
+    baseValue: 2800, // rebalanced down from 3500 (-20%)
     baseWeight: 22.0,
     sizeRange: [180, 310], // cm
     scaleFactor: 2.8,
@@ -39,7 +39,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 45,
     maxDepth: 180,
     rarity: 'legendary',
-    baseValue: 2800,
+    baseValue: 2200, // rebalanced down from 2800 (-21%)
     baseWeight: 140.0,
     sizeRange: [220, 380], // cm
     scaleFactor: 3.2,
@@ -67,7 +67,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 80,
     maxDepth: 220,
     rarity: 'legendary',
-    baseValue: 3200,
+    baseValue: 2550, // rebalanced down from 3200 (-20%)
     baseWeight: 48.0,
     sizeRange: [160, 260], // cm
     scaleFactor: 2.6,
@@ -96,7 +96,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 360,
     maxDepth: 490,
     rarity: 'legendary',
-    baseValue: 4200,
+    baseValue: 3350, // rebalanced down from 4200 (-20%)
     baseWeight: 68.0,
     sizeRange: [140, 230], // cm
     scaleFactor: 2.4,
@@ -124,7 +124,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 130,
     maxDepth: 300,
     rarity: 'legendary',
-    baseValue: 3800,
+    baseValue: 3000, // rebalanced down from 3800 (-21%)
     baseWeight: 95.0,
     sizeRange: [200, 340], // cm
     scaleFactor: 3.0,

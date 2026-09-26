@@ -36,7 +36,7 @@ export const FISH_SPECIES = [
     minDepth: 3,
     maxDepth: 38,
     rarity: 'common',
-    baseValue: 8, // rebalanced down from 12 (-33%)
+    baseValue: 6, // rebalanced down from 8 (-25%)
     baseWeight: 0.25,
     sizeRange: [8, 15],
     scaleFactor: 0.85,
@@ -57,7 +57,7 @@ export const FISH_SPECIES = [
     minDepth: 6,
     maxDepth: 42,
     rarity: 'common',
-    baseValue: 12, // rebalanced down from 18 (-33%)
+    baseValue: 9, // rebalanced down from 12 (-25%)
     baseWeight: 0.45,
     sizeRange: [14, 24],
     scaleFactor: 1.0,
@@ -78,7 +78,7 @@ export const FISH_SPECIES = [
     minDepth: 12,
     maxDepth: 45,
     rarity: 'rare',
-    baseValue: 45, // rebalanced down from 65 (-30%)
+    baseValue: 35, // rebalanced down from 45 (-22%)
     baseWeight: 0.15,
     sizeRange: [10, 18],
     scaleFactor: 0.8,
@@ -99,7 +99,7 @@ export const FISH_SPECIES = [
     minDepth: 18,
     maxDepth: 45,
     rarity: 'epic',
-    baseValue: 98, // rebalanced down from 140 (-30%)
+    baseValue: 78, // rebalanced down from 98 (-20%)
     baseWeight: 2.4,
     sizeRange: [30, 52],
     scaleFactor: 1.4,
@@ -120,7 +120,7 @@ export const FISH_SPECIES = [
     minDepth: 10,
     maxDepth: 40,
     rarity: 'uncommon',
-    baseValue: 24,
+    baseValue: 19, // rebalanced down from 24 (-21%)
     baseWeight: 0.6,
     sizeRange: [16, 26],
     scaleFactor: 0.95,
@@ -146,7 +146,7 @@ export const FISH_SPECIES = [
     minDepth: 46,
     maxDepth: 98,
     rarity: 'common',
-    baseValue: 20, // rebalanced from 28 (-28%)
+    baseValue: 16, // rebalanced from 20 (-20%)
     baseWeight: 0.9,
     sizeRange: [22, 38],
     scaleFactor: 1.15,
@@ -167,7 +167,7 @@ export const FISH_SPECIES = [
     minDepth: 52,
     maxDepth: 102,
     rarity: 'uncommon',
-    baseValue: 42,
+    baseValue: 34, // rebalanced from 42 (-19%)
     baseWeight: 2.8,
     sizeRange: [28, 48],
     scaleFactor: 1.3,
@@ -188,7 +188,7 @@ export const FISH_SPECIES = [
     minDepth: 62,
     maxDepth: 105,
     rarity: 'rare',
-    baseValue: 92,
+    baseValue: 74, // rebalanced from 92 (-20%)
     baseWeight: 1.8,
     sizeRange: [32, 54],
     scaleFactor: 1.35,
@@ -209,7 +209,7 @@ export const FISH_SPECIES = [
     minDepth: 75,
     maxDepth: 105,
     rarity: 'epic',
-    baseValue: 195,
+    baseValue: 155, // rebalanced from 195 (-20%)
     baseWeight: 4.2,
     sizeRange: [45, 75],
     scaleFactor: 1.7,
@@ -230,7 +230,7 @@ export const FISH_SPECIES = [
     minDepth: 48,
     maxDepth: 100,
     rarity: 'uncommon',
-    baseValue: 48,
+    baseValue: 38, // rebalanced from 48 (-21%)
     baseWeight: 1.2,
     sizeRange: [24, 40],
     scaleFactor: 1.2,
@@ -256,7 +256,7 @@ export const FISH_SPECIES = [
     minDepth: 106,
     maxDepth: 165,
     rarity: 'common',
-    baseValue: 36,
+    baseValue: 28, // rebalanced from 36 (-22%)
     baseWeight: 0.4,
     sizeRange: [12, 22],
     scaleFactor: 0.9,
@@ -277,7 +277,7 @@ export const FISH_SPECIES = [
     minDepth: 112,
     maxDepth: 172,
     rarity: 'uncommon',
-    baseValue: 78,
+    baseValue: 62, // rebalanced from 78 (-20%)
     baseWeight: 2.2,
     sizeRange: [25, 45],
     scaleFactor: 1.25,
@@ -298,7 +298,7 @@ export const FISH_SPECIES = [
     minDepth: 125,
     maxDepth: 178,
     rarity: 'rare',
-    baseValue: 175,
+    baseValue: 140, // rebalanced from 175 (-20%)
     baseWeight: 14.5,
     sizeRange: [60, 110],
     scaleFactor: 2.0,
@@ -319,7 +319,7 @@ export const FISH_SPECIES = [
     minDepth: 140,
     maxDepth: 180,
     rarity: 'epic',
-    baseValue: 340,
+    baseValue: 270, // rebalanced from 340 (-21%)
     baseWeight: 8.5,
     sizeRange: [40, 70],
     scaleFactor: 1.65,
@@ -340,7 +340,7 @@ export const FISH_SPECIES = [
     minDepth: 110,
     maxDepth: 170,
     rarity: 'uncommon',
-    baseValue: 82,
+    baseValue: 65, // rebalanced from 82 (-21%)
     baseWeight: 1.6,
     sizeRange: [22, 40],
     scaleFactor: 1.1,
@@ -366,7 +366,7 @@ export const FISH_SPECIES = [
     minDepth: 182,
     maxDepth: 250,
     rarity: 'common',
-    baseValue: 58,
+    baseValue: 46, // rebalanced from 58 (-21%)
     baseWeight: 3.5,
     sizeRange: [30, 52],
     scaleFactor: 1.3,
@@ -387,7 +387,7 @@ export const FISH_SPECIES = [
     minDepth: 195,
     maxDepth: 265,
     rarity: 'uncommon',
-    baseValue: 125,
+    baseValue: 98, // rebalanced from 125 (-22%)
     baseWeight: 5.8,
     sizeRange: [35, 60],
     scaleFactor: 1.45,
@@ -408,7 +408,7 @@ export const FISH_SPECIES = [
     minDepth: 215,
     maxDepth: 275,
     rarity: 'rare',
-    baseValue: 290,
+    baseValue: 230, // rebalanced from 290 (-21%)
     baseWeight: 12.0,
     sizeRange: [75, 140],
     scaleFactor: 2.1,
@@ -430,7 +430,7 @@ export const FISH_SPECIES = [
     maxDepth: 280,
     isSpecialDeep: true,
     rarity: 'epic',
-    baseValue: 590,
+    baseValue: 470, // rebalanced from 590 (-20%)
     baseWeight: 22.0,
     sizeRange: [65, 115],
     scaleFactor: 2.3,
@@ -451,7 +451,7 @@ export const FISH_SPECIES = [
     minDepth: 185,
     maxDepth: 260,
     rarity: 'uncommon',
-    baseValue: 130,
+    baseValue: 104, // rebalanced from 130 (-20%)
     baseWeight: 3.2,
     sizeRange: [24, 42],
     scaleFactor: 1.15,
@@ -477,7 +477,7 @@ export const FISH_SPECIES = [
     minDepth: 285,
     maxDepth: 370,
     rarity: 'common',
-    baseValue: 98,
+    baseValue: 78, // rebalanced from 98 (-20%)
     baseWeight: 2.5,
     sizeRange: [35, 60],
     scaleFactor: 1.35,
@@ -498,7 +498,7 @@ export const FISH_SPECIES = [
     minDepth: 300,
     maxDepth: 390,
     rarity: 'uncommon',
-    baseValue: 215,
+    baseValue: 170, // rebalanced from 215 (-21%)
     baseWeight: 6.5,
     sizeRange: [45, 80],
     scaleFactor: 1.6,
@@ -519,7 +519,7 @@ export const FISH_SPECIES = [
     minDepth: 325,
     maxDepth: 405,
     rarity: 'rare',
-    baseValue: 460,
+    baseValue: 365, // rebalanced from 460 (-21%)
     baseWeight: 28.0,
     sizeRange: [80, 150],
     scaleFactor: 2.4,
@@ -541,7 +541,7 @@ export const FISH_SPECIES = [
     maxDepth: 410,
     isSpecialDeep: true,
     rarity: 'epic',
-    baseValue: 950,
+    baseValue: 760, // rebalanced from 950 (-20%)
     baseWeight: 45.0,
     sizeRange: [95, 175],
     scaleFactor: 2.7,
@@ -562,7 +562,7 @@ export const FISH_SPECIES = [
     minDepth: 290,
     maxDepth: 380,
     rarity: 'common',
-    baseValue: 105,
+    baseValue: 84, // rebalanced from 105 (-20%)
     baseWeight: 0.8,
     sizeRange: [18, 30],
     scaleFactor: 1.0,
@@ -588,7 +588,7 @@ export const FISH_SPECIES = [
     minDepth: 412,
     maxDepth: 490,
     rarity: 'common',
-    baseValue: 155,
+    baseValue: 124, // rebalanced from 155 (-20%)
     baseWeight: 8.0,
     sizeRange: [60, 110],
     scaleFactor: 1.8,
@@ -609,7 +609,7 @@ export const FISH_SPECIES = [
     minDepth: 425,
     maxDepth: 505,
     rarity: 'uncommon',
-    baseValue: 330,
+    baseValue: 260, // rebalanced from 330 (-21%)
     baseWeight: 14.0,
     sizeRange: [40, 75],
     scaleFactor: 1.7,
@@ -631,7 +631,7 @@ export const FISH_SPECIES = [
     maxDepth: 520,
     isSpecialDeep: true,
     rarity: 'rare',
-    baseValue: 720,
+    baseValue: 575, // rebalanced from 720 (-20%)
     baseWeight: 65.0,
     sizeRange: [110, 190],
     scaleFactor: 2.8,
@@ -653,7 +653,7 @@ export const FISH_SPECIES = [
     maxDepth: 530,
     isSpecialDeep: true,
     rarity: 'epic',
-    baseValue: 1480,
+    baseValue: 1180, // rebalanced from 1480 (-20%)
     baseWeight: 140.0,
     sizeRange: [150, 260],
     scaleFactor: 3.3,
@@ -674,7 +674,7 @@ export const FISH_SPECIES = [
     minDepth: 415,
     maxDepth: 495,
     rarity: 'uncommon',
-    baseValue: 340,
+    baseValue: 270, // rebalanced from 340 (-21%)
     baseWeight: 5.5,
     sizeRange: [38, 65],
     scaleFactor: 1.5,
@@ -700,7 +700,7 @@ export const FISH_SPECIES = [
     minDepth: 535,
     maxDepth: 620,
     rarity: 'common',
-    baseValue: 245,
+    baseValue: 195, // rebalanced from 245 (-20%)
     baseWeight: 12.0,
     sizeRange: [50, 95],
     scaleFactor: 1.7,
@@ -722,7 +722,7 @@ export const FISH_SPECIES = [
     maxDepth: 640,
     isSpecialDeep: true,
     rarity: 'uncommon',
-    baseValue: 540,
+    baseValue: 430, // rebalanced from 540 (-20%)
     baseWeight: 180.0,
     sizeRange: [140, 250],
     scaleFactor: 3.2,
@@ -744,7 +744,7 @@ export const FISH_SPECIES = [
     maxDepth: 655,
     isSpecialDeep: true,
     rarity: 'rare',
-    baseValue: 1150,
+    baseValue: 920, // rebalanced from 1150 (-20%)
     baseWeight: 95.0,
     sizeRange: [110, 200],
     scaleFactor: 2.9,
@@ -766,7 +766,7 @@ export const FISH_SPECIES = [
     maxDepth: 660,
     isSpecialDeep: true,
     rarity: 'epic',
-    baseValue: 2450,
+    baseValue: 1950, // rebalanced from 2450 (-20%)
     baseWeight: 320.0,
     sizeRange: [200, 360],
     scaleFactor: 3.8,
@@ -787,7 +787,7 @@ export const FISH_SPECIES = [
     minDepth: 540,
     maxDepth: 630,
     rarity: 'uncommon',
-    baseValue: 510,
+    baseValue: 405, // rebalanced from 510 (-21%)
     baseWeight: 15.0,
     sizeRange: [90, 160],
     scaleFactor: 2.2,

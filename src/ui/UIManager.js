@@ -225,6 +225,12 @@ export class UIManager {
   }
 
   updateHUD(hook, gameState) {
+    const isDiving = (gameState === 'CASTING' || gameState === 'DESCENDING' || gameState === 'REELING');
+    const hudEl = document.getElementById('game-hud');
+    if (hudEl) {
+      hudEl.classList.toggle('hud-diving-mode', isDiving);
+    }
+
     const lvl = this.saveSystem.data.level;
     const currentXp = this.saveSystem.data.xp;
     const xpReq = this.saveSystem.getXpRequired(lvl);
