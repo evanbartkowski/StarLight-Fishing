@@ -279,7 +279,7 @@ export class OceanWorld {
     });
   }
 
-  update(dt, hook) {
+  update(dt, hook, particles = null) {
     const deltaSec = dt / 1000;
     this.waveTimer += deltaSec;
     this.causticTimer += deltaSec * 1.5;
@@ -310,7 +310,7 @@ export class OceanWorld {
     this.updateRodTip();
 
     // Update active entities
-    this.entities.fish.forEach((fish) => fish.update(dt, this.worldWidth, hook));
+    this.entities.fish.forEach((fish) => fish.update(dt, this.worldWidth, hook, particles));
     this.entities.hazards.forEach((hazard) => hazard.update(dt, this.worldWidth));
     this.entities.treasures.forEach((treasure) => treasure.update(dt, this.worldWidth, hook));
 

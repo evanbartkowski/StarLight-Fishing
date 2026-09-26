@@ -584,6 +584,95 @@ export class SoundManager {
     osc.stop(now + 0.28);
   }
 
+  playTeleportWarp() {
+    this.ensureAudio();
+    if (this.isMuted || !this.audioCtx) return;
+    const ctx = this.audioCtx;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(1480, now + 0.16);
+    osc.frequency.exponentialRampToValueAtTime(440, now + 0.32);
+
+    gain.gain.setValueAtTime(this.sfxVolume * 0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.32);
+  }
+
+  playDashWhoosh() {
+    this.ensureAudio();
+    if (this.isMuted || !this.audioCtx) return;
+    const ctx = this.audioCtx;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(420, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
+
+    gain.gain.setValueAtTime(this.sfxVolume * 0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.22);
+  }
+
+  playCloakVanish() {
+    this.ensureAudio();
+    if (this.isMuted || !this.audioCtx) return;
+    const ctx = this.audioCtx;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(740, now);
+    osc.frequency.exponentialRampToValueAtTime(220, now + 0.28);
+
+    gain.gain.setValueAtTime(this.sfxVolume * 0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.28);
+  }
+
+  playAuraDeflect() {
+    this.ensureAudio();
+    if (this.isMuted || !this.audioCtx) return;
+    const ctx = this.audioCtx;
+    const now = ctx.currentTime;
+
+    const freqs = [620, 930];
+    freqs.forEach((f) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, now);
+      osc.frequency.exponentialRampToValueAtTime(f * 1.5, now + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(f * 0.8, now + 0.24);
+
+      gain.gain.setValueAtTime(this.sfxVolume * 0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.24);
+    });
+  }
+
   playQuestComplete() {
     this.ensureAudio();
     if (this.isMuted || !this.audioCtx) return;

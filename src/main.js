@@ -363,7 +363,7 @@ const update = (dt) => {
   }
 
   // Update world environment
-  oceanWorld.update(dt, hook);
+  oceanWorld.update(dt, hook, particles);
 
   // Update Hook
   if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING') {
@@ -405,7 +405,7 @@ const update = (dt) => {
     if (canCatch && (gameState === 'REELING' || gameState === 'DESCENDING')) {
       for (let i = oceanWorld.entities.fish.length - 1; i >= 0; i--) {
         const fish = oceanWorld.entities.fish[i];
-        if (fish.state !== 'SWIMMING') continue;
+        if (fish.state !== 'SWIMMING' || fish.isCamouflaged) continue;
 
         const dx = fish.x - hook.x;
         const dy = fish.y - hook.y;

@@ -1,5 +1,6 @@
 import { RARITY_CONFIG } from '../data/FishData.js';
 import { calculateCrown, getCrownMultiplier } from '../data/legendaries.js';
+import { soundManager } from '../audio/SoundManager.js';
 
 export class Fish {
   constructor(species, x, y, options = {}) {
@@ -57,13 +58,83 @@ export class Fish {
 
     // Collision radius
     this.radius = Math.max(14, 18 * this.scale);
+
+    // Elusive / Evasive abilities for rare, epic, and mythical fish
+    this.evasion = species.evasion || null;
+    if (!this.evasion && (this.rarity === 'rare' || this.rarity === 'epic' || this.rarity === 'legendary' || this.isMythic || this.isSpecialDeep)) {
+      const defaultTypes = ['teleport', 'dash', 'camouflage', 'repel', 'zigzag'];
+      const pick = defaultTypes[Math.floor(Math.random() * defaultTypes.length)];
+      this.evasion = {
+        type: pick,
+        cooldown: pick === 'camouflage' ? 3.0 : 2.2,
+        range: 115,
+        label: pick.toUpperCase() + '!',
+      };
+    }
+
+    this.evasionCooldown = 0.4 + Math.random() * 0.8;
+    this.isDashing = false;
+    this.dashTimer = 0;
+    this.isCamouflaged = false;
+    this.camoTimer = 0;
+    this.deflectWave = 0;
+    this.deflectColor = this.rarityGlow || '#38bdf8';
+    this.teleportFlash = 0;
   }
 
-  update(dt, worldWidth, hook) {
+  update(dt, worldWidth, hook, particles = null) {
     const deltaSec = dt / 1000;
     this.wiggleTimer += this.wiggleFreq * deltaSec;
 
+    // Tick evasion cooldowns & active timers
+    if (this.evasionCooldown > 0) this.evasionCooldown -= deltaSec;
+    if (this.teleportFlash > 0) this.teleportFlash -= deltaSec;
+
+    if (this.isDashing) {
+      this.dashTimer -= deltaSec;
+      if (this.dashTimer <= 0) {
+        this.isDashing = false;
+        this.speed = this.baseSpeed;
+      } else if (particles && Math.random() < 0.35) {
+        particles.emitBubbles(this.x, this.y, 2, 4);
+      }
+    }
+
+    if (this.isCamouflaged) {
+      this.camoTimer -= deltaSec;
+      if (this.camoTimer <= 0) {
+        this.isCamouflaged = false;
+        if (particles) {
+          particles.emitSparkles(this.x, this.y, 8, this.rarityGlow || '#94a3b8');
+        }
+      }
+    }
+
+    if (this.deflectWave > 0) {
+      this.deflectWave += 180 * deltaSec;
+      if (this.deflectWave > 75) {
+        this.deflectWave = 0;
+      }
+    }
+
     if (this.state === 'SWIMMING') {
+      // Evasion trigger check: hook approaching an elusive specimen
+      if (
+        this.evasion &&
+        this.evasionCooldown <= 0 &&
+        hook &&
+        (hook.state === 'DESCENDING' || hook.state === 'REELING')
+      ) {
+        const dx = hook.x - this.x;
+        const dy = hook.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const triggerRange = this.evasion.range || 120;
+
+        if (dist < triggerRange) {
+          this.executeEvasion(hook, particles, worldWidth);
+        }
+      }
+
       this.x += this.direction * this.speed * 55 * deltaSec;
 
       // Vertical subtle drifting bob
@@ -82,6 +153,10 @@ export class Fish {
         this.direction *= -1;
       }
     } else if (this.state === 'HOOKED' && hook) {
+      this.isDashing = false;
+      this.isCamouflaged = false;
+      this.deflectWave = 0;
+
       // Firmly locked onto the line a bit above the hook and follows the hook
       const sway = Math.sin(this.wiggleTimer * 1.5) * 1.5;
       const offsetX = (this.hookOffset ? this.hookOffset.x : 0) + sway;
@@ -92,10 +167,98 @@ export class Fish {
     }
   }
 
+  executeEvasion(hook, particles, worldWidth) {
+    const type = this.evasion.type;
+
+    if (type === 'teleport') {
+      soundManager.playTeleportWarp();
+      if (particles) {
+        particles.emitSparkles(this.x, this.y, 18, this.rarityGlow || '#38bdf8');
+      }
+
+      const blinkDist = this.evasion.blinkDist || 190;
+      const awayAngle = Math.atan2(this.y - hook.y, this.x - hook.x) + (Math.random() - 0.5) * 0.7;
+      let newX = this.x + Math.cos(awayAngle) * blinkDist;
+      let newY = this.y + Math.sin(awayAngle) * (blinkDist * 0.65);
+
+      newX = Math.max(70, Math.min(worldWidth - 70, newX));
+      const minDepthY = (this.species.minDepth || 5) * 15;
+      const maxDepthY = (this.species.maxDepth || 600) * 15;
+      newY = Math.max(minDepthY, Math.min(maxDepthY, newY));
+
+      this.x = newX;
+      this.y = newY;
+      this.direction = this.x < hook.x ? -1 : 1;
+      this.teleportFlash = 0.35;
+      this.evasionCooldown = this.evasion.cooldown || 2.4;
+
+      if (particles) {
+        particles.emitSparkles(this.x, this.y, 22, '#ffffff');
+        particles.addFloatingText(this.evasion.label || '⚡ PHASE BLINK!', this.x, this.y - 20, this.rarityColor, 16, '#38bdf8');
+      }
+    } else if (type === 'dash') {
+      soundManager.playDashWhoosh();
+      this.isDashing = true;
+      this.dashTimer = 0.8;
+      this.direction = this.x < hook.x ? -1 : 1;
+      this.speed = this.baseSpeed * (this.evasion.speedMult || 4.2);
+      this.evasionCooldown = this.evasion.cooldown || 2.2;
+
+      if (particles) {
+        particles.emitBubbles(this.x, this.y, 6, 8);
+        particles.emitSparkles(this.x, this.y, 12, this.rarityGlow || '#38bdf8');
+        particles.addFloatingText(this.evasion.label || '💨 SPEED DASH!', this.x, this.y - 20, '#38bdf8', 16, '#60a5fa');
+      }
+    } else if (type === 'camouflage') {
+      soundManager.playCloakVanish();
+      this.isCamouflaged = true;
+      this.camoTimer = this.evasion.duration || 1.8;
+      this.evasionCooldown = this.evasion.cooldown || 3.0;
+
+      if (particles) {
+        particles.emitBubbles(this.x, this.y, 8, 12);
+        particles.emitSparkles(this.x, this.y, 14, '#94a3b8');
+        particles.addFloatingText(this.evasion.label || '🌫️ SHADOW CLOAK!', this.x, this.y - 20, '#cbd5e1', 16, '#64748b');
+      }
+    } else if (type === 'repel') {
+      soundManager.playAuraDeflect();
+      const pushAngle = Math.atan2(hook.y - this.y, hook.x - this.x);
+      const force = this.evasion.force || 190;
+      hook.vx += Math.cos(pushAngle) * force;
+      hook.vy += Math.sin(pushAngle) * (force * 0.55);
+
+      this.deflectWave = 14;
+      this.deflectColor = this.rarityGlow || '#38bdf8';
+      this.evasionCooldown = this.evasion.cooldown || 2.4;
+
+      if (particles) {
+        particles.emitSparkles(this.x, this.y, 16, this.deflectColor);
+        particles.addFloatingText(this.evasion.label || '🛡️ FORCE DEFLECTION!', this.x, this.y - 20, '#fde047', 16, '#eab308');
+        particles.addTrauma(0.18);
+      }
+    } else if (type === 'zigzag') {
+      soundManager.playDashWhoosh();
+      this.direction *= -1;
+      this.y += (Math.random() < 0.5 ? -35 : 35);
+      this.isDashing = true;
+      this.dashTimer = 0.6;
+      this.speed = this.baseSpeed * 3.4;
+      this.evasionCooldown = this.evasion.cooldown || 2.0;
+
+      if (particles) {
+        particles.emitBubbles(this.x, this.y, 6, 8);
+        particles.addFloatingText(this.evasion.label || '🌀 SLITHER EVADE!', this.x, this.y - 20, '#a855f7', 16, '#d8b4fe');
+      }
+    }
+  }
+
   hookTo(hook, slotIndex) {
     this.state = 'HOOKED';
     this.hook = hook;
     this.hookIndex = slotIndex;
+    this.isDashing = false;
+    this.isCamouflaged = false;
+    this.deflectWave = 0;
 
     // Fish stays on the line a bit above the hook:
     // Slot 0 sits 22px above hook, slot 1 sits 48px above, slot 2 sits 74px above
@@ -131,6 +294,20 @@ export class Fish {
     const drawY = posY - cameraY;
     const s = this.species;
 
+    // Render expanding kinetic forcefield ripple when repelling
+    if (this.deflectWave > 0) {
+      ctx.save();
+      ctx.strokeStyle = this.deflectColor || '#38bdf8';
+      ctx.lineWidth = Math.max(1, 3.5 * (1 - this.deflectWave / 75));
+      ctx.globalAlpha = Math.max(0, 1 - this.deflectWave / 75);
+      ctx.shadowColor = this.deflectColor || '#38bdf8';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(posX, drawY, this.deflectWave, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // Leader monofilament line from hook up to fish
     if (isHooked && this.hook) {
       ctx.save();
@@ -152,6 +329,11 @@ export class Fish {
     ctx.save();
     ctx.translate(posX, drawY);
 
+    // Apply camouflage opacity if cloaked
+    if (this.isCamouflaged) {
+      ctx.globalAlpha = 0.22;
+    }
+
     if (isHooked) {
       // Fish is hooked along the line, facing upwards toward surface with lively wiggling
       const side = this.hookIndex % 2 === 0 ? 1 : -1;
@@ -162,6 +344,48 @@ export class Fish {
     }
 
     ctx.scale(this.scale, this.scale);
+
+    // Speed lines if currently dashing
+    if (this.isDashing) {
+      ctx.save();
+      ctx.strokeStyle = this.rarityGlow || 'rgba(56, 189, 248, 0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-28, -6);
+      ctx.lineTo(-50, -6);
+      ctx.moveTo(-30, 6);
+      ctx.lineTo(-55, 6);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Teleport star flash
+    if (this.teleportFlash > 0) {
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 14;
+      ctx.globalAlpha = Math.min(1.0, this.teleportFlash / 0.35);
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Subtle alert reflex spark when elusive ability is primed and ready
+    if (this.evasion && this.evasionCooldown <= 0 && !isHooked) {
+      ctx.save();
+      const sparkAngle = this.wiggleTimer * 3.5;
+      const sx = Math.cos(sparkAngle) * 22;
+      const sy = Math.sin(sparkAngle) * 12;
+      ctx.fillStyle = this.rarityGlow || '#38bdf8';
+      ctx.shadowColor = this.rarityGlow || '#38bdf8';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     // Shiny shimmer aura (optimized for zero lag)
     if (this.isShiny) {

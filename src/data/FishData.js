@@ -90,6 +90,7 @@ export const FISH_SPECIES = [
     swimSpeed: 0.9,
     wiggleSpeed: 5,
     fantasyTrail: 'sparkle',
+    evasion: { type: 'camouflage', cooldown: 3.0, duration: 1.5, label: 'CORAL CAMO!' },
     lore: 'Anchors onto coral branches with its prehensile tail. Treasured by coastal collectors.',
   },
   {
@@ -111,6 +112,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.7,
     wiggleSpeed: 6,
     fantasyTrail: 'rainbow',
+    evasion: { type: 'dash', cooldown: 2.2, speedMult: 3.8, label: 'PRISMATIC DASH!' },
     lore: 'Gleams with iridescent scales as it grazes upon coral mounds under the gentle coastal surf.',
   },
   {
@@ -179,6 +181,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.8,
     wiggleSpeed: 8,
     fantasyTrail: 'neon',
+    evasion: { type: 'camouflage', cooldown: 2.5, duration: 1.8, label: 'NEON INK SHROUD!' },
     lore: 'Communicates with rhythmic light pulses along its mantle, illuminating the deep trench.',
   },
   {
@@ -200,6 +203,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.2,
     wiggleSpeed: 5,
     fantasyTrail: 'biolum',
+    evasion: { type: 'zigzag', cooldown: 2.0, label: 'GLIDER SWOOP!' },
     lore: 'Glides horizontally through plankton streams, collecting glowing bioluminescent nectar.',
   },
   {
@@ -221,6 +225,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.2,
     wiggleSpeed: 9,
     fantasyTrail: 'neon',
+    evasion: { type: 'dash', cooldown: 1.9, speedMult: 4.4, label: 'VIPER LUNGE!' },
     lore: 'A predatory deep trench hunter armed with needle teeth and a radiant cyan dorsal photophore.',
   },
   {
@@ -242,6 +247,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.0,
     wiggleSpeed: 4,
     fantasyTrail: 'biolum',
+    evasion: { type: 'camouflage', cooldown: 2.8, duration: 1.6, label: 'PHANTOM FADE!' },
     lore: 'Nearly translucent, trailing glowing tendrils that ripple like liquid silk in the dark.',
   },
 
@@ -268,6 +274,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.1,
     wiggleSpeed: 11,
     fantasyTrail: 'starlight',
+    evasion: { type: 'teleport', cooldown: 2.0, blinkDist: 160, label: 'TIME WARP!' },
     lore: 'Its tiny tail flickers between seconds, occasionally swimming backward in local time.',
   },
   {
@@ -310,6 +317,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.5,
     wiggleSpeed: 4,
     fantasyTrail: 'starlight',
+    evasion: { type: 'repel', cooldown: 2.4, force: 160, label: 'ASTRAL REPULSE!' },
     lore: 'Flaps its wide wings like a celestial carpet, trailing shimmering comet dust through the void.',
   },
   {
@@ -331,6 +339,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.7,
     wiggleSpeed: 6,
     fantasyTrail: 'starlight',
+    evasion: { type: 'repel', cooldown: 2.2, force: 190, label: 'PULSAR BURST!' },
     lore: 'Dangles a miniature glowing pulsar from its brow, hypnotizing prey with cosmic frequencies.',
   },
   {
@@ -352,6 +361,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.4,
     wiggleSpeed: 9,
     fantasyTrail: 'starlight',
+    evasion: { type: 'dash', cooldown: 1.8, speedMult: 4.6, label: 'COMET STREAK!' },
     lore: 'Accelerates like a falling star when startled, leaving a fiery violet streak behind.',
   },
 
@@ -399,6 +409,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.5,
     wiggleSpeed: 5,
     fantasyTrail: 'sparkle',
+    evasion: { type: 'dash', cooldown: 2.3, speedMult: 3.6, label: 'CLOCKWORK OVERDRIVE!' },
     lore: 'Ancient clockwork automaton crafted by Atlantean engineers, still swimming three millennia later.',
   },
   {
@@ -420,6 +431,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.8,
     wiggleSpeed: 8,
     fantasyTrail: 'emerald',
+    evasion: { type: 'zigzag', cooldown: 2.0, label: 'TEMPLE SLITHER!' },
     lore: 'Weaves effortlessly through the fluted columns of flooded Atlantean temples.',
   },
   {
@@ -442,6 +454,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.0,
     wiggleSpeed: 6,
     fantasyTrail: 'emerald',
+    evasion: { type: 'repel', cooldown: 2.2, force: 210, label: 'SOLAR CORE PULSE!' },
     lore: 'Carries a resonant crystal in its thoracic cavity that glows with the lost power of Atlantis.',
   },
   {
@@ -531,6 +544,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.6,
     wiggleSpeed: 5,
     fantasyTrail: 'aether',
+    evasion: { type: 'dash', cooldown: 2.0, speedMult: 4.0, label: 'AETHER GLIDE!' },
     lore: 'Leaps gracefully into the sky mist, drifting on lilac winds like a winged bird of prey.',
   },
   {
@@ -553,6 +567,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.2,
     wiggleSpeed: 6,
     fantasyTrail: 'aether',
+    evasion: { type: 'repel', cooldown: 2.0, force: 210, label: 'SERAPHIC SHIELD!' },
     lore: 'Blessed with six shimmering dorsal fins, said to bring peaceful fortune to respectful mariners.',
   },
   {
@@ -574,6 +589,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.7,
     wiggleSpeed: 9,
     fantasyTrail: 'aether',
+    evasion: { type: 'teleport', cooldown: 2.4, blinkDist: 150, label: 'WISP BLINK!' },
     lore: 'Gathers in playful lilac shoals around floating sky-island root systems.',
   },
 
@@ -643,6 +659,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.8,
     wiggleSpeed: 5,
     fantasyTrail: 'embers',
+    evasion: { type: 'repel', cooldown: 2.2, force: 220, label: 'PYROCLASTIC SURGE!' },
     lore: 'Rides superheated hydrothermal plumes, its wingtips glowing red-hot in the sulfur dark.',
   },
   {
@@ -665,6 +682,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.5,
     wiggleSpeed: 7,
     fantasyTrail: 'embers',
+    evasion: { type: 'dash', cooldown: 1.6, speedMult: 4.8, label: 'OBSIDIAN CHARGE!' },
     lore: 'A terrifying apex predator armored with glassy volcanic obsidian scales sharper than razor blades.',
   },
   {
@@ -712,6 +730,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.5,
     wiggleSpeed: 5,
     fantasyTrail: 'aurora',
+    evasion: { type: 'teleport', cooldown: 2.2, blinkDist: 190, label: 'PHASE SHIFT!' },
     lore: 'Phases partially out of physical space. It leaves behind an ethereal trail of cosmic stardust.',
   },
   {
@@ -734,6 +753,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.6,
     wiggleSpeed: 4,
     fantasyTrail: 'aurora',
+    evasion: { type: 'repel', cooldown: 2.6, force: 240, label: 'INFRASONIC RUMBLE!' },
     lore: 'Ancient space-leviathan singing low infrasonic chords that bend the fabric of ocean time.',
   },
   {
@@ -756,6 +776,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.1,
     wiggleSpeed: 7,
     fantasyTrail: 'aurora',
+    evasion: { type: 'camouflage', cooldown: 2.6, duration: 2.2, label: 'VOID CLOAK!' },
     lore: 'Unfurls undulating violet tentacles studded with bioluminescent cosmic eyes.',
   },
   {
@@ -778,6 +799,7 @@ export const FISH_SPECIES = [
     swimSpeed: 2.4,
     wiggleSpeed: 5,
     fantasyTrail: 'aurora',
+    evasion: { type: 'teleport', cooldown: 2.0, blinkDist: 240, label: 'VOID BLINK!' },
     lore: 'The sovereign monarch of the Chrono Void. Wings ripple with auroral starlight from distant galaxies.',
   },
   {
@@ -799,6 +821,7 @@ export const FISH_SPECIES = [
     swimSpeed: 1.4,
     wiggleSpeed: 4,
     fantasyTrail: 'aurora',
+    evasion: { type: 'zigzag', cooldown: 1.9, label: 'TEMPORAL DRIFT!' },
     lore: 'A perpetual colonial ribbon of light, drifting serenely in the zero-gravity stillness of the deep void.',
   },
 ];

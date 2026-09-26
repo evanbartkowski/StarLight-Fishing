@@ -145,7 +145,10 @@ export class Hook {
         16,
         glow
       );
-      if (entity.isShiny || rarity === 'epic' || rarity === 'legendary' || entity.isMythic || entity.isSpecialDeep) {
+      if (entity.evasion) {
+        particles.addFloatingText('🎯 ELUSIVE CATCH!', this.x, this.y - 32, '#facc15', 18, '#ca8a04');
+        particles.addTrauma(0.3);
+      } else if (entity.isShiny || rarity === 'epic' || rarity === 'legendary' || entity.isMythic || entity.isSpecialDeep) {
         particles.addTrauma(0.35);
       }
     }

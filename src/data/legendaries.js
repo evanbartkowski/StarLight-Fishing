@@ -23,6 +23,7 @@ export const LEGENDARY_SPECIES = [
     eyeColor: '#38bdf8',
     swimSpeed: 1.4,
     wiggleSpeed: 5,
+    evasion: { type: 'teleport', cooldown: 1.8, blinkDist: 260, label: 'STELLAR WARP!' },
     lore: 'A translucent celestial ribbon eel that gathers stellar luminescence from cosmic ocean currents. Appears only during clear abyssal nights.',
     spawnConditions: {
       timesOfDay: ['NIGHT'],
@@ -51,6 +52,7 @@ export const LEGENDARY_SPECIES = [
     eyeColor: '#facc15',
     swimSpeed: 0.85,
     wiggleSpeed: 3,
+    evasion: { type: 'camouflage', cooldown: 2.8, duration: 2.2, label: 'COLOSSAL REEF CAMO!' },
     lore: 'A centuries-old colossal sea turtle whose shell hosts a living coral reef ecosystem. Surfaces in foggy twilight mists at dawn.',
     spawnConditions: {
       timesOfDay: ['DAWN'],
@@ -79,6 +81,7 @@ export const LEGENDARY_SPECIES = [
     eyeColor: '#ffffff',
     swimSpeed: 2.3,
     wiggleSpeed: 7,
+    evasion: { type: 'dash', cooldown: 1.5, speedMult: 5.0, label: 'AURORAL LIGHTSPEED!' },
     lore: 'A majestic polar billfish whose crystalline dorsal sail refracts polar lights across the pelagic waves at dusk and night.',
     spawnConditions: {
       timesOfDay: ['DUSK', 'NIGHT'],
@@ -108,6 +111,7 @@ export const LEGENDARY_SPECIES = [
     eyeColor: '#ffffff',
     swimSpeed: 1.2,
     wiggleSpeed: 4,
+    evasion: { type: 'zigzag', cooldown: 2.0, label: 'PREHISTORIC EVASION!' },
     lore: 'A pristine prehistoric relic adorned with natural pyrite and gold plating from magma vent vents. Extremely rare drop of ancient antiquity.',
     spawnConditions: {
       timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'], // Any time, but very rare
@@ -136,6 +140,7 @@ export const LEGENDARY_SPECIES = [
     eyeColor: '#ffffff',
     swimSpeed: 1.5,
     wiggleSpeed: 4,
+    evasion: { type: 'repel', cooldown: 1.9, force: 250, label: 'SIREN GRAVITY WAVE!' },
     lore: 'A majestic royal manta ray that produces a soothing, harmonic hum resonant with wooden boat hulls under calm evening skies.',
     spawnConditions: {
       timesOfDay: ['DUSK', 'NIGHT'],
