@@ -86,6 +86,10 @@ export class OceanWorld {
     this.trapSystem = trapSys;
   }
 
+  setCurrentSea(seaId) {
+    this.currentSeaId = parseInt(seaId, 10) || 1;
+  }
+
   setAimDirection(dir) {
     this.aimDirection = dir < 0 ? -1 : 1;
     this.updateRodTip();
