@@ -106,8 +106,7 @@ export class UIManager {
           📋 Quests <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
         </button>
         <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 Shop</button>
-        <button class="icon-btn" id="btn-journal" title="Angler's Field Log & Museum">📜 Journal</button>
-        <button class="icon-btn" id="btn-achievements" title="Logbook & Trophy Room">🏆 Logbook</button>
+        <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 Journal & Logbook</button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 Radio</button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
@@ -176,8 +175,8 @@ export class UIManager {
     });
     document.getElementById('btn-shop').addEventListener('click', () => this.openShop());
     document.getElementById('btn-quests')?.addEventListener('click', () => this.openQuestsModal());
-    document.getElementById('btn-journal').addEventListener('click', () => this.openJournal());
-    document.getElementById('btn-achievements').addEventListener('click', () => this.openAchievements());
+    document.getElementById('btn-journal')?.addEventListener('click', () => this.openJournalLogbook('journal'));
+    document.getElementById('btn-achievements')?.addEventListener('click', () => this.openJournalLogbook('logbook'));
     document.getElementById('btn-radio-hud')?.addEventListener('click', () => this.openRadio());
     document.getElementById('btn-settings').addEventListener('click', () => this.openSettings());
     document.getElementById('btn-tutorial').addEventListener('click', () => this.openTutorial());
@@ -1260,7 +1259,11 @@ export class UIManager {
 
   // The Cozy Field Log & Illustrated Antique Journal
   openJournal(defaultTab = 'fieldlog') {
-    this.activeModal = 'journal';
+    this.openJournalLogbook('journal', defaultTab);
+  }
+
+  openJournalLogbook(primaryMenu = 'journal', defaultSubTab = 'fieldlog') {
+    this.activeModal = primaryMenu === 'logbook' ? 'achievements' : 'journal';
     const save = this.saveSystem;
     const allSpecies = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
     const caughtSpeciesCount = Object.keys(save.data.journal).length;
@@ -1544,113 +1547,149 @@ export class UIManager {
     const unlockedPetCount = ['cat', 'pelican', 'dolphin'].filter(id => save.hasPet(id)).length;
 
     const modalBody = `
-      <div class="journal-wrapper">
-        <div class="journal-tabs">
-          <button class="tab-btn ${defaultTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog">📜 Field Log (${caughtSpeciesCount} / ${allSpecies.length})</button>
-          <button class="tab-btn ${defaultTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / 3)</button>
-          <button class="tab-btn ${defaultTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
-          <button class="tab-btn ${defaultTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Skeletons</button>
-          <button class="tab-btn ${defaultTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
-          <button class="tab-btn ${defaultTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps</button>
-          <button class="tab-btn" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
-          <button class="tab-btn" id="tab-aquarium">🐠 Virtual Aquarium</button>
+      <div class="journal-logbook-container">
+        <!-- 2 Primary Menus -->
+        <div class="primary-menu-tabs">
+          <button class="primary-tab-btn ${primaryMenu === 'journal' ? 'active' : ''}" id="primary-menu-journal">
+            📖 Field Journal & Collections
+          </button>
+          <button class="primary-tab-btn ${primaryMenu === 'logbook' ? 'active' : ''}" id="primary-menu-logbook">
+            🏆 Logbook & Trophy Room
+          </button>
         </div>
-        <div id="journal-tab-content">
-          ${defaultTab === 'crew' ? renderCrewTab() : defaultTab === 'traps' ? renderTrapsTab() : defaultTab === 'skeletons' ? renderSkeletonsTab() : defaultTab === 'relics' ? '' : renderFieldLogHtml()}
-          ${defaultTab === 'traps' ? renderTrapsTab() : defaultTab === 'skeletons' ? renderSkeletonsTab() : defaultTab === 'relics' ? '' : renderFieldLogHtml()}
+
+        <!-- Primary Menu 1: Field Journal & Collections -->
+        <div id="view-journal" style="display: ${primaryMenu === 'journal' ? 'block' : 'none'};">
+          <div class="journal-wrapper">
+            <div class="journal-tabs">
+              <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog">📜 Field Log (${caughtSpeciesCount} / ${allSpecies.length})</button>
+              <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / 3)</button>
+              <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
+              <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Skeletons</button>
+              <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
+              <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
+              <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium">🐠 Virtual Aquarium</button>
+            </div>
+            <div id="journal-tab-content">
+              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : renderFieldLogHtml()}
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary Menu 2: Logbook & Trophy Room -->
+        <div id="view-logbook" style="display: ${primaryMenu === 'logbook' ? 'block' : 'none'};">
+          ${this.getLogbookHtml()}
         </div>
       </div>
     `;
 
-    this.openModal("📜 Angler's Field Log & Illustrated Journal", modalBody);
+    this.openModal("📜 Angler's Field Journal & Trophy Logbook", modalBody);
 
-    if (defaultTab === 'relics') {
-      this.renderCabinShelfTab();
-    } else if (defaultTab === 'traps') {
-      const harvestBtn = document.getElementById('btn-harvest-modal');
-      if (harvestBtn) {
-        harvestBtn.addEventListener('click', () => {
-          this.handleTrapClick();
-          this.openJournal('traps');
-        });
-      }
-      const goShopBtn = document.getElementById('btn-traps-go-shop');
-      if (goShopBtn) {
-        goShopBtn.addEventListener('click', () => {
-          this.openShop();
-        });
+    const journalTabBtn = document.getElementById('primary-menu-journal');
+    const logbookTabBtn = document.getElementById('primary-menu-logbook');
+    const viewJournal = document.getElementById('view-journal');
+    const viewLogbook = document.getElementById('view-logbook');
+
+    journalTabBtn?.addEventListener('click', () => {
+      soundManager.playButtonClick();
+      this.activeModal = 'journal';
+      journalTabBtn.classList.add('active');
+      logbookTabBtn.classList.remove('active');
+      viewJournal.style.display = 'block';
+      viewLogbook.style.display = 'none';
+    });
+
+    logbookTabBtn?.addEventListener('click', () => {
+      soundManager.playButtonClick();
+      this.activeModal = 'achievements';
+      logbookTabBtn.classList.add('active');
+      journalTabBtn.classList.remove('active');
+      viewJournal.style.display = 'none';
+      viewLogbook.style.display = 'block';
+    });
+
+    if (primaryMenu === 'journal') {
+      if (defaultSubTab === 'relics') {
+        this.renderCabinShelfTab();
+      } else if (defaultSubTab === 'fossils') {
+        this.renderFossilMuseumTab();
+      } else if (defaultSubTab === 'aquarium') {
+        this.renderAquariumTab();
+      } else if (defaultSubTab === 'traps') {
+        this.bindTrapsTabEvents();
       }
     }
 
     const setupTabListeners = () => {
-      document.getElementById('tab-fieldlog').addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-        document.getElementById('tab-fieldlog').classList.add('active');
+      const activateTab = (tabId) => {
+        document.querySelectorAll('#view-journal .tab-btn').forEach((b) => b.classList.remove('active'));
+        document.getElementById(tabId)?.classList.add('active');
+      };
+
+      document.getElementById('tab-fieldlog')?.addEventListener('click', () => {
+        soundManager.playButtonClick();
+        activateTab('tab-fieldlog');
         document.getElementById('journal-tab-content').innerHTML = renderFieldLogHtml();
       });
 
       const crewBtn = document.getElementById('tab-crew');
       if (crewBtn) {
         crewBtn.addEventListener('click', () => {
-          document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-          crewBtn.classList.add('active');
+          soundManager.playButtonClick();
+          activateTab('tab-crew');
           document.getElementById('journal-tab-content').innerHTML = renderCrewTab();
         });
       }
 
-      document.getElementById('tab-relics').addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-        document.getElementById('tab-relics').classList.add('active');
+      document.getElementById('tab-relics')?.addEventListener('click', () => {
+        soundManager.playButtonClick();
+        activateTab('tab-relics');
         this.renderCabinShelfTab();
       });
 
-      document.getElementById('tab-skeletons').addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-        document.getElementById('tab-skeletons').classList.add('active');
+      document.getElementById('tab-skeletons')?.addEventListener('click', () => {
+        soundManager.playButtonClick();
+        activateTab('tab-skeletons');
         document.getElementById('journal-tab-content').innerHTML = renderSkeletonsTab();
       });
 
-      document.getElementById('tab-traps').addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-        document.getElementById('tab-traps').classList.add('active');
+      document.getElementById('tab-traps')?.addEventListener('click', () => {
+        soundManager.playButtonClick();
+        activateTab('tab-traps');
         document.getElementById('journal-tab-content').innerHTML = renderTrapsTab();
-        const harvestBtn = document.getElementById('btn-harvest-modal');
-        if (harvestBtn) {
-          harvestBtn.addEventListener('click', () => {
-            this.handleTrapClick();
-            this.openJournal('traps');
-          });
-        }
-        const goShopBtn = document.getElementById('btn-traps-go-shop');
-        if (goShopBtn) {
-          goShopBtn.addEventListener('click', () => {
-            this.openShop();
-          });
-        }
+        this.bindTrapsTabEvents();
       });
 
-      document.getElementById('tab-fossils').addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-        document.getElementById('tab-fossils').classList.add('active');
+      document.getElementById('tab-fossils')?.addEventListener('click', () => {
+        soundManager.playButtonClick();
+        activateTab('tab-fossils');
         this.renderFossilMuseumTab();
       });
 
-      document.getElementById('tab-aquarium').addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-        document.getElementById('tab-aquarium').classList.add('active');
+      document.getElementById('tab-aquarium')?.addEventListener('click', () => {
+        soundManager.playButtonClick();
+        activateTab('tab-aquarium');
         this.renderAquariumTab();
       });
-
-      const harvestBtn = document.getElementById('btn-harvest-modal');
-      if (harvestBtn) {
-        harvestBtn.addEventListener('click', () => {
-          this.handleTrapClick();
-          this.openJournal('traps');
-        });
-      }
     };
 
     setupTabListeners();
+  }
+
+  bindTrapsTabEvents() {
+    const harvestBtn = document.getElementById('btn-harvest-modal');
+    if (harvestBtn) {
+      harvestBtn.addEventListener('click', () => {
+        this.handleTrapClick();
+        this.openJournalLogbook('journal', 'traps');
+      });
+    }
+    const goShopBtn = document.getElementById('btn-traps-go-shop');
+    if (goShopBtn) {
+      goShopBtn.addEventListener('click', () => {
+        this.openShop();
+      });
+    }
   }
 
   // Cabin Shelf: Displays the 5 archaeological relics on an antique wooden shelf
@@ -1957,8 +1996,7 @@ export class UIManager {
     renderAq();
   }
 
-  openAchievements() {
-    this.activeModal = 'achievements';
+  getLogbookHtml() {
     const save = this.saveSystem;
 
     const milestoneIds = [
@@ -1970,9 +2008,34 @@ export class UIManager {
 
     const milestones = ACHIEVEMENTS.filter((a) => milestoneIds.includes(a.id));
     const regularAchievements = ACHIEVEMENTS.filter((a) => !milestoneIds.includes(a.id));
+    const stats = save.data.stats;
 
     let html = `
       <div class="trophy-room-container">
+        <!-- Career Snapshot -->
+        <div class="trophy-career-snapshot">
+          <div class="stat-pill-box">
+            <span class="stat-lbl">Angler Rank</span>
+            <span class="stat-val">Lv. ${save.data.level}</span>
+          </div>
+          <div class="stat-pill-box">
+            <span class="stat-lbl">Total Catches</span>
+            <span class="stat-val">${stats.totalFishCaught}</span>
+          </div>
+          <div class="stat-pill-box">
+            <span class="stat-lbl">Total Gold</span>
+            <span class="stat-val">$${stats.totalGoldEarned.toLocaleString()}</span>
+          </div>
+          <div class="stat-pill-box">
+            <span class="stat-lbl">Max Depth</span>
+            <span class="stat-val">${stats.maxDepthReached}m</span>
+          </div>
+          <div class="stat-pill-box">
+            <span class="stat-lbl">Mythic Titans</span>
+            <span class="stat-val">🌟 ${stats.mythicsCaught || 0}</span>
+          </div>
+        </div>
+
         <!-- Grand Milestones Showcase Banner -->
         <div class="trophy-showcase-section">
           <div class="trophy-section-title">
@@ -2055,7 +2118,11 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal('🏆 Logbook & Trophy Room', html);
+    return html;
+  }
+
+  openAchievements() {
+    this.openJournalLogbook('logbook');
   }
 
   openSettings() {

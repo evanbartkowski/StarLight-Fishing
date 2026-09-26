@@ -165,7 +165,7 @@ export const UPGRADE_DEFINITIONS = {
     description: 'Deploy idle drift traps that passively catch coastal crabs, oysters, and prehistoric bone fragments.',
     tiers: [
       { level: 0, cost: 0, trapCount: 0, maxStorage: 0, reqLevel: 1, label: 'Not Purchased (0 Pots)' },
-      { level: 1, cost: 450, trapCount: 1, maxStorage: 10, reqLevel: 2, label: '1 Drift Pot (10 Capacity)' },
+      { level: 1, cost: 450, trapCount: 1, maxStorage: 10, reqLevel: 1, label: '1 Drift Pot (10 Capacity)' },
       { level: 2, cost: 1200, trapCount: 2, maxStorage: 20, reqLevel: 4, label: '2 Drift Pots (20 Capacity)' },
       { level: 3, cost: 3100, trapCount: 3, maxStorage: 35, reqLevel: 8, label: '3 Commercial Pots (35 Capacity)' },
     ],
