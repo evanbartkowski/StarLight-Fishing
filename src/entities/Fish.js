@@ -186,6 +186,59 @@ export class Fish {
       ctx.restore();
     }
 
+    // Fantasy species particle trail & aura
+    if (s.fantasyTrail) {
+      ctx.save();
+      const trail = s.fantasyTrail;
+      const t = this.wiggleTimer;
+      if (trail === 'starlight' || trail === 'sparkle' || trail === 'rainbow') {
+        ctx.fillStyle = trail === 'rainbow' ? '#f43f5e' : '#fef08a';
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 6;
+        for (let p = 0; p < 3; p++) {
+          const px = -25 - p * 8 + Math.sin(t * 2 + p) * 3;
+          const py = Math.sin(t * 3 + p) * 5;
+          ctx.beginPath();
+          ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (trail === 'biolum' || trail === 'neon') {
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#22d3ee';
+        ctx.shadowBlur = 8;
+        for (let p = 0; p < 3; p++) {
+          const px = -24 - p * 7;
+          const py = Math.cos(t * 2.5 + p) * 4;
+          ctx.beginPath();
+          ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (trail === 'embers') {
+        ctx.fillStyle = '#f97316';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
+        for (let p = 0; p < 3; p++) {
+          const px = -22 - p * 6;
+          const py = Math.sin(t * 3 + p) * 6;
+          ctx.beginPath();
+          ctx.arc(px, py, 2.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (trail === 'aether' || trail === 'aurora' || trail === 'emerald') {
+        ctx.fillStyle = trail === 'aether' ? '#e879f9' : (trail === 'emerald' ? '#34d399' : '#38bdf8');
+        ctx.shadowColor = trail === 'aether' ? '#c026d3' : (trail === 'emerald' ? '#059669' : '#a855f7');
+        ctx.shadowBlur = 8;
+        for (let p = 0; p < 4; p++) {
+          const px = -24 - p * 6;
+          const py = Math.sin(t * 2 + p * 1.5) * 5;
+          ctx.beginPath();
+          ctx.arc(px, py, 2.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
     // Crown floating icon above fish if crowned
     if (this.crown) {
       ctx.save();

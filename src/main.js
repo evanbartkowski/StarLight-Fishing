@@ -10,6 +10,8 @@ import { UPGRADE_DEFINITIONS } from './data/UpgradesData.js';
 import { TrapSystem } from './systems/TrapSystem.js';
 import { checkRandomPetEncounter } from './data/PetsData.js';
 import { QuestSystem } from './systems/QuestSystem.js';
+import { NPCSystem } from './systems/NPCSystem.js';
+import { MinimapUI } from './ui/MinimapUI.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -117,6 +119,22 @@ uiManager = new UIManager(save, triggerCast, startDive, trapSystem, questSystem)
 questSystem.onQuestCompleted = (q) => {
   uiManager.showToast(`📋 Noticeboard Mission Complete: ${q.title}! Claim your reward!`);
 };
+
+// Atmospheric NPC System & Chart Minimap
+const npcSystem = new NPCSystem(save, soundManager, uiManager);
+const minimapUI = new MinimapUI(save, soundManager, uiManager, oceanWorld);
+uiManager.setMinimapUI(minimapUI);
+
+minimapUI.onSailToSea = (sea) => {
+  oceanWorld.setCurrentSea(sea.id);
+  soundManager.setSeaTrack(sea.id);
+  oceanWorld.populateWorld(save);
+};
+
+// Apply current realm state to ocean and soundscape
+const initialSea = save.getCurrentSea() || 1;
+oceanWorld.setCurrentSea(initialSea);
+soundManager.setSeaTrack(initialSea);
 
 hook.applyUpgrades(save);
 hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
@@ -307,6 +325,9 @@ function startDive() {
   hook.applyUpgrades(save);
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
   gameState = 'SURFACE_IDLE';
+
+  // Check for rare atmospheric NPC wandering encounter upon resurfacing (~3.5% chance)
+  npcSystem.checkRandomEncounter('catch');
 }
 
 let surfaceIdleTimer = 0;
@@ -315,12 +336,17 @@ let surfaceIdleTimer = 0;
 const update = (dt) => {
   const deltaSec = dt / 1000;
 
-  // Track surface playtime to reward long cozy sessions with pet visits
+  // Update NPC director cooldowns
+  npcSystem.update(dt);
+
+  // Track surface playtime to reward long cozy sessions with pet visits or wandering traders
   if (gameState === 'SURFACE_IDLE') {
     surfaceIdleTimer += deltaSec;
-    if (surfaceIdleTimer >= 150) {
+    if (surfaceIdleTimer >= 120) {
       surfaceIdleTimer = 0;
-      checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager);
+      if (!npcSystem.checkRandomEncounter('travel')) {
+        checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager);
+      }
     }
   } else {
     surfaceIdleTimer = 0;

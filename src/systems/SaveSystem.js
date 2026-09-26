@@ -39,6 +39,9 @@ export class SaveSystem {
         dunkleosteus: 0, // 0 / 4 pieces
         plesiosaur: 0,   // 0 / 4 pieces
       },
+      currentSea: 1,
+      unlockedSeas: [1],
+      buffs: {},
       stats: {
         totalFishCaught: 0,
         maxDepthReached: 0,
@@ -61,6 +64,11 @@ export class SaveSystem {
         biggestCatchCm: 0,
         heaviestCatchKg: 0,
         biggestCatchName: 'None',
+        npcInteractionsCount: 0,
+        perfectReelsInARow: 0,
+        maxPerfectReelStreak: 0,
+        seasUnlockedCount: 1,
+        legendariesPerSea: {},
       },
       unlockedBobbers: ['pelican_bobber'],
       journal: {}, // speciesId -> { count, maxSize, minSize, maxWeight, shinyCount, goldCrown, silverCrown, firstCaughtAt }
@@ -78,7 +86,8 @@ export class SaveSystem {
 
   getXpRequired(level) {
     const lvl = Math.max(1, level || 1);
-    return Math.round(90 * Math.pow(lvl, 1.38));
+    // Rebalanced XP curve: floor(60 * level^1.45)
+    return Math.floor(60 * Math.pow(lvl, 1.45));
   }
 
   addXp(amount) {
@@ -242,6 +251,12 @@ export class SaveSystem {
     this.data.stats.totalCasts += 1;
     if (maxDepth >= 80 && !tookDamage) {
       this.data.stats.perfectDives += 1;
+    }
+
+    if (!tookDamage) {
+      this.recordPerfectReel();
+    } else {
+      this.breakPerfectReelStreak();
     }
 
     // Award depth exploration XP
@@ -429,6 +444,82 @@ export class SaveSystem {
       return true;
     }
     return false;
+  }
+
+  // --- Fantasy Seas & Chart Navigation ---
+  getCurrentSea() {
+    return this.data.currentSea || 1;
+  }
+
+  setCurrentSea(seaId) {
+    const id = parseInt(seaId, 10) || 1;
+    if (this.isSeaUnlocked(id)) {
+      this.data.currentSea = id;
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  isSeaUnlocked(seaId) {
+    const id = parseInt(seaId, 10) || 1;
+    if (id === 1) return true;
+    return Array.isArray(this.data.unlockedSeas) && this.data.unlockedSeas.includes(id);
+  }
+
+  unlockSea(seaId, cost = 0) {
+    const id = parseInt(seaId, 10) || 1;
+    if (this.isSeaUnlocked(id)) return true;
+    if (cost > 0) {
+      if (!this.spendCoins(cost)) return false;
+    }
+    if (!Array.isArray(this.data.unlockedSeas)) {
+      this.data.unlockedSeas = [1];
+    }
+    this.data.unlockedSeas.push(id);
+    this.data.stats.seasUnlockedCount = this.data.unlockedSeas.length;
+    this.checkAchievements();
+    this.save();
+    return true;
+  }
+
+  isMinimapUnlocked() {
+    return (this.data.level >= 4) && (this.getUpgradeLevel('nauticalAstrolabe') >= 1);
+  }
+
+  recordNPCInteraction() {
+    this.data.stats.npcInteractionsCount = (this.data.stats.npcInteractionsCount || 0) + 1;
+    this.checkAchievements();
+    this.save();
+  }
+
+  recordPerfectReel() {
+    this.data.stats.perfectReelsInARow = (this.data.stats.perfectReelsInARow || 0) + 1;
+    if (this.data.stats.perfectReelsInARow > (this.data.stats.maxPerfectReelStreak || 0)) {
+      this.data.stats.maxPerfectReelStreak = this.data.stats.perfectReelsInARow;
+    }
+    this.checkAchievements();
+    this.save();
+  }
+
+  breakPerfectReelStreak() {
+    this.data.stats.perfectReelsInARow = 0;
+  }
+
+  addBuff(buffId, durationMs) {
+    if (!this.data.buffs) this.data.buffs = {};
+    this.data.buffs[buffId] = Date.now() + durationMs;
+    this.save();
+  }
+
+  hasActiveBuff(buffId) {
+    if (!this.data.buffs || !this.data.buffs[buffId]) return false;
+    return Date.now() < this.data.buffs[buffId];
+  }
+
+  getBuffRemainingSeconds(buffId) {
+    if (!this.hasActiveBuff(buffId)) return 0;
+    return Math.max(0, Math.ceil((this.data.buffs[buffId] - Date.now()) / 1000));
   }
 }
 

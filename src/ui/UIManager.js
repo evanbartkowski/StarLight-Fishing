@@ -16,6 +16,7 @@ export class UIManager {
     this.onStartDive = onStartDive;
     this.trapSystem = trapSystem;
     this.questSystem = questSystem;
+    this.minimapUI = null;
 
     this.activeModal = null;
     this.toastTimer = null;
@@ -33,6 +34,10 @@ export class UIManager {
       this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${newLevel * 100})`);
       soundManager.playUpgrade();
     };
+  }
+
+  setMinimapUI(minimapUI) {
+    this.minimapUI = minimapUI;
   }
 
   setTrapSystem(trapSys) {
@@ -77,12 +82,14 @@ export class UIManager {
           <span class="shield-icon">🛡️</span>
           <span id="shield-amount">0</span>
         </div>
+
+        <div class="hud-buffs-container" id="hud-buffs"></div>
       </div>
 
       <div class="hud-center">
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
           <div class="depth-number" id="hud-depth">0.0m</div>
-          <div class="zone-badge" id="hud-zone">Sea 1: Sunlit Coral Haven</div>
+          <div class="zone-badge" id="hud-zone">Sea 1: Sunlit Shoals</div>
           <div class="depth-bar-track">
             <div class="depth-bar-fill" id="hud-depth-fill"></div>
           </div>
@@ -91,6 +98,7 @@ export class UIManager {
       </div>
 
       <div class="hud-right">
+        <button class="icon-btn" id="btn-minimap" title="Fantasy Nautical Chart & Minimap">🧭 Chart</button>
         <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
           🪤 Traps <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
@@ -99,7 +107,7 @@ export class UIManager {
         </button>
         <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 Shop</button>
         <button class="icon-btn" id="btn-journal" title="Angler's Field Log & Museum">📜 Journal</button>
-        <button class="icon-btn" id="btn-achievements" title="Trophies">🏆 Badges</button>
+        <button class="icon-btn" id="btn-achievements" title="Logbook & Trophy Room">🏆 Logbook</button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 Radio</button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
@@ -161,6 +169,11 @@ export class UIManager {
   }
 
   bindEvents() {
+    document.getElementById('btn-minimap')?.addEventListener('click', () => {
+      if (this.minimapUI) {
+        this.minimapUI.openChartNavigation();
+      }
+    });
     document.getElementById('btn-shop').addEventListener('click', () => this.openShop());
     document.getElementById('btn-quests')?.addEventListener('click', () => this.openQuestsModal());
     document.getElementById('btn-journal').addEventListener('click', () => this.openJournal());
@@ -268,6 +281,25 @@ export class UIManager {
       }
     }
 
+    // Update active buffs in HUD
+    const buffsContainer = document.getElementById('hud-buffs');
+    if (buffsContainer) {
+      let buffsHtml = '';
+      if (this.saveSystem.hasActiveBuff('sirensGrace')) {
+        const sec = this.saveSystem.getBuffRemainingSeconds('sirensGrace');
+        buffsHtml += `<span class="hud-buff-pill" title="Increased Rare Catch Rate">🌊 Siren's Grace (${sec}s)</span>`;
+      }
+      if (this.saveSystem.hasActiveBuff('starlightClarity')) {
+        const sec = this.saveSystem.getBuffRemainingSeconds('starlightClarity');
+        buffsHtml += `<span class="hud-buff-pill" title="Reveals fish silhouettes">🌟 Starlight Sight (${sec}s)</span>`;
+      }
+      if (this.saveSystem.hasActiveBuff('cartographerMark')) {
+        const sec = this.saveSystem.getBuffRemainingSeconds('cartographerMark');
+        buffsHtml += `<span class="hud-buff-pill" title="Secret Hotspot Active">🗺️ Survey Mark (${sec}s)</span>`;
+      }
+      buffsContainer.innerHTML = buffsHtml;
+    }
+
     const capEl = document.getElementById('hud-capacity');
     const capAmt = document.getElementById('capacity-amount');
     if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
@@ -355,6 +387,57 @@ export class UIManager {
     if (wasCrateModal && crateCtx && crateCtx.hook) {
       this.openCatchSummary(crateCtx.hook, crateCtx.onContinue);
     }
+  }
+
+  showNPCModal(npc, onOptionChosen) {
+    this.activeModal = 'npc_encounter';
+
+    let optionsHtml = '';
+    npc.options.forEach((opt, idx) => {
+      optionsHtml += `
+        <div class="npc-option-card" data-idx="${idx}">
+          <div class="npc-option-label">${opt.label}</div>
+          <div class="npc-option-desc">${opt.desc}</div>
+        </div>
+      `;
+    });
+
+    const contentHtml = `
+      <div class="npc-encounter-modal">
+        <div class="npc-header-bar" style="border-bottom: 2px solid ${npc.themeColor || '#38bdf8'};">
+          <div class="npc-avatar-box" style="border-color: ${npc.themeColor || '#38bdf8'};">
+            <span class="npc-avatar-emoji">${npc.avatar}</span>
+          </div>
+          <div class="npc-meta">
+            <h3 class="npc-name" style="color: ${npc.themeColor || '#f8fafc'};">${npc.name}</h3>
+            <div class="npc-title">${npc.title}</div>
+          </div>
+        </div>
+
+        <div class="npc-speech-bubble">
+          <p>“${npc.greeting}”</p>
+        </div>
+
+        <div class="npc-options-section">
+          <div class="npc-options-heading">Choose Your Course of Action:</div>
+          <div class="npc-options-list">
+            ${optionsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.openModal(`✨ Atmospheric Encounter: ${npc.name}`, contentHtml);
+
+    document.querySelectorAll('.npc-option-card').forEach((card) => {
+      card.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+        const chosenOpt = npc.options[idx];
+        if (chosenOpt && onOptionChosen) {
+          onOptionChosen(chosenOpt);
+        }
+      });
+    });
   }
 
   openRadio() {
@@ -1872,20 +1955,81 @@ export class UIManager {
     this.activeModal = 'achievements';
     const save = this.saveSystem;
 
-    let achHtml = '<div class="achievements-grid">';
+    const milestoneIds = [
+      'cartographer_unknown',
+      'friend_of_the_deep',
+      'titan_tamer',
+      'patience_of_the_tide',
+    ];
 
-    ACHIEVEMENTS.forEach((ach) => {
+    const milestones = ACHIEVEMENTS.filter((a) => milestoneIds.includes(a.id));
+    const regularAchievements = ACHIEVEMENTS.filter((a) => !milestoneIds.includes(a.id));
+
+    let html = `
+      <div class="trophy-room-container">
+        <!-- Grand Milestones Showcase Banner -->
+        <div class="trophy-showcase-section">
+          <div class="trophy-section-title">
+            <span>✨ Hall of Grand Milestones</span>
+            <span style="font-size:0.8rem; color:#94a3b8; font-weight:normal;">Legendary Angler Feats</span>
+          </div>
+          <div class="milestones-highlight-grid">
+    `;
+
+    milestones.forEach((ach) => {
       const isUnlocked = save.isAchievementUnlocked(ach.id);
       const prog = ach.progress(save.data.stats, save.data);
       const pct = Math.min(100, Math.round((prog.current / prog.target) * 100));
 
-      achHtml += `
+      html += `
+        <div class="milestone-hero-card ${isUnlocked ? 'milestone-unlocked' : 'milestone-in-progress'}">
+          <div class="milestone-badge-pedestal">
+            <span class="milestone-badge-icon">${ach.icon}</span>
+            ${isUnlocked ? '<span class="milestone-gold-star">⭐</span>' : ''}
+          </div>
+          <div class="milestone-info">
+            <div class="milestone-title-row">
+              <h4>${ach.name}</h4>
+              <span class="milestone-bounty">+$${ach.reward.toLocaleString()}</span>
+            </div>
+            <p class="milestone-desc">${ach.description}</p>
+            <div class="milestone-bar-container">
+              <div class="ach-prog-bar">
+                <div class="ach-prog-fill" style="width: ${pct}%; background: ${isUnlocked ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #38bdf8, #818cf8)'};"></div>
+              </div>
+              <div class="milestone-stat-label">
+                <span>Progress: ${prog.current} / ${prog.target}</span>
+                <span>${pct}% ${isUnlocked ? '• COMPLETED 🏆' : ''}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+          </div>
+        </div>
+
+        <!-- Seafaring Medals & Badges -->
+        <div class="trophy-section-title" style="margin-top:24px;">
+          <span>🎖️ Seafaring Badges & Medals</span>
+        </div>
+        <div class="achievements-grid">
+    `;
+
+    regularAchievements.forEach((ach) => {
+      const isUnlocked = save.isAchievementUnlocked(ach.id);
+      const prog = ach.progress(save.data.stats, save.data);
+      const pct = Math.min(100, Math.round((prog.current / prog.target) * 100));
+
+      html += `
         <div class="achievement-card ${isUnlocked ? 'ach-unlocked' : 'ach-locked'}">
           <div class="ach-icon">${ach.icon}</div>
           <div class="ach-details">
             <div class="ach-title-row">
               <h4>${ach.name}</h4>
-              <span class="ach-reward">+$${ach.reward}</span>
+              <span class="ach-reward">+$${ach.reward.toLocaleString()}</span>
             </div>
             <p class="ach-desc">${ach.description}</p>
             <div class="ach-prog-bar">
@@ -1900,9 +2044,12 @@ export class UIManager {
       `;
     });
 
-    achHtml += '</div>';
+    html += `
+        </div>
+      </div>
+    `;
 
-    this.openModal('🏆 Seven Seas Trophies & Milestones', achHtml);
+    this.openModal('🏆 Logbook & Trophy Room', html);
   }
 
   openSettings() {

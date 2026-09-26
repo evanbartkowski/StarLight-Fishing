@@ -170,5 +170,16 @@ export const UPGRADE_DEFINITIONS = {
       { level: 3, cost: 1600, trapCount: 3, maxStorage: 35, reqLevel: 8, label: '3 Commercial Pots (35 Capacity)' },
     ],
   },
+
+  nauticalAstrolabe: {
+    id: 'nauticalAstrolabe',
+    name: 'Brass Astrolabe & Nautical Compass',
+    icon: '🧭',
+    description: 'Unlocks the Chart Navigation Minimap, revealing ocean realm coordinates, live school currents, and fast travel routes.',
+    tiers: [
+      { level: 0, cost: 0, reqLevel: 1, label: 'Uncalibrated (Chart Locked)' },
+      { level: 1, cost: 350, reqLevel: 4, label: 'Calibrated Brass Astrolabe (Minimap Unlocked)' },
+    ],
+  },
 };
 

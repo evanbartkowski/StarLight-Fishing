@@ -1,4 +1,6 @@
 import { DEPTH_ZONES, FISH_SPECIES } from '../data/FishData.js';
+import { FANTASY_SEAS, getSeaById } from '../entities/SeasData.js';
+import { soundManager } from '../audio/SoundManager.js';
 import { TREASURE_ITEMS, HAZARD_TYPES } from '../data/TreasureData.js';
 import { LEGENDARY_SPECIES, checkMythicSpawn } from '../data/legendaries.js';
 import { Fish } from '../entities/Fish.js';
@@ -15,9 +17,10 @@ export class OceanWorld {
     this.worldWidth = canvas.width;
     this.surfaceY = 220; // Y position of ocean surface
     this.pixelsPerMeter = 15;
-    this.maxDepthMeters = 620;
+    this.maxDepthMeters = 660;
     this.totalWorldHeight = this.surfaceY + this.maxDepthMeters * this.pixelsPerMeter;
     this.trapSystem = trapSystem;
+    this.currentSeaId = 1;
 
     this.entities = {
       fish: [],
@@ -729,30 +732,46 @@ export class OceanWorld {
 
     ctx.fillRect(0, topY, this.worldWidth, bottomY - topY);
 
-    // Sunlight Caustics in Sea 1 (0 - 35m)
-    if (visibleTopM < 40) {
+    // Sea 1: Sunlit Caustics (0 - 45m)
+    if (visibleTopM < 50) {
       this.renderCaustics(ctx, topY);
     }
 
-    // Parallax Kelp Forests in Sea 2 (35 - 80m)
-    if (visibleTopM < 90 && visibleBottomM > 30) {
-      this.renderKelp(ctx, cameraY, screenHeight);
+    // Sea 2: Bioluminescent Trench Plankton & Jellies (45 - 105m)
+    if (visibleTopM < 110 && visibleBottomM > 40) {
+      this.renderBioluminescentPlankton(ctx, cameraY, screenHeight);
     }
 
-    // Shipwreck Silhouettes in Sea 4 (150 - 240m)
-    if (visibleTopM < 250 && visibleBottomM > 140) {
-      this.renderShipwreckSilhouettes(ctx, cameraY, screenHeight);
+    // Sea 3: Astral Shimmerfall Starlight Cascades (105 - 180m)
+    if (visibleTopM < 190 && visibleBottomM > 100) {
+      this.renderAstralStarlightCascades(ctx, cameraY, screenHeight);
     }
 
-    // Thermal Vent Magma Glow in Sea 6 (360 - 480m)
-    if (visibleTopM < 490 && visibleBottomM > 350) {
+    // Sea 4: Sunken Atlantis Marble Pillars & Gears (180 - 280m)
+    if (visibleTopM < 290 && visibleBottomM > 170) {
+      this.renderSunkenAtlantisPillars(ctx, cameraY, screenHeight);
+    }
+
+    // Sea 5: Whispering Aether Sea Sky-Islands & Lilac Winds (280 - 410m)
+    if (visibleTopM < 420 && visibleBottomM > 270) {
+      this.renderAetherSkyIslands(ctx, cameraY, screenHeight);
+    }
+
+    // Sea 6: Magma Caldera Trench Embers & Volcanic Spire (410 - 530m)
+    if (visibleTopM < 540 && visibleBottomM > 400) {
       this.renderThermalVentBackground(ctx, cameraY, screenHeight);
+    }
+
+    // Sea 7: Eldritch Chrono Void Auroras & Space-Whales (530 - 660m+)
+    if (visibleBottomM > 520) {
+      this.renderEldritchVoidWhales(ctx, cameraY, screenHeight);
     }
 
     // Render Weather Effects: Rain ripples, fog drift, night stars & biolum plankton
     worldCycle.renderWeatherEffects(ctx, cameraY, this.worldWidth, screenHeight, this.surfaceY);
   }
 
+  // Sea 1: Sunlit Caustics
   renderCaustics(ctx, topY) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -777,72 +796,257 @@ export class OceanWorld {
     ctx.restore();
   }
 
-  renderKelp(ctx, cameraY, screenHeight) {
+  // Sea 2: Bioluminescent Trench Plankton & Jellies
+  renderBioluminescentPlankton(ctx, cameraY, screenHeight) {
+    const seaStartY = this.surfaceY + 45 * this.pixelsPerMeter;
+    const seaEndY = this.surfaceY + 105 * this.pixelsPerMeter;
+    const drawStartY = seaStartY - cameraY;
+    const drawEndY = seaEndY - cameraY;
+
+    if (drawEndY < 0 || drawStartY > screenHeight) return;
+
     ctx.save();
-    for (let k = 0; k < 10; k++) {
-      const isRight = k >= 5;
-      const baseX = isRight ? this.worldWidth - 20 - (k - 5) * 18 : 20 + k * 18;
-      const startDepthY = this.surfaceY + 38 * this.pixelsPerMeter + (k % 3) * 120;
-      const strandHeight = 240;
+    const time = this.causticTimer;
+    for (let i = 0; i < 18; i++) {
+      const px = ((i * 137 + time * 12) % (this.worldWidth - 40)) + 20;
+      const progress = (i * 41 + time * 8) % (seaEndY - seaStartY);
+      const py = (seaStartY + progress) - cameraY;
 
-      const drawStartY = startDepthY - cameraY;
-      if (drawStartY + strandHeight < 0 || drawStartY > screenHeight) continue;
+      if (py < 0 || py > screenHeight) continue;
 
-      ctx.strokeStyle = k % 2 === 0 ? 'rgba(5, 150, 105, 0.35)' : 'rgba(6, 95, 70, 0.25)';
-      ctx.lineWidth = 9;
-      ctx.lineCap = 'round';
+      const pulse = 0.4 + Math.sin(time * 3 + i) * 0.4;
+      const isCyan = i % 2 === 0;
+      ctx.fillStyle = isCyan ? `rgba(56, 189, 248, ${pulse * 0.7})` : `rgba(168, 85, 247, ${pulse * 0.7})`;
+      ctx.shadowColor = isCyan ? '#38bdf8' : '#c084fc';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5 + Math.sin(time + i) * 1.0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Sea 3: Astral Shimmerfall Starlight Cascades
+  renderAstralStarlightCascades(ctx, cameraY, screenHeight) {
+    const seaStartY = this.surfaceY + 105 * this.pixelsPerMeter;
+    const seaEndY = this.surfaceY + 180 * this.pixelsPerMeter;
+    const drawStartY = seaStartY - cameraY;
+    const drawEndY = seaEndY - cameraY;
+
+    if (drawEndY < 0 || drawStartY > screenHeight) return;
+
+    ctx.save();
+    const time = this.causticTimer * 1.5;
+    for (let i = 0; i < 22; i++) {
+      const driftX = ((i * 179 + time * 25) % (this.worldWidth + 100)) - 50;
+      const driftY = (seaStartY + ((i * 73 + time * 45) % (seaEndY - seaStartY))) - cameraY;
+
+      if (driftY < 0 || driftY > screenHeight) continue;
+
+      const alpha = 0.35 + Math.sin(time * 2 + i) * 0.35;
+      ctx.fillStyle = `rgba(254, 240, 138, ${alpha})`;
+      ctx.shadowColor = '#facc15';
+      ctx.shadowBlur = 8;
 
       ctx.beginPath();
-      ctx.moveTo(baseX, drawStartY + strandHeight);
+      ctx.arc(driftX, driftY, 1.8, 0, Math.PI * 2);
+      ctx.fill();
 
-      const sway1 = Math.sin(this.waveTimer * 1.5 + k) * 22;
-      const sway2 = Math.sin(this.waveTimer * 1.8 + k * 1.5) * 26;
-
-      ctx.bezierCurveTo(
-        baseX + sway1,
-        drawStartY + strandHeight * 0.6,
-        baseX - sway2,
-        drawStartY + strandHeight * 0.3,
-        baseX + sway1 * 0.5,
-        drawStartY
-      );
+      // Slanted starlight trail
+      ctx.strokeStyle = `rgba(199, 210, 254, ${alpha * 0.5})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(driftX, driftY);
+      ctx.lineTo(driftX - 12, driftY - 18);
       ctx.stroke();
     }
     ctx.restore();
   }
 
-  renderShipwreckSilhouettes(ctx, cameraY, screenHeight) {
-    const shipwreckY = this.surfaceY + 180 * this.pixelsPerMeter - cameraY;
-    if (shipwreckY < -200 || shipwreckY > screenHeight + 200) return;
+  // Sea 4: Sunken Atlantis Marble Pillars & Ancient Gilded Gears
+  renderSunkenAtlantisPillars(ctx, cameraY, screenHeight) {
+    const seaStartY = this.surfaceY + 180 * this.pixelsPerMeter;
+    const basePillarY = (seaStartY + 60 * this.pixelsPerMeter) - cameraY;
+
+    if (basePillarY < -300 || basePillarY > screenHeight + 300) return;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.5)';
+    // Marble Pillar 1 (Left flank)
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.45)';
+    ctx.fillRect(80, basePillarY - 180, 28, 180);
+    // Fluted lines
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+    ctx.lineWidth = 2;
+    for (let fl = 0; fl < 4; fl++) {
+      ctx.beginPath();
+      ctx.moveTo(85 + fl * 6, basePillarY - 180);
+      ctx.lineTo(85 + fl * 6, basePillarY);
+      ctx.stroke();
+    }
+    // Capital & base
+    ctx.fillStyle = 'rgba(203, 213, 225, 0.55)';
+    ctx.fillRect(72, basePillarY - 192, 44, 12);
+    ctx.fillRect(72, basePillarY, 44, 14);
 
+    // Marble Pillar 2 (Right flank)
+    const p2X = this.worldWidth - 120;
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.4)';
+    ctx.fillRect(p2X, basePillarY - 150, 26, 150);
+    for (let fl = 0; fl < 4; fl++) {
+      ctx.beginPath();
+      ctx.moveTo(p2X + 5 + fl * 5, basePillarY - 150);
+      ctx.lineTo(p2X + 5 + fl * 5, basePillarY);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(203, 213, 225, 0.5)';
+    ctx.fillRect(p2X - 8, basePillarY - 162, 42, 12);
+    ctx.fillRect(p2X - 8, basePillarY, 42, 14);
+
+    // Sunken antique gear silhouette
+    ctx.strokeStyle = 'rgba(217, 119, 6, 0.4)';
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.moveTo(80, shipwreckY + 120);
-    ctx.lineTo(240, shipwreckY + 90);
-    ctx.lineTo(260, shipwreckY + 130);
-    ctx.lineTo(70, shipwreckY + 130);
-    ctx.closePath();
-    ctx.fill();
+    ctx.arc(p2X - 35, basePillarY - 20, 22, 0, Math.PI * 2);
+    ctx.stroke();
 
-    ctx.fillRect(160, shipwreckY + 20, 10, 80);
-    ctx.fillRect(140, shipwreckY + 45, 50, 6);
     ctx.restore();
   }
 
-  renderThermalVentBackground(ctx, cameraY, screenHeight) {
-    const ventY = this.surfaceY + 410 * this.pixelsPerMeter - cameraY;
-    if (ventY < -150 || ventY > screenHeight + 150) return;
+  // Sea 5: Whispering Aether Sea Clouds & Sky-Islands
+  renderAetherSkyIslands(ctx, cameraY, screenHeight) {
+    const seaStartY = this.surfaceY + 280 * this.pixelsPerMeter;
+    const aetherDrawY = (seaStartY + 50 * this.pixelsPerMeter) - cameraY;
+
+    if (aetherDrawY < -200 || aetherDrawY > screenHeight + 200) return;
 
     ctx.save();
+    // Floating sky island silhouette (Left)
+    ctx.fillStyle = 'rgba(76, 29, 149, 0.45)';
+    ctx.beginPath();
+    ctx.moveTo(60, aetherDrawY);
+    ctx.quadraticCurveTo(140, aetherDrawY - 30, 220, aetherDrawY);
+    ctx.lineTo(190, aetherDrawY + 45);
+    ctx.quadraticCurveTo(140, aetherDrawY + 80, 90, aetherDrawY + 45);
+    ctx.closePath();
+    ctx.fill();
+
+    // Floating sky island silhouette (Right)
+    const isle2X = this.worldWidth - 240;
+    ctx.fillStyle = 'rgba(112, 26, 117, 0.4)';
+    ctx.beginPath();
+    ctx.moveTo(isle2X, aetherDrawY - 40);
+    ctx.quadraticCurveTo(isle2X + 70, aetherDrawY - 65, isle2X + 150, aetherDrawY - 40);
+    ctx.lineTo(isle2X + 125, aetherDrawY);
+    ctx.quadraticCurveTo(isle2X + 70, aetherDrawY + 30, isle2X + 25, aetherDrawY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lilac wind motes
+    const time = this.causticTimer;
+    for (let w = 0; w < 12; w++) {
+      const wx = ((w * 110 + time * 35) % (this.worldWidth + 60)) - 30;
+      const wy = (aetherDrawY - 50 + Math.sin(time * 2 + w) * 35);
+      ctx.fillStyle = 'rgba(232, 121, 249, 0.35)';
+      ctx.beginPath();
+      ctx.arc(wx, wy, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  // Sea 6: Magma Caldera Trench Embers & Thermal Chimneys
+  renderThermalVentBackground(ctx, cameraY, screenHeight) {
+    const ventY = this.surfaceY + 410 * this.pixelsPerMeter - cameraY;
+    if (ventY < -250 || ventY > screenHeight + 250) return;
+
+    ctx.save();
+    // Warm radial core glow
     try {
-      const glowGrad = ctx.createRadialGradient(this.worldWidth * 0.5, ventY, 20, this.worldWidth * 0.5, ventY, 220);
-      glowGrad.addColorStop(0, 'rgba(234, 88, 12, 0.25)');
-      glowGrad.addColorStop(1, 'rgba(59, 13, 12, 0)');
+      const glowGrad = ctx.createRadialGradient(this.worldWidth * 0.5, ventY + 60, 20, this.worldWidth * 0.5, ventY + 60, 280);
+      glowGrad.addColorStop(0, 'rgba(239, 68, 68, 0.35)');
+      glowGrad.addColorStop(0.6, 'rgba(185, 28, 28, 0.12)');
+      glowGrad.addColorStop(1, 'rgba(69, 10, 10, 0)');
       ctx.fillStyle = glowGrad;
-      ctx.fillRect(0, ventY - 200, this.worldWidth, 400);
+      ctx.fillRect(0, ventY - 150, this.worldWidth, 400);
     } catch (e) {}
+
+    // Volcanic Obsidian Spire
+    ctx.fillStyle = 'rgba(24, 24, 27, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(this.worldWidth * 0.5 - 60, ventY + 180);
+    ctx.lineTo(this.worldWidth * 0.5 - 12, ventY);
+    ctx.lineTo(this.worldWidth * 0.5 + 24, ventY + 25);
+    ctx.lineTo(this.worldWidth * 0.5 + 75, ventY + 180);
+    ctx.closePath();
+    ctx.fill();
+
+    // Glowing magma cracks
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(this.worldWidth * 0.5 - 10, ventY + 20);
+    ctx.lineTo(this.worldWidth * 0.5 - 5, ventY + 80);
+    ctx.lineTo(this.worldWidth * 0.5 + 15, ventY + 130);
+    ctx.stroke();
+
+    // Upward floating embers
+    const time = this.causticTimer * 2;
+    for (let e = 0; e < 16; e++) {
+      const ex = this.worldWidth * 0.5 - 80 + ((e * 47 + Math.sin(time + e) * 25) % 160);
+      const ey = ventY + 160 - ((e * 28 + time * 35) % 220);
+      ctx.fillStyle = 'rgba(249, 115, 22, 0.8)';
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(ex, ey, 2.0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  // Sea 7: Eldritch Chrono Void Auroras & Space-Whales
+  renderEldritchVoidWhales(ctx, cameraY, screenHeight) {
+    const seaStartY = this.surfaceY + 530 * this.pixelsPerMeter;
+    const voidY = seaStartY - cameraY;
+
+    ctx.save();
+    // Shimmering iridescent aurora curtains
+    const time = this.causticTimer * 0.8;
+    for (let a = 0; a < 3; a++) {
+      const aX = (a * 280 + Math.sin(time + a) * 50) % (this.worldWidth + 200) - 100;
+      try {
+        const aGrad = ctx.createLinearGradient(aX, voidY, aX + 180, voidY + 400);
+        aGrad.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+        aGrad.addColorStop(0.5, 'rgba(168, 85, 247, 0.12)');
+        aGrad.addColorStop(1, 'rgba(236, 72, 153, 0)');
+        ctx.fillStyle = aGrad;
+        ctx.fillRect(aX, voidY, 180, 500);
+      } catch (e) {}
+    }
+
+    // Space-whale background silhouette
+    const whaleX = ((time * 18) % (this.worldWidth + 300)) - 150;
+    const whaleY = voidY + 140 + Math.sin(time * 0.5) * 20;
+
+    if (whaleY > -100 && whaleY < screenHeight + 100) {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+      ctx.beginPath();
+      ctx.ellipse(whaleX, whaleY, 65, 22, 0.08, 0, Math.PI * 2);
+      ctx.fill();
+      // Fluke
+      ctx.beginPath();
+      ctx.moveTo(whaleX - 60, whaleY);
+      ctx.lineTo(whaleX - 95, whaleY - 18);
+      ctx.lineTo(whaleX - 85, whaleY);
+      ctx.lineTo(whaleX - 95, whaleY + 18);
+      ctx.closePath();
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 

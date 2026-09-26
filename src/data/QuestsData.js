@@ -163,15 +163,89 @@ export const QUEST_POOL = [
   },
   {
     id: 'pelagic_trawler',
-    title: 'Pelagic Open-Water Trawler',
+    title: 'Astral Shimmer Trawler',
     category: 'fishing',
-    icon: '🌊',
-    description: 'Catch 2 fish from Sea 3: Twilight Pelagic Sea.',
+    icon: '✨',
+    description: 'Catch 2 fish from Sea 3: Astral Shimmerfall.',
     target: 2,
     rewardCoins: 260,
     rewardXp: 110,
     check: (event, current) => {
       if (event.type === 'catch_fish' && event.fish.zone === 3) return current + 1;
+      return current;
+    },
+  },
+  {
+    id: 'starlight_night_contract',
+    title: 'Starlight Nightfall Contract',
+    category: 'fantasy',
+    icon: '🌟',
+    description: 'Harvest 2 Starlight Anglers or Chrono fish under starlit skies.',
+    target: 2,
+    rewardCoins: 480,
+    rewardXp: 220,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && (event.fish.id === 'starlight_angler' || event.fish.id === 'chrono_guppy' || event.fish.fantasyTrail === 'starlight')) {
+        return current + 1;
+      }
+      return current;
+    },
+  },
+  {
+    id: 'atlantis_core_salvage',
+    title: 'Sunken Atlantis Core Salvage',
+    category: 'fantasy',
+    icon: '🏛️',
+    description: 'Salvage 1 Atlantis Core fish or Imperial Automaton from Sea 4.',
+    target: 1,
+    rewardCoins: 650,
+    rewardXp: 300,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && (event.fish.id === 'atlantis_sun_core' || event.fish.id === 'gilded_automaton_fish')) {
+        return current + 1;
+      }
+      return current;
+    },
+  },
+  {
+    id: 'aether_sky_harvest',
+    title: 'Aether Sky-Islands Contract',
+    category: 'fantasy',
+    icon: '🪶',
+    description: 'Reel in 2 Aetherial or Cloud-Fin fish from Sea 5: Whispering Aether Sea.',
+    target: 2,
+    rewardCoins: 750,
+    rewardXp: 350,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && event.fish.zone === 5) return current + 1;
+      return current;
+    },
+  },
+  {
+    id: 'magma_sunfire_contract',
+    title: 'Caldera Sunfire Contract',
+    category: 'fantasy',
+    icon: '🌋',
+    description: 'Catch 2 Sunfire Eels or Pyroclastic specimens from Sea 6: Magma Caldera.',
+    target: 2,
+    rewardCoins: 900,
+    rewardXp: 420,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && event.fish.zone === 6) return current + 1;
+      return current;
+    },
+  },
+  {
+    id: 'eldritch_voidray_contract',
+    title: 'Eldritch Void Bounty',
+    category: 'fantasy',
+    icon: '🌌',
+    description: 'Hook and surface 1 specimen from Sea 7: Eldritch Chrono Void.',
+    target: 1,
+    rewardCoins: 1500,
+    rewardXp: 600,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && event.fish.zone === 7) return current + 1;
       return current;
     },
   },
