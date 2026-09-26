@@ -119,6 +119,10 @@ export class SaveSystem {
     this.save();
   }
 
+  addXP(amount) {
+    return this.addXp(amount);
+  }
+
   load() {
     try {
       let raw = localStorage.getItem(STORAGE_KEY);

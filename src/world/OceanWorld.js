@@ -134,7 +134,9 @@ export class OceanWorld {
     const maxLineTier = UPGRADE_DEFINITIONS.lineLength.tiers[saveSystem.getUpgradeLevel('lineLength')] || UPGRADE_DEFINITIONS.lineLength.tiers[0];
     const activeMaxDepth = Math.min(this.maxDepthMeters, maxLineTier.depth + 30);
 
-    // Populate Fish across the Seven Seas
+    // Populate Fish across the Seven Seas with gradual depth sparsity decay
+    // Deeper waters are vast, serene, and sparse, while shallow waters are teeming with life.
+    // Solitary special deep apex fish maintain their majestic presence!
     FISH_SPECIES.forEach((species) => {
       if (species.minDepth > activeMaxDepth) return;
 
@@ -142,12 +144,56 @@ export class OceanWorld {
       const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, species.maxDepth) * this.pixelsPerMeter;
       if (minSpawnY >= maxSpawnY) return;
 
-      let count = 2;
-      if (species.rarity === 'common') count = 2;
-      if (species.rarity === 'uncommon') count = Math.random() < 0.8 ? 1 : 2;
-      if (species.rarity === 'rare') count = Math.random() < (0.65 * rareBoost) ? 1 : 0;
-      if (species.rarity === 'epic') count = Math.random() < (0.45 * rareBoost) ? 1 : 0;
-      if (species.rarity === 'legendary') count = Math.random() < (0.25 * rareBoost) ? 1 : 0;
+      const avgDepth = (species.minDepth + species.maxDepth) / 2;
+      const isSpecialDeep = !!species.isSpecialDeep;
+
+      let count = 0;
+
+      if (isSpecialDeep) {
+        // Special deep fish are majestic, solitary encounters in deep waters:
+        // They bypass the depth density penalty completely!
+        if (species.rarity === 'legendary' || species.rarity === 'epic') {
+          // 85% chance to spawn 1 solitary deep titan
+          count = Math.random() < 0.85 ? 1 : 0;
+        } else if (species.rarity === 'rare') {
+          count = Math.random() < 0.80 ? 1 : 0;
+        } else {
+          count = 1;
+        }
+      } else {
+        // Normal fish spawn less the deeper you go gradually:
+        // Surface & Shallows (0-50m): depthFactor ~ 1.0 (abundant shoals)
+        // Mid depths (100-250m): depthFactor ~ 0.70 - 0.50
+        // Abyssal depths (300-600m+): depthFactor ~ 0.35 - 0.14 (rare, quiet ocean)
+        const depthFactor = avgDepth <= 50
+          ? 1.0
+          : Math.max(0.12, 1.0 - Math.pow(avgDepth / 660, 0.82) * 0.88);
+
+        if (species.rarity === 'common') {
+          if (avgDepth <= 50) {
+            // Lively shallow shoaling (2-3 fish)
+            count = Math.random() < 0.45 ? 3 : 2;
+          } else {
+            // Gradual reduction: in deep waters, 80-90% chance of 0, small chance of 1
+            const roll = Math.random();
+            if (roll < 0.40 * depthFactor) count = 2;
+            else if (roll < 1.20 * depthFactor) count = 1;
+            else count = 0;
+          }
+        } else if (species.rarity === 'uncommon') {
+          if (avgDepth <= 50) {
+            count = Math.random() < 0.65 ? 2 : 1;
+          } else {
+            count = Math.random() < (0.85 * depthFactor) ? 1 : 0;
+          }
+        } else if (species.rarity === 'rare') {
+          count = Math.random() < (0.50 * rareBoost * depthFactor) ? 1 : 0;
+        } else if (species.rarity === 'epic') {
+          count = Math.random() < (0.35 * rareBoost * depthFactor) ? 1 : 0;
+        } else if (species.rarity === 'legendary') {
+          count = Math.random() < (0.20 * rareBoost * depthFactor) ? 1 : 0;
+        }
+      }
 
       for (let i = 0; i < count; i++) {
         const x = 60 + Math.random() * (this.worldWidth - 120);

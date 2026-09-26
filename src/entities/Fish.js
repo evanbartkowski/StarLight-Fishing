@@ -11,6 +11,7 @@ export class Fish {
     this.rarityColor = RARITY_CONFIG[species.rarity]?.color || '#ffffff';
     this.rarityGlow = RARITY_CONFIG[species.rarity]?.glow || '#ffffff';
     this.isMythic = !!species.isMythic;
+    this.isSpecialDeep = !!species.isSpecialDeep;
 
     this.x = x;
     this.y = y;
@@ -173,13 +174,14 @@ export class Fish {
       ctx.ellipse(0, 0, 24, 14, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
-    } else if (this.isMythic || s.glowColor) {
-      // Celestial mythic aura (clean & efficient)
+    } else if (this.isMythic || this.isSpecialDeep || s.glowColor) {
+      // Celestial mythic or special deep titan aura (clean & efficient)
       ctx.save();
-      ctx.strokeStyle = s.glowColor || 'rgba(196, 181, 253, 0.7)';
-      ctx.lineWidth = 2;
-      ctx.shadowColor = s.glowColor || '#c084fc';
-      ctx.shadowBlur = 8;
+      const auraColor = s.glowColor || (this.isSpecialDeep ? 'rgba(56, 189, 248, 0.8)' : 'rgba(196, 181, 253, 0.7)');
+      ctx.strokeStyle = auraColor;
+      ctx.lineWidth = this.isSpecialDeep ? 2.5 : 2;
+      ctx.shadowColor = s.glowColor || (this.isSpecialDeep ? '#38bdf8' : '#c084fc');
+      ctx.shadowBlur = this.isSpecialDeep ? 12 : 8;
       ctx.beginPath();
       ctx.ellipse(0, 0, 26, 15, 0, 0, Math.PI * 2);
       ctx.stroke();

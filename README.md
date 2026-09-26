@@ -41,6 +41,18 @@ Each sea features unique depth ranges, gate requirements, distinct ambient audio
   - 〰️ **Swell Phase**: Water resistance slows retrieval gently without punishing line snaps.
 - Avoid hazards on the way up to maintain your **"Patience of the Tide"** perfect reel streak!
 
+### 4. Depth Density & Special Deep Titans
+- **Gradual Sparsity Decay**: Fish density scales inversely with depth. While shallow waters (0m–50m) are lively and packed with bustling schools of fish, the deep ocean abyss gradually becomes quiet, vast, and sparse.
+- **Special Deep Titans**: Several majestic deep-water species are exempt from the depth sparsity penalty. When diving to extreme depths, anglers will encounter these solitary wonders:
+  - **Cosmic Voidray** *(Sea 7, 600m–660m)*: Celestial monarch trailing iridescent auroral starlight.
+  - **Chrono-Tide Whale** *(Sea 7, 550m–640m)*: Singing infrasonic space leviathan.
+  - **Eldritch Tentacled Maw** *(Sea 7, 575m–655m)*: Undulating tentacles with glowing cosmic eyes.
+  - **Obsidian Spire Shark** *(Sea 6, 465m–530m)*: Glassy razor-scaled volcanic apex hunter.
+  - **Pyroclastic Ray** *(Sea 6, 445m–520m)*: Glider across superheated hydrothermal vents.
+  - **Celestial Seraph-Fish** *(Sea 5, 350m–410m)*: Six-winged sacred stratosphere wonder.
+  - **Atlantis Sun-Core Dory** *(Sea 4, 235m–280m)*: Bearer of the resonant ancient solar crystal.
+  - **Abyssal Star-Weaver & Golden Coelacanth**: Prehistoric celestial mythics.
+
 ---
 
 ## 🧭 Chart Navigation & Minimap
@@ -128,3 +140,4 @@ Navigate to `http://localhost:5173/` in your browser.
 npm run build
 ```
 Generates optimized static assets into `/dist`.
+

@@ -6,7 +6,7 @@ export const QUEST_POOL = [
     title: 'Sunlit Reef Angler',
     category: 'fishing',
     icon: '🐠',
-    description: 'Catch 3 fish from Sea 1: Sunlit Coral Haven.',
+    description: 'Catch 3 fish from Sea 1: Sunlit Shoals.',
     target: 3,
     rewardCoins: 120,
     rewardXp: 60,
@@ -17,10 +17,10 @@ export const QUEST_POOL = [
   },
   {
     id: 'kelp_forager',
-    title: 'Kelp Canopy Forager',
+    title: 'Bioluminescent Abyss Explorer',
     category: 'fishing',
-    icon: '🌿',
-    description: 'Catch 3 fish from Sea 2: Emerald Kelp Forest.',
+    icon: '🌌',
+    description: 'Catch 3 fish from Sea 2: Bioluminescent Trench.',
     target: 3,
     rewardCoins: 180,
     rewardXp: 85,
@@ -63,14 +63,14 @@ export const QUEST_POOL = [
     title: 'Apex Ocean Hunter',
     category: 'fishing',
     icon: '🌟',
-    description: 'Reel in any Epic, Legendary, or Mythic fish.',
+    description: 'Reel in any Epic, Legendary, Mythic, or Deep Titan fish.',
     target: 1,
     rewardCoins: 450,
     rewardXp: 200,
     check: (event, current) => {
       if (event.type === 'catch_fish') {
         const r = event.fish.rarity;
-        if (r === 'epic' || r === 'legendary' || event.fish.isMythic) return current + 1;
+        if (r === 'epic' || r === 'legendary' || event.fish.isMythic || event.fish.isSpecialDeep) return current + 1;
       }
       return current;
     },
@@ -163,9 +163,9 @@ export const QUEST_POOL = [
   },
   {
     id: 'pelagic_trawler',
-    title: 'Astral Shimmer Trawler',
+    title: 'Astral Shimmerfall Trawler',
     category: 'fishing',
-    icon: '✨',
+    icon: '🌌',
     description: 'Catch 2 fish from Sea 3: Astral Shimmerfall.',
     target: 2,
     rewardCoins: 260,
@@ -176,76 +176,48 @@ export const QUEST_POOL = [
     },
   },
   {
-    id: 'starlight_night_contract',
+    id: 'starlight_contract',
     title: 'Starlight Nightfall Contract',
     category: 'fantasy',
-    icon: '🌟',
-    description: 'Harvest 2 Starlight Anglers or Chrono fish under starlit skies.',
+    icon: '✨',
+    description: 'Catch 2 Starlight or Prism specimens from celestial waters.',
     target: 2,
-    rewardCoins: 480,
-    rewardXp: 220,
+    rewardCoins: 380,
+    rewardXp: 150,
     check: (event, current) => {
-      if (event.type === 'catch_fish' && (event.fish.id === 'starlight_angler' || event.fish.id === 'chrono_guppy' || event.fish.fantasyTrail === 'starlight')) {
+      if (event.type === 'catch_fish' && (event.fish.speciesId === 'starlight_angler' || event.fish.speciesId === 'prism_fin' || event.fish.speciesId === 'chrono_guppy')) {
         return current + 1;
       }
       return current;
     },
   },
   {
-    id: 'atlantis_core_salvage',
-    title: 'Sunken Atlantis Core Salvage',
+    id: 'atlantis_core_contract',
+    title: 'Atlantis Core Salvage',
     category: 'fantasy',
     icon: '🏛️',
-    description: 'Salvage 1 Atlantis Core fish or Imperial Automaton from Sea 4.',
+    description: 'Dredge 1 sunken relic, automaton fish, or Sun-Core specimen from Sea 4.',
+    target: 1,
+    rewardCoins: 480,
+    rewardXp: 190,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && (event.fish.speciesId === 'atlantis_sun_core' || event.fish.speciesId === 'gilded_automaton_fish')) return current + 1;
+      if (event.type === 'catch_treasure' && event.item?.era) return current + 1;
+      return current;
+    },
+  },
+  {
+    id: 'void_titan_contract',
+    title: 'Chrono Void Expedition',
+    category: 'fantasy',
+    icon: '🌀',
+    description: 'Lend your line to the Chrono Void: Catch 1 specimen or descend past 500m.',
     target: 1,
     rewardCoins: 650,
-    rewardXp: 300,
-    check: (event, current) => {
-      if (event.type === 'catch_fish' && (event.fish.id === 'atlantis_sun_core' || event.fish.id === 'gilded_automaton_fish')) {
-        return current + 1;
-      }
-      return current;
-    },
-  },
-  {
-    id: 'aether_sky_harvest',
-    title: 'Aether Sky-Islands Contract',
-    category: 'fantasy',
-    icon: '🪶',
-    description: 'Reel in 2 Aetherial or Cloud-Fin fish from Sea 5: Whispering Aether Sea.',
-    target: 2,
-    rewardCoins: 750,
-    rewardXp: 350,
-    check: (event, current) => {
-      if (event.type === 'catch_fish' && event.fish.zone === 5) return current + 1;
-      return current;
-    },
-  },
-  {
-    id: 'magma_sunfire_contract',
-    title: 'Caldera Sunfire Contract',
-    category: 'fantasy',
-    icon: '🌋',
-    description: 'Catch 2 Sunfire Eels or Pyroclastic specimens from Sea 6: Magma Caldera.',
-    target: 2,
-    rewardCoins: 900,
-    rewardXp: 420,
-    check: (event, current) => {
-      if (event.type === 'catch_fish' && event.fish.zone === 6) return current + 1;
-      return current;
-    },
-  },
-  {
-    id: 'eldritch_voidray_contract',
-    title: 'Eldritch Void Bounty',
-    category: 'fantasy',
-    icon: '🌌',
-    description: 'Hook and surface 1 specimen from Sea 7: Eldritch Chrono Void.',
-    target: 1,
-    rewardCoins: 1500,
-    rewardXp: 600,
+    rewardXp: 280,
     check: (event, current) => {
       if (event.type === 'catch_fish' && event.fish.zone === 7) return current + 1;
+      if (event.type === 'dive_completed' && event.maxDepth >= 500) return current + 1;
       return current;
     },
   },

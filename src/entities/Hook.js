@@ -126,25 +126,26 @@ export class Hook {
     const rarity = entity.rarity || 'common';
     soundManager.playCatch(rarity);
 
-    // If rare or legendary, play the two-tone chime!
-    if (rarity === 'rare' || rarity === 'epic' || rarity === 'legendary' || entity.isMythic) {
+    // If rare, legendary, or special deep titan, play the two-tone chime!
+    if (rarity === 'rare' || rarity === 'epic' || rarity === 'legendary' || entity.isMythic || entity.isSpecialDeep) {
       soundManager.playRareChime();
     }
 
     if (particles) {
-      const glow = entity.isShiny ? '#fef08a' : (entity.rarityGlow || '#fde047');
-      particles.emitSparkles(this.x, this.y, entity.isShiny ? 26 : 16, glow);
+      const glow = entity.isShiny ? '#fef08a' : (entity.rarityGlow || (entity.isSpecialDeep ? '#38bdf8' : '#fde047'));
+      particles.emitSparkles(this.x, this.y, entity.isShiny ? 26 : (entity.isSpecialDeep ? 22 : 16), glow);
 
       const crownTag = entity.crown === 'gold' ? ' 👑' : entity.crown === 'silver' ? ' 🥈' : '';
+      const deepTitanTag = entity.isSpecialDeep ? ' [DEEP TITAN]' : '';
       particles.addFloatingText(
-        `+${entity.name}${entity.isShiny ? ' (SHINY!)' : ''}${crownTag}`,
+        `+${entity.name}${entity.isShiny ? ' (SHINY!)' : ''}${deepTitanTag}${crownTag}`,
         this.x,
         this.y - 15,
         entity.rarityColor || '#ffffff',
         16,
         glow
       );
-      if (entity.isShiny || rarity === 'epic' || rarity === 'legendary' || entity.isMythic) {
+      if (entity.isShiny || rarity === 'epic' || rarity === 'legendary' || entity.isMythic || entity.isSpecialDeep) {
         particles.addTrauma(0.35);
       }
     }
