@@ -386,11 +386,42 @@ const update = (dt) => {
       gameState = 'CATCH_SUMMARY';
       soundManager.setMusicMode('surface');
       checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager);
+
+      // Record items to journal, stats, achievements, and persistent inventory!
+      hook.caughtItems.forEach((item) => {
+        if (!item._recordedInInventory) {
+          save.recordCatchItem(item);
+          item.inventoryRef = save.addItemToInventory(item);
+          item._recordedInInventory = true;
+        }
+      });
+
+      if (hook.caughtItems.length >= hook.capacity) {
+        save.recordFullHaul();
+      }
+      save.recordDiveStats({
+        maxDepth: hook.maxDepthReachedThisDive,
+        tookDamage: hook.tookDamage,
+      });
+
+      if (questSystem) {
+        questSystem.dispatch({
+          type: 'complete_dive',
+          maxDepth: hook.maxDepthReachedThisDive,
+          caughtCount: hook.caughtItems.length,
+          isFullCapacity: hook.caughtItems.length >= hook.capacity,
+          tookDamage: hook.tookDamage,
+        });
+      }
+
       const unboxedCrates = hook.caughtItems.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed);
       if (unboxedCrates.length > 0) {
         uiManager.openCratesModal(unboxedCrates, hook, () => {
           startDive();
         });
+      } else if (!save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
+        uiManager.showToast(`🎒 Stored ${hook.caughtItems.length} catches directly in your inventory!`);
+        startDive();
       } else {
         uiManager.openCatchSummary(hook, () => {
           startDive();

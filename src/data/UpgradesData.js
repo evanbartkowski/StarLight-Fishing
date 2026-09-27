@@ -181,4 +181,17 @@ export const UPGRADE_DEFINITIONS = {
       { level: 1, cost: 550, reqLevel: 4, label: 'Calibrated Brass Astrolabe (Minimap Unlocked)' },
     ],
   },
+
+  personalAquarium: {
+    id: 'personalAquarium',
+    name: 'Personal Marine Aquarium',
+    icon: '🐠',
+    description: 'A luxurious glass marine tank for your vessel cabin. Houses live swimming specimens and ancient relics while generating passive visitor tips.',
+    tiers: [
+      { level: 0, cost: 0, capacity: 0, reqLevel: 1, label: 'Not Purchased (Locked)' },
+      { level: 1, cost: 1450, capacity: 5, reqLevel: 3, label: 'Base Marine Tank (5 Slots)' },
+      { level: 2, cost: 3200, capacity: 10, reqLevel: 6, label: 'Expanded Coral Tank (10 Slots)' },
+      { level: 3, cost: 6800, capacity: 20, reqLevel: 10, label: 'Grand Oceanic Conservatory (20 Slots)' },
+    ],
+  },
 };

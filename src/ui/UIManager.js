@@ -105,6 +105,7 @@ export class UIManager {
         <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
           📋 Quests <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
         </button>
+        <button class="icon-btn" id="btn-inventory" title="Angler's Persistent Inventory & Tackle Box">🎒 Inventory</button>
         <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 Shop</button>
         <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 Journal & Logbook</button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 Radio</button>
@@ -175,6 +176,7 @@ export class UIManager {
     });
     document.getElementById('btn-shop').addEventListener('click', () => this.openShop());
     document.getElementById('btn-quests')?.addEventListener('click', () => this.openQuestsModal());
+    document.getElementById('btn-inventory')?.addEventListener('click', () => this.openInventory());
     document.getElementById('btn-journal')?.addEventListener('click', () => this.openJournalLogbook('journal'));
     document.getElementById('btn-achievements')?.addEventListener('click', () => this.openJournalLogbook('logbook'));
     document.getElementById('btn-radio-hud')?.addEventListener('click', () => this.openRadio());
@@ -387,10 +389,17 @@ export class UIManager {
     const wasCrateModal = this.activeModal === 'crate_opening';
     const crateCtx = this._currentCrateContext;
     this._currentCrateContext = null;
+
+    const wasCatchSummary = this.activeModal === 'catchSummary';
+    const catchContinue = this._onCatchSummaryContinue;
+    this._onCatchSummaryContinue = null;
+
     document.getElementById('modal-overlay').className = 'modal-overlay-hidden';
     this.activeModal = null;
     if (wasCrateModal && crateCtx && crateCtx.hook) {
       this.openCatchSummary(crateCtx.hook, crateCtx.onContinue);
+    } else if (wasCatchSummary && catchContinue) {
+      catchContinue();
     }
   }
 
@@ -542,6 +551,17 @@ export class UIManager {
     const save = this.saveSystem;
     const playerLevel = save.data.level;
 
+    let shopHeaderHtml = `
+      <div class="shop-top-bar" style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; border: 1px solid rgba(255, 255, 255, 0.08);">
+        <div style="font-size: 1rem; color: #f8fafc;">
+          🪙 Current Purse: <strong style="color: #facc15; font-size: 1.15rem;">$${save.data.coins.toLocaleString()}</strong>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-shop-inventory" title="Open tackle box to view or sell catches">
+          🎒 Sell Catches from Inventory
+        </button>
+      </div>
+    `;
+
     let itemsHtml = '<div class="shop-grid">';
 
     Object.values(upgrades).forEach((upg) => {
@@ -577,9 +597,12 @@ export class UIManager {
                 : !meetsLevel
                 ? `<button class="btn btn-disabled" disabled>🔒 Unlocks at Lv. ${nextTier.reqLevel}</button>`
                   : `<button class="btn ${canAfford ? 'btn-buy' : 'btn-disabled'} btn-upgrade" data-upgrade="${upg.id}">
-                    ${currentLvl === 0 && upg.id === 'seabedTraps' ? 'Deploy Pots: ' : 'Upgrade: '}$${nextTier.cost.toLocaleString()}
+                    ${currentLvl === 0 && upg.id === 'seabedTraps' ? 'Deploy Pots: ' : currentLvl === 0 && upg.id === 'personalAquarium' ? 'Purchase Tank: ' : 'Upgrade: '}$${nextTier.cost.toLocaleString()}
                    </button>`
             }
+            ${currentLvl > 0 && upg.id === 'personalAquarium' ? `
+              <button class="btn btn-secondary btn-sm" id="btn-shop-view-aquarium" style="margin-top: 6px; width: 100%;">🐠 View Aquarium</button>
+            ` : ''}
           </div>
         </div>
       `;
@@ -587,7 +610,15 @@ export class UIManager {
 
     itemsHtml += '</div>';
 
-    this.openModal('🎣 Seven Seas Tackle & Vessel Outfitters', itemsHtml);
+    this.openModal('🎣 Seven Seas Tackle & Vessel Outfitters', shopHeaderHtml + itemsHtml);
+
+    document.getElementById('btn-shop-inventory')?.addEventListener('click', () => {
+      this.openInventory('fish');
+    });
+
+    document.getElementById('btn-shop-view-aquarium')?.addEventListener('click', () => {
+      this.openAquariumModal();
+    });
 
     document.querySelectorAll('.btn-upgrade').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -609,6 +640,8 @@ export class UIManager {
           soundManager.playUpgrade();
           if (upgId === 'seabedTraps' && currentLvl === 0) {
             this.showToast(`🪤 Purchased Seabed Drift Pots! Deployed ${nextTier.trapCount} pot in coastal waters.`);
+          } else if (upgId === 'personalAquarium' && currentLvl === 0) {
+            this.showToast(`🐠 Unlocked Personal Marine Aquarium! Visit your Journal or Inventory to view your tank.`);
           } else {
             this.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
           }
@@ -620,6 +653,7 @@ export class UIManager {
 
   openCatchSummary(hook, onContinue) {
     this.activeModal = 'catchSummary';
+    this._onCatchSummaryContinue = onContinue;
     soundManager.playCoin();
 
     const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[this.saveSystem.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
@@ -628,6 +662,7 @@ export class UIManager {
     let subtotal = 0;
     let listHtml = '<div class="catch-summary-list">';
     const hasUnrestoredRelic = hook.caughtItems.some(i => i.isRelic && !i.restored);
+    const soldIds = new Set();
 
     if (hook.caughtItems.length === 0) {
       listHtml += `
@@ -640,7 +675,7 @@ export class UIManager {
     } else {
       hook.caughtItems.forEach((item) => {
         const isCrate = !!item.isCrate || item.category === 'crate';
-        const itemVal = isCrate ? 0 : Math.round(item.value * sellMultiplier);
+        const itemVal = isCrate ? 0 : Math.max(1, Math.round(item.value * sellMultiplier));
         subtotal += itemVal;
 
         const isRelic = !!item.isRelic;
@@ -662,8 +697,10 @@ export class UIManager {
           ? `<span class="crown-tag crown-silver">🥈 SILVER CROWN</span>`
           : '';
 
+        const instId = item.inventoryRef?.instanceId;
+
         listHtml += `
-          <div class="catch-item-card rarity-border-${item.rarity}">
+          <div class="catch-item-card rarity-border-${item.rarity}" id="catch-card-${instId}">
             <div class="catch-item-icon">
               ${isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '📦' : item.isMythic ? '🌟' : '🐟'}
             </div>
@@ -683,16 +720,24 @@ export class UIManager {
                 }
               </div>
             </div>
-            <div class="catch-item-price">
-              ${
-                isCrate
-                  ? (item.unboxed
-                    ? (item.loot && item.loot.coins !== undefined
-                      ? (item.loot.coins >= 0 ? `+$${item.loot.coins.toLocaleString()} (Claimed)` : `-$${Math.abs(item.loot.coins)} (Paid)`)
-                      : 'Claimed')
-                    : 'Needs Opening')
-                  : `+$${itemVal.toLocaleString()}`
-              }
+            <div class="catch-item-price-side">
+              <div class="catch-item-price">
+                ${
+                  isCrate
+                    ? (item.unboxed
+                      ? (item.loot && item.loot.coins !== undefined
+                        ? (item.loot.coins >= 0 ? `+$${item.loot.coins.toLocaleString()}` : `-$${Math.abs(item.loot.coins)}`)
+                        : 'Claimed')
+                      : 'Unopened')
+                    : `+$${itemVal.toLocaleString()}`
+                }
+              </div>
+              ${!isCrate && instId ? `
+                <div class="catch-item-actions-row" id="catch-actions-${instId}">
+                  <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" title="Keep safe in tackle box">🎒 Keep</button>
+                  <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-val="${itemVal}" title="Sell immediately for gold">🪙 Sell Now</button>
+                </div>
+              ` : ''}
             </div>
           </div>
         `;
@@ -702,7 +747,7 @@ export class UIManager {
     listHtml += '</div>';
 
     const unboxedCrates = hook.caughtItems.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed);
-    const totalGold = subtotal;
+    let remainingGold = subtotal;
 
     const modalBody = `
       <div class="summary-container">
@@ -725,20 +770,27 @@ export class UIManager {
 
         <div class="summary-footer">
           <div class="total-earnings">
-            <span>Total Haul Value:</span>
-            <strong class="total-cash">+$${totalGold.toLocaleString()}</strong>
+            <span>Remaining Haul Value:</span>
+            <strong class="total-cash" id="summary-total-cash">+$${remainingGold.toLocaleString()}</strong>
           </div>
           <div class="summary-actions">
             ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;">🎁 Crack Open Crates (${unboxedCrates.length})</button>` : ''}
             ${hasUnrestoredRelic ? `<button class="btn btn-warning" id="btn-restore-relic">🪥 Restoration Desk</button>` : ''}
-            <button class="btn btn-primary" id="btn-collect-catch">Sell All & Deposit</button>
-            <button class="btn btn-secondary" id="btn-summary-shop">Tackle Shop</button>
+            <button class="btn btn-primary" id="btn-keep-all-catches">🎒 Keep All Catches</button>
+            <button class="btn btn-buy" id="btn-sell-all-catches">🪙 Sell All Catches Now</button>
+            <button class="btn btn-secondary" id="btn-summary-inventory">🎒 View Inventory</button>
           </div>
+        </div>
+        <div class="catch-toggle-row">
+          <label class="catch-toggle-label">
+            <input type="checkbox" id="chk-always-ask-catch" ${this.saveSystem.data.settings.alwaysAskOnCatch ? 'checked' : ''}>
+            <span>Always ask on catch (uncheck to send catches directly to inventory)</span>
+          </label>
         </div>
       </div>
     `;
 
-    this.openModal('⛵ Dive Completed — Catch Summary', modalBody);
+    this.openModal('⛵ Dive Completed — Catch Resolution', modalBody);
 
     if (hasUnrestoredRelic) {
       const restoreBtn = document.getElementById('btn-restore-relic');
@@ -761,53 +813,84 @@ export class UIManager {
       });
     }
 
-    document.getElementById('btn-collect-catch').addEventListener('click', () => {
-      hook.caughtItems.forEach((item) => {
-        this.saveSystem.recordCatchItem(item);
+    // Individual Keep
+    document.querySelectorAll('.btn-catch-keep').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const instId = e.currentTarget.dataset.id;
+        const actionsDiv = document.getElementById(`catch-actions-${instId}`);
+        if (actionsDiv) {
+          actionsDiv.innerHTML = '<span class="status-badge kept-badge">🎒 In Tackle Box</span>';
+        }
+        soundManager.playButtonClick();
       });
-      if (hook.caughtItems.length >= hook.capacity) {
-        this.saveSystem.recordFullHaul();
-      }
-      this.saveSystem.recordDiveStats({
-        maxDepth: hook.maxDepthReachedThisDive,
-        tookDamage: hook.tookDamage,
+    });
+
+    // Individual Sell
+    document.querySelectorAll('.btn-catch-sell').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const instId = e.currentTarget.dataset.id;
+        if (soldIds.has(instId)) return;
+        const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
+        if (res) {
+          soldIds.add(instId);
+          soundManager.playCoin();
+          const actionsDiv = document.getElementById(`catch-actions-${instId}`);
+          if (actionsDiv) {
+            actionsDiv.innerHTML = `<span class="status-badge sold-badge">🪙 Sold (+$${res.gold.toLocaleString()})</span>`;
+          }
+          remainingGold = Math.max(0, remainingGold - res.gold);
+          const totalEl = document.getElementById('summary-total-cash');
+          if (totalEl) totalEl.textContent = `+$${remainingGold.toLocaleString()}`;
+          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
+        }
       });
-      if (this.questSystem) {
-        this.questSystem.dispatch({
-          type: 'complete_dive',
-          maxDepth: hook.maxDepthReachedThisDive,
-          caughtCount: hook.caughtItems.length,
-          isFullCapacity: hook.caughtItems.length >= hook.capacity,
-          tookDamage: hook.tookDamage,
-        });
-      }
-      this.saveSystem.addCoins(totalGold);
+    });
+
+    // Keep All Catches
+    document.getElementById('btn-keep-all-catches')?.addEventListener('click', () => {
+      soundManager.playButtonClick();
+      this._onCatchSummaryContinue = null;
       this.closeModal();
       if (onContinue) onContinue();
     });
 
-    document.getElementById('btn-summary-shop').addEventListener('click', () => {
+    // Sell All Catches Now
+    document.getElementById('btn-sell-all-catches')?.addEventListener('click', () => {
+      let soldCount = 0;
+      let totalSoldGold = 0;
       hook.caughtItems.forEach((item) => {
-        this.saveSystem.recordCatchItem(item);
+        const instId = item.inventoryRef?.instanceId;
+        if (instId && !soldIds.has(instId)) {
+          const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
+          if (res) {
+            soldIds.add(instId);
+            soldCount++;
+            totalSoldGold += res.gold;
+          }
+        }
       });
-      if (hook.caughtItems.length >= hook.capacity) {
-        this.saveSystem.recordFullHaul();
+      if (soldCount > 0) {
+        soundManager.playCoin();
+        this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`);
       }
-      this.saveSystem.recordDiveStats({
-        maxDepth: hook.maxDepthReachedThisDive,
-        tookDamage: hook.tookDamage,
-      });
-      if (this.questSystem) {
-        this.questSystem.dispatch({
-          type: 'complete_dive',
-          maxDepth: hook.maxDepthReachedThisDive,
-          caughtCount: hook.caughtItems.length,
-          isFullCapacity: hook.caughtItems.length >= hook.capacity,
-          tookDamage: hook.tookDamage,
-        });
-      }
-      this.saveSystem.addCoins(totalGold);
-      this.openShop();
+      this._onCatchSummaryContinue = null;
+      this.closeModal();
+      if (onContinue) onContinue();
+    });
+
+    // View Inventory
+    document.getElementById('btn-summary-inventory')?.addEventListener('click', () => {
+      this._onCatchSummaryContinue = null;
+      this.closeModal();
+      if (onContinue) onContinue();
+      this.openInventory();
+    });
+
+    // Quick toggle
+    document.getElementById('chk-always-ask-catch')?.addEventListener('change', (e) => {
+      this.saveSystem.data.settings.alwaysAskOnCatch = e.target.checked;
+      this.saveSystem.save();
+      this.showToast(e.target.checked ? '🔔 Catch resolution popup active.' : '🎒 Catches will now be added directly to inventory.');
     });
   }
 
@@ -1822,59 +1905,209 @@ export class UIManager {
     document.getElementById('journal-tab-content').innerHTML = html;
   }
 
+  openAquariumModal() {
+    this.openJournalLogbook('journal', 'aquarium');
+  }
+
   renderAquariumTab() {
     const save = this.saveSystem;
-    const caughtKeys = Object.keys(save.data.journal);
-    const allSpecies = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
+    const container = document.getElementById('journal-tab-content');
+    if (!container) return;
 
-    if (caughtKeys.length === 0) {
-      document.getElementById('journal-tab-content').innerHTML = `
-        <div class="empty-aquarium">
-          <p style="font-size: 3rem;">🫧</p>
-          <h3>Your Seven Seas Aquarium is Currently Empty</h3>
-          <p>Cast your line into the ocean and catch fish to populate your personal marine sanctuary!</p>
+    if (!save.hasAquarium()) {
+      container.innerHTML = `
+        <div class="aquarium-locked-container">
+          <div style="font-size: 3.5rem; margin-bottom: 8px;">🏛️🐠</div>
+          <h3 style="font-size: 1.5rem; color: #f8fafc; margin-bottom: 8px;">Personal Marine Aquarium (Milestone Purchase)</h3>
+          <p style="color: #94a3b8; max-width: 540px; margin: 0 auto 16px; font-size: 0.95rem; line-height: 1.5;">
+            Purchase your very own <strong>Personal Marine Aquarium</strong> from the Tackle Shop! House your favorite catches and rare sea relics in an interactive animated tank, customize water themes, and collect passive visitor tip income.
+          </p>
+          <div class="aquarium-perks-box">
+            <div class="perk-row"><span>🐠</span> Display live swimming fish with authentic species colors, scales & crowns</div>
+            <div class="perk-row"><span>🏺</span> Exhibit rare ocean relics & sunken treasures on seabed pedestals</div>
+            <div class="perk-row"><span>🎨</span> Choose between 4 themes: Sunlit Reef, Biolum Abyss, Atlantis & Nebula</div>
+            <div class="perk-row"><span>🪙</span> Earn passive visitor tip gold generated over time</div>
+            <div class="perk-row"><span>📦</span> Expandable capacity: 5 slots (Tier I), 10 slots (Tier II), 20 slots (Tier III)</div>
+          </div>
+          <button class="btn btn-buy btn-lg" id="btn-unlock-aquarium-shop" style="margin-top: 16px;">
+            🛒 View Personal Aquarium in Tackle Shop ($1,450)
+          </button>
         </div>
       `;
+      document.getElementById('btn-unlock-aquarium-shop')?.addEventListener('click', () => {
+        this.openShop();
+      });
       return;
     }
 
-    document.getElementById('journal-tab-content').innerHTML = `
-      <div class="aquarium-container">
-        <div class="aquarium-controls">
-          <span>Click the tank to tap the glass!</span>
-          <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Drop Fish Food</button>
+    const items = save.getAquariumItems();
+    const capacity = save.getAquariumCapacity();
+    const theme = save.data.aquarium?.theme || 'reef';
+    const pendingTips = save.calculatePendingVisitorTips();
+    const currentTier = save.getUpgradeLevel('personalAquarium') || 1;
+
+    let inhabitantsCardsHtml = '';
+    items.forEach((item) => {
+      const isFish = item.type === 'fish';
+      const isRelic = item.type === 'relic' || item.isRelic;
+      const shinyTag = item.isShiny ? '✨' : '';
+      const crownTag = item.crown === 'gold' ? '👑' : item.crown === 'silver' ? '🥈' : '';
+
+      inhabitantsCardsHtml += `
+        <div class="inhabitant-slot-card filled rarity-border-${item.rarity}">
+          <div class="slot-icon" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
+            ${item.icon || (isRelic ? '🏺' : '🐟')}
+          </div>
+          <div class="slot-info">
+            <div class="slot-name">${shinyTag} ${crownTag} ${item.name}</div>
+            <div class="slot-sub">${isFish ? `${item.size}cm • ${item.weight}kg` : isRelic ? `Relic (${item.era || 'Ancient'})` : 'Specimen'}</div>
+          </div>
+          <button class="btn btn-sm btn-outline btn-remove-inhabitant" data-id="${item.instanceId}" title="Return back to tackle box">↩️</button>
         </div>
-        <canvas id="aquarium-canvas" width="760" height="380"></canvas>
+      `;
+    });
+
+    const emptySlots = Math.max(0, capacity - items.length);
+    for (let s = 0; s < emptySlots; s++) {
+      inhabitantsCardsHtml += `
+        <div class="inhabitant-slot-card empty btn-assign-slot">
+          <div class="slot-empty-icon">➕</div>
+          <div class="slot-empty-text">Empty Slot<br><span style="font-size:0.75rem; color:#64748b;">Click to Assign</span></div>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="aquarium-panel">
+        <div class="aquarium-header-bar">
+          <div class="aq-stat-pill">
+            <span class="aq-lbl">Capacity:</span>
+            <strong>${items.length} / ${capacity} Slots (Tier ${currentTier})</strong>
+          </div>
+          <div class="aq-stat-pill aq-tips-pill">
+            <span class="aq-lbl">Visitor Tips:</span>
+            <strong style="color: #facc15;">🪙 $${pendingTips.toLocaleString()}</strong>
+            <button class="btn btn-sm btn-buy" id="btn-collect-tips" ${pendingTips > 0 ? '' : 'disabled'}>💰 Collect</button>
+          </div>
+          <div class="aq-theme-selector">
+            <span class="aq-lbl">Theme:</span>
+            <button class="theme-btn ${theme === 'reef' ? 'active' : ''}" data-theme="reef">🪸 Reef</button>
+            <button class="theme-btn ${theme === 'abyss' ? 'active' : ''}" data-theme="abyss">🌌 Abyss</button>
+            <button class="theme-btn ${theme === 'atlantis' ? 'active' : ''}" data-theme="atlantis">🏛️ Atlantis</button>
+            <button class="theme-btn ${theme === 'nebula' ? 'active' : ''}" data-theme="nebula">✨ Nebula</button>
+          </div>
+          <div class="aq-actions-col">
+            <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish</button>
+            <button class="btn btn-outline btn-sm" id="btn-aq-upgrade">🛒 Upgrade</button>
+          </div>
+        </div>
+
+        <div class="aquarium-canvas-box">
+          <canvas id="aquarium-canvas" width="760" height="380"></canvas>
+          <div class="aquarium-canvas-hint">Click tank to tap the glass • Food attracts fish • Relics rest on seabed</div>
+        </div>
+
+        <div class="aquarium-inhabitants-section">
+          <div class="inhabitants-header">
+            <h4>Tank Inhabitants (${items.length} / ${capacity})</h4>
+            <button class="btn btn-primary btn-sm" id="btn-assign-inhabitant-main" ${items.length >= capacity ? 'disabled title="Tank is at max capacity"' : ''}>
+              ➕ Assign Catch from Tackle Box
+            </button>
+          </div>
+          <div class="inhabitants-grid">
+            ${inhabitantsCardsHtml}
+          </div>
+        </div>
       </div>
     `;
 
-    this.startAquariumCanvas(allSpecies);
+    this.startAquariumCanvas(items, theme);
+
+    // Event listeners
+    document.getElementById('btn-collect-tips')?.addEventListener('click', () => {
+      const tips = this.saveSystem.collectVisitorTips();
+      if (tips > 0) {
+        soundManager.playCoin();
+        this.showToast(`🪙 Collected +$${tips.toLocaleString()} in visitor tips!`);
+        this.renderAquariumTab();
+      }
+    });
+
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const newTheme = e.currentTarget.dataset.theme;
+        this.saveSystem.setAquariumTheme(newTheme);
+        soundManager.playButtonClick();
+        this.renderAquariumTab();
+      });
+    });
+
+    document.getElementById('btn-aq-upgrade')?.addEventListener('click', () => {
+      this.openShop();
+    });
+
+    document.getElementById('btn-assign-inhabitant-main')?.addEventListener('click', () => {
+      this.openAssignToAquariumModal();
+    });
+
+    document.querySelectorAll('.btn-assign-slot').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.openAssignToAquariumModal();
+      });
+    });
+
+    document.querySelectorAll('.btn-remove-inhabitant').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        const itm = items.find(i => i.instanceId === id);
+        this.saveSystem.removeItemFromAquarium(id);
+        soundManager.playButtonClick();
+        this.showToast(`🎒 Returned ${itm?.name || 'item'} to tackle box.`);
+        this.renderAquariumTab();
+      });
+    });
   }
 
-  startAquariumCanvas(allSpecies) {
+  startAquariumCanvas(items, theme = 'reef') {
     const canvas = document.getElementById('aquarium-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const save = this.saveSystem;
 
     const aquariumFish = [];
-    Object.keys(save.data.journal).forEach((speciesId) => {
-      const species = allSpecies.find((s) => s.id === speciesId);
-      if (species) {
+    const aquariumRelics = [];
+
+    items.forEach((item) => {
+      if (item.type === 'fish' || (!item.type && !item.isRelic)) {
         aquariumFish.push({
-          species,
-          x: 40 + Math.random() * (canvas.width - 80),
-          y: 40 + Math.random() * (canvas.height - 80),
-          vx: (Math.random() < 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.8),
+          item,
+          x: 60 + Math.random() * (canvas.width - 120),
+          y: 40 + Math.random() * (canvas.height - 120),
+          vx: (Math.random() < 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.9),
           vy: (Math.random() * 2 - 1) * 0.4,
           timer: Math.random() * 10,
-          scale: species.scaleFactor || 1.0,
+          scale: Math.max(0.6, Math.min(1.8, item.scaleFactor || 1.0)),
+          primaryColor: item.primaryColor || '#38bdf8',
+          finColor: item.finColor || '#0284c7',
+          isShiny: !!item.isShiny,
+          crown: item.crown || null,
         });
+      } else {
+        aquariumRelics.push(item);
       }
     });
 
     const ripples = [];
     const foodPellets = [];
+    const bubbles = [];
+
+    for (let i = 0; i < 20; i++) {
+      bubbles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vy: 0.3 + Math.random() * 0.5,
+        r: 1 + Math.random() * 2.5,
+      });
+    }
 
     canvas.addEventListener('click', (e) => {
       const rect = canvas.getBoundingClientRect();
@@ -1887,9 +2120,9 @@ export class UIManager {
         const dx = f.x - x;
         const dy = f.y - y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120) {
-          f.vx = (dx / dist) * 3.5;
-          f.vy = (dy / dist) * 2.0;
+        if (dist < 140) {
+          f.vx = (dx / (dist || 1)) * 4.0;
+          f.vy = (dy / (dist || 1)) * 2.5;
         }
       });
     });
@@ -1897,11 +2130,11 @@ export class UIManager {
     const feedBtn = document.getElementById('btn-feed-fish');
     if (feedBtn) {
       feedBtn.addEventListener('click', () => {
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 7; i++) {
           foodPellets.push({
             x: 60 + Math.random() * (canvas.width - 120),
             y: 10,
-            vy: 0.8 + Math.random() * 0.6,
+            vy: 0.7 + Math.random() * 0.5,
           });
         }
         soundManager.playButtonClick();
@@ -1916,16 +2149,75 @@ export class UIManager {
       }
 
       const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, '#0284c7');
-      grad.addColorStop(1, '#0c4a6e');
+      let floorColor1 = '#fde047';
+      let floorColor2 = '#eab308';
+
+      if (theme === 'abyss') {
+        grad.addColorStop(0, '#030712');
+        grad.addColorStop(1, '#0f172a');
+        floorColor1 = '#1e293b';
+        floorColor2 = '#334155';
+      } else if (theme === 'atlantis') {
+        grad.addColorStop(0, '#064e3b');
+        grad.addColorStop(1, '#022c22');
+        floorColor1 = '#047857';
+        floorColor2 = '#065f46';
+      } else if (theme === 'nebula') {
+        grad.addColorStop(0, '#3b0764');
+        grad.addColorStop(1, '#1e1b4b');
+        floorColor1 = '#701a75';
+        floorColor2 = '#4a044e';
+      } else {
+        grad.addColorStop(0, '#0284c7');
+        grad.addColorStop(1, '#0c4a6e');
+        floorColor1 = '#fde047';
+        floorColor2 = '#eab308';
+      }
+
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = '#fde047';
+      // Floor Seabed
+      ctx.fillStyle = floorColor1;
       ctx.fillRect(0, canvas.height - 35, canvas.width, 35);
-      ctx.fillStyle = '#eab308';
+      ctx.fillStyle = floorColor2;
       ctx.fillRect(0, canvas.height - 40, canvas.width, 5);
 
+      // Ambient bubbles
+      ctx.fillStyle = theme === 'abyss' ? 'rgba(56, 189, 248, 0.4)' : theme === 'nebula' ? 'rgba(232, 121, 249, 0.4)' : 'rgba(255, 255, 255, 0.3)';
+      bubbles.forEach((b) => {
+        b.y -= b.vy;
+        if (b.y < 0) {
+          b.y = canvas.height - 40;
+          b.x = Math.random() * canvas.width;
+        }
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Relics on pedestals
+      const relicSpacing = canvas.width / (aquariumRelics.length + 1);
+      aquariumRelics.forEach((relic, idx) => {
+        const rx = relicSpacing * (idx + 1);
+        const ry = canvas.height - 45;
+
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(rx - 22, ry + 10, 44, 12);
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(rx - 18, ry + 4, 36, 6);
+
+        ctx.font = '22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(relic.icon || '🏺', rx, ry - 6);
+
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillText(relic.name.substring(0, 14), rx, ry + 28);
+      });
+
+      // Food pellets
       for (let i = foodPellets.length - 1; i >= 0; i--) {
         const fp = foodPellets[i];
         fp.y += fp.vy;
@@ -1933,30 +2225,52 @@ export class UIManager {
         ctx.beginPath();
         ctx.arc(fp.x, fp.y, 3.5, 0, Math.PI * 2);
         ctx.fill();
-        if (fp.y >= canvas.height - 35) {
+        if (fp.y >= canvas.height - 40) {
           foodPellets.splice(i, 1);
         }
       }
 
+      // Fish swimming
       aquariumFish.forEach((f) => {
         f.timer += 0.05;
+
+        if (foodPellets.length > 0) {
+          let closest = null;
+          let minD = 9999;
+          foodPellets.forEach(fp => {
+            const d = Math.hypot(fp.x - f.x, fp.y - f.y);
+            if (d < minD) { minD = d; closest = fp; }
+          });
+          if (closest && minD < 180) {
+            f.vx += (closest.x > f.x ? 0.04 : -0.04);
+            f.vy += (closest.y > f.y ? 0.03 : -0.03);
+            if (minD < 16) {
+              const pIdx = foodPellets.indexOf(closest);
+              if (pIdx !== -1) foodPellets.splice(pIdx, 1);
+            }
+          }
+        }
+
         f.x += f.vx;
         f.y += f.vy + Math.sin(f.timer) * 0.4;
 
-        if (f.x < 30) f.vx = Math.abs(f.vx);
-        if (f.x > canvas.width - 30) f.vx = -Math.abs(f.vx);
-        if (f.y < 30) f.vy = Math.abs(f.vy);
-        if (f.y > canvas.height - 55) f.vy = -Math.abs(f.vy);
+        if (f.x < 35) { f.vx = Math.abs(f.vx); }
+        if (f.x > canvas.width - 35) { f.vx = -Math.abs(f.vx); }
+        if (f.y < 35) { f.vy = Math.abs(f.vy); }
+        if (f.y > canvas.height - 65) { f.vy = -Math.abs(f.vy); }
 
         ctx.save();
         ctx.translate(f.x, f.y);
         ctx.scale((f.vx > 0 ? 1 : -1) * f.scale, f.scale);
-        ctx.fillStyle = f.species.primaryColor;
+
+        // Body
+        ctx.fillStyle = f.primaryColor;
         ctx.beginPath();
         ctx.ellipse(0, 0, 16, 9, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = f.species.finColor;
+        // Fin
+        ctx.fillStyle = f.finColor;
         ctx.beginPath();
         ctx.moveTo(-12, 0);
         ctx.lineTo(-22, -6 + Math.sin(f.timer * 4) * 3);
@@ -1964,6 +2278,7 @@ export class UIManager {
         ctx.closePath();
         ctx.fill();
 
+        // Eye
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(8, -2, 2.5, 0, Math.PI * 2);
@@ -1973,9 +2288,33 @@ export class UIManager {
         ctx.arc(9, -2, 1.2, 0, Math.PI * 2);
         ctx.fill();
 
+        // Shiny glimmer
+        if (f.isShiny) {
+          ctx.fillStyle = 'rgba(254, 240, 138, 0.8)';
+          ctx.beginPath();
+          ctx.arc(Math.sin(f.timer * 2) * 8, Math.cos(f.timer * 2) * 5, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Crown
+        if (f.crown === 'gold' || f.crown === 'silver') {
+          ctx.fillStyle = f.crown === 'gold' ? '#facc15' : '#e2e8f0';
+          ctx.beginPath();
+          ctx.moveTo(4, -10);
+          ctx.lineTo(6, -15);
+          ctx.lineTo(8, -11);
+          ctx.lineTo(10, -16);
+          ctx.lineTo(12, -11);
+          ctx.lineTo(14, -15);
+          ctx.lineTo(16, -10);
+          ctx.closePath();
+          ctx.fill();
+        }
+
         ctx.restore();
       });
 
+      // Ripples
       for (let i = ripples.length - 1; i >= 0; i--) {
         const r = ripples[i];
         r.r += 1.8;
@@ -1994,6 +2333,475 @@ export class UIManager {
     };
 
     renderAq();
+  }
+
+  openAssignToAquariumModal() {
+    this.activeModal = 'assignAquarium';
+    const inv = this.saveSystem.getInventory();
+    const save = this.saveSystem;
+    const eligible = inv.filter((item) => {
+      const isEligibleType = item.type === 'fish' || item.type === 'relic' || item.isRelic;
+      return isEligibleType && !save.isItemInAquarium(item.instanceId);
+    });
+
+    let listHtml = '';
+    if (eligible.length === 0) {
+      listHtml = `
+        <div style="text-align: center; padding: 40px; color: #94a3b8;">
+          <p style="font-size: 3rem;">🪹</p>
+          <h4>No Available Catches Found</h4>
+          <p>All eligible fish and relics in your tackle box are already in the tank, or you haven't caught any yet.</p>
+        </div>
+      `;
+    } else {
+      listHtml = '<div class="assign-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; max-height: 420px; overflow-y: auto; padding: 4px;">';
+      eligible.forEach((item) => {
+        const isFish = item.type === 'fish';
+        const isRelic = item.type === 'relic' || item.isRelic;
+        const shinyTag = item.isShiny ? '✨' : '';
+        const crownTag = item.crown === 'gold' ? '👑' : item.crown === 'silver' ? '🥈' : '';
+        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
+
+        listHtml += `
+          <div class="inventory-card rarity-border-${item.rarity}" style="padding: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="font-size: 1.8rem; color: ${item.primaryColor || '#38bdf8'};">${item.icon || (isRelic ? '🏺' : '🐟')}</span>
+              <div style="flex: 1; overflow: hidden;">
+                <div style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${shinyTag} ${crownTag} ${item.name}
+                </div>
+                <div>${rarityBadge}</div>
+              </div>
+            </div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
+              ${isFish ? `${item.size}cm • ${item.weight}kg` : isRelic ? `Relic (${item.era || 'Ancient'})` : ''}
+            </div>
+            <button class="btn btn-buy btn-sm btn-slot-item" data-id="${item.instanceId}" style="width: 100%;">
+              ➕ Move into Tank
+            </button>
+          </div>
+        `;
+      });
+      listHtml += '</div>';
+    }
+
+    const modalBody = `
+      <div class="assign-aquarium-container">
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px;">
+          Select a fish or archaeological relic from your tackle box to place into your Personal Marine Sanctuary.
+        </p>
+        ${listHtml}
+        <div style="margin-top: 14px; text-align: right;">
+          <button class="btn btn-secondary" id="btn-assign-back">Back to Aquarium</button>
+        </div>
+      </div>
+    `;
+
+    this.openModal('➕ Assign Catch to Aquarium', modalBody);
+
+    document.querySelectorAll('.btn-slot-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        const res = this.saveSystem.moveItemToAquarium(id);
+        if (res.success) {
+          soundManager.playUpgrade();
+          this.showToast(`🐠 Added ${res.item?.name || 'catch'} to your aquarium!`);
+          this.openJournalLogbook('journal', 'aquarium');
+        } else {
+          this.showToast(`⚠️ Could not add to aquarium: ${res.reason}`);
+        }
+      });
+    });
+
+    document.getElementById('btn-assign-back')?.addEventListener('click', () => {
+      this.openJournalLogbook('journal', 'aquarium');
+    });
+  }
+
+  openInventory(filter = 'all') {
+    this.activeModal = 'inventory';
+    const inv = this.saveSystem.getInventory();
+    const save = this.saveSystem;
+    const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[save.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
+    const sellMultiplier = 1 + rodTier.sellBonus;
+
+    const fishCount = inv.filter(i => i.type === 'fish').length;
+    const fossilCount = inv.filter(i => i.type === 'fossil' || i.category === 'fossil').length;
+    const relicCount = inv.filter(i => i.type === 'relic' || i.isRelic).length;
+    const tankCount = inv.filter(i => save.isItemInAquarium(i.instanceId)).length;
+    const lockedCount = inv.filter(i => i.isLocked).length;
+
+    const sellableFish = inv.filter(i => i.type === 'fish' && !i.isLocked && !save.isItemInAquarium(i.instanceId));
+    const totalSellableValue = sellableFish.reduce((acc, f) => acc + Math.max(1, Math.round(f.value * sellMultiplier)), 0);
+
+    let filteredItems = inv;
+    if (filter === 'fish') {
+      filteredItems = inv.filter(i => i.type === 'fish');
+    } else if (filter === 'fossils') {
+      filteredItems = inv.filter(i => i.type === 'fossil' || i.category === 'fossil');
+    } else if (filter === 'relics') {
+      filteredItems = inv.filter(i => i.type === 'relic' || i.isRelic);
+    } else if (filter === 'aquarium') {
+      filteredItems = inv.filter(i => save.isItemInAquarium(i.instanceId));
+    } else if (filter === 'locked') {
+      filteredItems = inv.filter(i => i.isLocked);
+    }
+
+    const hasAq = save.hasAquarium();
+    const aqCap = save.getAquariumCapacity();
+
+    let itemsGridHtml = '';
+    if (filteredItems.length === 0) {
+      itemsGridHtml = `
+        <div class="empty-inventory-state">
+          <p style="font-size:3rem;">🎒</p>
+          <h4>No Items Found in this Category</h4>
+          <p>Cast your line into the deep ocean or harvest seabed traps to collect fish, fossils, and relics!</p>
+        </div>
+      `;
+    } else {
+      itemsGridHtml = '<div class="inventory-grid">';
+      filteredItems.forEach((item) => {
+        const isFish = item.type === 'fish';
+        const isRelic = item.type === 'relic' || item.isRelic;
+        const isFossil = item.type === 'fossil' || item.category === 'fossil';
+        const inTank = save.isItemInAquarium(item.instanceId);
+        const isLocked = !!item.isLocked;
+        const itemVal = Math.max(1, Math.round(item.value * sellMultiplier));
+
+        const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
+        const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
+        const crownTag = item.crown === 'gold'
+          ? `<span class="crown-tag crown-gold">👑 GOLD</span>`
+          : item.crown === 'silver'
+          ? `<span class="crown-tag crown-silver">🥈 SILVER</span>`
+          : '';
+        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
+
+        itemsGridHtml += `
+          <div class="inventory-card rarity-border-${item.rarity} ${isLocked ? 'item-locked-border' : ''}">
+            <div class="inv-card-header">
+              <div class="inv-card-icon" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
+                ${item.icon || (isRelic ? '🏺' : isFossil ? '🦴' : '🐟')}
+              </div>
+              <div class="inv-card-title-col">
+                <div class="inv-card-name">${item.name}</div>
+                <div class="inv-card-tags">${rarityBadge} ${shinyTag} ${mythicTag} ${crownTag}</div>
+              </div>
+              <button class="btn-icon-lock btn-toggle-lock" data-id="${item.instanceId}" title="${isLocked ? 'Unlock item' : 'Lock item (protects from selling)'}">
+                ${isLocked ? '🔒' : '🔓'}
+              </button>
+            </div>
+
+            <div class="inv-card-specs">
+              ${isFish ? `<span>📏 <strong>${item.size || 0} cm</strong></span> <span>⚖️ <strong>${item.weight || 0} kg</strong></span>` : ''}
+              ${isRelic ? `<span>🏺 ${item.era || 'Ancient'} Era • ${item.restored ? '✨ Restored' : '🪥 Needs Cleaning'}</span>` : ''}
+              ${isFossil ? `<span>🏛️ Prehistoric Specimen</span>` : ''}
+            </div>
+
+            <div class="inv-card-status-row">
+              ${inTank ? `<span class="badge-tank">🐠 IN AQUARIUM</span>` : ''}
+              ${isLocked ? `<span class="badge-lock">🔒 PROTECTED</span>` : ''}
+              <div class="inv-card-price">Market Value: <strong>🪙 $${itemVal.toLocaleString()}</strong></div>
+            </div>
+
+            <div class="inv-card-actions">
+              <button class="btn btn-sm btn-outline btn-inspect-item" data-id="${item.instanceId}" title="Inspect details, lore, and records">🔍 Inspect</button>
+              
+              ${inTank ? `
+                <button class="btn btn-sm btn-secondary btn-tank-remove" data-id="${item.instanceId}" title="Remove from personal aquarium back to tackle box">↩️ Remove</button>
+              ` : (isFish || isRelic) ? `
+                ${hasAq ? `
+                  <button class="btn btn-sm btn-outline btn-tank-add" data-id="${item.instanceId}" ${tankCount >= aqCap ? 'disabled title="Aquarium is at max capacity"' : 'title="Place in personal aquarium"'}>🐠 To Tank</button>
+                ` : `
+                  <button class="btn btn-sm btn-disabled" disabled title="Personal Aquarium not owned. Unlock in Tackle Shop.">🔒 No Tank</button>
+                `}
+              ` : ''}
+
+              <button class="btn btn-sm ${isLocked || inTank ? 'btn-disabled' : 'btn-buy'} btn-sell-single" data-id="${item.instanceId}" data-val="${itemVal}"
+                ${isLocked ? 'disabled title="Unlock item before selling"' : inTank ? 'disabled title="Remove from aquarium before selling"' : 'title="Sell single item"'}
+              >
+                🪙 Sell
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      itemsGridHtml += '</div>';
+    }
+
+    const modalBody = `
+      <div class="inventory-container">
+        <!-- Top Stats Banner -->
+        <div class="inventory-header-stats">
+          <div class="inv-stat-box">
+            <span class="stat-label">Stored Catches</span>
+            <span class="stat-value">${inv.length}</span>
+          </div>
+          <div class="inv-stat-box">
+            <span class="stat-label">Fish</span>
+            <span class="stat-value">${fishCount}</span>
+          </div>
+          <div class="inv-stat-box">
+            <span class="stat-label">In Aquarium</span>
+            <span class="stat-value">${tankCount} ${hasAq ? `/ ${aqCap}` : '(No Tank)'}</span>
+          </div>
+          <div class="inv-stat-box">
+            <span class="stat-label">Locked</span>
+            <span class="stat-value">🔒 ${lockedCount}</span>
+          </div>
+          <div class="inv-stat-box">
+            <span class="stat-label">Unlocked Sell Value</span>
+            <span class="stat-value" style="color: #facc15;">🪙 $${totalSellableValue.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <!-- Controls & Bulk Action Bar -->
+        <div class="inventory-controls-bar">
+          <div class="inv-tabs">
+            <button class="tab-btn ${filter === 'all' ? 'active' : ''}" data-filter="all">All (${inv.length})</button>
+            <button class="tab-btn ${filter === 'fish' ? 'active' : ''}" data-filter="fish">🐟 Fish (${fishCount})</button>
+            <button class="tab-btn ${filter === 'relics' ? 'active' : ''}" data-filter="relics">🏺 Relics (${relicCount})</button>
+            <button class="tab-btn ${filter === 'fossils' ? 'active' : ''}" data-filter="fossils">🦴 Fossils (${fossilCount})</button>
+            <button class="tab-btn ${filter === 'aquarium' ? 'active' : ''}" data-filter="aquarium">🐠 In Tank (${tankCount})</button>
+            <button class="tab-btn ${filter === 'locked' ? 'active' : ''}" data-filter="locked">🔒 Locked (${lockedCount})</button>
+          </div>
+          <div class="inv-top-actions">
+            <button class="btn ${sellableFish.length > 0 ? 'btn-buy' : 'btn-disabled'} btn-bulk-sell" id="btn-inv-bulk-sell" ${sellableFish.length > 0 ? '' : 'disabled'}>
+              🪙 Sell All Unlocked Fish (${sellableFish.length} • +$${totalSellableValue.toLocaleString()})
+            </button>
+            ${hasAq ? `
+              <button class="btn btn-secondary" id="btn-inv-visit-aquarium">🐠 Visit Aquarium</button>
+            ` : ''}
+          </div>
+        </div>
+
+        ${itemsGridHtml}
+      </div>
+    `;
+
+    this.openModal("🎒 Angler's Persistent Inventory & Tackle Box", modalBody);
+
+    document.querySelectorAll('.inv-tabs .tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.openInventory(e.currentTarget.dataset.filter);
+      });
+    });
+
+    document.getElementById('btn-inv-bulk-sell')?.addEventListener('click', () => {
+      this.openBulkSellConfirm(sellableFish, totalSellableValue, sellMultiplier);
+    });
+
+    document.getElementById('btn-inv-visit-aquarium')?.addEventListener('click', () => {
+      this.openAquariumModal();
+    });
+
+    document.querySelectorAll('.btn-toggle-lock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        this.saveSystem.toggleItemLock(id);
+        soundManager.playButtonClick();
+        this.openInventory(filter);
+      });
+    });
+
+    document.querySelectorAll('.btn-inspect-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        this.openInspectItemModal(id, filter);
+      });
+    });
+
+    document.querySelectorAll('.btn-tank-add').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        const res = this.saveSystem.moveItemToAquarium(id);
+        if (res.success) {
+          soundManager.playUpgrade();
+          this.showToast('🐠 Placed catch into your personal aquarium!');
+          this.openInventory(filter);
+        } else {
+          this.showToast(`⚠️ Could not add to aquarium: ${res.reason}`);
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-tank-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        this.saveSystem.removeItemFromAquarium(id);
+        soundManager.playButtonClick();
+        this.showToast('🎒 Returned to tackle box.');
+        this.openInventory(filter);
+      });
+    });
+
+    document.querySelectorAll('.btn-sell-single').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.dataset.id;
+        const res = this.saveSystem.sellInventoryItem(id, sellMultiplier);
+        if (res) {
+          soundManager.playCoin();
+          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
+          this.openInventory(filter);
+        }
+      });
+    });
+  }
+
+  openBulkSellConfirm(sellableFish, totalPayout, sellMultiplier) {
+    this.activeModal = 'bulkSellConfirm';
+    const modalBody = `
+      <div class="confirm-bulk-sell-modal" style="text-align: center; padding: 20px 10px;">
+        <div style="font-size: 3.5rem; margin-bottom: 12px;">🪙</div>
+        <h3 style="font-size: 1.5rem; color: #f8fafc; margin-bottom: 10px;">Confirm Bulk Fish Sale</h3>
+        <p style="font-size: 1.05rem; color: #cbd5e1; max-width: 480px; margin: 0 auto 16px;">
+          Sell <strong>${sellableFish.length} unlocked fish</strong> from your tackle box for a total of <strong style="color: #facc15; font-size: 1.25rem;">+$${totalPayout.toLocaleString()}</strong>?
+        </p>
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 12px; max-width: 480px; margin: 0 auto 20px; font-size: 0.85rem; color: #94a3b8; text-align: left;">
+          🛡️ <strong>Safety Protection Active:</strong>
+          <ul style="margin: 6px 0 0 16px; padding: 0;">
+            <li>Favorited and locked fish (🔒) will <strong>NOT</strong> be sold.</li>
+            <li>Fish currently swimming in your aquarium (🐠) are protected and will <strong>NOT</strong> be sold.</li>
+          </ul>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 12px;">
+          <button class="btn btn-buy btn-lg" id="btn-confirm-bulk-sale">🪙 Sell ${sellableFish.length} Fish (+$${totalPayout.toLocaleString()})</button>
+          <button class="btn btn-secondary btn-lg" id="btn-cancel-bulk-sale">Cancel & Return</button>
+        </div>
+      </div>
+    `;
+
+    this.openModal('Confirm Bulk Sale', modalBody);
+
+    document.getElementById('btn-confirm-bulk-sale')?.addEventListener('click', () => {
+      const result = this.saveSystem.sellAllFish(sellMultiplier);
+      soundManager.playCoin();
+      this.showToast(`🪙 Sold ${result.count} fish for +$${result.totalGold.toLocaleString()}!`);
+      this.openInventory('fish');
+    });
+
+    document.getElementById('btn-cancel-bulk-sale')?.addEventListener('click', () => {
+      this.openInventory('fish');
+    });
+  }
+
+  openInspectItemModal(instanceId, returnFilter = 'all') {
+    this.activeModal = 'inspectItem';
+    const inv = this.saveSystem.getInventory();
+    const item = inv.find((i) => i.instanceId === instanceId);
+    if (!item) {
+      this.openInventory(returnFilter);
+      return;
+    }
+
+    const save = this.saveSystem;
+    const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[save.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
+    const sellMultiplier = 1 + rodTier.sellBonus;
+    const itemVal = Math.max(1, Math.round(item.value * sellMultiplier));
+
+    const isFish = item.type === 'fish';
+    const isRelic = item.type === 'relic' || item.isRelic;
+    const isFossil = item.type === 'fossil' || item.category === 'fossil';
+    const inTank = save.isItemInAquarium(item.instanceId);
+    const isLocked = !!item.isLocked;
+    const hasAq = save.hasAquarium();
+    const tankFull = save.getAquariumItems().length >= save.getAquariumCapacity();
+
+    const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
+    const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
+    const crownTag = item.crown === 'gold'
+      ? `<span class="crown-tag crown-gold">👑 GOLD CROWN</span>`
+      : item.crown === 'silver'
+      ? `<span class="crown-tag crown-silver">🥈 SILVER CROWN</span>`
+      : '';
+    const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
+
+    const modalBody = `
+      <div class="inspect-item-container">
+        <div class="inspect-item-hero rarity-border-${item.rarity}">
+          <div class="inspect-item-icon" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 4rem;">
+            ${item.icon || (isRelic ? '🏺' : isFossil ? '🦴' : '🐟')}
+          </div>
+          <div class="inspect-item-titles">
+            <h2>${item.name}</h2>
+            <div class="inspect-item-tags">${rarityBadge} ${shinyTag} ${mythicTag} ${crownTag}</div>
+          </div>
+        </div>
+
+        <div class="inspect-item-body">
+          ${item.lore ? `<p class="inspect-item-lore">${item.lore}</p>` : ''}
+          
+          <div class="inspect-specs-grid">
+            ${isFish ? `
+              <div class="inspect-spec"><span class="lbl">Length</span><strong>${item.size || 0} cm</strong></div>
+              <div class="inspect-spec"><span class="lbl">Weight</span><strong>${item.weight || 0} kg</strong></div>
+              <div class="inspect-spec"><span class="lbl">Trophy Rank</span><strong>${item.crown ? `${item.crown.toUpperCase()} CROWN` : 'Standard'}</strong></div>
+            ` : ''}
+            ${isRelic ? `
+              <div class="inspect-spec"><span class="lbl">Archaeological Era</span><strong>${item.era || 'Ancient'}</strong></div>
+              <div class="inspect-spec"><span class="lbl">Condition</span><strong>${item.restored ? '✨ Restored' : '🪥 Dirty Relic'}</strong></div>
+            ` : ''}
+            <div class="inspect-spec"><span class="lbl">Date Landed</span><strong>${item.caughtAt ? new Date(item.caughtAt).toLocaleDateString() : 'Unknown'}</strong></div>
+            <div class="inspect-spec"><span class="lbl">Base Market Value</span><strong>$${(item.value || 0).toLocaleString()}</strong></div>
+            <div class="inspect-spec"><span class="lbl">With Rod Bonus</span><strong style="color:#facc15;">🪙 $${itemVal.toLocaleString()}</strong></div>
+            <div class="inspect-spec"><span class="lbl">Storage Status</span><strong>${inTank ? '🐠 In Personal Aquarium' : '🎒 In Tackle Box'}</strong></div>
+          </div>
+
+          <div class="inspect-actions-row">
+            <button class="btn btn-secondary" id="btn-inspect-toggle-lock">${isLocked ? '🔓 Unlock Item' : '🔒 Lock Item'}</button>
+            
+            ${inTank ? `
+              <button class="btn btn-warning" id="btn-inspect-tank">↩️ Remove from Aquarium</button>
+            ` : (isFish || isRelic) ? `
+              ${hasAq ? `
+                <button class="btn btn-primary" id="btn-inspect-tank" ${tankFull ? 'disabled title="Aquarium is full"' : ''}>🐠 Move to Aquarium</button>
+              ` : `
+                <button class="btn btn-disabled" disabled title="Unlock Personal Aquarium in Tackle Shop">🔒 Aquarium Locked</button>
+              `}
+            ` : ''}
+
+            <button class="btn ${isLocked || inTank ? 'btn-disabled' : 'btn-buy'}" id="btn-inspect-sell" ${isLocked || inTank ? 'disabled' : ''}>
+              🪙 Sell Item (+$${itemVal.toLocaleString()})
+            </button>
+            <button class="btn btn-secondary" id="btn-inspect-back">🔙 Back to Tackle Box</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.openModal(`🔍 Inspecting Catch: ${item.name}`, modalBody);
+
+    document.getElementById('btn-inspect-toggle-lock')?.addEventListener('click', () => {
+      this.saveSystem.toggleItemLock(instanceId);
+      this.openInspectItemModal(instanceId, returnFilter);
+    });
+
+    document.getElementById('btn-inspect-tank')?.addEventListener('click', () => {
+      if (inTank) {
+        this.saveSystem.removeItemFromAquarium(instanceId);
+        this.showToast(`🎒 Returned ${item.name} to tackle box.`);
+      } else {
+        const res = this.saveSystem.moveItemToAquarium(instanceId);
+        if (res.success) {
+          this.showToast(`🐠 Placed ${item.name} in your personal aquarium!`);
+        }
+      }
+      this.openInspectItemModal(instanceId, returnFilter);
+    });
+
+    document.getElementById('btn-inspect-sell')?.addEventListener('click', () => {
+      const res = this.saveSystem.sellInventoryItem(instanceId, sellMultiplier);
+      if (res) {
+        soundManager.playCoin();
+        this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
+        this.openInventory(returnFilter);
+      }
+    });
+
+    document.getElementById('btn-inspect-back')?.addEventListener('click', () => {
+      this.openInventory(returnFilter);
+    });
   }
 
   getLogbookHtml() {
@@ -2149,6 +2957,16 @@ export class UIManager {
         </div>
 
         <div class="settings-section">
+          <h3>🎣 Fishing Preferences</h3>
+          <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
+            <label for="setting-always-ask" style="font-size: 0.95rem; color: #cbd5e1; cursor: pointer;">
+              Always ask on catch (show Keep / Sell modal):
+            </label>
+            <input type="checkbox" id="setting-always-ask" ${settings.alwaysAskOnCatch ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+          </div>
+        </div>
+
+        <div class="settings-section">
           <h3>🔊 Audio Controls</h3>
           <div class="setting-item">
             <label for="music-vol">Music Volume:</label>
@@ -2169,6 +2987,12 @@ export class UIManager {
     `;
 
     this.openModal('⚙️ Settings & Career Records', modalBody);
+
+    document.getElementById('setting-always-ask')?.addEventListener('change', (e) => {
+      this.saveSystem.data.settings.alwaysAskOnCatch = e.target.checked;
+      this.saveSystem.save();
+      this.showToast(e.target.checked ? '🔔 Catch resolution popup enabled.' : '🎒 Catches will now be added directly to inventory.');
+    });
 
     document.getElementById('music-vol').addEventListener('input', (e) => {
       const vol = parseFloat(e.target.value);

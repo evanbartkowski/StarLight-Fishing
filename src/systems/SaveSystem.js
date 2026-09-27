@@ -70,6 +70,16 @@ export class SaveSystem {
         seasUnlockedCount: 1,
         legendariesPerSea: {},
       },
+      inventory: [],
+      aquarium: {
+        isUnlocked: false,
+        tier: 0,
+        maxCapacity: 0,
+        theme: 'reef',
+        unlockedThemes: ['reef'],
+        slottedItemIds: [],
+        lastTipCollectedAt: Date.now(),
+      },
       unlockedBobbers: ['pelican_bobber'],
       journal: {}, // speciesId -> { count, maxSize, minSize, maxWeight, shinyCount, goldCrown, silverCrown, firstCaughtAt }
       fossils: {}, // fossilId -> { count, firstFoundAt }
@@ -80,6 +90,7 @@ export class SaveSystem {
         sfxVolume: 0.7,
         isMuted: false,
         hasSeenTutorial: false,
+        alwaysAskOnCatch: true,
       },
     };
   }
@@ -152,6 +163,13 @@ export class SaveSystem {
         skeletons: { ...def.skeletons, ...(parsed.skeletons || {}) },
         stats: { ...def.stats, ...(parsed.stats || {}) },
         unlockedBobbers: parsed.unlockedBobbers || def.unlockedBobbers || ['pelican_bobber'],
+        inventory: Array.isArray(parsed.inventory) ? parsed.inventory : [],
+        aquarium: {
+          ...def.aquarium,
+          ...(parsed.aquarium || {}),
+          slottedItemIds: Array.isArray(parsed.aquarium?.slottedItemIds) ? parsed.aquarium.slottedItemIds : [],
+          unlockedThemes: Array.isArray(parsed.aquarium?.unlockedThemes) ? parsed.aquarium.unlockedThemes : ['reef'],
+        },
         journal: parsed.journal || {},
         fossils: parsed.fossils || {},
         relics: parsed.relics || {},
@@ -168,6 +186,13 @@ export class SaveSystem {
       const trapTier = UPGRADE_DEFINITIONS.seabedTraps.tiers[trapLvl] || UPGRADE_DEFINITIONS.seabedTraps.tiers[0];
       this.data.traps.count = trapTier.trapCount || 0;
       this.data.traps.maxStorage = trapTier.maxStorage || 0;
+
+      // Sync aquarium capacity & unlocked state with personalAquarium upgrade
+      const aqLvl = this.getUpgradeLevel('personalAquarium');
+      const aqTier = UPGRADE_DEFINITIONS.personalAquarium?.tiers[aqLvl] || UPGRADE_DEFINITIONS.personalAquarium?.tiers[0];
+      this.data.aquarium.isUnlocked = aqLvl > 0;
+      this.data.aquarium.tier = aqLvl;
+      this.data.aquarium.maxCapacity = aqTier?.capacity || 0;
     } catch (e) {
       console.error('Failed to load save game:', e);
       this.data = this.getDefaultData();
@@ -245,6 +270,15 @@ export class SaveSystem {
 
   setUpgradeLevel(key, level) {
     this.data.upgrades[key] = level;
+    if (key === 'personalAquarium') {
+      const tier = UPGRADE_DEFINITIONS.personalAquarium?.tiers[level] || UPGRADE_DEFINITIONS.personalAquarium?.tiers[0];
+      if (!this.data.aquarium) {
+        this.data.aquarium = { theme: 'reef', unlockedThemes: ['reef'], slottedItemIds: [] };
+      }
+      this.data.aquarium.isUnlocked = level > 0;
+      this.data.aquarium.tier = level;
+      this.data.aquarium.maxCapacity = tier?.capacity || 0;
+    }
     this.save();
   }
 
@@ -524,6 +558,215 @@ export class SaveSystem {
   getBuffRemainingSeconds(buffId) {
     if (!this.hasActiveBuff(buffId)) return 0;
     return Math.max(0, Math.ceil((this.data.buffs[buffId] - Date.now()) / 1000));
+  }
+
+  // --- Inventory Management ---
+  getInventory() {
+    if (!Array.isArray(this.data.inventory)) {
+      this.data.inventory = [];
+    }
+    return this.data.inventory;
+  }
+
+  createInventoryItem(item) {
+    const instanceId = 'inv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+    const isCrate = !!item.isCrate || item.category === 'crate';
+    const isRelic = !!item.isRelic;
+    const isFossil = item.category === 'fossil';
+    const isTreasure = (item.isTreasure || item.category === 'treasure') && !isCrate;
+
+    let type = 'fish';
+    if (isRelic) type = 'relic';
+    else if (isFossil || isTreasure || isCrate) type = 'trinket';
+
+    return {
+      instanceId,
+      id: item.id || item.speciesId || 'item',
+      speciesId: item.species?.id || item.speciesId || item.id || null,
+      name: item.name || 'Mysterious Catch',
+      type,
+      rarity: item.rarity || 'common',
+      size: item.size || 0,
+      weight: item.weight || 0,
+      value: item.value || 0,
+      sellValue: item.sellValue || item.value || 0,
+      icon: isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '💎' : (item.isMythic ? '🌟' : '🐟'),
+      primaryColor: item.primaryColor || item.species?.primaryColor || '#38bdf8',
+      finColor: item.finColor || item.species?.finColor || '#0284c7',
+      scaleFactor: item.scaleFactor || item.scale || 1.0,
+      isShiny: !!item.isShiny,
+      crown: item.crown || null,
+      isMythic: !!item.isMythic,
+      lore: item.lore || item.species?.lore || '',
+      isLocked: false,
+      caughtAt: Date.now(),
+      era: item.relicType?.era || item.era || null,
+      restored: !!item.restored,
+    };
+  }
+
+  addItemToInventory(item) {
+    const invItem = item.instanceId ? item : this.createInventoryItem(item);
+    if (!Array.isArray(this.data.inventory)) {
+      this.data.inventory = [];
+    }
+    this.data.inventory.push(invItem);
+    this.save();
+    return invItem;
+  }
+
+  removeItemFromInventory(instanceId) {
+    const inv = this.getInventory();
+    const idx = inv.findIndex((i) => i.instanceId === instanceId);
+    if (idx !== -1) {
+      const removed = inv.splice(idx, 1)[0];
+      // Also remove from aquarium if it was slotted
+      if (this.data.aquarium?.slottedItemIds) {
+        this.data.aquarium.slottedItemIds = this.data.aquarium.slottedItemIds.filter((id) => id !== instanceId);
+      }
+      this.save();
+      return removed;
+    }
+    return null;
+  }
+
+  toggleItemLock(instanceId) {
+    const item = this.getInventory().find((i) => i.instanceId === instanceId);
+    if (item) {
+      item.isLocked = !item.isLocked;
+      this.save();
+      return item.isLocked;
+    }
+    return false;
+  }
+
+  sellInventoryItem(instanceId, multiplier = 1) {
+    const item = this.getInventory().find((i) => i.instanceId === instanceId);
+    if (!item) return null;
+    if (item.isLocked) return null;
+    if (this.isItemInAquarium(instanceId)) return null;
+
+    const gold = Math.max(1, Math.round(item.value * multiplier));
+    this.removeItemFromInventory(instanceId);
+    this.addCoins(gold);
+    return { item, gold };
+  }
+
+  sellAllFish(multiplier = 1) {
+    const inv = this.getInventory();
+    const fishToSell = inv.filter((item) =>
+      item.type === 'fish' && !item.isLocked && !this.isItemInAquarium(item.instanceId)
+    );
+
+    if (fishToSell.length === 0) {
+      return { count: 0, totalGold: 0 };
+    }
+
+    let totalGold = 0;
+    const sellIds = new Set(fishToSell.map((f) => f.instanceId));
+
+    fishToSell.forEach((f) => {
+      totalGold += Math.max(1, Math.round(f.value * multiplier));
+    });
+
+    this.data.inventory = inv.filter((i) => !sellIds.has(i.instanceId));
+    this.addCoins(totalGold);
+    this.save();
+    return { count: fishToSell.length, totalGold };
+  }
+
+  // --- Aquarium Management ---
+  hasAquarium() {
+    return this.getUpgradeLevel('personalAquarium') > 0 || !!this.data.aquarium?.isUnlocked;
+  }
+
+  getAquariumCapacity() {
+    const lvl = this.getUpgradeLevel('personalAquarium');
+    const tier = UPGRADE_DEFINITIONS.personalAquarium?.tiers[lvl] || UPGRADE_DEFINITIONS.personalAquarium?.tiers[0];
+    return tier?.capacity || this.data.aquarium?.maxCapacity || 0;
+  }
+
+  isItemInAquarium(instanceId) {
+    return !!(this.data.aquarium?.slottedItemIds?.includes(instanceId));
+  }
+
+  getAquariumItems() {
+    const ids = this.data.aquarium?.slottedItemIds || [];
+    const inv = this.getInventory();
+    return ids.map((id) => inv.find((item) => item.instanceId === id)).filter(Boolean);
+  }
+
+  moveItemToAquarium(instanceId) {
+    if (!this.hasAquarium()) return { success: false, reason: 'unlocked' };
+    const capacity = this.getAquariumCapacity();
+    if (!this.data.aquarium.slottedItemIds) this.data.aquarium.slottedItemIds = [];
+    if (this.data.aquarium.slottedItemIds.length >= capacity) {
+      return { success: false, reason: 'full' };
+    }
+    if (this.data.aquarium.slottedItemIds.includes(instanceId)) {
+      return { success: false, reason: 'already_slotted' };
+    }
+    const item = this.getInventory().find((i) => i.instanceId === instanceId);
+    if (!item) return { success: false, reason: 'not_found' };
+
+    this.data.aquarium.slottedItemIds.push(instanceId);
+    this.save();
+    return { success: true, item };
+  }
+
+  removeItemFromAquarium(instanceId) {
+    if (!this.data.aquarium?.slottedItemIds) return false;
+    const initialLen = this.data.aquarium.slottedItemIds.length;
+    this.data.aquarium.slottedItemIds = this.data.aquarium.slottedItemIds.filter((id) => id !== instanceId);
+    if (this.data.aquarium.slottedItemIds.length !== initialLen) {
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  setAquariumTheme(themeId) {
+    if (!this.data.aquarium) return;
+    this.data.aquarium.theme = themeId;
+    this.save();
+  }
+
+  calculatePendingVisitorTips() {
+    if (!this.hasAquarium()) return 0;
+    const items = this.getAquariumItems();
+    const fishInAquarium = items.filter((i) => i.type === 'fish');
+    if (fishInAquarium.length === 0) return 0;
+
+    const now = Date.now();
+    const lastCollected = this.data.aquarium.lastTipCollectedAt || now;
+    const elapsedMinutes = Math.max(0, (now - lastCollected) / 60000);
+
+    let ratePerMin = 0;
+    fishInAquarium.forEach((fish) => {
+      let base = 3;
+      if (fish.rarity === 'uncommon') base = 5;
+      else if (fish.rarity === 'rare') base = 9;
+      else if (fish.rarity === 'epic') base = 18;
+      else if (fish.rarity === 'legendary') base = 32;
+      if (fish.isMythic) base += 20;
+      if (fish.isShiny) base += 10;
+      ratePerMin += base;
+    });
+
+    const tier = Math.max(1, this.getUpgradeLevel('personalAquarium') || 1);
+    const maxTipCap = tier * 750;
+    const pending = Math.min(maxTipCap, Math.floor(elapsedMinutes * ratePerMin));
+    return pending;
+  }
+
+  collectVisitorTips() {
+    const tips = this.calculatePendingVisitorTips();
+    if (tips > 0) {
+      this.addCoins(tips);
+      this.data.aquarium.lastTipCollectedAt = Date.now();
+      this.save();
+    }
+    return tips;
   }
 }
 
