@@ -254,22 +254,41 @@ export class UIManager {
     const regFeedback = document.getElementById('auth-reg-feedback');
 
     const launchGame = () => {
-      soundManager.ensureAudio();
-      soundManager.playButtonClick();
-      soundManager.setMusicMode('surface');
-      this.updateHUD();
-      if (this.onAccountSwitched) {
-        this.onAccountSwitched();
+      try {
+        soundManager.ensureAudio();
+        soundManager.playButtonClick();
+        soundManager.setMusicMode('surface');
+      } catch (e) {
+        console.warn('Audio start error:', e);
       }
+
+      try {
+        this.updateHUD();
+      } catch (e) {
+        console.warn('HUD update error:', e);
+      }
+
+      try {
+        if (this.onAccountSwitched) {
+          this.onAccountSwitched();
+        }
+      } catch (e) {
+        console.warn('Account switched callback error:', e);
+      }
+
       welcomePopup.classList.add('welcome-overlay-hidden');
       setTimeout(() => {
         welcomePopup.style.display = 'none';
       }, 400);
 
-      if (!this.saveSystem.data.settings.hasSeenTutorial) {
-        this.openTutorial();
-        this.saveSystem.data.settings.hasSeenTutorial = true;
-        this.saveSystem.save();
+      try {
+        if (!this.saveSystem.data.settings.hasSeenTutorial) {
+          this.openTutorial();
+          this.saveSystem.data.settings.hasSeenTutorial = true;
+          this.saveSystem.save();
+        }
+      } catch (e) {
+        console.warn('Tutorial open error:', e);
       }
     };
 
@@ -611,33 +630,33 @@ export class UIManager {
 
     const capEl = document.getElementById('hud-capacity');
     const capAmt = document.getElementById('capacity-amount');
-    if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
-      capAmt.textContent = `0 / ${hook.capacity}`;
-      document.getElementById('hud-depth-container').style.display = 'none';
-      document.getElementById('hud-shields').style.display = 'none';
+    if (!hook || gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
+      if (capAmt) capAmt.textContent = `0 / ${hook ? hook.capacity : 3}`;
+      const depthContainer = document.getElementById('hud-depth-container');
+      if (depthContainer) depthContainer.style.display = 'none';
+      const shieldEl = document.getElementById('hud-shields');
+      if (shieldEl) shieldEl.style.display = 'none';
     } else {
-      capAmt.textContent = `${hook.caughtItems.length} / ${hook.capacity}`;
+      if (capAmt) capAmt.textContent = `${hook.caughtItems.length} / ${hook.capacity}`;
       if (hook.caughtItems.length >= hook.capacity) {
-        capEl.classList.add('capacity-full');
+        capEl?.classList.add('capacity-full');
       } else {
-        capEl.classList.remove('capacity-full');
+        capEl?.classList.remove('capacity-full');
       }
 
       const depthContainer = document.getElementById('hud-depth-container');
-      depthContainer.style.display = 'flex';
+      if (depthContainer) depthContainer.style.display = 'flex';
       const depthM = Math.min(hook.depthMeters, hook.maxDepthMeters);
 
-      const sonarLvl = this.saveSystem.getUpgradeLevel('treasureSonar') || 0;
-      if (sonarLvl === 0) {
-        document.getElementById('hud-depth').textContent = '??? m';
-        document.getElementById('hud-depth').title = 'Sonar Uncalibrated — Upgrade Sonar in Tackle Shop!';
-      } else {
-        document.getElementById('hud-depth').textContent = `${depthM.toFixed(1)}m`;
-        document.getElementById('hud-depth').title = 'Sonar Depth Sounder';
+      const depthEl = document.getElementById('hud-depth');
+      if (depthEl) {
+        depthEl.textContent = `${depthM.toFixed(1)}m`;
+        depthEl.title = 'Sonar Depth Sounder';
       }
 
       const fillPct = Math.min(100, (depthM / hook.maxDepthMeters) * 100);
-      document.getElementById('hud-depth-fill').style.width = `${fillPct}%`;
+      const fillEl = document.getElementById('hud-depth-fill');
+      if (fillEl) fillEl.style.width = `${fillPct}%`;
 
       let activeZoneName = '🏖️ Sunken Shallows';
       if (this.zoneManager) {
@@ -659,7 +678,7 @@ export class UIManager {
     const tensionContainer = document.getElementById('hud-tension-container');
     const heatContainer = document.getElementById('hud-heat-container');
 
-    if (gameState === 'REELING') {
+    if (hook && gameState === 'REELING') {
       if (tensionContainer) {
         tensionContainer.style.display = 'flex';
         const tensionPct = Math.min(100, Math.max(0, (hook.tension / hook.maxTension) * 100));
