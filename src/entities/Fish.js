@@ -67,7 +67,7 @@ export class Fish {
       this.evasion = {
         type: pick,
         cooldown: pick === 'camouflage' ? 3.0 : 2.2,
-        range: 55,
+        range: 115,
         label: pick.toUpperCase() + '!',
       };
     }
@@ -118,23 +118,6 @@ export class Fish {
     }
 
     if (this.state === 'SWIMMING') {
-      // Evasion trigger check: hook approaching an elusive specimen
-      if (
-        this.evasion &&
-        this.evasionCooldown <= 0 &&
-        hook &&
-        (hook.state === 'DESCENDING' || hook.state === 'REELING')
-      ) {
-        const dx = hook.x - this.x;
-        const dy = hook.y - this.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const triggerRange = Math.min(60, this.evasion.range || 60);
-
-        if (dist < triggerRange) {
-          this.executeEvasion(hook, particles, worldWidth);
-        }
-      }
-
       this.x += this.direction * this.speed * 55 * deltaSec;
 
       // Vertical subtle drifting bob
@@ -474,13 +457,10 @@ export class Fish {
       ctx.restore();
     }
 
-    // Check Sonar / Depth Finder level: uncalibrated sonar in deep water renders dark silhouettes
-    const isSilhouette = hook && hook.sonarLevel === 'None' && !isHooked && this.depthMeters > 20;
-
-    // Colors
-    const primary = isSilhouette ? 'rgba(15, 23, 42, 0.78)' : (this.isShiny ? '#fbbf24' : s.primaryColor);
-    const secondary = isSilhouette ? 'rgba(30, 41, 59, 0.65)' : (this.isShiny ? '#fef08a' : s.secondaryColor);
-    const finColor = isSilhouette ? 'rgba(15, 23, 42, 0.78)' : (this.isShiny ? '#f59e0b' : s.finColor);
+    // Always render authentic vibrant species colors with rich saturation and contrast
+    const primary = this.isShiny ? '#fbbf24' : (s.primaryColor || '#38bdf8');
+    const secondary = this.isShiny ? '#fef08a' : (s.secondaryColor || '#93c5fd');
+    const finColor = this.isShiny ? '#f59e0b' : (s.finColor || '#0284c7');
     const wiggle = Math.sin(this.wiggleTimer) * 4;
 
     // Tail fin

@@ -685,6 +685,25 @@ html, body {
   transition: width 0.1s linear;
 }
 
+.btn-reel-dive {
+  margin-top: 6px;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  padding: 3px 12px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.btn-reel-dive:hover {
+  background: linear-gradient(135deg, #0369a1, #0284c7);
+  transform: translateY(-1px);
+}
+
 .hint-message {
   font-size: 0.82rem;
   font-weight: 600;

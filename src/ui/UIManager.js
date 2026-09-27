@@ -120,6 +120,7 @@ export class UIManager {
           <div class="depth-bar-track">
             <div class="depth-bar-fill" id="hud-depth-fill"></div>
           </div>
+          <button class="btn-reel-dive" id="btn-manual-reel-up" style="display: none;" title="Reel Up (or press Space)">⬆️ Reel Up</button>
         </div>
 
         <!-- Line Tension Meter during Reeling -->
@@ -504,6 +505,10 @@ export class UIManager {
     document.getElementById('btn-settings')?.addEventListener('click', () => this.openSettings());
     document.getElementById('btn-tutorial')?.addEventListener('click', () => this.openTutorial());
     document.getElementById('btn-traps-hud')?.addEventListener('click', () => this.handleTrapClick());
+    document.getElementById('btn-manual-reel-up')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (this.onManualReel) this.onManualReel();
+    });
 
     const muteBtn = document.getElementById('btn-mute');
     muteBtn?.addEventListener('click', () => {
@@ -657,6 +662,11 @@ export class UIManager {
       const fillPct = Math.min(100, (depthM / hook.maxDepthMeters) * 100);
       const fillEl = document.getElementById('hud-depth-fill');
       if (fillEl) fillEl.style.width = `${fillPct}%`;
+
+      const reelBtn = document.getElementById('btn-manual-reel-up');
+      if (reelBtn) {
+        reelBtn.style.display = (gameState === 'DESCENDING' || hook.state === 'DESCENDING') ? 'inline-flex' : 'none';
+      }
 
       let activeZoneName = '🏖️ Sunken Shallows';
       if (this.zoneManager) {

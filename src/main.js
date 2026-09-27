@@ -132,8 +132,6 @@ oceanWorld.setZoneManager(zoneManager);
 uiManager.setZoneManager(zoneManager);
 
 const minimapUI = new MinimapUI(save, soundManager, uiManager, oceanWorld, zoneManager);
-uiManager.setMinimapUI(minimapUI);
-
 uiManager.onAccountSwitched = () => {
   hook.applyUpgrades(save);
   oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
@@ -152,6 +150,13 @@ uiManager.onModalClosed = () => {
 minimapUI.onSailToSea = (sea) => {
   oceanWorld.populateWorld(save);
   soundManager.setZoneSoundscape(zoneManager.getZoneId());
+};
+
+uiManager.onManualReel = () => {
+  if (gameState === 'DESCENDING' || hook.state === 'DESCENDING') {
+    hook.startReel();
+    particles.addFloatingText('REELING UP!', hook.x, hook.y - 25, '#38bdf8', 16);
+  }
 };
 
 // Initialize world cycle from persistent save
@@ -178,8 +183,6 @@ function getCanvasCoords(e) {
     y: clientY - rect.top,
   };
 }
-
-let lastPointerDownTime = 0;
 
 function handlePointerDown(e) {
   // If user clicks while modal is actively visible, ignore
@@ -265,17 +268,7 @@ function handlePointerDown(e) {
     gameState = 'AIMING';
     const aimDx = mousePos.x - oceanWorld.boat.x;
     oceanWorld.setAimDirection(aimDx < 0 ? -1 : 1);
-  } else if (gameState === 'DESCENDING') {
-    isMouseDown = true;
-    hook.setTargetX(mousePos.x);
-    // Double click/tap allows manual early reel up during descent
-    const now = performance.now();
-    if (now - lastPointerDownTime < 350) {
-      hook.startReel();
-      particles.addFloatingText('REELING UP!', hook.x, hook.y - 25, '#38bdf8', 16);
-    }
-    lastPointerDownTime = now;
-  } else if (gameState === 'REELING') {
+  } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     isMouseDown = true;
     hook.setTargetX(mousePos.x);
   }
@@ -577,7 +570,7 @@ const update = (dt) => {
     };
 
     // Collision detection: Hook vs Fish (active during both descent and reeling!)
-    const hookRadius = 26;
+    const hookRadius = 36;
     const canCatch = hook.caughtItems.length < hook.capacity;
 
     if (canCatch && (gameState === 'REELING' || gameState === 'DESCENDING' || hook.state === 'REELING' || hook.state === 'DESCENDING')) {
@@ -586,7 +579,7 @@ const update = (dt) => {
 
       for (let i = oceanWorld.entities.fish.length - 1; i >= 0; i--) {
         const fish = oceanWorld.entities.fish[i];
-        if (fish.state !== 'SWIMMING' || fish.isCamouflaged) continue;
+        if (fish.state !== 'SWIMMING') continue;
 
         const dist = distToSegment(fish.x, fish.y, prevX, prevY, hook.x, hook.y);
 
