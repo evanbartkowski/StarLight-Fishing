@@ -27,6 +27,10 @@ export class Hook {
     this.caughtItems = [];
     this.tookDamage = false;
 
+    // Previous position for continuous collision sweep
+    this.prevX = 0;
+    this.prevY = 0;
+
     // Visuals & animation
     this.tiltAngle = 0;
     this.sonarTimer = 0;
@@ -40,10 +44,10 @@ export class Hook {
     this.sweetSpotMax = 70;
     this.isInSweetSpot = false;
 
-    // Bite reaction wait timer (6-9s baseline on starter rod)
-    this.initialBiteWait = 7.5;
-    this.biteTimer = 7.5;
-    this.hasBitten = false;
+    // Instant bite readiness - can hook fish immediately going downwards or reeling
+    this.initialBiteWait = 0;
+    this.biteTimer = 0;
+    this.hasBitten = true;
 
     // Relaxed rhythm-based legend reel mechanic
     this.rhythmTimer = 0;
@@ -93,6 +97,8 @@ export class Hook {
   reset(surfaceX, surfaceY) {
     this.x = surfaceX;
     this.y = surfaceY;
+    this.prevX = surfaceX;
+    this.prevY = surfaceY;
     this.vx = 0;
     this.vy = 0;
     this.targetX = surfaceX;
@@ -108,13 +114,15 @@ export class Hook {
     this.isLegendaryOnLine = false;
     this.tension = 0;
     this.isInSweetSpot = false;
-    this.biteTimer = this.initialBiteWait;
-    this.hasBitten = false;
+    this.biteTimer = 0;
+    this.hasBitten = true;
   }
 
   cast(startX, startY, velocityX, velocityY) {
     this.x = startX;
     this.y = startY;
+    this.prevX = startX;
+    this.prevY = startY;
     this.vx = velocityX;
     this.vy = velocityY;
     this.state = 'CASTING';
@@ -127,8 +135,8 @@ export class Hook {
     this.isLegendaryOnLine = false;
     this.tension = 0;
     this.isInSweetSpot = false;
-    this.biteTimer = this.initialBiteWait;
-    this.hasBitten = false;
+    this.biteTimer = 0;
+    this.hasBitten = true;
 
     soundManager.playCast();
   }
@@ -248,6 +256,8 @@ export class Hook {
 
   update(dt, surfaceY, worldWidth, particles, isReelingInput = true, zoneManager = null) {
     const deltaSec = dt / 1000;
+    this.prevX = this.x;
+    this.prevY = this.y;
 
     if (this.state === 'CASTING') {
       this.vy += 650 * deltaSec;
@@ -266,17 +276,6 @@ export class Hook {
         }
       }
     } else if (this.state === 'DESCENDING') {
-      // Countdown bite wait timer
-      if (this.biteTimer > 0) {
-        this.biteTimer = Math.max(0, this.biteTimer - deltaSec);
-        if (this.biteTimer === 0 && !this.hasBitten) {
-          this.hasBitten = true;
-          if (particles) {
-            particles.addFloatingText('🐟 BITE STRIKE READY!', this.x, this.y - 25, '#22c55e', 16, '#86efac');
-          }
-        }
-      }
-
       const targetSinkSpeed = 160 + (this.caughtItems.length * 10);
       this.vy += (targetSinkSpeed - this.vy) * 4 * deltaSec;
 
@@ -307,12 +306,12 @@ export class Hook {
         }
       }
     } else if (this.state === 'REELING') {
-      // Automatic fast retrieve upward!
+      // Automatic retrieve upward!
       this.tension = 0; // No line snap
       this.isInSweetSpot = true;
 
-      // Base auto reel speed is fast, responsive, and scales with reelSpeed upgrades
-      const baseAutoReelSpeed = -540;
+      // Base auto reel speed is responsive and scales with reelSpeed upgrades
+      const baseAutoReelSpeed = -420;
       const targetReelSpeed = baseAutoReelSpeed * Math.max(1.0, this.reelSpeed);
 
       this.vy += (targetReelSpeed - this.vy) * 8 * deltaSec;
@@ -320,12 +319,6 @@ export class Hook {
       // Agile steering during auto-reel
       const steerDiff = this.targetX - this.x;
       this.vx += (steerDiff * 3.6 * this.agility - this.vx) * 6 * deltaSec;
-
-      this.x += this.vx * deltaSec;
-      this.y += this.vy * deltaSec;
-      this.x = Math.max(30, Math.min(worldWidth - 30, this.x));
-
-      this.depthMeters = Math.max(0, (this.y - surfaceY) / 15);
 
       this.x += this.vx * deltaSec;
       this.y += this.vy * deltaSec;

@@ -179,6 +179,8 @@ function getCanvasCoords(e) {
   };
 }
 
+let lastPointerDownTime = 0;
+
 function handlePointerDown(e) {
   // If user clicks while modal is actively visible, ignore
   const overlay = document.getElementById('modal-overlay');
@@ -265,9 +267,17 @@ function handlePointerDown(e) {
     oceanWorld.setAimDirection(aimDx < 0 ? -1 : 1);
   } else if (gameState === 'DESCENDING') {
     isMouseDown = true;
-    // Click during descent to manually begin reeling up
-    hook.startReel();
-    particles.addFloatingText('REELING UP!', hook.x, hook.y - 25, '#38bdf8', 16);
+    hook.setTargetX(mousePos.x);
+    // Double click/tap allows manual early reel up during descent
+    const now = performance.now();
+    if (now - lastPointerDownTime < 350) {
+      hook.startReel();
+      particles.addFloatingText('REELING UP!', hook.x, hook.y - 25, '#38bdf8', 16);
+    }
+    lastPointerDownTime = now;
+  } else if (gameState === 'REELING') {
+    isMouseDown = true;
+    hook.setTargetX(mousePos.x);
   }
 }
 
@@ -554,25 +564,33 @@ const update = (dt) => {
       }
     }
 
-    // Collision detection: Hook vs Fish
-    const hookRadius = 16;
+    // Continuous swept-line collision helper to prevent high-speed tunneling
+    const distToSegment = (px, py, x1, y1, x2, y2) => {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const lenSq = dx * dx + dy * dy;
+      if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+      const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / lenSq));
+      const projX = x1 + t * dx;
+      const projY = y1 + t * dy;
+      return Math.hypot(px - projX, py - projY);
+    };
+
+    // Collision detection: Hook vs Fish (active during both descent and reeling!)
+    const hookRadius = 26;
     const canCatch = hook.caughtItems.length < hook.capacity;
 
-    if (canCatch && (gameState === 'REELING' || gameState === 'DESCENDING')) {
+    if (canCatch && (gameState === 'REELING' || gameState === 'DESCENDING' || hook.state === 'REELING' || hook.state === 'DESCENDING')) {
+      const prevX = typeof hook.prevX === 'number' ? hook.prevX : hook.x;
+      const prevY = typeof hook.prevY === 'number' ? hook.prevY : hook.y;
+
       for (let i = oceanWorld.entities.fish.length - 1; i >= 0; i--) {
         const fish = oceanWorld.entities.fish[i];
         if (fish.state !== 'SWIMMING' || fish.isCamouflaged) continue;
 
-        const dx = fish.x - hook.x;
-        const dy = fish.y - hook.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dist = distToSegment(fish.x, fish.y, prevX, prevY, hook.x, hook.y);
 
         if (dist < hookRadius + fish.radius) {
-          // Check bite wait timer on descending hook
-          if (gameState === 'DESCENDING' && hook.biteTimer > 0) {
-            fish.x += (Math.random() < 0.5 ? -1 : 1) * 2;
-            continue;
-          }
           const hooked = hook.addCatch(fish, particles);
           if (hooked) {
             oceanWorld.entities.fish.splice(i, 1);
@@ -592,9 +610,7 @@ const update = (dt) => {
         const tr = oceanWorld.entities.treasures[i];
         if (tr.state !== 'IDLE') continue;
 
-        const dx = tr.x - hook.x;
-        const dy = tr.y - hook.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dist = distToSegment(tr.x, tr.y, prevX, prevY, hook.x, hook.y);
 
         // Magnetic sonar attractor if upgraded
         if (hook.sonarLevel === 'MagnetSonar' && dist < 85) {
@@ -624,9 +640,7 @@ const update = (dt) => {
           const relic = oceanWorld.entities.relics[i];
           if (relic.state !== 'IDLE') continue;
 
-          const dx = relic.x - hook.x;
-          const dy = relic.y - hook.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const dist = distToSegment(relic.x, relic.y, prevX, prevY, hook.x, hook.y);
 
           if (hook.sonarLevel === 'MagnetSonar' && dist < 85) {
             relic.x += (hook.x - relic.x) * 4.5 * deltaSec;

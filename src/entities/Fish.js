@@ -67,7 +67,7 @@ export class Fish {
       this.evasion = {
         type: pick,
         cooldown: pick === 'camouflage' ? 3.0 : 2.2,
-        range: 115,
+        range: 55,
         label: pick.toUpperCase() + '!',
       };
     }
@@ -128,7 +128,7 @@ export class Fish {
         const dx = hook.x - this.x;
         const dy = hook.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const triggerRange = this.evasion.range || 120;
+        const triggerRange = Math.min(60, this.evasion.range || 60);
 
         if (dist < triggerRange) {
           this.executeEvasion(hook, particles, worldWidth);
