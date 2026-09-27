@@ -1,4 +1,4 @@
-# Seven Seas Fishing 🎣✨
+# Starlight Fishing 🎣✨
 
 A relaxing, atmospheric high-fantasy ocean angling and exploration game built with **HTML5 Canvas**, **Web Audio API**, and **Vite**.
 
@@ -103,7 +103,7 @@ Loot crates contain randomized rewards including gold bounties, rare pearl bobbe
 - **📜 Angler's Field Log**: Catalog 35+ unique fantasy fish species, recording crown records (Giant Gold 👑 & Mini Silver 🥈) and shiny variants.
 - **🏛️ Archaeological Restoration Desk**: Dredge barnacle-encrusted ancient relics and clean them with brush and solvent.
 - **🦴 Prehistoric Fossil Museum**: Assemble complete prehistoric titan skeletons (Megalodon, Dunkleosteus, Plesiosaur).
-- **🫧 Seven Seas Aquarium**: Visit your personal sanctuary where all discovered fish swim dynamically. Tap the glass and feed them!
+- **🫧 Starlight Aquarium**: Visit your personal sanctuary where all discovered fish swim dynamically. Tap the glass and feed them!
 
 ---
 

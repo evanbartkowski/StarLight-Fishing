@@ -34,22 +34,39 @@ export class Hazard {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // Prominent danger warning aura: pulsing dashed red/amber ring to make bad obstacles obvious
+    // High-visibility danger warning: bold red border and glowing hazard ring
     ctx.save();
-    const auraAlpha = 0.35 + Math.sin(this.timer * 3) * 0.2;
-    ctx.strokeStyle = this.isColossal ? `rgba(239, 68, 68, ${auraAlpha + 0.3})` : `rgba(245, 158, 11, ${auraAlpha})`;
-    ctx.lineWidth = this.isColossal ? 2.5 : 1.5;
-    ctx.setLineDash([4, 4]);
+    const pulseScale = 1.0 + Math.sin(this.timer * 3.5) * 0.08;
+    
+    // Glowing red outline around object bounds
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 12;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2.8;
     ctx.beginPath();
-    ctx.arc(0, 0, this.radius + 6 + Math.sin(this.timer * 2.5) * 2, 0, Math.PI * 2);
+    ctx.arc(0, 0, (this.radius + 3) * pulseScale, 0, Math.PI * 2);
     ctx.stroke();
 
+    // Secondary dashed outer warning orbit
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(248, 113, 113, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius + 9 + Math.sin(this.timer * 2) * 2, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Warning icon indicator
+    ctx.setLineDash([]);
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚠️', 0, -this.radius - 8);
+
     if (this.isColossal) {
-      ctx.setLineDash([]);
       ctx.fillStyle = '#ef4444';
       ctx.font = 'bold 10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('⚠️ DANGER', 0, -this.radius - 8);
+      ctx.fillText('COLOSSAL', 0, -this.radius - 20);
     }
     ctx.restore();
 

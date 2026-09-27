@@ -10,6 +10,8 @@ import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { worldCycle } from '../systems/WorldCycle.js';
 import { ShipsCat, PerchingPelican, BackgroundDolphin } from '../entities/BoatCompanions.js';
 import { DriftItemManager } from '../entities/DriftItems.js';
+import { HotspotManager } from '../entities/Hotspots.js';
+import { isConditionMet } from '../data/weather.config.js';
 
 export class OceanWorld {
   constructor(canvas, trapSystem = null) {
@@ -65,6 +67,9 @@ export class OceanWorld {
     // Drift items (bottles + driftwood) floating on surface
     this.driftItems = new DriftItemManager(this.worldWidth, this.surfaceY);
 
+    // Interactive surface hotspots
+    this.hotspotManager = new HotspotManager(this.surfaceY, this.worldWidth);
+
     // Pending bottle message for UI to display
     this.pendingBottleMessage = null;
     this.pendingDriftwoodBobber = null;
@@ -76,6 +81,7 @@ export class OceanWorld {
     this.updateRodTip();
     if (this.driftItems) this.driftItems.resize(width);
     if (this.dolphin) this.dolphin.worldWidth = width;
+    if (this.hotspotManager) this.hotspotManager.worldWidth = width;
   }
 
   setSaveSystem(saveSys) {
@@ -88,6 +94,10 @@ export class OceanWorld {
 
   setCurrentSea(seaId) {
     this.currentSeaId = parseInt(seaId, 10) || 1;
+  }
+
+  setZoneManager(zoneMgr) {
+    this.zoneManager = zoneMgr;
   }
 
   setAimDirection(dir) {
@@ -129,7 +139,8 @@ export class OceanWorld {
 
     const luckLevel = saveSystem.getUpgradeLevel('lureLuck');
     const luckTier = UPGRADE_DEFINITIONS.lureLuck.tiers[luckLevel] || UPGRADE_DEFINITIONS.lureLuck.tiers[0];
-    const rareBoost = luckTier.rareBoost;
+    const weatherApexMult = worldCycle.getApexSpawnMultiplier ? worldCycle.getApexSpawnMultiplier() : 1.0;
+    const rareBoost = luckTier.rareBoost * weatherApexMult;
     const shinyChance = luckTier.shinyChance;
 
     const fossilLevel = saveSystem.getUpgradeLevel('fossilRadar') || 0;
@@ -138,64 +149,53 @@ export class OceanWorld {
     const maxLineTier = UPGRADE_DEFINITIONS.lineLength.tiers[saveSystem.getUpgradeLevel('lineLength')] || UPGRADE_DEFINITIONS.lineLength.tiers[0];
     const activeMaxDepth = Math.min(this.maxDepthMeters, maxLineTier.depth + 30);
 
-    // Populate Fish across the Seven Seas with gradual depth sparsity decay
-    // Deeper waters are vast, serene, and sparse, while shallow waters are teeming with life.
-    // Solitary special deep apex fish maintain their majestic presence!
+    const activeZone = this.zoneManager ? this.zoneManager.getCurrentZone() : null;
+    const activeZoneCatches = activeZone?.catches || [];
+
+    // Populate Fish across the Seven Seas
+    // Deep waters now spawn diverse abyssal, volcanic, starlight, and void species!
     FISH_SPECIES.forEach((species) => {
+      // Must be reachable within line limit
       if (species.minDepth > activeMaxDepth) return;
+
+      // Check conditional spawn criteria (time of day, weather)
+      if (species.conditions) {
+        const env = {
+          time: worldCycle.getTimeOfDay(),
+          weather: worldCycle.getWeather(),
+          minZoneTier: this.currentSeaId || 1,
+        };
+        if (!isConditionMet(species.conditions, env)) {
+          return;
+        }
+      }
 
       const minSpawnY = this.surfaceY + species.minDepth * this.pixelsPerMeter;
       const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, species.maxDepth) * this.pixelsPerMeter;
       if (minSpawnY >= maxSpawnY) return;
 
-      const avgDepth = (species.minDepth + species.maxDepth) / 2;
-      const isSpecialDeep = !!species.isSpecialDeep;
+      // Current sea gives affinity boost to its native species
+      const isCurrentSeaSpecies = species.zone === this.currentSeaId;
+      const affinityMult = isCurrentSeaSpecies ? 1.4 : 1.0;
 
       let count = 0;
-
-      if (isSpecialDeep) {
-        // Special deep fish are majestic, solitary encounters in deep waters:
-        // They bypass the depth density penalty completely!
-        if (species.rarity === 'legendary' || species.rarity === 'epic') {
-          // 85% chance to spawn 1 solitary deep titan
-          count = Math.random() < 0.85 ? 1 : 0;
-        } else if (species.rarity === 'rare') {
-          count = Math.random() < 0.80 ? 1 : 0;
-        } else {
-          count = 1;
-        }
+      if (species.isSpecialDeep) {
+        // Solitary deep titan
+        count = Math.random() < 0.85 ? 1 : 0;
       } else {
-        // Normal fish spawn less the deeper you go gradually:
-        // Surface & Shallows (0-50m): depthFactor ~ 1.0 (abundant shoals)
-        // Mid depths (100-250m): depthFactor ~ 0.70 - 0.50
-        // Abyssal depths (300-600m+): depthFactor ~ 0.35 - 0.14 (rare, quiet ocean)
-        const depthFactor = avgDepth <= 50
-          ? 1.0
-          : Math.max(0.12, 1.0 - Math.pow(avgDepth / 660, 0.82) * 0.88);
-
         if (species.rarity === 'common') {
-          if (avgDepth <= 50) {
-            // Lively shallow shoaling (2-3 fish)
-            count = Math.random() < 0.45 ? 3 : 2;
-          } else {
-            // Gradual reduction: in deep waters, 80-90% chance of 0, small chance of 1
-            const roll = Math.random();
-            if (roll < 0.40 * depthFactor) count = 2;
-            else if (roll < 1.20 * depthFactor) count = 1;
-            else count = 0;
-          }
+          // Healthy shoals across all depths (2-3 fish)
+          count = Math.random() < 0.5 ? 2 : 3;
         } else if (species.rarity === 'uncommon') {
-          if (avgDepth <= 50) {
-            count = Math.random() < 0.65 ? 2 : 1;
-          } else {
-            count = Math.random() < (0.85 * depthFactor) ? 1 : 0;
-          }
+          // 1-2 fish
+          count = Math.random() < 0.75 * affinityMult ? 2 : 1;
         } else if (species.rarity === 'rare') {
-          count = Math.random() < (0.50 * rareBoost * depthFactor) ? 1 : 0;
+          // Reliable encounters for rare deep fish
+          count = Math.random() < Math.min(0.95, 0.65 * rareBoost * affinityMult) ? 1 : 0;
         } else if (species.rarity === 'epic') {
-          count = Math.random() < (0.35 * rareBoost * depthFactor) ? 1 : 0;
+          count = Math.random() < Math.min(0.85, 0.45 * rareBoost * affinityMult) ? 1 : 0;
         } else if (species.rarity === 'legendary') {
-          count = Math.random() < (0.20 * rareBoost * depthFactor) ? 1 : 0;
+          count = Math.random() < Math.min(0.70, 0.30 * rareBoost * affinityMult) ? 1 : 0;
         }
       }
 
@@ -234,22 +234,23 @@ export class OceanWorld {
       const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, item.maxDepth) * this.pixelsPerMeter;
       if (minSpawnY >= maxSpawnY) return;
 
-      let count = 1;
+      let count = 0;
       if (item.category === 'fossil') {
-        count = Math.random() < 0.55 * fossilBonus ? 1 : 0;
+        count = Math.random() < 0.18 * fossilBonus ? 1 : 0;
       } else if (item.category === 'crate') {
-        // Mystery Loot Crate spawning chance based on rank
-        if (item.crateRank === 1) count = Math.random() < 0.65 ? 1 : 0;
-        else if (item.crateRank === 2) count = Math.random() < 0.55 ? 1 : 0;
-        else if (item.crateRank === 3) count = Math.random() < 0.40 ? 1 : 0;
-        else if (item.crateRank === 4) count = Math.random() < 0.30 ? 1 : 0;
-        else count = Math.random() < 0.20 ? 1 : 0;
+        // Mystery Loot Crate spawning chance based on rank (rarer encounter)
+        if (item.crateRank === 1) count = Math.random() < 0.20 ? 1 : 0;
+        else if (item.crateRank === 2) count = Math.random() < 0.15 ? 1 : 0;
+        else if (item.crateRank === 3) count = Math.random() < 0.10 ? 1 : 0;
+        else if (item.crateRank === 4) count = Math.random() < 0.07 ? 1 : 0;
+        else count = Math.random() < 0.04 ? 1 : 0;
       } else {
-        if (item.rarity === 'common') count = 2;
-        if (item.rarity === 'uncommon') count = 1;
-        if (item.rarity === 'rare') count = 1;
-        if (item.rarity === 'epic') count = Math.random() < 0.7 ? 1 : 0;
-        if (item.rarity === 'legendary') count = Math.random() < 0.4 ? 1 : 0;
+        // Sunken relics and treasures are rare rewards
+        if (item.rarity === 'common') count = Math.random() < 0.32 ? 1 : 0;
+        else if (item.rarity === 'uncommon') count = Math.random() < 0.22 ? 1 : 0;
+        else if (item.rarity === 'rare') count = Math.random() < 0.14 ? 1 : 0;
+        else if (item.rarity === 'epic') count = Math.random() < 0.08 ? 1 : 0;
+        else if (item.rarity === 'legendary') count = Math.random() < 0.04 ? 1 : 0;
       }
 
       for (let i = 0; i < count; i++) {
@@ -286,6 +287,11 @@ export class OceanWorld {
 
     // Update world atmospheric cycle
     worldCycle.update(dt, this.worldWidth, this.surfaceY);
+
+    // Update surface hotspots
+    if (this.hotspotManager) {
+      this.hotspotManager.update(dt, this.boat.x);
+    }
 
     // Update idle traps
     if (this.trapSystem) {
@@ -342,16 +348,23 @@ export class OceanWorld {
 
     const skyHeight = this.surfaceY - cameraY;
     const sky = worldCycle.getSkyColors();
+    const sea = getSeaById(this.currentSeaId) || FANTASY_SEAS[0];
 
-    // Dynamic Atmospheric Sky Gradient
+    // Dynamic Atmospheric Sky Gradient adapting to current Fantasy Sea Realm + Time of Day
     try {
       const skyGrad = ctx.createLinearGradient(0, -cameraY, 0, this.surfaceY - cameraY);
-      skyGrad.addColorStop(0, sky.top);
-      skyGrad.addColorStop(0.65, sky.middle);
-      skyGrad.addColorStop(1, sky.horizon);
+      if (sky.isNight) {
+        skyGrad.addColorStop(0, sky.top);
+        skyGrad.addColorStop(0.55, sea.skyTop || sky.middle);
+        skyGrad.addColorStop(1, sea.skyHorizon || sky.horizon);
+      } else {
+        skyGrad.addColorStop(0, sea.skyTop || sky.top);
+        skyGrad.addColorStop(0.65, sea.skyMiddle || sky.middle);
+        skyGrad.addColorStop(1, sea.skyHorizon || sky.horizon);
+      }
       ctx.fillStyle = skyGrad;
     } catch (e) {
-      ctx.fillStyle = sky.top;
+      ctx.fillStyle = sea.skyTop || sky.top;
     }
     ctx.fillRect(0, 0, this.worldWidth, skyHeight);
 
@@ -366,9 +379,12 @@ export class OceanWorld {
     ctx.fill();
     ctx.restore();
 
-    // Clouds
+    // Clouds tinted by current sea realm palette
     ctx.save();
-    ctx.fillStyle = sky.isNight ? 'rgba(30, 41, 59, 0.45)' : 'rgba(255, 255, 255, 0.85)';
+    const cloudColor = sky.isNight
+      ? (sea.id === 6 ? 'rgba(70, 20, 20, 0.65)' : 'rgba(30, 41, 59, 0.45)')
+      : (sea.id === 6 ? 'rgba(254, 215, 170, 0.75)' : sea.id === 2 ? 'rgba(233, 213, 255, 0.75)' : sea.id === 4 ? 'rgba(204, 251, 241, 0.8)' : sea.id === 5 ? 'rgba(243, 232, 255, 0.8)' : 'rgba(255, 255, 255, 0.85)');
+    ctx.fillStyle = cloudColor;
     this.clouds.forEach((cloud) => {
       const cy = cloud.y - cameraY * 0.3;
       ctx.beginPath();
@@ -378,13 +394,73 @@ export class OceanWorld {
       ctx.fill();
     });
     ctx.restore();
+
+    // Realm-specific surface atmospheric effects
+    this.renderSeaAtmosphere(ctx, sea, skyHeight, cameraY);
+  }
+
+  // Atmospheric features unique to the active Sea
+  renderSeaAtmosphere(ctx, sea, skyHeight, cameraY) {
+    if (sea.id === 6) {
+      // Magma Caldera: Rising volcanic embers & ash
+      ctx.save();
+      for (let i = 0; i < 24; i++) {
+        const seed = i * 47.3;
+        const emberX = (seed * 19 + this.waveTimer * (15 + (i % 5) * 8)) % this.worldWidth;
+        const emberY = (this.surfaceY - 20) - ((this.waveTimer * 30 + seed * 23) % (skyHeight + 40)) - cameraY;
+        const alpha = 0.3 + 0.6 * Math.sin(this.waveTimer * 3 + seed);
+        ctx.fillStyle = i % 2 === 0 ? `rgba(234, 88, 12, ${alpha})` : `rgba(254, 240, 138, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(emberX, emberY, 2 + (i % 3), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    } else if (sea.id === 2) {
+      // Bioluminescent Trench: Floating neon plankton spores in twilight air
+      ctx.save();
+      for (let i = 0; i < 20; i++) {
+        const seed = i * 31.7;
+        const px = (seed * 23 + Math.sin(this.waveTimer + seed) * 35) % this.worldWidth;
+        const py = (this.surfaceY - 15) - ((this.waveTimer * 14 + seed * 17) % (skyHeight + 30)) - cameraY;
+        const alpha = 0.35 + 0.45 * Math.sin(this.waveTimer * 2 + seed);
+        ctx.fillStyle = i % 2 === 0 ? `rgba(168, 85, 247, ${alpha})` : `rgba(56, 189, 248, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    } else if (sea.id === 3) {
+      // Astral Shimmerfall: Drifting fallen starlight sparkles
+      ctx.save();
+      for (let i = 0; i < 18; i++) {
+        const seed = i * 53.1;
+        const sx = (seed * 37 + this.waveTimer * 10) % this.worldWidth;
+        const sy = (this.waveTimer * 20 + seed * 29) % skyHeight - cameraY;
+        const alpha = 0.4 + 0.5 * Math.sin(this.waveTimer * 4 + seed);
+        ctx.fillStyle = `rgba(224, 231, 255, ${alpha})`;
+        ctx.font = `${8 + (i % 4) * 2}px sans-serif`;
+        ctx.fillText('✦', sx, sy);
+      }
+      ctx.restore();
+    } else if (sea.id === 5) {
+      // Whispering Aether: Floating distant sky islands silhouette
+      ctx.save();
+      ctx.fillStyle = 'rgba(76, 29, 149, 0.22)';
+      const islandY = this.surfaceY - 70 - cameraY * 0.2;
+      ctx.beginPath();
+      ctx.ellipse(this.worldWidth * 0.75, islandY, 90, 22, 0, 0, Math.PI * 2);
+      ctx.ellipse(this.worldWidth * 0.25, islandY - 30, 65, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
   }
 
   renderWaterSurface(ctx, cameraY = 0) {
     const drawSurfaceY = this.surfaceY - cameraY;
+    const sea = getSeaById(this.currentSeaId) || FANTASY_SEAS[0];
 
     ctx.save();
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = sea.waterSurfaceColor || 'rgba(56, 189, 248, 0.45)';
     ctx.beginPath();
     ctx.moveTo(0, drawSurfaceY);
 
@@ -392,13 +468,13 @@ export class OceanWorld {
       const wy = drawSurfaceY + this.getWaveHeight(x, this.waveTimer);
       ctx.lineTo(x, wy);
     }
-    ctx.lineTo(this.worldWidth, drawSurfaceY + 12);
-    ctx.lineTo(0, drawSurfaceY + 12);
+    ctx.lineTo(this.worldWidth, drawSurfaceY + 14);
+    ctx.lineTo(0, drawSurfaceY + 14);
     ctx.closePath();
     ctx.fill();
 
-    // Crest line
-    ctx.strokeStyle = '#e0f2fe';
+    // Crest line matching sea horizon tint
+    ctx.strokeStyle = sea.skyHorizon || '#e0f2fe';
     ctx.lineWidth = 3;
     ctx.beginPath();
     for (let x = 0; x <= this.worldWidth; x += 8) {
@@ -412,6 +488,11 @@ export class OceanWorld {
     // Render Seabed Traps Buoys bobbing on water
     if (this.trapSystem) {
       this.trapSystem.renderBuoys(ctx, this.boat.x, this.surfaceY, cameraY);
+    }
+
+    // Render interactive surface hotspots
+    if (this.hotspotManager) {
+      this.hotspotManager.render(ctx, cameraY, this.worldWidth, this.canvas.height);
     }
   }
 
@@ -743,9 +824,14 @@ export class OceanWorld {
     const depthSpan = Math.max(1, visibleBottomM - visibleTopM);
 
     try {
+      const sea = getSeaById(this.currentSeaId) || FANTASY_SEAS[0];
+      const activeZone = this.zoneManager ? this.zoneManager.getCurrentZone() : null;
+      const zTopColor = visibleTopM < 45 ? (sea.topColor || activeZone?.aesthetics?.topColor || DEPTH_ZONES[0].topColor) : (activeZone?.aesthetics?.topColor || DEPTH_ZONES[0].topColor);
+      const zBottomColor = sea.bottomColor || activeZone?.aesthetics?.bottomColor || DEPTH_ZONES[DEPTH_ZONES.length - 1].bottomColor;
+
       const grad = ctx.createLinearGradient(0, topY, 0, bottomY);
       const stops = [];
-      stops.push({ t: 0, color: DEPTH_ZONES[0].topColor });
+      stops.push({ t: 0, color: zTopColor });
 
       DEPTH_ZONES.forEach((zone) => {
         const startT = (zone.minDepth - visibleTopM) / depthSpan;
@@ -766,7 +852,7 @@ export class OceanWorld {
           break;
         }
       }
-      stops.push({ t: 1, color: bottomZone.bottomColor });
+      stops.push({ t: 1, color: activeZone ? zBottomColor : bottomZone.bottomColor });
 
       stops.sort((a, b) => a.t - b.t);
 

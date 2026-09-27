@@ -276,7 +276,7 @@ export class Fish {
     this.y = hook.y + this.hookOffset.y;
   }
 
-  render(ctx, cameraY = 0) {
+  render(ctx, cameraY = 0, hook = null) {
     const isHooked = this.state === 'HOOKED';
 
     // When hooked, position is locked onto the line directly above the hook
@@ -474,10 +474,13 @@ export class Fish {
       ctx.restore();
     }
 
+    // Check Sonar / Depth Finder level: uncalibrated sonar in deep water renders dark silhouettes
+    const isSilhouette = hook && hook.sonarLevel === 'None' && !isHooked && this.depthMeters > 20;
+
     // Colors
-    const primary = this.isShiny ? '#fbbf24' : s.primaryColor;
-    const secondary = this.isShiny ? '#fef08a' : s.secondaryColor;
-    const finColor = this.isShiny ? '#f59e0b' : s.finColor;
+    const primary = isSilhouette ? 'rgba(15, 23, 42, 0.78)' : (this.isShiny ? '#fbbf24' : s.primaryColor);
+    const secondary = isSilhouette ? 'rgba(30, 41, 59, 0.65)' : (this.isShiny ? '#fef08a' : s.secondaryColor);
+    const finColor = isSilhouette ? 'rgba(15, 23, 42, 0.78)' : (this.isShiny ? '#f59e0b' : s.finColor);
     const wiggle = Math.sin(this.wiggleTimer) * 4;
 
     // Tail fin

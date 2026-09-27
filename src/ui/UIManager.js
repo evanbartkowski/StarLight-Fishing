@@ -8,6 +8,9 @@ import { PET_DEFINITIONS } from '../data/PetsData.js';
 import { CRATE_RANKS, rollCrateLoot } from '../data/CrateData.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { worldCycle } from '../systems/WorldCycle.js';
+import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/almanac.config.js';
+import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
+import { accountManager } from '../systems/AccountManager.js';
 
 export class UIManager {
   constructor(saveSystem, onCastTrigger, onStartDive, trapSystem = null, questSystem = null) {
@@ -46,6 +49,30 @@ export class UIManager {
 
   setQuestSystem(questSys) {
     this.questSystem = questSys;
+  }
+
+  setZoneManager(zoneMgr) {
+    this.zoneManager = zoneMgr;
+  }
+
+  announceZoneEntry(zone) {
+    const banner = document.getElementById('zone-entry-banner');
+    if (!banner || !zone) return;
+    const iconEl = document.getElementById('zone-banner-icon');
+    const titleEl = document.getElementById('zone-banner-title');
+    const descEl = document.getElementById('zone-banner-desc');
+    if (iconEl) iconEl.textContent = zone.icon || '🗺️';
+    if (titleEl) titleEl.textContent = zone.name;
+    if (descEl) descEl.textContent = `${zone.subtitle} • ${zone.mechanic?.badge || ''}`;
+
+    banner.classList.remove('zone-banner-hidden');
+    banner.classList.add('zone-banner-visible');
+
+    soundManager.playUpgrade();
+    setTimeout(() => {
+      banner.classList.remove('zone-banner-visible');
+      banner.classList.add('zone-banner-hidden');
+    }, 4500);
   }
 
   createDomElements() {
@@ -89,16 +116,38 @@ export class UIManager {
       <div class="hud-center">
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
           <div class="depth-number" id="hud-depth">0.0m</div>
-          <div class="zone-badge" id="hud-zone">Sea 1: Sunlit Shoals</div>
+          <div class="zone-badge" id="hud-zone">🏖️ Sunken Shallows</div>
           <div class="depth-bar-track">
             <div class="depth-bar-fill" id="hud-depth-fill"></div>
           </div>
         </div>
-        <div class="hint-message" id="hud-hint">Aim on either side of the boat & release!</div>
+
+        <!-- Line Tension Meter during Reeling -->
+        <div class="tension-meter-container" id="hud-tension-container" style="display: none;">
+          <div class="tension-header-row">
+            <span class="tension-title-txt">🪢 LINE TENSION</span>
+            <span class="tension-val-txt" id="hud-tension-percent">0%</span>
+          </div>
+          <div class="tension-bar-track">
+            <div class="tension-sweet-spot" id="hud-tension-sweet-spot" title="Optimal Reel Sweet Spot"></div>
+            <div class="tension-bar-fill" id="hud-tension-fill"></div>
+          </div>
+        </div>
+
+        <!-- Volcanic Caldera Line Heat Meter -->
+        <div class="heat-meter-container" id="hud-heat-container" style="display: none;">
+          <div class="heat-header-row">
+            <span class="heat-title-txt">🌋 LINE HEAT</span>
+            <span class="heat-val-txt" id="hud-heat-percent">0%</span>
+          </div>
+          <div class="heat-bar-track">
+            <div class="heat-bar-fill" id="hud-heat-fill"></div>
+          </div>
+        </div>
       </div>
 
       <div class="hud-right">
-        <button class="icon-btn" id="btn-minimap" title="Fantasy Nautical Chart & Minimap">🧭 Chart</button>
+        <button class="icon-btn" id="btn-minimap" title="Charted Waters Map & World Navigation">🗺️ Map</button>
         <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
           🪤 Traps <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
@@ -107,7 +156,8 @@ export class UIManager {
         </button>
         <button class="icon-btn" id="btn-inventory" title="Angler's Persistent Inventory & Tackle Box">🎒 Inventory</button>
         <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 Shop</button>
-        <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 Journal & Logbook</button>
+        <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 Journal</button>
+        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 Aquarium</button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 Radio</button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
@@ -115,6 +165,20 @@ export class UIManager {
       </div>
     `;
     document.body.appendChild(hud);
+
+    // Stylish Zone Entry Announcement Banner
+    const zoneBanner = document.createElement('div');
+    zoneBanner.id = 'zone-entry-banner';
+    zoneBanner.className = 'zone-entry-banner zone-banner-hidden';
+    zoneBanner.innerHTML = `
+      <div class="zone-banner-icon" id="zone-banner-icon">🏖️</div>
+      <div class="zone-banner-info">
+        <div class="zone-banner-sub" id="zone-banner-sub">NOW ENTERING</div>
+        <div class="zone-banner-title" id="zone-banner-title">Sunken Shallows</div>
+        <div class="zone-banner-desc" id="zone-banner-desc">Sandy Turquoise Coastal Reef • Calm Waters</div>
+      </div>
+    `;
+    document.body.appendChild(zoneBanner);
 
     const toast = document.createElement('div');
     toast.id = 'toast-notification';
@@ -144,28 +208,265 @@ export class UIManager {
     const coinsEl = document.getElementById('welcome-coins');
     const speciesEl = document.getElementById('welcome-species');
 
-    if (lvlEl) lvlEl.textContent = `Lv. ${this.saveSystem.data.level}`;
-    if (coinsEl) coinsEl.textContent = `$${this.saveSystem.data.coins.toLocaleString()}`;
-    if (speciesEl) speciesEl.textContent = `${Object.keys(this.saveSystem.data.journal).length} / 33`;
+    const updatePreviewStats = (usernameOrGuest) => {
+      if (usernameOrGuest === '__new_account__') {
+        if (lvlEl) lvlEl.textContent = 'Lv. 1';
+        if (coinsEl) coinsEl.textContent = '$0';
+        if (speciesEl) speciesEl.textContent = '0 / 66';
+        return;
+      }
+      if (usernameOrGuest === '__not_found__') {
+        if (lvlEl) lvlEl.textContent = 'Lv. —';
+        if (coinsEl) coinsEl.textContent = '$—';
+        if (speciesEl) speciesEl.textContent = '— / 66';
+        return;
+      }
+      const data = this.saveSystem.getSaveDataForUser(usernameOrGuest);
+      if (lvlEl) lvlEl.textContent = `Lv. ${data.level || 1}`;
+      if (coinsEl) coinsEl.textContent = `$${(data.coins || 0).toLocaleString()}`;
+      if (speciesEl) speciesEl.textContent = `${data.speciesCount || 0} / 66`;
+    };
 
-    const startBtn = document.getElementById('btn-welcome-start');
-    if (startBtn) {
-      startBtn.addEventListener('click', () => {
-        soundManager.ensureAudio();
-        soundManager.playButtonClick();
-        soundManager.setMusicMode('surface');
-        welcomePopup.classList.add('welcome-overlay-hidden');
-        setTimeout(() => {
-          welcomePopup.style.display = 'none';
-        }, 400);
+    const loggedInView = document.getElementById('auth-logged-in-view');
+    const formView = document.getElementById('auth-form-view');
+    const currentUsernameEl = document.getElementById('auth-current-username');
 
-        if (!this.saveSystem.data.settings.hasSeenTutorial) {
-          this.openTutorial();
-          this.saveSystem.data.settings.hasSeenTutorial = true;
-          this.saveSystem.save();
+    const tabGuest = document.getElementById('tab-auth-guest');
+    const tabLogin = document.getElementById('tab-auth-login');
+    const tabRegister = document.getElementById('tab-auth-register');
+
+    const panelGuest = document.getElementById('panel-auth-guest');
+    const panelLogin = document.getElementById('panel-auth-login');
+    const panelRegister = document.getElementById('panel-auth-register');
+
+    const btnGuestStart = document.getElementById('btn-guest-start');
+    const btnAuthPlayGuest = document.getElementById('btn-auth-play-guest');
+    const btnAuthSwitch = document.getElementById('btn-auth-switch-account');
+
+    const loginForm = document.getElementById('form-auth-login');
+    const loginUser = document.getElementById('auth-login-user');
+    const loginPass = document.getElementById('auth-login-pass');
+    const loginFeedback = document.getElementById('auth-login-feedback');
+
+    const regForm = document.getElementById('form-auth-register');
+    const regUser = document.getElementById('auth-reg-user');
+    const regPass = document.getElementById('auth-reg-pass');
+    const regFeedback = document.getElementById('auth-reg-feedback');
+
+    const launchGame = () => {
+      soundManager.ensureAudio();
+      soundManager.playButtonClick();
+      soundManager.setMusicMode('surface');
+      this.updateHUD();
+      if (this.onAccountSwitched) {
+        this.onAccountSwitched();
+      }
+      welcomePopup.classList.add('welcome-overlay-hidden');
+      setTimeout(() => {
+        welcomePopup.style.display = 'none';
+      }, 400);
+
+      if (!this.saveSystem.data.settings.hasSeenTutorial) {
+        this.openTutorial();
+        this.saveSystem.data.settings.hasSeenTutorial = true;
+        this.saveSystem.save();
+      }
+    };
+
+    const switchTab = (tabName) => {
+      [tabGuest, tabLogin, tabRegister].forEach(t => t?.classList.remove('active'));
+      [panelGuest, panelLogin, panelRegister].forEach(p => {
+        if (p) {
+          p.classList.remove('active');
+          p.style.display = 'none';
         }
       });
+
+      if (loginFeedback) {
+        loginFeedback.textContent = '';
+        loginFeedback.className = 'auth-feedback';
+      }
+      if (regFeedback) {
+        regFeedback.textContent = '';
+        regFeedback.className = 'auth-feedback';
+      }
+
+      if (tabName === 'guest') {
+        tabGuest?.classList.add('active');
+        if (panelGuest) {
+          panelGuest.classList.add('active');
+          panelGuest.style.display = 'flex';
+        }
+        updatePreviewStats(null);
+      } else if (tabName === 'login') {
+        tabLogin?.classList.add('active');
+        if (panelLogin) {
+          panelLogin.classList.add('active');
+          panelLogin.style.display = 'flex';
+        }
+        const val = loginUser?.value?.trim();
+        if (val && accountManager.hasAccount(val)) {
+          updatePreviewStats(val);
+        } else {
+          updatePreviewStats(null);
+        }
+        setTimeout(() => loginUser?.focus(), 50);
+      } else if (tabName === 'register') {
+        tabRegister?.classList.add('active');
+        if (panelRegister) {
+          panelRegister.classList.add('active');
+          panelRegister.style.display = 'flex';
+        }
+        updatePreviewStats('__new_account__');
+        setTimeout(() => regUser?.focus(), 50);
+      }
+    };
+
+    tabGuest?.addEventListener('click', () => switchTab('guest'));
+    tabLogin?.addEventListener('click', () => switchTab('login'));
+    tabRegister?.addEventListener('click', () => switchTab('register'));
+
+    loginUser?.addEventListener('input', () => {
+      const val = loginUser.value.trim();
+      if (!val) {
+        updatePreviewStats(null);
+        if (loginFeedback) {
+          loginFeedback.textContent = '';
+          loginFeedback.className = 'auth-feedback';
+        }
+        return;
+      }
+      if (accountManager.hasAccount(val)) {
+        updatePreviewStats(val);
+        if (loginFeedback) {
+          loginFeedback.textContent = `⚓ Account found! Enter password to set sail.`;
+          loginFeedback.className = 'auth-feedback auth-info';
+        }
+      } else {
+        updatePreviewStats('__not_found__');
+        if (loginFeedback) {
+          loginFeedback.textContent = `No account found for "${val}".`;
+          loginFeedback.className = 'auth-feedback auth-muted';
+        }
+      }
+    });
+
+    regUser?.addEventListener('input', () => {
+      const val = regUser.value.trim();
+      if (!val) {
+        if (regFeedback) {
+          regFeedback.textContent = '';
+          regFeedback.className = 'auth-feedback';
+        }
+        return;
+      }
+      if (accountManager.hasAccount(val)) {
+        if (regFeedback) {
+          regFeedback.textContent = `⚠️ Username "${val}" already exists. Log in instead.`;
+          regFeedback.className = 'auth-feedback auth-error';
+        }
+      } else {
+        if (regFeedback) {
+          regFeedback.textContent = `✨ Username "${val}" is available!`;
+          regFeedback.className = 'auth-feedback auth-success';
+        }
+      }
+    });
+
+    const activeUser = accountManager.getCurrentUser();
+    if (activeUser && accountManager.hasAccount(activeUser)) {
+      if (loggedInView) loggedInView.style.display = 'flex';
+      if (formView) formView.style.display = 'none';
+      if (currentUsernameEl) currentUsernameEl.textContent = activeUser;
+      updatePreviewStats(activeUser);
+    } else {
+      if (loggedInView) loggedInView.style.display = 'none';
+      if (formView) formView.style.display = 'flex';
+      switchTab('guest');
     }
+
+    document.getElementById('btn-welcome-start')?.addEventListener('click', () => {
+      launchGame();
+    });
+
+    const startAsGuest = () => {
+      this.saveSystem.switchToAccount(null);
+      this.showToast('⛵ Sailing as Guest Mariner!');
+      launchGame();
+    };
+
+    btnGuestStart?.addEventListener('click', startAsGuest);
+    btnAuthPlayGuest?.addEventListener('click', startAsGuest);
+
+    btnAuthSwitch?.addEventListener('click', () => {
+      soundManager.playButtonClick();
+      accountManager.logout();
+      if (loggedInView) loggedInView.style.display = 'none';
+      if (formView) formView.style.display = 'flex';
+      switchTab('login');
+    });
+
+    const handleLogin = async (e) => {
+      if (e) e.preventDefault();
+      const u = loginUser?.value?.trim();
+      const p = loginPass?.value;
+      if (!u || !p) {
+        if (loginFeedback) {
+          loginFeedback.textContent = 'Please enter both username and password.';
+          loginFeedback.className = 'auth-feedback auth-error';
+        }
+        return;
+      }
+      const res = await accountManager.login(u, p);
+      if (!res.success) {
+        if (loginFeedback) {
+          loginFeedback.textContent = res.message;
+          loginFeedback.className = 'auth-feedback auth-error';
+        }
+        return;
+      }
+      if (loginFeedback) {
+        loginFeedback.textContent = `✅ Welcome back, Captain ${res.username}!`;
+        loginFeedback.className = 'auth-feedback auth-success';
+      }
+      this.saveSystem.switchToAccount(res.username);
+      this.showToast(`⚓ Welcome aboard, Captain ${res.username}!`);
+      setTimeout(() => launchGame(), 300);
+    };
+
+    document.getElementById('btn-auth-login')?.addEventListener('click', handleLogin);
+    loginForm?.addEventListener('submit', handleLogin);
+
+    const handleRegister = async (e) => {
+      if (e) e.preventDefault();
+      const u = regUser?.value?.trim();
+      const p = regPass?.value;
+      if (!u || !p) {
+        if (regFeedback) {
+          regFeedback.textContent = 'Please enter both username and password.';
+          regFeedback.className = 'auth-feedback auth-error';
+        }
+        return;
+      }
+      const res = await accountManager.register(u, p);
+      if (!res.success) {
+        if (regFeedback) {
+          regFeedback.textContent = res.message;
+          regFeedback.className = 'auth-feedback auth-error';
+        }
+        return;
+      }
+      if (regFeedback) {
+        regFeedback.textContent = `🎉 Account created! Welcome, Captain ${res.username}!`;
+        regFeedback.className = 'auth-feedback auth-success';
+      }
+      this.saveSystem.switchToAccount(res.username);
+      this.showToast(`🎉 Account Created! Welcome, Captain ${res.username}!`);
+      setTimeout(() => launchGame(), 350);
+    };
+
+    document.getElementById('btn-auth-register')?.addEventListener('click', handleRegister);
+    regForm?.addEventListener('submit', handleRegister);
   }
 
   bindEvents() {
@@ -174,18 +475,19 @@ export class UIManager {
         this.minimapUI.openChartNavigation();
       }
     });
-    document.getElementById('btn-shop').addEventListener('click', () => this.openShop());
+    document.getElementById('btn-shop')?.addEventListener('click', () => this.openShop());
     document.getElementById('btn-quests')?.addEventListener('click', () => this.openQuestsModal());
     document.getElementById('btn-inventory')?.addEventListener('click', () => this.openInventory());
     document.getElementById('btn-journal')?.addEventListener('click', () => this.openJournalLogbook('journal'));
+    document.getElementById('btn-aquarium-hud')?.addEventListener('click', () => this.openAquariumModal());
     document.getElementById('btn-achievements')?.addEventListener('click', () => this.openJournalLogbook('logbook'));
     document.getElementById('btn-radio-hud')?.addEventListener('click', () => this.openRadio());
-    document.getElementById('btn-settings').addEventListener('click', () => this.openSettings());
-    document.getElementById('btn-tutorial').addEventListener('click', () => this.openTutorial());
-    document.getElementById('btn-traps-hud').addEventListener('click', () => this.handleTrapClick());
+    document.getElementById('btn-settings')?.addEventListener('click', () => this.openSettings());
+    document.getElementById('btn-tutorial')?.addEventListener('click', () => this.openTutorial());
+    document.getElementById('btn-traps-hud')?.addEventListener('click', () => this.handleTrapClick());
 
     const muteBtn = document.getElementById('btn-mute');
-    muteBtn.addEventListener('click', () => {
+    muteBtn?.addEventListener('click', () => {
       const isMuted = soundManager.toggleMute();
       this.saveSystem.data.settings.isMuted = isMuted;
       this.saveSystem.save();
@@ -193,8 +495,8 @@ export class UIManager {
       soundManager.playButtonClick();
     });
 
-    document.getElementById('modal-close').addEventListener('click', () => this.closeModal());
-    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+    document.getElementById('modal-close')?.addEventListener('click', () => this.closeModal());
+    document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
       if (e.target.id === 'modal-overlay') {
         this.closeModal();
       }
@@ -324,16 +626,25 @@ export class UIManager {
       const depthContainer = document.getElementById('hud-depth-container');
       depthContainer.style.display = 'flex';
       const depthM = Math.min(hook.depthMeters, hook.maxDepthMeters);
-      document.getElementById('hud-depth').textContent = `${depthM.toFixed(1)}m`;
+
+      const sonarLvl = this.saveSystem.getUpgradeLevel('treasureSonar') || 0;
+      if (sonarLvl === 0) {
+        document.getElementById('hud-depth').textContent = '??? m';
+        document.getElementById('hud-depth').title = 'Sonar Uncalibrated — Upgrade Sonar in Tackle Shop!';
+      } else {
+        document.getElementById('hud-depth').textContent = `${depthM.toFixed(1)}m`;
+        document.getElementById('hud-depth').title = 'Sonar Depth Sounder';
+      }
 
       const fillPct = Math.min(100, (depthM / hook.maxDepthMeters) * 100);
       document.getElementById('hud-depth-fill').style.width = `${fillPct}%`;
 
-      let currentZone = DEPTH_ZONES[0];
-      for (const z of DEPTH_ZONES) {
-        if (depthM >= z.minDepth) currentZone = z;
+      let activeZoneName = '🏖️ Sunken Shallows';
+      if (this.zoneManager) {
+        const az = this.zoneManager.getCurrentZone();
+        if (az) activeZoneName = `${az.icon} ${az.name}`;
       }
-      document.getElementById('hud-zone').textContent = `Sea ${currentZone.id}: ${currentZone.name}`;
+      document.getElementById('hud-zone').textContent = activeZoneName;
 
       const shieldEl = document.getElementById('hud-shields');
       if (hook.shields > 0) {
@@ -344,25 +655,75 @@ export class UIManager {
       }
     }
 
-    const hintEl = document.getElementById('hud-hint');
-    if (gameState === 'SURFACE_IDLE') {
-      hintEl.textContent = 'Drag left or right of the boat to aim & cast!';
-    } else if (gameState === 'AIMING') {
-      hintEl.textContent = 'Release to launch line into the sea!';
-    } else if (gameState === 'CASTING') {
-      hintEl.textContent = 'Hook is soaring through the air!';
-    } else if (gameState === 'DESCENDING') {
-      hintEl.textContent = 'Dodge obstacles! Move mouse or use A/D keys to steer';
-    } else if (gameState === 'REELING') {
-      if (hook.isLegendaryOnLine) {
-        hintEl.textContent = hook.rhythmPhase === 'LULL'
-          ? '🌊 CALM LULL: Optimal retrieval window!'
-          : '〰️ WAVE SWELL: Easing line tension...';
-      } else {
-        hintEl.textContent = 'Catches stay attached to the line! Snag more as you rise!';
+    // Line Tension & Volcanic Heat Gauges
+    const tensionContainer = document.getElementById('hud-tension-container');
+    const heatContainer = document.getElementById('hud-heat-container');
+
+    if (gameState === 'REELING') {
+      if (tensionContainer) {
+        tensionContainer.style.display = 'flex';
+        const tensionPct = Math.min(100, Math.max(0, (hook.tension / hook.maxTension) * 100));
+        const fillEl = document.getElementById('hud-tension-fill');
+        const pctEl = document.getElementById('hud-tension-percent');
+        const sweetEl = document.getElementById('hud-tension-sweet-spot');
+
+        if (fillEl) fillEl.style.width = `${tensionPct}%`;
+        if (pctEl) pctEl.textContent = `${Math.round(tensionPct)}%`;
+
+        if (sweetEl) {
+          const sMinPct = (hook.sweetSpotMin / hook.maxTension) * 100;
+          const sMaxPct = (hook.sweetSpotMax / hook.maxTension) * 100;
+          sweetEl.style.left = `${sMinPct}%`;
+          sweetEl.style.width = `${sMaxPct - sMinPct}%`;
+        }
+
+        if (fillEl) {
+          if (hook.isInSweetSpot) {
+            fillEl.style.background = '#22c55e'; // Green sweet spot!
+          } else if (tensionPct > 80) {
+            fillEl.style.background = '#ef4444'; // Red snap danger
+          } else {
+            fillEl.style.background = '#38bdf8'; // Normal tension
+          }
+        }
+      }
+
+      if (heatContainer) {
+        if (this.zoneManager?.activeZone?.mechanic?.heatBuildup) {
+          heatContainer.style.display = 'flex';
+          const heatPct = Math.min(100, Math.max(0, this.zoneManager.lineHeat || 0));
+          const hFill = document.getElementById('hud-heat-fill');
+          const hPct = document.getElementById('hud-heat-percent');
+          if (hFill) hFill.style.width = `${heatPct}%`;
+          if (hPct) hPct.textContent = `${Math.round(heatPct)}%`;
+        } else {
+          heatContainer.style.display = 'none';
+        }
       }
     } else {
-      hintEl.textContent = '';
+      if (tensionContainer) tensionContainer.style.display = 'none';
+      if (heatContainer) heatContainer.style.display = 'none';
+    }
+
+    // Update Persistent Inventory Button capacity text
+    const invCount = this.saveSystem.getInventory().length;
+    const invCap = this.saveSystem.getInventoryCapacity();
+    const invBtn = document.getElementById('btn-inventory');
+    if (invBtn) {
+      invBtn.title = `Tackle Box Inventory (${invCount} / ${invCap} slots)`;
+      invBtn.innerHTML = `🎒 Inventory <span style="font-size: 0.72rem; color: ${invCount >= invCap ? '#ef4444' : '#38bdf8'}; font-weight:700;">(${invCount}/${invCap})</span>`;
+    }
+
+    // Update Personal Aquarium Button visibility
+    const aqBtn = document.getElementById('btn-aquarium-hud');
+    if (aqBtn) {
+      const hasAq = this.saveSystem.hasAquarium();
+      aqBtn.style.display = hasAq ? 'inline-flex' : 'none';
+      if (hasAq) {
+        const aqItems = this.saveSystem.getAquariumItems?.() || [];
+        const aqCap = this.saveSystem.getAquariumCapacity?.() || 5;
+        aqBtn.title = `Personal Marine Aquarium (${aqItems.length} / ${aqCap} fish in tank)`;
+      }
     }
   }
 
@@ -396,6 +757,9 @@ export class UIManager {
 
     document.getElementById('modal-overlay').className = 'modal-overlay-hidden';
     this.activeModal = null;
+    if (typeof this.onModalClosed === 'function') {
+      this.onModalClosed();
+    }
     if (wasCrateModal && crateCtx && crateCtx.hook) {
       this.openCatchSummary(crateCtx.hook, crateCtx.onContinue);
     } else if (wasCatchSummary && catchContinue) {
@@ -696,6 +1060,16 @@ export class UIManager {
           : item.crown === 'silver'
           ? `<span class="crown-tag crown-silver">🥈 SILVER CROWN</span>`
           : '';
+        const gradeBadge = item.gradeTier?.id === 'Monster'
+          ? `<span class="grade-badge grade-monster" style="background:#b45309;color:#fef08a;border:1px solid #facc15;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">👑 MONSTER (3x)</span>`
+          : item.gradeTier?.id === 'Trophy'
+          ? `<span class="grade-badge grade-trophy" style="background:#6b21a8;color:#f5d0fe;border:1px solid #d8b4fe;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">🏆 TROPHY (1.5x)</span>`
+          : item.gradeTier?.id === 'Small'
+          ? `<span class="grade-badge grade-small" style="background:#334155;color:#94a3b8;padding:2px 6px;border-radius:4px;font-size:10px;">🐟 Small</span>`
+          : '';
+        const aberrationTag = item.isAberration
+          ? `<span class="aberration-tag" style="background:#581c87;color:#f3e8ff;border:1px solid #c084fc;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">☣️ ABERRATION (${item.aberrationMult || 4.0}x)</span>`
+          : '';
 
         const instId = item.inventoryRef?.instanceId;
 
@@ -706,6 +1080,7 @@ export class UIManager {
             </div>
             <div class="catch-item-details">
               <div class="catch-item-name">${item.name} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
+              <div class="catch-item-name">${item.name} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-specs">
                 ${
                   isCrate
@@ -1064,6 +1439,225 @@ export class UIManager {
     }
   }
 
+  // Sunken Safe & Chest Lockpicking Minigame
+  openLockpickMinigame(safeItem, onDone) {
+    this.activeModal = 'lockpick';
+    soundManager.playTreasure();
+
+    let pinsPicked = 0;
+    const totalPins = 3;
+    let targetAngle = 60 + Math.random() * 240;
+    let currentAngle = 0;
+    let needleSpeed = 90; // smooth, controllable degrees per second
+    let needleDir = 1;
+    let isFinished = false;
+    let animId = null;
+
+    const modalBody = `
+      <div class="lockpick-modal-content" style="text-align: center; padding: 15px 10px;">
+        <div style="margin-bottom: 14px;">
+          <h3 style="color: #fde047; font-size: 1.25rem; margin-bottom: 4px;">🪙 Sunken Iron Safe Dredged!</h3>
+          <p style="color: #94a3b8; font-size: 0.88rem;">Click the lock dial, click the button, or press Space when the needle is in the green zone to pick all 3 pins!</p>
+        </div>
+
+        <div style="position: relative; width: 220px; height: 220px; margin: 0 auto 16px auto; cursor: pointer;" id="lockpick-tap-zone" title="Click anywhere on the dial to pick!">
+          <canvas id="lockpick-canvas" width="220" height="220" style="background: #0f172a; border-radius: 50%; border: 3px solid #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);"></canvas>
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 14px; margin-bottom: 16px;">
+          <div class="stat-box" style="padding: 8px 16px;">
+            <span class="stat-label">Pins Picked</span>
+            <span class="stat-value" id="lockpick-pins" style="color: #4ade80;">0 / 3</span>
+          </div>
+          <div class="stat-box" style="padding: 8px 16px;">
+            <span class="stat-label">Mechanism State</span>
+            <span class="stat-value" id="lockpick-status" style="color: #fbbf24;">LOCKED</span>
+          </div>
+        </div>
+
+        <div id="lockpick-actions">
+          <button class="btn btn-primary" id="btn-pick-pin" style="font-size: 1.05rem; padding: 12px 28px;">
+            ⚡ Pick Pin (Click Dial or Press Space)
+          </button>
+        </div>
+
+        <div id="lockpick-rewards" style="display: none; margin-top: 15px; padding: 16px; background: rgba(15, 23, 42, 0.7); border-radius: 8px; border: 1px solid #22c55e;">
+          <h4 style="color: #4ade80; margin-bottom: 8px; font-size: 1.15rem;">🔓 SAFE CRACKED OPEN!</h4>
+          <p id="lockpick-payout" style="color: #fef08a; font-size: 0.95rem; margin-bottom: 14px; line-height: 1.5;"></p>
+          <button class="btn btn-primary" id="btn-claim-safe-loot">🧺 Collect All Safe Loot</button>
+        </div>
+      </div>
+    `;
+
+    this.openModal('🔒 Sunken Safe — Lockpicking Minigame', modalBody);
+
+    const canvas = document.getElementById('lockpick-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const sweetTolerance = 42; // Generous +-42 degrees sweet spot
+
+    const updateLoop = () => {
+      if (this.activeModal !== 'lockpick' || isFinished) return;
+
+      currentAngle += needleSpeed * needleDir * 0.016;
+      if (currentAngle >= 360) currentAngle -= 360;
+      if (currentAngle < 0) currentAngle += 360;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const r = 85;
+
+      // Check if needle currently inside sweet spot
+      const normCurr = ((currentAngle % 360) + 360) % 360;
+      const normTgt = ((targetAngle % 360) + 360) % 360;
+      const diff = Math.abs(normCurr - normTgt);
+      const shortestDiff = Math.min(diff, 360 - diff);
+      const isInside = shortestDiff <= sweetTolerance;
+
+      // Outer dial ring
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Green sweet spot arc
+      const startRad = (((targetAngle - sweetTolerance) % 360) * Math.PI) / 180;
+      const endRad = (((targetAngle + sweetTolerance) % 360) * Math.PI) / 180;
+
+      ctx.save();
+      if (isInside) {
+        ctx.strokeStyle = '#4ade80';
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 18;
+      } else {
+        ctx.strokeStyle = '#22c55e';
+        ctx.shadowBlur = 0;
+      }
+      ctx.lineWidth = 16;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, startRad, endRad);
+      ctx.stroke();
+      ctx.restore();
+
+      // Rotating Needle
+      const needleRad = (currentAngle * Math.PI) / 180;
+      const nx = cx + Math.cos(needleRad) * (r - 8);
+      const ny = cy + Math.sin(needleRad) * (r - 8);
+
+      ctx.save();
+      ctx.strokeStyle = isInside ? '#4ade80' : '#f43f5e';
+      ctx.lineWidth = isInside ? 5 : 4;
+      if (isInside) {
+        ctx.shadowColor = '#4ade80';
+        ctx.shadowBlur = 10;
+      }
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(nx, ny);
+      ctx.stroke();
+      ctx.restore();
+
+      // Center lock hub
+      ctx.fillStyle = isInside ? '#4ade80' : '#94a3b8';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Center status text
+      if (isInside) {
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('STRIKE!', cx, cy);
+      }
+
+      animId = requestAnimationFrame(updateLoop);
+    };
+
+    animId = requestAnimationFrame(updateLoop);
+
+    let keyHandler = null;
+
+    const attemptPick = () => {
+      if (isFinished) return;
+
+      const normCurr = ((currentAngle % 360) + 360) % 360;
+      const normTgt = ((targetAngle % 360) + 360) % 360;
+      const diff = Math.abs(normCurr - normTgt);
+      const shortestDiff = Math.min(diff, 360 - diff);
+
+      if (shortestDiff <= sweetTolerance + 6) { // Generous latency buffer
+        // Hit sweet spot!
+        pinsPicked++;
+        soundManager.playLockpickClick();
+        const pinsEl = document.getElementById('lockpick-pins');
+        if (pinsEl) pinsEl.textContent = `${pinsPicked} / ${totalPins}`;
+
+        if (pinsPicked >= totalPins) {
+          isFinished = true;
+          if (animId) cancelAnimationFrame(animId);
+          if (keyHandler) window.removeEventListener('keydown', keyHandler);
+          soundManager.playLockpickUnlock();
+
+          const goldPayout = 450 + Math.floor(Math.random() * 350);
+          this.saveSystem.addCoins(goldPayout);
+          safeItem.unlocked = true;
+
+          const statusEl = document.getElementById('lockpick-status');
+          if (statusEl) {
+            statusEl.textContent = 'UNLOCKED!';
+            statusEl.style.color = '#4ade80';
+          }
+          const actionsEl = document.getElementById('lockpick-actions');
+          if (actionsEl) actionsEl.style.display = 'none';
+
+          const rewardsEl = document.getElementById('lockpick-rewards');
+          const payoutEl = document.getElementById('lockpick-payout');
+          if (rewardsEl && payoutEl) {
+            rewardsEl.style.display = 'block';
+            payoutEl.innerHTML = `
+              <div>💰 <strong>+$${goldPayout.toLocaleString()} Gold Coins</strong> dredged from the chest!</div>
+              <div style="margin-top: 6px; font-size: 0.85rem; color: #38bdf8;">📜 Ancient Hydro-Logbook Page: <em>"In the depths of the trenches, lightning awakens the aberrations..."</em></div>
+            `;
+            document.getElementById('btn-claim-safe-loot')?.addEventListener('click', () => {
+              this.closeModal();
+              if (onDone) onDone();
+            });
+          }
+        } else {
+          // Advance to next pin target angle
+          targetAngle = (targetAngle + 100 + Math.random() * 110) % 360;
+          needleSpeed += 15; // Modest needle acceleration
+        }
+      } else {
+        // Miss
+        soundManager.playFishEscape();
+        needleDir *= -1; // Reverse needle direction
+      }
+    };
+
+    // Direct click/touch listeners on canvas and tap zone
+    canvas.addEventListener('click', attemptPick);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      attemptPick();
+    }, { passive: false });
+
+    document.getElementById('btn-pick-pin')?.addEventListener('click', attemptPick);
+
+    keyHandler = (e) => {
+      if (this.activeModal === 'lockpick' && (e.code === 'Space' || e.code === 'Enter')) {
+        e.preventDefault();
+        attemptPick();
+      }
+    };
+    window.addEventListener('keydown', keyHandler);
+  }
+
   // Harbor Noticeboard Quests Modal
   openQuestsModal() {
     this.activeModal = 'quests';
@@ -1352,23 +1946,178 @@ export class UIManager {
     const caughtSpeciesCount = Object.keys(save.data.journal).length;
     const fossilCount = Object.keys(save.data.fossils).length;
 
-    const renderFieldLogHtml = () => {
-      let cardsHtml = '<div class="journal-grid">';
+    let currentAlmanacZone = 'sunken_shallows';
 
-      allSpecies.forEach((species) => {
+    const renderAlmanacHtml = (zoneKey = currentAlmanacZone) => {
+      currentAlmanacZone = zoneKey;
+      const isAberrations = zoneKey === 'aberrations';
+
+      const zonePills = [
+        { id: 'sunken_shallows', name: 'Sunken Shallows', icon: '🏖️' },
+        { id: 'whispering_mangrove', name: 'Whispering Mangrove', icon: '🌿' },
+        { id: 'abyssal_rift', name: 'Abyssal Rift', icon: '🔮' },
+        { id: 'volcanic_caldera', name: 'Volcanic Caldera', icon: '🌋' },
+        { id: 'aberrations', name: 'Aberrations', icon: '☣️' },
+      ];
+
+      let navHtml = '<div class="almanac-zone-pills">';
+      zonePills.forEach((z) => {
+        const activeClass = z.id === zoneKey ? 'active' : '';
+        navHtml += `<button class="almanac-pill-btn ${activeClass}" data-zone="${z.id}">${z.icon} ${z.name}</button>`;
+      });
+      navHtml += '</div>';
+
+      if (isAberrations) {
+        const catalogList = Object.values(ABERRATIONS_CATALOG);
+        const discoveredCount = catalogList.filter(ab => (save.data.aberrations && save.data.aberrations[ab.baseSpeciesId] > 0)).length;
+
+        let html = `
+          <div class="almanac-container">
+            ${navHtml}
+            <div class="almanac-header-card" style="border-left: 4px solid #a855f7; background: linear-gradient(135deg, rgba(88, 28, 135, 0.45), rgba(15, 23, 42, 0.85)); padding: 16px 20px; border-radius: 8px; margin-bottom: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <h3 style="color: #f3e8ff; margin: 0 0 4px 0; font-size: 1.25rem;">☣️ The Eldritch Aberrations (Dredge-style Mutations)</h3>
+                  <p style="color: #c084fc; font-size: 0.88rem; margin: 0;">Unnatural corrupted horrors dredged from the black depths. Sells for 3.5x to 5.0x gold value!</p>
+                </div>
+                <div class="almanac-progress-box" style="min-width: 220px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 4px;">
+                    <span>Aberrations Cataloged</span>
+                    <strong style="color: #f3e8ff;">${discoveredCount} / ${catalogList.length}</strong>
+                  </div>
+                  <div style="background: rgba(15, 23, 42, 0.6); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${Math.round((discoveredCount / catalogList.length) * 100)}%; height: 100%; background: #a855f7;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="journal-grid">
+        `;
+
+        catalogList.forEach((ab) => {
+          const count = save.data.aberrations ? (save.data.aberrations[ab.baseSpeciesId] || 0) : 0;
+          const isCaught = count > 0;
+
+          if (isCaught) {
+            html += `
+              <div class="journal-card journal-discovered" style="border-color: #a855f7; background: rgba(30, 27, 75, 0.65);">
+                <div class="journal-card-top">
+                  <span class="rarity-tag" style="background:#581c87; color:#f3e8ff; border:1px solid #c084fc;">☣️ ABERRATION</span>
+                  <span class="zone-tag" style="color: #facc15;">💰 ${ab.sellMultiplier}x Value</span>
+                </div>
+                <div class="journal-visual">
+                  <div class="journal-fish-preview" style="color: ${ab.primaryColor}; font-size: 2.2rem; filter: drop-shadow(0 0 10px ${ab.glowColor});">
+                    🐟
+                  </div>
+                </div>
+                <div class="journal-card-info">
+                  <h4 style="color: #f3e8ff;">${ab.name}</h4>
+                  <p style="font-size: 0.78rem; font-style: italic; color: #d8b4fe; margin-bottom: 6px;">"${ab.title}"</p>
+                  <p class="journal-lore">${ab.lore}</p>
+                  <div class="journal-meta">
+                    <span>Times Caught: <strong>${count}</strong></span>
+                    <span>Mutation Rate: <strong>4.0%</strong></span>
+                  </div>
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="journal-card journal-undiscovered" style="border-color: #475569;">
+                <div class="journal-card-top">
+                  <span class="rarity-tag" style="background:#334155; color:#94a3b8;">☣️ ???</span>
+                  <span class="zone-tag">Unknown Depth</span>
+                </div>
+                <div class="journal-visual">
+                  <div class="journal-fish-preview silhouette" style="font-size: 2.2rem;">🐟</div>
+                </div>
+                <div class="journal-card-info">
+                  <h4 style="color: #94a3b8;">Undiscovered Aberration</h4>
+                  <p class="journal-lore">Eerie genetic mutation of a ${ab.baseSpeciesId}. Emerges in dark waters, stormy seas, and nocturnal tides.</p>
+                  <div style="margin-top: 8px; font-size: 0.78rem; color: #fbbf24; background: rgba(15, 23, 42, 0.5); padding: 4px 8px; border-radius: 4px;">
+                    ⚡ <em>Tip: Fish during Thunderstorms or Night tides to trigger mutations!</em>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+        });
+
+        html += '</div></div>';
+        return html;
+      }
+
+      // Zone Bestiary
+      const zoneData = ZONE_ALMANAC_DATA[zoneKey] || ZONE_ALMANAC_DATA.sunken_shallows;
+      const progress = getZoneProgress(zoneKey, save);
+
+      let perkStatusHtml = '';
+      if (progress.perkUnlocked) {
+        perkStatusHtml = `<span style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; padding: 4px 10px; border-radius: 4px; font-size: 0.82rem; font-weight: 700;">✅ PERK ACTIVE</span>`;
+      } else if (progress.completed) {
+        perkStatusHtml = `<button class="btn btn-primary btn-claim-zone-perk" data-zone="${zoneKey}" style="padding: 4px 12px; font-size: 0.85rem;">🎁 Claim Zone Perk!</button>`;
+      } else {
+        perkStatusHtml = `<span style="color: #94a3b8; font-size: 0.82rem; font-style: italic;">🔒 Unlocks at 100% Bestiary</span>`;
+      }
+
+      let html = `
+        <div class="almanac-container">
+          ${navHtml}
+          <div class="almanac-header-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; padding: 16px 20px; border-radius: 8px; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <span style="font-size: 2.2rem;">${zoneData.icon}</span>
+                <div>
+                  <h3 style="color: #f8fafc; margin: 0 0 4px 0; font-size: 1.25rem;">${zoneData.name} Almanac</h3>
+                  <p style="color: #94a3b8; font-size: 0.88rem; margin: 0; max-width: 520px;">${zoneData.description}</p>
+                </div>
+              </div>
+              <div style="min-width: 220px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 4px;">
+                  <span>Bestiary Progress</span>
+                  <strong style="color: #38bdf8;">${progress.caught} / ${progress.total} (${progress.percent}%)</strong>
+                </div>
+                <div style="background: rgba(30, 41, 59, 0.8); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px;">
+                  <div style="width: ${progress.percent}%; height: 100%; background: #38bdf8; transition: width 0.3s ease;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.6); padding: 6px 10px; border-radius: 6px;">
+                  <div style="font-size: 0.82rem; color: #e2e8f0; margin-right: 8px;">
+                    <strong>${zoneData.perk.icon} ${zoneData.perk.title}:</strong> <span style="color: #94a3b8;">${zoneData.perk.description}</span>
+                  </div>
+                  <div>${perkStatusHtml}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="journal-grid">
+      `;
+
+      zoneData.speciesIds.forEach((spId) => {
+        const species = FISH_SPECIES.find((s) => s.id === spId) || LEGENDARY_SPECIES.find((s) => s.id === spId);
+        if (!species) return;
+
         const entry = save.getSpeciesJournalEntry(species.id);
         const isDiscovered = !!entry;
         const zoneName = DEPTH_ZONES[species.zone - 1]?.name || 'Deep Abyssal Ocean';
+        const hint = zoneData.hints[species.id] || {};
 
         if (isDiscovered) {
           const goldCrownBadge = entry.goldCrown ? `<span class="crown-badge gold-crown" title="Gold Crown (Giant)">👑 Giant</span>` : '';
           const silverCrownBadge = entry.silverCrown ? `<span class="crown-badge silver-crown" title="Silver Crown (Mini)">🥈 Mini</span>` : '';
+          const gradeBadge = entry.bestGrade === 'Monster'
+            ? `<span class="grade-badge grade-monster" style="background:#b45309;color:#fef08a;border:1px solid #facc15;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">👑 MONSTER</span>`
+            : entry.bestGrade === 'Trophy'
+            ? `<span class="grade-badge grade-trophy" style="background:#6b21a8;color:#f5d0fe;border:1px solid #d8b4fe;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">🏆 TROPHY</span>`
+            : `<span class="grade-badge grade-average" style="background:#0369a1;color:#bae6fd;padding:2px 6px;border-radius:4px;font-size:10px;">Average</span>`;
 
-          cardsHtml += `
+          html += `
             <div class="journal-card journal-discovered rarity-border-${species.rarity}">
               <div class="journal-card-top">
                 <span class="rarity-tag rarity-${species.rarity}">${species.isMythic ? '🌟 MYTHIC' : species.rarity.toUpperCase()}</span>
                 <span class="zone-tag">Sea ${species.zone}: ${zoneName}</span>
+                <span class="zone-tag">${gradeBadge}</span>
               </div>
               <div class="journal-visual">
                 <div class="journal-fish-preview" style="color: ${species.primaryColor}; font-size: ${1.8 * (species.scaleFactor || 1)}rem;">
@@ -1378,36 +2127,45 @@ export class UIManager {
               <div class="journal-card-info">
                 <h4>${species.name} ${goldCrownBadge} ${silverCrownBadge}</h4>
                 <p class="journal-lore">${species.lore}</p>
-                <div class="journal-meta">
-                  <span>Caught: <strong>${entry.count}</strong></span>
-                  <span>Max: <strong>${entry.maxSize} cm</strong></span>
-                  <span>Min: <strong>${entry.minSize || entry.maxSize} cm</strong></span>
-                  ${entry.shinyCount > 0 ? `<span class="shiny-count">✨ ${entry.shinyCount} Shiny</span>` : ''}
+                <div class="journal-meta" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.8rem;">
+                  <span>Caught: <strong>${entry.timesCaught || entry.count || 0}</strong></span>
+                  <span>Record Wt: <strong>${entry.recordWeight || entry.maxWeight || 0} kg</strong></span>
+                  <span>Record Len: <strong>${entry.recordLength || entry.maxSize || 0} cm</strong></span>
+                  <span>Top Grade: <strong>${entry.bestGrade || 'Average'}</strong></span>
+                  ${entry.shinyCount > 0 ? `<span style="color:#fef08a; grid-column: span 2;">✨ ${entry.shinyCount} Shiny</span>` : ''}
+                  ${entry.aberrationCount > 0 ? `<span style="color:#c084fc; grid-column: span 2;">☣️ ${entry.aberrationCount} Mutated</span>` : ''}
                 </div>
               </div>
             </div>
           `;
         } else {
-          cardsHtml += `
+          html += `
             <div class="journal-card journal-undiscovered">
               <div class="journal-card-top">
                 <span class="rarity-tag">${species.isMythic ? '🌟 MYTHIC' : '???'}</span>
                 <span class="zone-tag">Sea ${species.zone}: ${zoneName}</span>
+                <span class="zone-tag">Dwells: ${hint.depth || (species.minDepth + '-' + species.maxDepth + 'm')}</span>
               </div>
               <div class="journal-visual">
                 <div class="journal-fish-preview silhouette">${species.isMythic ? '🌟' : '🐟'}</div>
               </div>
               <div class="journal-card-info">
-                <h4>Undiscovered Species</h4>
+                <h4>??? Undiscovered Species</h4>
                 <p class="journal-lore">Dwells between ${species.minDepth}m and ${species.maxDepth}m.${species.isMythic ? ' Responds to specific atmospheric weather and time of day!' : ' Cast deep to discover!'}</p>
+                <div style="font-size: 0.82rem; color: #94a3b8; display: flex; flex-direction: column; gap: 3px; background: rgba(15, 23, 42, 0.4); padding: 8px; border-radius: 6px; margin-top: 6px;">
+                  <div>📍 <strong>Depth:</strong> ${hint.depth || (species.minDepth + ' - ' + species.maxDepth + 'm')}</div>
+                  <div>☁️ <strong>Weather:</strong> ${hint.weather || 'Any weather'}</div>
+                  <div>🕒 <strong>Time:</strong> ${hint.time || 'Any time'}</div>
+                  <div>🪱 <strong>Preferred:</strong> ${hint.bait || 'Standard bait'}</div>
+                </div>
               </div>
             </div>
           `;
         }
       });
 
-      cardsHtml += '</div>';
-      return cardsHtml;
+      html += '</div></div>';
+      return html;
     };
 
     const renderSkeletonsTab = () => {
@@ -1645,16 +2403,16 @@ export class UIManager {
         <div id="view-journal" style="display: ${primaryMenu === 'journal' ? 'block' : 'none'};">
           <div class="journal-wrapper">
             <div class="journal-tabs">
-              <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog">📜 Field Log (${caughtSpeciesCount} / ${allSpecies.length})</button>
+              <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog">📖 Angler's Almanac (${caughtSpeciesCount} / ${allSpecies.length})</button>
+              <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;">🐠 Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
               <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / 3)</button>
               <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
               <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Skeletons</button>
               <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
               <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
-              <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium">🐠 Virtual Aquarium</button>
             </div>
             <div id="journal-tab-content">
-              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : renderFieldLogHtml()}
+              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : renderAlmanacHtml('sunken_shallows')}
             </div>
           </div>
         </div>
@@ -1666,7 +2424,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal("📜 Angler's Field Journal & Trophy Logbook", modalBody);
+    this.openModal("📜 Angler's Almanac & Field Journal", modalBody);
 
     const journalTabBtn = document.getElementById('primary-menu-journal');
     const logbookTabBtn = document.getElementById('primary-menu-logbook');
@@ -1691,6 +2449,32 @@ export class UIManager {
       viewLogbook.style.display = 'block';
     });
 
+    const bindAlmanacEvents = () => {
+      document.querySelectorAll('.almanac-pill-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          soundManager.playButtonClick();
+          const zKey = e.currentTarget.getAttribute('data-zone');
+          document.getElementById('journal-tab-content').innerHTML = renderAlmanacHtml(zKey);
+          bindAlmanacEvents();
+        });
+      });
+
+      document.querySelectorAll('.btn-claim-zone-perk').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const zKey = e.currentTarget.getAttribute('data-zone');
+          const res = this.saveSystem.claimZonePerk(zKey);
+          if (res.success) {
+            soundManager.playUpgrade();
+            this.showToast(`🎉 UNLOCKED PERK: ${res.perk.title}! (${res.perk.description})`);
+            document.getElementById('journal-tab-content').innerHTML = renderAlmanacHtml(zKey);
+            bindAlmanacEvents();
+          } else {
+            this.showToast(`❌ ${res.reason}`);
+          }
+        });
+      });
+    };
+
     if (primaryMenu === 'journal') {
       if (defaultSubTab === 'relics') {
         this.renderCabinShelfTab();
@@ -1700,6 +2484,8 @@ export class UIManager {
         this.renderAquariumTab();
       } else if (defaultSubTab === 'traps') {
         this.bindTrapsTabEvents();
+      } else if (defaultSubTab === 'fieldlog') {
+        bindAlmanacEvents();
       }
     }
 
@@ -1712,7 +2498,8 @@ export class UIManager {
       document.getElementById('tab-fieldlog')?.addEventListener('click', () => {
         soundManager.playButtonClick();
         activateTab('tab-fieldlog');
-        document.getElementById('journal-tab-content').innerHTML = renderFieldLogHtml();
+        document.getElementById('journal-tab-content').innerHTML = renderAlmanacHtml(currentAlmanacZone);
+        bindAlmanacEvents();
       });
 
       const crewBtn = document.getElementById('tab-crew');
@@ -2530,13 +3317,15 @@ export class UIManager {
       itemsGridHtml += '</div>';
     }
 
+    const invCap = save.getInventoryCapacity();
+
     const modalBody = `
       <div class="inventory-container">
         <!-- Top Stats Banner -->
         <div class="inventory-header-stats">
           <div class="inv-stat-box">
-            <span class="stat-label">Stored Catches</span>
-            <span class="stat-value">${inv.length}</span>
+            <span class="stat-label">Tackle Box Cap</span>
+            <span class="stat-value" style="color: ${inv.length >= invCap ? '#ef4444' : '#38bdf8'}; font-weight: 700;">${inv.length} / ${invCap}</span>
           </div>
           <div class="inv-stat-box">
             <span class="stat-label">Fish</span>
@@ -2950,7 +3739,7 @@ export class UIManager {
             <div class="stat-row"><span>Mythic Titans Landed:</span><strong>🌟 ${stats.mythicsCaught || 0}</strong></div>
             <div class="stat-row"><span>Max Depth Reached:</span><strong>${stats.maxDepthReached}m</strong></div>
             <div class="stat-row"><span>Total Gold Earned:</span><strong>$${stats.totalGoldEarned.toLocaleString()}</strong></div>
-            <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / 33</strong></div>
+            <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / 66</strong></div>
             <div class="stat-row"><span>Prehistoric Fossils Found:</span><strong>${stats.totalFossilsCollected} / 5</strong></div>
             <div class="stat-row"><span>Biggest Catch:</span><strong>${stats.biggestCatchName} (${stats.biggestCatchCm} cm, ${stats.heaviestCatchKg} kg)</strong></div>
           </div>
@@ -3091,7 +3880,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal("🎣 Seven Seas Angler's Field Guide", modalBody);
+    this.openModal("🎣 Starlight Angler's Field Guide", modalBody);
 
     document.getElementById('btn-tutorial-ready').addEventListener('click', () => {
       this.closeModal();

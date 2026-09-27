@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Seven Seas Fishing</title>
+    <title>Starlight Fishing</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,8 +13,8 @@
     <!-- Polished Loading Screen -->
     <div id="loading-screen">
       <div class="loading-content">
-        <div class="loading-icon">🌊</div>
-        <h1 class="loading-title">SEVEN SEAS FISHING</h1>
+        <div class="loading-icon">✨🎣</div>
+        <h1 class="loading-title">STARLIGHT FISHING</h1>
         <p class="loading-subtitle">Sounding oceanic depths and discovering mythical titans...</p>
         <div class="loading-bar-track">
           <div class="loading-bar-fill" id="loading-bar"></div>
@@ -25,8 +25,8 @@
     <!-- Small Screen Welcome Popup (Appears on Load Before You Play) -->
     <div id="welcome-popup" class="welcome-overlay">
       <div class="welcome-card">
-        <div class="welcome-icon">🌊🎣</div>
-        <h1 class="welcome-title">Seven Seas Fishing</h1>
+        <div class="welcome-icon">✨🎣</div>
+        <h1 class="welcome-title">Starlight Fishing</h1>
         <p class="welcome-tagline">Embark across 7 unique ocean depths, uncover prehistoric fossils, and reel in legendary titans!</p>
         
         <div class="welcome-stats-preview">
@@ -40,7 +40,7 @@
           </div>
           <div class="wstat-box">
             <span class="wstat-lbl">Species Found</span>
-            <span class="wstat-val" id="welcome-species">0 / 28</span>
+            <span class="wstat-val" id="welcome-species">0 / 66</span>
           </div>
         </div>
 
@@ -50,9 +50,84 @@
           <div class="wfeat"><span>🦴</span> Unearth rare prehistoric fossils</div>
         </div>
 
-        <button class="btn btn-primary btn-welcome-start" id="btn-welcome-start">
-          Set Sail ⛵
-        </button>
+        <!-- Auth & Play Mode Container -->
+        <div class="welcome-auth-container" id="welcome-auth-container">
+          <!-- Active Logged In View (shown if an account is already active) -->
+          <div class="auth-logged-in-view" id="auth-logged-in-view" style="display: none;">
+            <div class="auth-user-badge">
+              <span class="auth-user-avatar">⚓</span>
+              <div class="auth-user-info">
+                <span class="auth-user-sub">Current Captain</span>
+                <span class="auth-user-name" id="auth-current-username">Captain</span>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-welcome-start" id="btn-welcome-start">
+              Set Sail ⛵
+            </button>
+            <div class="auth-action-links">
+              <button type="button" class="auth-text-btn" id="btn-auth-switch-account">Switch Account / Log Out</button>
+              <span class="auth-link-divider">•</span>
+              <button type="button" class="auth-text-btn" id="btn-auth-play-guest">Play as Guest</button>
+            </div>
+          </div>
+
+          <!-- Guest vs Login/Register Selector (shown if not logged in or switching) -->
+          <div class="auth-form-view" id="auth-form-view">
+            <div class="auth-nav-tabs">
+              <button type="button" class="auth-nav-tab active" id="tab-auth-guest" data-tab="guest">⛵ Guest</button>
+              <button type="button" class="auth-nav-tab" id="tab-auth-login" data-tab="login">🔑 Log In</button>
+              <button type="button" class="auth-nav-tab" id="tab-auth-register" data-tab="register">✍️ Register</button>
+            </div>
+
+            <!-- Tab 1: Guest Mode -->
+            <div class="auth-tab-panel active" id="panel-auth-guest">
+              <p class="auth-tab-desc">Play immediately without an account. Progress saves locally to this browser.</p>
+              <button class="btn btn-primary btn-welcome-start" id="btn-guest-start">
+                Continue as Guest ⛵
+              </button>
+            </div>
+
+            <!-- Tab 2: Log In Mode -->
+            <div class="auth-tab-panel" id="panel-auth-login" style="display: none;">
+              <p class="auth-tab-desc">Log into your Captain account to load your saved ocean career.</p>
+              <form class="auth-inputs-form" id="form-auth-login" onsubmit="return false;">
+                <div class="auth-input-group">
+                  <span class="auth-input-icon">👤</span>
+                  <input type="text" class="auth-input" id="auth-login-user" placeholder="Username" autocomplete="username" maxlength="20" required />
+                </div>
+                <div class="auth-input-group">
+                  <span class="auth-input-icon">🔒</span>
+                  <input type="password" class="auth-input" id="auth-login-pass" placeholder="Password" autocomplete="current-password" maxlength="32" required />
+                </div>
+                <div class="auth-feedback" id="auth-login-feedback"></div>
+                <button type="submit" class="btn btn-primary btn-welcome-start" id="btn-auth-login">
+                  Log In & Set Sail ⛵
+                </button>
+              </form>
+            </div>
+
+            <!-- Tab 3: Register Mode -->
+            <div class="auth-tab-panel" id="panel-auth-register" style="display: none;">
+              <p class="auth-tab-desc">Create a username and password to keep your progress and records saved.</p>
+              <form class="auth-inputs-form" id="form-auth-register" onsubmit="return false;">
+                <div class="auth-input-group">
+                  <span class="auth-input-icon">👤</span>
+                  <input type="text" class="auth-input" id="auth-reg-user" placeholder="Choose Username (3-20 chars)" autocomplete="username" maxlength="20" required />
+                </div>
+                <div class="auth-input-group">
+                  <span class="auth-input-icon">🔒</span>
+                  <input type="password" class="auth-input" id="auth-reg-pass" placeholder="Choose Password (min 4 chars)" autocomplete="new-password" maxlength="32" required />
+                </div>
+                <div class="auth-feedback" id="auth-reg-feedback"></div>
+                <button type="submit" class="btn btn-primary btn-welcome-start" id="btn-auth-register">
+                  Create Account & Set Sail ⛵
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="welcome-creator">created by: Evan Bartkowski</div>
       </div>
     </div>
 
@@ -61,6 +136,23 @@
 
     <!-- Main script -->
     <script type="module" src="/src/main.js"></script>
+
+    <!-- Failsafe auto-dismiss for loading screen -->
+    <script>
+      (function() {
+        const dismissLoading = function() {
+          const ls = document.getElementById('loading-screen');
+          if (ls && ls.style.display !== 'none') {
+            ls.style.opacity = '0';
+            setTimeout(function() { ls.style.display = 'none'; }, 400);
+          }
+        };
+        window.addEventListener('load', function() {
+          setTimeout(dismissLoading, 1000);
+        });
+        setTimeout(dismissLoading, 3000);
+      })();
+    </script>
   </body>
 </html>
 

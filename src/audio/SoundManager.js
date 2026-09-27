@@ -1018,6 +1018,21 @@ export class SoundManager {
   // Smooth Web Audio cross-fading per ocean realm
   // ========================================================
 
+  setZoneSoundscape(zoneId) {
+    if (typeof zoneId === 'number') {
+      this.setSeaTrack(zoneId);
+      return;
+    }
+    const zoneMap = {
+      sunken_shallows: 1,
+      whispering_mangrove: 2,
+      abyssal_rift: 3,
+      volcanic_caldera: 6,
+    };
+    const targetSea = zoneMap[zoneId] || 1;
+    this.setSeaTrack(targetSea);
+  }
+
   setSeaTrack(seaId) {
     const id = parseInt(seaId, 10) || 1;
     if (this.currentSeaId === id && this.seaGain) return;

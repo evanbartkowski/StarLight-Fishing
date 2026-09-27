@@ -2,6 +2,8 @@ import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
 import { FISH_SPECIES } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
+import { calculateGradeTier, claimZonePerk } from '../data/almanac.config.js';
+import { accountManager } from './AccountManager.js';
 
 const STORAGE_KEY = 'seven_seas_fishing_save_v2';
 const LEGACY_STORAGE_KEY = 'fishing_game_save_v1';
@@ -41,6 +43,8 @@ export class SaveSystem {
       },
       currentSea: 1,
       unlockedSeas: [1],
+      currentZone: 'sunken_shallows',
+      unlockedZones: ['sunken_shallows'],
       buffs: {},
       stats: {
         totalFishCaught: 0,
@@ -82,6 +86,11 @@ export class SaveSystem {
       },
       unlockedBobbers: ['pelican_bobber'],
       journal: {}, // speciesId -> { count, maxSize, minSize, maxWeight, shinyCount, goldCrown, silverCrown, firstCaughtAt }
+      worldTime: 600,
+      currentWeather: 'CLEAR',
+      zonePerks: {}, // perkId -> true
+      aberrations: {}, // speciesId -> count
+      journal: {}, // speciesId -> { count, maxSize, minSize, maxWeight, shinyCount, goldCrown, silverCrown, firstCaughtAt, bestGrade, aberrationCount }
       fossils: {}, // fossilId -> { count, firstFoundAt }
       relics: {}, // relicId -> { count, restored: boolean, restoredAt: number }
       achievements: {}, // achId -> { unlocked: boolean, unlockedAt: number }
@@ -134,11 +143,49 @@ export class SaveSystem {
     return this.addXp(amount);
   }
 
+  getActiveStorageKey() {
+    return accountManager.getActiveSaveKey();
+  }
+
+  getSaveDataForUser(username) {
+    try {
+      const key = accountManager.getSaveKeyForUser(username);
+      let raw = localStorage.getItem(key);
+      if (!raw && (!username || accountManager.isGuest())) {
+        raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+      }
+      if (!raw) {
+        return { level: 1, coins: 0, speciesCount: 0 };
+      }
+      const parsed = JSON.parse(raw);
+      const journal = parsed.journal || {};
+      const speciesCount = Object.keys(journal).filter(k => (journal[k]?.count > 0 || journal[k]?.timesCaught > 0)).length;
+      return {
+        level: Math.max(1, parsed.level || 1),
+        coins: Math.max(0, parsed.coins || 0),
+        speciesCount,
+      };
+    } catch (e) {
+      return { level: 1, coins: 0, speciesCount: 0 };
+    }
+  }
+
+  switchToAccount(username) {
+    if (username) {
+      accountManager.activeUser = username;
+      accountManager.saveActiveSession(username);
+    } else {
+      accountManager.continueAsGuest();
+    }
+    return this.load();
+  }
+
   load() {
     try {
-      let raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        // Try importing legacy save if present
+      const storageKey = this.getActiveStorageKey();
+      let raw = localStorage.getItem(storageKey);
+      if (!raw && accountManager.isGuest()) {
+        // Try importing legacy save if present for guest
         raw = localStorage.getItem(LEGACY_STORAGE_KEY);
       }
 
@@ -174,6 +221,12 @@ export class SaveSystem {
         fossils: parsed.fossils || {},
         relics: parsed.relics || {},
         achievements: parsed.achievements || {},
+        currentZone: parsed.currentZone || 'sunken_shallows',
+        unlockedZones: (Array.isArray(parsed.unlockedZones) && parsed.unlockedZones.length > 0) ? parsed.unlockedZones : ['sunken_shallows'],
+        worldTime: typeof parsed.worldTime === 'number' ? parsed.worldTime : 600,
+        currentWeather: parsed.currentWeather || 'CLEAR',
+        zonePerks: parsed.zonePerks || {},
+        aberrations: parsed.aberrations || {},
         settings: { ...def.settings, ...(parsed.settings || {}) },
       };
 
@@ -202,7 +255,8 @@ export class SaveSystem {
 
   save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+      const storageKey = this.getActiveStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify(this.data));
     } catch (e) {
       console.error('Failed to save game to localStorage:', e);
     }
@@ -210,8 +264,11 @@ export class SaveSystem {
 
   reset() {
     try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      const storageKey = this.getActiveStorageKey();
+      localStorage.removeItem(storageKey);
+      if (accountManager.isGuest()) {
+        localStorage.removeItem(LEGACY_STORAGE_KEY);
+      }
       this.data = this.getDefaultData();
       this.save();
     } catch (e) {
@@ -391,30 +448,64 @@ export class SaveSystem {
 
       this.addXp(xpGain);
 
+      // Grade evaluation
+      if (!item.gradeTier && item.species) {
+        item.gradeTier = calculateGradeTier(item.species, item.size, item.weight);
+      }
+
+      // Aberration tracking
+      if (item.isAberration) {
+        if (!this.data.aberrations) this.data.aberrations = {};
+        this.data.aberrations[item.speciesId] = (this.data.aberrations[item.speciesId] || 0) + 1;
+      }
+
       // Journal entry
       const id = item.speciesId || item.id;
       if (!this.data.journal[id]) {
         this.data.journal[id] = {
           count: 0,
+          timesCaught: 0,
           maxSize: item.size || 0,
           minSize: item.size || 0,
           maxWeight: item.weight || 0,
+          recordWeight: item.weight || 0,
+          recordLength: item.size || 0,
           shinyCount: 0,
           goldCrown: false,
           silverCrown: false,
+          bestGrade: item.gradeTier?.id || 'Average',
+          aberrationCount: 0,
           firstCaughtAt: Date.now(),
         };
       }
 
       const entry = this.data.journal[id];
       entry.count += 1;
+      entry.timesCaught = entry.count;
 
       if (!entry.maxSize || item.size > entry.maxSize) entry.maxSize = item.size;
+      if (!entry.maxSize || item.size > entry.maxSize) {
+        entry.maxSize = item.size;
+        entry.recordLength = item.size;
+      }
       if (!entry.minSize || item.size < entry.minSize) entry.minSize = item.size;
       if (!entry.maxWeight || item.weight > entry.maxWeight) entry.maxWeight = item.weight;
+      if (!entry.maxWeight || item.weight > entry.maxWeight) {
+        entry.maxWeight = item.weight;
+        entry.recordWeight = item.weight;
+      }
       if (item.isShiny) entry.shinyCount += 1;
       if (item.crown === 'gold') entry.goldCrown = true;
       if (item.crown === 'silver') entry.silverCrown = true;
+      if (item.isAberration) entry.aberrationCount = (entry.aberrationCount || 0) + 1;
+
+      // Grade hierarchy: Monster > Trophy > Average > Small
+      const gradeRank = { Monster: 4, Trophy: 3, Average: 2, Small: 1 };
+      const currentRank = gradeRank[entry.bestGrade] || 2;
+      const newRank = gradeRank[item.gradeTier?.id] || 2;
+      if (newRank > currentRank) {
+        entry.bestGrade = item.gradeTier?.id || 'Average';
+      }
 
       this.data.stats.uniqueSpeciesCaught = Object.keys(this.data.journal).length;
 
@@ -430,6 +521,14 @@ export class SaveSystem {
 
     this.checkAchievements();
     this.save();
+  }
+
+  hasZonePerk(perkId) {
+    return !!(this.data.zonePerks && this.data.zonePerks[perkId]);
+  }
+
+  claimZonePerk(zoneId) {
+    return claimZonePerk(zoneId, this);
   }
 
   recordFullHaul() {
@@ -605,10 +704,24 @@ export class SaveSystem {
     };
   }
 
+  getInventoryCapacity() {
+    const lvl = this.getUpgradeLevel('tackleBox') || 0;
+    const tier = UPGRADE_DEFINITIONS.tackleBox?.tiers[lvl] || UPGRADE_DEFINITIONS.tackleBox?.tiers[0];
+    return tier?.capacity || 15;
+  }
+
+  isInventoryFull() {
+    return this.getInventory().length >= this.getInventoryCapacity();
+  }
+
   addItemToInventory(item) {
     const invItem = item.instanceId ? item : this.createInventoryItem(item);
     if (!Array.isArray(this.data.inventory)) {
       this.data.inventory = [];
+    }
+    const cap = this.getInventoryCapacity();
+    if (this.data.inventory.length >= cap) {
+      invItem.isOverflow = true;
     }
     this.data.inventory.push(invItem);
     this.save();

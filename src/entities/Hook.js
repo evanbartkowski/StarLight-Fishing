@@ -33,6 +33,18 @@ export class Hook {
     this.sonarPulseRadius = 0;
     this.bubbleTimer = 0;
 
+    // Tension & Durability mechanics
+    this.tension = 0;
+    this.maxTension = 100;
+    this.sweetSpotMin = 45;
+    this.sweetSpotMax = 70;
+    this.isInSweetSpot = false;
+
+    // Bite reaction wait timer (6-9s baseline on starter rod)
+    this.initialBiteWait = 7.5;
+    this.biteTimer = 7.5;
+    this.hasBitten = false;
+
     // Relaxed rhythm-based legend reel mechanic
     this.rhythmTimer = 0;
     this.rhythmRatio = 0.5;
@@ -42,28 +54,39 @@ export class Hook {
   }
 
   applyUpgrades(saveSystem) {
-    const getLvl = (key) => saveSystem.getUpgradeLevel(key);
+    const getLvl = (key) => (saveSystem?.getUpgradeLevel ? saveSystem.getUpgradeLevel(key) : 0);
 
-    const lineTier = UPGRADE_DEFINITIONS.lineLength.tiers[getLvl('lineLength')] || UPGRADE_DEFINITIONS.lineLength.tiers[0];
-    this.maxDepthMeters = lineTier.depth;
+    const lineTier = UPGRADE_DEFINITIONS.lineLength?.tiers?.[getLvl('lineLength')] || { depth: 45 };
+    this.maxDepthMeters = lineTier.depth || 45;
 
-    const capTier = UPGRADE_DEFINITIONS.hookCapacity.tiers[getLvl('hookCapacity')] || UPGRADE_DEFINITIONS.hookCapacity.tiers[0];
-    this.capacity = capTier.capacity;
+    const capTier = UPGRADE_DEFINITIONS.hookCapacity?.tiers?.[getLvl('hookCapacity')] || { capacity: 3 };
+    this.capacity = capTier.capacity || 3;
 
-    const reelTier = UPGRADE_DEFINITIONS.reelPower.tiers[getLvl('reelPower')] || UPGRADE_DEFINITIONS.reelPower.tiers[0];
-    this.reelSpeed = reelTier.multiplier;
+    const reelTier = UPGRADE_DEFINITIONS.reelPower?.tiers?.[getLvl('reelPower')] || { multiplier: 1.0 };
+    this.reelSpeed = reelTier.multiplier || 1.0;
 
-    const agilTier = UPGRADE_DEFINITIONS.hookAgility.tiers[getLvl('hookAgility')] || UPGRADE_DEFINITIONS.hookAgility.tiers[0];
-    this.agility = agilTier.speedMult;
+    const tensionLvl = getLvl('highTensionLine') || 0;
+    const tensionTier = UPGRADE_DEFINITIONS.highTensionLine?.tiers?.[tensionLvl] || { threshold: 100, sweetSpotMult: 1.0 };
+    this.maxTension = tensionTier.threshold || 100;
+    const sweetMult = tensionTier.sweetSpotMult || 1.0;
+    this.sweetSpotMin = Math.max(25, 45 - (sweetMult - 1) * 10);
+    this.sweetSpotMax = Math.min(85, 70 + (sweetMult - 1) * 12);
 
-    const lanternTier = UPGRADE_DEFINITIONS.abyssalLantern.tiers[getLvl('abyssalLantern')] || UPGRADE_DEFINITIONS.abyssalLantern.tiers[0];
-    this.lanternRadius = lanternTier.radius;
+    const luckLvl = getLvl('lureLuck') || 0;
+    const reelLvl = getLvl('reelPower') || 0;
+    this.initialBiteWait = Math.max(1.5, 7.5 - luckLvl * 1.0 - reelLvl * 0.5);
 
-    const sonarTier = UPGRADE_DEFINITIONS.treasureSonar.tiers[getLvl('treasureSonar')] || UPGRADE_DEFINITIONS.treasureSonar.tiers[0];
-    this.sonarLevel = sonarTier.levelName;
+    const agilTier = UPGRADE_DEFINITIONS.hookAgility?.tiers?.[getLvl('hookAgility')] || { speedMult: 1.0 };
+    this.agility = agilTier.speedMult || 1.0;
 
-    const armorTier = UPGRADE_DEFINITIONS.lineArmor.tiers[getLvl('lineArmor')] || UPGRADE_DEFINITIONS.lineArmor.tiers[0];
-    this.initialShields = armorTier.shields;
+    const lanternTier = UPGRADE_DEFINITIONS.abyssalLantern?.tiers?.[getLvl('abyssalLantern')] || { radius: 100 };
+    this.lanternRadius = lanternTier.radius || 100;
+
+    const sonarTier = UPGRADE_DEFINITIONS.treasureSonar?.tiers?.[getLvl('treasureSonar')] || { levelName: 'None' };
+    this.sonarLevel = sonarTier.levelName || 'None';
+
+    const armorTier = UPGRADE_DEFINITIONS.lineArmor?.tiers?.[getLvl('lineArmor')] || { shields: 0 };
+    this.initialShields = armorTier.shields || 0;
     this.shields = this.initialShields;
   }
 
@@ -83,6 +106,10 @@ export class Hook {
     this.sonarPulseRadius = 0;
     this.rhythmTimer = 0;
     this.isLegendaryOnLine = false;
+    this.tension = 0;
+    this.isInSweetSpot = false;
+    this.biteTimer = this.initialBiteWait;
+    this.hasBitten = false;
   }
 
   cast(startX, startY, velocityX, velocityY) {
@@ -98,6 +125,10 @@ export class Hook {
     this.maxDepthReachedThisDive = 0;
     this.rhythmTimer = 0;
     this.isLegendaryOnLine = false;
+    this.tension = 0;
+    this.isInSweetSpot = false;
+    this.biteTimer = this.initialBiteWait;
+    this.hasBitten = false;
 
     soundManager.playCast();
   }
@@ -215,7 +246,7 @@ export class Hook {
     this.vx = (Math.random() < 0.5 ? -1 : 1) * hazard.knockback * 1.3;
   }
 
-  update(dt, surfaceY, worldWidth, particles) {
+  update(dt, surfaceY, worldWidth, particles, isReelingInput = true, zoneManager = null) {
     const deltaSec = dt / 1000;
 
     if (this.state === 'CASTING') {
@@ -235,6 +266,17 @@ export class Hook {
         }
       }
     } else if (this.state === 'DESCENDING') {
+      // Countdown bite wait timer
+      if (this.biteTimer > 0) {
+        this.biteTimer = Math.max(0, this.biteTimer - deltaSec);
+        if (this.biteTimer === 0 && !this.hasBitten) {
+          this.hasBitten = true;
+          if (particles) {
+            particles.addFloatingText('🐟 BITE STRIKE READY!', this.x, this.y - 25, '#22c55e', 16, '#86efac');
+          }
+        }
+      }
+
       const targetSinkSpeed = 160 + (this.caughtItems.length * 10);
       this.vy += (targetSinkSpeed - this.vy) * 4 * deltaSec;
 
@@ -265,40 +307,25 @@ export class Hook {
         }
       }
     } else if (this.state === 'REELING') {
-      // Check if carrying legendary or mythic catches
-      this.isLegendaryOnLine = this.caughtItems.some(
-        (i) => i.rarity === 'legendary' || i.isMythic || i.rarity === 'epic'
-      );
+      // Automatic fast retrieve upward!
+      this.tension = 0; // No line snap
+      this.isInSweetSpot = true;
 
-      // Relaxed Rhythm Mechanic for Legends & Epics
-      let speedMult = 1.0;
-      if (this.isLegendaryOnLine) {
-        this.rhythmTimer += deltaSec * 1.6;
-        const wave = Math.sin(this.rhythmTimer);
-        this.rhythmRatio = (wave + 1) / 2; // 0 to 1
+      // Base auto reel speed is fast, responsive, and scales with reelSpeed upgrades
+      const baseAutoReelSpeed = -540;
+      const targetReelSpeed = baseAutoReelSpeed * Math.max(1.0, this.reelSpeed);
 
-        if (this.rhythmRatio < 0.65) {
-          // LULL (Optimal calm window): bonus retrieve speed!
-          this.rhythmPhase = 'LULL';
-          speedMult = 1.25;
+      this.vy += (targetReelSpeed - this.vy) * 8 * deltaSec;
 
-          const now = Date.now();
-          if (now - this.lastSweetSpotPlayTime > 3200) {
-            this.lastSweetSpotPlayTime = now;
-            soundManager.playRhythmSweetSpot();
-          }
-        } else {
-          // SWELL (Gentle tension): retrieval gently slows down, NEVER breaks line!
-          this.rhythmPhase = 'SWELL';
-          speedMult = 0.55;
-        }
-      }
-
-      const targetReelSpeed = -260 * this.reelSpeed * speedMult;
-      this.vy += (targetReelSpeed - this.vy) * 6 * deltaSec;
-
+      // Agile steering during auto-reel
       const steerDiff = this.targetX - this.x;
-      this.vx += (steerDiff * 3.0 * this.agility - this.vx) * 5 * deltaSec;
+      this.vx += (steerDiff * 3.6 * this.agility - this.vx) * 6 * deltaSec;
+
+      this.x += this.vx * deltaSec;
+      this.y += this.vy * deltaSec;
+      this.x = Math.max(30, Math.min(worldWidth - 30, this.x));
+
+      this.depthMeters = Math.max(0, (this.y - surfaceY) / 15);
 
       this.x += this.vx * deltaSec;
       this.y += this.vy * deltaSec;

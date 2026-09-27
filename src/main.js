@@ -12,6 +12,8 @@ import { checkRandomPetEncounter } from './data/PetsData.js';
 import { QuestSystem } from './systems/QuestSystem.js';
 import { NPCSystem } from './systems/NPCSystem.js';
 import { MinimapUI } from './ui/MinimapUI.js';
+import { ZoneManager } from './systems/ZoneManager.js';
+import { worldCycle } from './systems/WorldCycle.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -23,6 +25,7 @@ let screenHeight = window.innerHeight;
 
 let oceanWorld = null;
 let uiManager = null;
+let zoneManager = null;
 
 function handleResize() {
   dpr = window.devicePixelRatio || 1;
@@ -50,7 +53,7 @@ const particles = new ParticleSystem();
 const hook = new Hook();
 
 // Off-tab title alert & chime system
-const originalTitle = document.title || 'Seven Seas Fishing';
+const originalTitle = document.title || 'Starlight Fishing';
 let titleNotificationInterval = null;
 
 function notifyTitle(msg) {
@@ -120,26 +123,49 @@ questSystem.onQuestCompleted = (q) => {
   uiManager.showToast(`📋 Noticeboard Mission Complete: ${q.title}! Claim your reward!`);
 };
 
-// Atmospheric NPC System & Chart Minimap
+// Atmospheric NPC System & Multi-Zone Exploration System
 const npcSystem = new NPCSystem(save, soundManager, uiManager);
-const minimapUI = new MinimapUI(save, soundManager, uiManager, oceanWorld);
+
+// Initialize ZoneManager driving dynamic visual architecture and zone mechanics
+zoneManager = new ZoneManager(save, oceanWorld, uiManager);
+oceanWorld.setZoneManager(zoneManager);
+uiManager.setZoneManager(zoneManager);
+
+const minimapUI = new MinimapUI(save, soundManager, uiManager, oceanWorld, zoneManager);
 uiManager.setMinimapUI(minimapUI);
 
-minimapUI.onSailToSea = (sea) => {
-  oceanWorld.setCurrentSea(sea.id);
-  soundManager.setSeaTrack(sea.id);
+uiManager.onAccountSwitched = () => {
+  hook.applyUpgrades(save);
+  oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
   oceanWorld.populateWorld(save);
+  zoneManager.setZone(save.data.currentZone || 'sunken_shallows');
+  soundManager.setZoneSoundscape(zoneManager.getZoneId());
 };
 
-// Apply current realm state to ocean and soundscape
-const initialSea = save.getCurrentSea() || 1;
-oceanWorld.setCurrentSea(initialSea);
-soundManager.setSeaTrack(initialSea);
+uiManager.onModalClosed = () => {
+  isMouseDown = false;
+  if (gameState === 'AIMING') {
+    gameState = 'SURFACE_IDLE';
+  }
+};
+
+minimapUI.onSailToSea = (sea) => {
+  oceanWorld.populateWorld(save);
+  soundManager.setZoneSoundscape(zoneManager.getZoneId());
+};
+
+// Initialize world cycle from persistent save
+if (worldCycle && typeof worldCycle.deserialize === 'function') {
+  worldCycle.deserialize({ timer: save.data.worldTime, weather: save.data.currentWeather });
+}
+
+// Initialize current zone soundscape
+soundManager.setZoneSoundscape(zoneManager.getZoneId());
 
 hook.applyUpgrades(save);
 hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
 
-// Populate ocean life across the Seven Seas
+// Populate ocean life across current zone
 oceanWorld.populateWorld(save);
 
 // Input handlers
@@ -154,8 +180,15 @@ function getCanvasCoords(e) {
 }
 
 function handlePointerDown(e) {
-  // If user clicks while in modal, ignore
-  if (uiManager.activeModal) return;
+  // If user clicks while modal is actively visible, ignore
+  const overlay = document.getElementById('modal-overlay');
+  if (uiManager.activeModal && overlay && overlay.classList.contains('modal-overlay-visible')) {
+    return;
+  }
+  // Clear any stale activeModal state
+  if (!overlay || !overlay.classList.contains('modal-overlay-visible')) {
+    uiManager.activeModal = null;
+  }
 
   // Initialize audio on user gesture
   soundManager.ensureAudio();
@@ -190,7 +223,6 @@ function handlePointerDown(e) {
 
     // 2. Check if user clicked boat companions (Cat or Pelican)
     const vessel = save.getUpgradeLevel('boatVessel') || 0;
-    gameState = 'AIMING';
     const dx = mousePos.x - oceanWorld.boat.x;
     const dy = (mousePos.y + cameraY) - oceanWorld.boat.y;
     const boatAngle = oceanWorld.boat.angle || 0;
@@ -228,7 +260,6 @@ function handlePointerDown(e) {
       return;
     }
 
-    isMouseDown = true;
     gameState = 'AIMING';
     const aimDx = mousePos.x - oceanWorld.boat.x;
     oceanWorld.setAimDirection(aimDx < 0 ? -1 : 1);
@@ -245,7 +276,15 @@ function handlePointerMove(e) {
   mousePos.x = coords.x;
   mousePos.y = coords.y;
 
-  if (gameState === 'AIMING') {
+  // Auto-recover if mouseup was released outside browser or over modal
+  if (e.buttons === 0 && isMouseDown && !e.touches) {
+    if (gameState === 'AIMING') {
+      triggerCast();
+    }
+    isMouseDown = false;
+  }
+
+  if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
     // Dynamically update fisherman orientation (left or right side of boat)
     const dx = mousePos.x - oceanWorld.boat.x;
     oceanWorld.setAimDirection(dx < 0 ? -1 : 1);
@@ -362,18 +401,79 @@ const update = (dt) => {
     }
   }
 
+  const isReelingInput = isMouseDown || !!keysDown[' '] || !!keysDown['arrowup'] || !!keysDown['w'];
+
   // Update world environment
   oceanWorld.update(dt, hook, particles);
+
+  // Update Zone-Specific Environmental Mechanics (Mangrove snags, Abyssal pressure bursts, Caldera heat)
+  if (zoneManager) {
+    zoneManager.update(dt, hook, gameState, isReelingInput);
+  }
 
   // Update Hook
   if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING') {
     hook.rodTip = oceanWorld.rodTip;
-    hook.update(dt, oceanWorld.surfaceY, screenWidth, particles);
+    hook.update(dt, oceanWorld.surfaceY, screenWidth, particles, isReelingInput, zoneManager);
 
     // Transition: entering water
     if (gameState === 'CASTING' && hook.state === 'DESCENDING') {
       gameState = 'DESCENDING';
       soundManager.setMusicMode('underwater');
+
+      // Check interactive surface hotspot strike
+      if (oceanWorld.hotspotManager) {
+        const hit = oceanWorld.hotspotManager.checkHit(hook.x, oceanWorld.surfaceY);
+        if (hit) {
+          hook.biteTimer = 0;
+          hook.hasBitten = true;
+          soundManager.playRareChime();
+          if (particles) {
+            particles.emitSparkles(hook.x, oceanWorld.surfaceY, 28, hit.isSunkenSafe ? '#fbbf24' : '#38bdf8');
+            particles.addFloatingText(
+              hit.isSunkenSafe ? '🪙 SUNKEN SAFE STRIKE! 0s BITE!' : '✨ HOTSPOT STRIKE! INSTANT BITE!',
+              hook.x,
+              oceanWorld.surfaceY - 30,
+              hit.isSunkenSafe ? '#fbbf24' : '#38bdf8',
+              18
+            );
+            particles.addTrauma(0.3);
+          }
+
+          if (hit.isSunkenSafe && hook.caughtItems.length < hook.capacity) {
+            const safeItem = {
+              id: 'sunken_safe_' + Date.now(),
+              speciesId: 'sunken_safe',
+              name: 'Sunken Iron Safe',
+              rarity: 'rare',
+              rarityColor: '#38bdf8',
+              rarityGlow: '#7dd3fc',
+              baseValue: 180,
+              value: 180,
+              size: 45,
+              weight: 18.5,
+              scale: 1.2,
+              isSunkenSafe: true,
+              itemType: 'relic',
+              category: 'relic',
+              unlocked: false,
+              hookTo: (h, idx) => {
+                safeItem.hook = h;
+                safeItem.hookIndex = idx;
+              },
+              render: (ctx, camY) => {
+                ctx.save();
+                ctx.translate(safeItem.x, safeItem.y - camY);
+                ctx.font = '24px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🔒', 0, 0);
+                ctx.restore();
+              }
+            };
+            hook.addCatch(safeItem, particles);
+          }
+        }
+      }
     }
 
     // Hook reached max depth or began reeling
@@ -386,6 +486,14 @@ const update = (dt) => {
       gameState = 'CATCH_SUMMARY';
       soundManager.setMusicMode('surface');
       checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager);
+
+      // Save atmospheric cycle to persistent save
+      if (worldCycle && typeof worldCycle.serialize === 'function') {
+        const cycleState = worldCycle.serialize();
+        save.data.worldTime = cycleState.timer;
+        save.data.currentWeather = cycleState.weather;
+        save.save();
+      }
 
       // Record items to journal, stats, achievements, and persistent inventory!
       hook.caughtItems.forEach((item) => {
@@ -414,8 +522,25 @@ const update = (dt) => {
         });
       }
 
+      const unpickedSafe = hook.caughtItems.find(i => i.isSunkenSafe && !i.unlocked);
       const unboxedCrates = hook.caughtItems.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed);
-      if (unboxedCrates.length > 0) {
+
+      if (unpickedSafe) {
+        uiManager.openLockpickMinigame(unpickedSafe, () => {
+          if (unboxedCrates.length > 0) {
+            uiManager.openCratesModal(unboxedCrates, hook, () => {
+              startDive();
+            });
+          } else if (!save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
+            uiManager.showToast(`🎒 Stored ${hook.caughtItems.length} catches directly in your inventory!`);
+            startDive();
+          } else {
+            uiManager.openCatchSummary(hook, () => {
+              startDive();
+            });
+          }
+        });
+      } else if (unboxedCrates.length > 0) {
         uiManager.openCratesModal(unboxedCrates, hook, () => {
           startDive();
         });
@@ -443,6 +568,11 @@ const update = (dt) => {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < hookRadius + fish.radius) {
+          // Check bite wait timer on descending hook
+          if (gameState === 'DESCENDING' && hook.biteTimer > 0) {
+            fish.x += (Math.random() < 0.5 ? -1 : 1) * 2;
+            continue;
+          }
           const hooked = hook.addCatch(fish, particles);
           if (hooked) {
             oceanWorld.entities.fish.splice(i, 1);
@@ -616,10 +746,10 @@ const render = () => {
     });
   }
 
-  // 6. Fish (with dynamic size scaling and shapes)
+  // 6. Fish (with dynamic size scaling, shapes, and uncalibrated sonar silhouettes)
   oceanWorld.entities.fish.forEach((fish) => {
     if (fish.y - cameraY > -70 && fish.y - cameraY < screenHeight + 70) {
-      fish.render(ctx, cameraY);
+      fish.render(ctx, cameraY, hook);
     }
   });
 
@@ -650,6 +780,11 @@ const render = () => {
       cameraY,
       rodTier
     );
+  }
+
+  // 10b. Zone Atmospheric Shaders (Mangrove fog wisps, Abyssal vignette, Caldera heat haze ripples, and Transition screen wipes)
+  if (zoneManager) {
+    zoneManager.renderAtmosphere(ctx, cameraY, screenWidth, screenHeight);
   }
 
   // 11. Particles (splashes, bubbles, sparkles, floating text)

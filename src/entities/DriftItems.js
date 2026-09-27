@@ -141,7 +141,7 @@ export class DriftItemManager {
     this.worldWidth = worldWidth;
     this.surfaceY = surfaceY;
     this.items = [];
-    this.spawnTimer = 20; // First item spawns in ~20s
+    this.spawnTimer = 90 + Math.random() * 60; // Initial drift item delay
   }
 
   resize(worldWidth) {
@@ -153,11 +153,11 @@ export class DriftItemManager {
     this.surfaceY = surfaceY;
     this.spawnTimer -= sec;
 
-    // Spawn a new drifting item every ~60-90s if fewer than 2 active
-    if (this.spawnTimer <= 0 && this.items.length < 2) {
-      this.spawnTimer = 65 + Math.random() * 45;
+    // Spawn a new drifting item rarely (every ~3-5 mins), max 1 active
+    if (this.spawnTimer <= 0 && this.items.length < 1) {
+      this.spawnTimer = 180 + Math.random() * 120;
       const x = Math.random() < 0.5 ? 40 : this.worldWidth - 40;
-      if (Math.random() < 0.6) {
+      if (Math.random() < 0.25) {
         this.items.push(new DriftBottle(x, surfaceY));
       } else {
         this.items.push(new DriftWood(x, surfaceY));
