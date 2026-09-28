@@ -2429,6 +2429,7 @@ export class UIManager {
           <div class="journal-wrapper">
             <div class="journal-tabs">
               <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog">📖 Angler's Almanac (${caughtSpeciesCount} / ${allSpecies.length})</button>
+              <button class="tab-btn ${defaultSubTab === 'scoreboard' ? 'active' : ''}" id="tab-scoreboard" style="border: 1px solid #facc15; color: #facc15; font-weight: 700;">🏆 Scoreboard</button>
               <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;">🐠 Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
               <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / 3)</button>
               <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
@@ -2437,7 +2438,7 @@ export class UIManager {
               <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
             </div>
             <div id="journal-tab-content">
-              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : renderAlmanacHtml('sunken_shallows')}
+              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml('sunken_shallows')}
             </div>
           </div>
         </div>
@@ -2507,6 +2508,8 @@ export class UIManager {
         this.renderFossilMuseumTab();
       } else if (defaultSubTab === 'aquarium') {
         this.renderAquariumTab();
+      } else if (defaultSubTab === 'scoreboard') {
+        this.renderScoreboardTab('level');
       } else if (defaultSubTab === 'traps') {
         this.bindTrapsTabEvents();
       } else if (defaultSubTab === 'fieldlog') {
@@ -2525,6 +2528,12 @@ export class UIManager {
         activateTab('tab-fieldlog');
         document.getElementById('journal-tab-content').innerHTML = renderAlmanacHtml(currentAlmanacZone);
         bindAlmanacEvents();
+      });
+
+      document.getElementById('tab-scoreboard')?.addEventListener('click', () => {
+        soundManager.playButtonClick();
+        activateTab('tab-scoreboard');
+        this.renderScoreboardTab('level');
       });
 
       const crewBtn = document.getElementById('tab-crew');
@@ -2585,6 +2594,228 @@ export class UIManager {
         this.openShop();
       });
     }
+  }
+
+  // World Angler Scoreboard: Ranks top 100 created accounts by level and by money (strictly excludes guests)
+  renderScoreboardTab(sortMode = 'level') {
+    const container = document.getElementById('journal-tab-content');
+    if (!container) return;
+
+    const rawEntries = this.saveSystem.getScoreboardData();
+    const isGuest = accountManager.isGuest();
+    const currentUser = accountManager.getCurrentUser();
+
+    // Sort according to requested ranking mode
+    const sorted = [...rawEntries];
+    if (sortMode === 'level') {
+      sorted.sort((a, b) => {
+        if (b.level !== a.level) return b.level - a.level;
+        if (b.xp !== a.xp) return b.xp - a.xp;
+        if (b.coins !== a.coins) return b.coins - a.coins;
+        if (b.totalFishCaught !== a.totalFishCaught) return b.totalFishCaught - a.totalFishCaught;
+        return a.createdAt - b.createdAt;
+      });
+    } else {
+      sorted.sort((a, b) => {
+        if (b.coins !== a.coins) return b.coins - a.coins;
+        if (b.totalGoldEarned !== a.totalGoldEarned) return b.totalGoldEarned - a.totalGoldEarned;
+        if (b.level !== a.level) return b.level - a.level;
+        return a.createdAt - b.createdAt;
+      });
+    }
+
+    const top100 = sorted.slice(0, 100);
+
+    let userRank = -1;
+    let userStats = null;
+    if (!isGuest && currentUser) {
+      userRank = sorted.findIndex(e => e.isCurrent) + 1;
+      userStats = sorted.find(e => e.isCurrent);
+    }
+
+    let html = `
+      <div class="scoreboard-container">
+        <!-- Scoreboard Header Card -->
+        <div class="scoreboard-header-card">
+          <div class="scoreboard-header-left">
+            <div class="scoreboard-trophy-badge">🏆</div>
+            <div>
+              <h3 class="scoreboard-title">World Angler Scoreboard</h3>
+              <p class="scoreboard-subtitle">
+                Official rankings of registered captain accounts across the Seven Seas (Guest records are unranked).
+              </p>
+            </div>
+          </div>
+          <div class="scoreboard-header-actions">
+            <div class="scoreboard-toggle-pill-group">
+              <button class="scoreboard-pill-btn ${sortMode === 'level' ? 'active' : ''}" data-sort="level">
+                🎖️ Rank by Level (Top 100)
+              </button>
+              <button class="scoreboard-pill-btn ${sortMode === 'money' ? 'active' : ''}" data-sort="money">
+                💰 Rank by Money (Top 100)
+              </button>
+            </div>
+          </div>
+        </div>
+    `;
+
+    // Status Banner: Account vs Guest
+    if (isGuest) {
+      html += `
+        <div class="scoreboard-guest-banner">
+          <div class="guest-banner-icon">⚓</div>
+          <div class="guest-banner-text">
+            <strong>Playing as Guest:</strong> Only created player accounts are officially ranked on the Top 100 Scoreboard. Guest catches and coins are stored locally and excluded from standings.
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-scoreboard-open-auth">
+            Create Account & Join Ranks
+          </button>
+        </div>
+      `;
+    } else if (userStats) {
+      html += `
+        <div class="scoreboard-user-banner">
+          <div class="user-banner-col">
+            <span class="user-banner-label">Your Captain Account</span>
+            <span class="user-banner-val">👤 <strong>${currentUser}</strong></span>
+          </div>
+          <div class="user-banner-col">
+            <span class="user-banner-label">Current Standing</span>
+            <span class="user-banner-val" style="color: #facc15;">#${userRank > 0 ? userRank : 'Unranked'}</span>
+          </div>
+          <div class="user-banner-col">
+            <span class="user-banner-label">Level</span>
+            <span class="user-banner-val">Lv. ${userStats.level}</span>
+          </div>
+          <div class="user-banner-col">
+            <span class="user-banner-label">Purse Wealth</span>
+            <span class="user-banner-val" style="color: #38bdf8;">💰 ${userStats.coins.toLocaleString()}</span>
+          </div>
+          <div class="user-banner-col">
+            <span class="user-banner-label">Deepest Dive</span>
+            <span class="user-banner-val">⚓ ${Math.round(userStats.maxDepthReached)}m</span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (top100.length === 0) {
+      html += `
+        <div class="scoreboard-empty-state">
+          <div style="font-size: 3.2rem; margin-bottom: 8px;">📜</div>
+          <h4>No Registered Accounts Found</h4>
+          <p>
+            No player accounts have been created yet on this vessel. Guest accounts are not ranked.
+            Create an account to be ranked #1 on the scoreboard!
+          </p>
+          <button class="btn btn-primary" id="btn-scoreboard-register-empty">
+            ⚓ Create First Captain Account
+          </button>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="scoreboard-table-wrap">
+          <table class="scoreboard-table">
+            <thead>
+              <tr>
+                <th style="width: 70px; text-align: center;">Rank</th>
+                <th style="text-align: left;">Captain Account</th>
+                <th style="text-align: center;">${sortMode === 'level' ? '⭐ Level' : '💰 Coins'}</th>
+                <th style="text-align: center;">${sortMode === 'level' ? '💰 Coins' : '⭐ Level'}</th>
+                <th style="text-align: center;">🐟 Fish Caught</th>
+                <th style="text-align: center;">⚓ Max Depth</th>
+                <th style="text-align: right;">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      top100.forEach((item, idx) => {
+        const rank = idx + 1;
+        let rankBadge = `<span class="rank-num">#${rank}</span>`;
+        let rowClass = 'scoreboard-row';
+
+        if (rank === 1) {
+          rankBadge = `<span class="rank-medal rank-gold">🥇 1</span>`;
+          rowClass += ' row-top-1';
+        } else if (rank === 2) {
+          rankBadge = `<span class="rank-medal rank-silver">🥈 2</span>`;
+          rowClass += ' row-top-2';
+        } else if (rank === 3) {
+          rankBadge = `<span class="rank-medal rank-bronze">🥉 3</span>`;
+          rowClass += ' row-top-3';
+        }
+
+        if (item.isCurrent) {
+          rowClass += ' row-current-user';
+        }
+
+        const dateStr = new Date(item.createdAt).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        const primaryCol = sortMode === 'level'
+          ? `<span class="level-badge-tag">Lv. ${item.level}</span>`
+          : `<span class="coin-gold-tag">💰 ${item.coins.toLocaleString()}</span>`;
+
+        const secondaryCol = sortMode === 'level'
+          ? `<span class="coin-muted-tag">💰 ${item.coins.toLocaleString()}</span>`
+          : `<span class="level-badge-tag">Lv. ${item.level}</span>`;
+
+        html += `
+          <tr class="${rowClass}">
+            <td style="text-align: center;">${rankBadge}</td>
+            <td style="text-align: left;">
+              <div class="captain-cell">
+                <span class="captain-avatar">${item.level >= 20 ? '👑' : item.level >= 10 ? '⚓' : '⛵'}</span>
+                <span class="captain-username">${item.username}</span>
+                ${item.isCurrent ? '<span class="badge-you">YOU</span>' : ''}
+              </div>
+            </td>
+            <td style="text-align: center;">${primaryCol}</td>
+            <td style="text-align: center;">${secondaryCol}</td>
+            <td style="text-align: center; color: #cbd5e1;">${item.totalFishCaught.toLocaleString()}</td>
+            <td style="text-align: center; color: #38bdf8;">${Math.round(item.maxDepthReached)}m</td>
+            <td style="text-align: right; color: #94a3b8; font-size: 0.8rem;">${dateStr}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    html += `</div>`;
+
+    container.innerHTML = html;
+
+    // Bind events for sorting & account buttons
+    container.querySelectorAll('.scoreboard-pill-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        soundManager.playButtonClick();
+        const mode = e.currentTarget.getAttribute('data-sort');
+        this.renderScoreboardTab(mode);
+      });
+    });
+
+    const openAuthHandler = () => {
+      soundManager.playButtonClick();
+      this.closeModal();
+      const welcome = document.getElementById('welcome-popup');
+      if (welcome) {
+        welcome.classList.remove('welcome-overlay-hidden');
+        welcome.style.display = 'flex';
+      }
+    };
+
+    container.querySelector('#btn-scoreboard-open-auth')?.addEventListener('click', openAuthHandler);
+    container.querySelector('#btn-scoreboard-register-empty')?.addEventListener('click', openAuthHandler);
   }
 
   // Cabin Shelf: Displays the 5 archaeological relics on an antique wooden shelf

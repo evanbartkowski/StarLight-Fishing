@@ -186,6 +186,14 @@ export class AccountManager {
     this.saveActiveSession(null);
     return { success: true };
   }
+
+  getRegisteredAccounts() {
+    return Object.values(this.accounts || {});
+  }
+
+  getAccountCount() {
+    return Object.keys(this.accounts || {}).length;
+  }
 }
 
 export const accountManager = new AccountManager();

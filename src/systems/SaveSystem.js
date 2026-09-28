@@ -170,6 +170,66 @@ export class SaveSystem {
     }
   }
 
+  getScoreboardData() {
+    const registered = accountManager.getRegisteredAccounts();
+    const activeUsername = (accountManager.getCurrentUser() || '').toLowerCase();
+
+    return registered.map((acc) => {
+      const isCurrent = acc.username.toLowerCase() === activeUsername;
+      let level = 0;
+      let xp = 0;
+      let coins = 0;
+      let totalGoldEarned = 0;
+      let totalFishCaught = 0;
+      let maxDepthReached = 0;
+      let goldCrowns = 0;
+      let currentSea = 1;
+
+      if (isCurrent) {
+        level = (this.data.level === 1 && (!this.data.xp || this.data.xp === 0) && (!this.data.stats?.totalFishCaught || this.data.stats.totalFishCaught === 0)) ? 0 : Math.max(0, this.data.level ?? 0);
+        xp = Math.max(0, this.data.xp || 0);
+        coins = Math.max(0, this.data.coins || 0);
+        totalGoldEarned = Math.max(0, this.data.stats?.totalGoldEarned ?? coins);
+        totalFishCaught = Math.max(0, this.data.stats?.totalFishCaught || 0);
+        maxDepthReached = Math.max(0, this.data.stats?.maxDepthReached || 0);
+        goldCrowns = Math.max(0, this.data.stats?.goldCrowns || 0);
+        currentSea = this.data.currentSea || 1;
+      } else {
+        try {
+          const key = accountManager.getSaveKeyForUser(acc.username);
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            level = (parsed.level === 1 && (!parsed.xp || parsed.xp === 0) && (!parsed.stats?.totalFishCaught || parsed.stats.totalFishCaught === 0)) ? 0 : Math.max(0, parsed.level ?? 0);
+            xp = Math.max(0, parsed.xp || 0);
+            coins = Math.max(0, parsed.coins || 0);
+            totalGoldEarned = Math.max(0, parsed.stats?.totalGoldEarned ?? coins);
+            totalFishCaught = Math.max(0, parsed.stats?.totalFishCaught || 0);
+            maxDepthReached = Math.max(0, parsed.stats?.maxDepthReached || 0);
+            goldCrowns = Math.max(0, parsed.stats?.goldCrowns || 0);
+            currentSea = parsed.currentSea || 1;
+          }
+        } catch (e) {
+          console.warn('Error reading score data for user', acc.username, e);
+        }
+      }
+
+      return {
+        username: acc.username,
+        level,
+        xp,
+        coins,
+        totalGoldEarned,
+        totalFishCaught,
+        maxDepthReached,
+        goldCrowns,
+        currentSea,
+        createdAt: acc.createdAt || Date.now(),
+        isCurrent,
+      };
+    });
+  }
+
   switchToAccount(username) {
     if (username) {
       accountManager.activeUser = username;
