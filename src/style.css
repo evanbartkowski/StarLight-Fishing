@@ -2799,25 +2799,25 @@ html, body {
 
 @media (max-width: 768px) {
   #game-hud {
-    padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left));
+    padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 6px;
+    gap: 4px;
   }
 
   .hud-left {
-    gap: 5px;
+    gap: 4px;
     flex-wrap: wrap;
-    max-width: 52%;
+    max-width: 55%;
   }
 
   .hud-right {
-    gap: 4px;
+    gap: 3px;
     flex-wrap: wrap;
     justify-content: flex-end;
-    max-width: 48%;
+    max-width: 45%;
   }
 
   .hud-center {
@@ -2834,10 +2834,11 @@ html, body {
   }
 
   .icon-btn {
-    padding: 6px 8px;
-    font-size: 0.8rem;
-    gap: 3px;
+    padding: 5px 7px;
+    font-size: 0.75rem;
+    gap: 2px;
     border-radius: 8px;
+    min-height: 32px;
   }
 
   .level-display,
@@ -2845,42 +2846,46 @@ html, body {
   .capacity-display,
   .shield-display,
   .weather-display {
-    padding: 5px 9px;
-    font-size: 0.82rem;
+    padding: 4px 8px;
+    font-size: 0.78rem;
   }
 
   .depth-meter-container {
-    padding: 5px 14px;
-    min-width: 160px;
+    padding: 4px 12px;
+    min-width: 140px;
   }
 
   .depth-number {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
   }
 
   /* Modals: safe-area aware & scrollable */
   #modal-overlay {
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: max(10px, env(safe-area-inset-top));
   }
 
   .modal-card {
     width: 100%;
     max-width: 100%;
-    max-height: 92vh;
-    border-radius: 16px;
+    max-height: 94vh;
+    border-radius: 14px;
+    margin-top: 0;
   }
 
   .modal-header {
-    padding: 12px 16px;
+    padding: 10px 14px;
   }
 
   .modal-header h2 {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
   }
 
   .modal-body {
-    padding: 12px 14px;
-    max-height: calc(92vh - 58px);
+    padding: 10px 12px;
+    max-height: calc(94vh - 52px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
@@ -2888,69 +2893,80 @@ html, body {
 
   .welcome-card {
     width: 95vw;
-    max-width: 440px;
-    max-height: 92vh;
+    max-width: 420px;
+    max-height: 90vh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
-    padding: 20px 16px;
-    gap: 12px;
+    padding: 18px 14px;
+    gap: 10px;
   }
 
   #toast-notification {
     width: 90%;
-    max-width: 360px;
-    font-size: 0.82rem;
-    padding: 8px 16px;
+    max-width: 340px;
+    font-size: 0.8rem;
+    padding: 7px 14px;
     text-align: center;
-    top: max(55px, calc(env(safe-area-inset-top) + 48px));
+    top: max(52px, calc(env(safe-area-inset-top) + 46px));
   }
 
   .zone-entry-banner {
     width: 92%;
-    max-width: 420px;
-    padding: 8px 16px;
-    top: max(60px, calc(env(safe-area-inset-top) + 52px));
-    gap: 12px;
+    max-width: 400px;
+    padding: 7px 14px;
+    top: max(58px, calc(env(safe-area-inset-top) + 50px));
+    gap: 10px;
   }
 
   .zone-banner-title {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
   }
 
   .zone-banner-icon {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
 
   .btn {
-    min-height: 38px;
+    min-height: 36px;
   }
 }
 
 /* Phones & Compact Viewports */
 @media (max-width: 580px) {
-  .hud-right .btn-label {
-    display: none;
-  }
-
-  .icon-btn {
-    padding: 6px 8px;
-    min-width: 34px;
-    height: 34px;
-    justify-content: center;
-    font-size: 0.92rem;
-  }
-
-  .hud-left {
-    max-width: 60%;
-    gap: 4px;
-  }
-
-  .hud-right {
-    max-width: 40%;
+  #game-hud {
+    padding: max(4px, env(safe-area-inset-top)) 6px 3px 6px;
     gap: 3px;
   }
 
+  /* Hide text labels — icon-only buttons on phones */
+  .btn-label {
+    display: none !important;
+  }
+
+  .icon-btn {
+    padding: 5px 6px;
+    min-width: 32px;
+    height: 32px;
+    justify-content: center;
+    font-size: 0.9rem;
+    border-radius: 7px;
+  }
+
+  .hud-left {
+    max-width: 58%;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+
+  .hud-right {
+    max-width: 42%;
+    gap: 2px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* Hide less-essential HUD left items on small phones */
   .weather-sub {
     display: none;
   }
@@ -2960,20 +2976,33 @@ html, body {
   }
 
   .level-display {
-    padding: 4px 7px;
+    padding: 3px 6px;
   }
 
   .level-badge {
-    font-size: 0.76rem;
-    padding: 2px 6px;
+    font-size: 0.72rem;
+    padding: 2px 5px;
   }
 
   .coin-display,
   .capacity-display,
   .shield-display {
-    padding: 4px 8px;
-    font-size: 0.78rem;
-    gap: 4px;
+    padding: 3px 7px;
+    font-size: 0.74rem;
+    gap: 3px;
+  }
+
+  .depth-meter-container {
+    padding: 3px 10px;
+    min-width: 120px;
+  }
+
+  .depth-number {
+    font-size: 0.95rem;
+  }
+
+  .zone-badge {
+    font-size: 0.6rem;
   }
 
   /* Shop grid adapts to single column on phones */
@@ -2986,7 +3015,7 @@ html, body {
   .inventory-grid {
     grid-template-columns: 1fr;
     gap: 10px;
-    max-height: 420px;
+    max-height: 380px;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
   }
@@ -3015,7 +3044,7 @@ html, body {
   .journal-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
-    max-height: 440px;
+    max-height: 400px;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
   }
@@ -3026,25 +3055,25 @@ html, body {
   }
 
   .journal-visual {
-    height: 44px;
+    height: 40px;
   }
 
   .journal-card-info h4 {
-    font-size: 0.85rem;
+    font-size: 0.82rem;
   }
 
   .journal-lore {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 
   .primary-menu-tabs {
-    gap: 4px;
-    padding: 4px;
+    gap: 3px;
+    padding: 3px;
   }
 
   .primary-tab-btn {
-    padding: 8px 10px;
-    font-size: 0.82rem;
+    padding: 7px 8px;
+    font-size: 0.78rem;
   }
 
   /* Minimap / Seas navigation on phones */
@@ -3071,7 +3100,7 @@ html, body {
   /* Catch summary resolution on mobile */
   .summary-footer {
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     align-items: stretch;
   }
 
@@ -3079,23 +3108,25 @@ html, body {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 7px;
   }
 
   .summary-actions .btn {
     width: 100%;
+    font-size: 0.8rem;
+    padding: 8px 6px;
   }
 
   .total-cash {
     text-align: center;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
 
   /* Inspect item details */
   .inspect-item-hero {
     flex-direction: column;
     text-align: center;
-    gap: 10px;
+    gap: 8px;
   }
 
   .inspect-specs-grid {
@@ -3112,45 +3143,50 @@ html, body {
 
   /* Welcome card compact sizing on small screens */
   .welcome-card {
-    padding: 16px 14px;
-    gap: 10px;
+    width: 96vw;
+    padding: 14px 12px;
+    gap: 9px;
+    max-height: 88vh;
   }
 
   .welcome-title {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
   }
 
   .welcome-icon {
-    font-size: 2.2rem;
+    font-size: 2rem;
   }
 
   .welcome-tagline {
-    font-size: 0.8rem;
-  }
-
-  .welcome-stats-preview {
-    gap: 4px;
-  }
-
-  .wstat-box {
-    padding: 6px 3px;
-  }
-
-  .wstat-lbl {
-    font-size: 0.62rem;
-  }
-
-  .wstat-val {
-    font-size: 0.88rem;
+    font-size: 0.78rem;
   }
 
   .welcome-features {
-    padding: 8px 10px;
-    font-size: 0.76rem;
+    padding: 7px 10px;
+    font-size: 0.74rem;
   }
 
   .wfeat {
-    gap: 6px;
+    gap: 5px;
+  }
+
+  /* Modals tighter on phones */
+  .modal-card {
+    border-radius: 12px;
+    max-height: 92vh;
+  }
+
+  .modal-header {
+    padding: 9px 12px;
+  }
+
+  .modal-header h2 {
+    font-size: 1rem;
+  }
+
+  .modal-body {
+    padding: 9px 10px;
+    max-height: calc(92vh - 46px);
   }
 }
 
@@ -3163,28 +3199,43 @@ html, body {
   .coin-display,
   .capacity-display,
   .level-display {
-    font-size: 0.72rem;
-    padding: 3px 6px;
+    font-size: 0.68rem;
+    padding: 3px 5px;
   }
 
   .hud-left {
-    max-width: 54%;
+    max-width: 56%;
+    gap: 2px;
   }
 
   .hud-right {
-    max-width: 46%;
+    max-width: 44%;
+    gap: 2px;
+  }
+
+  .icon-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 3px 5px;
+    font-size: 0.85rem;
   }
 
   .journal-grid {
     grid-template-columns: 1fr;
   }
 
-  .icon-btn {
-    min-width: 30px;
-    height: 30px;
-    padding: 4px 6px;
+  .depth-meter-container {
+    min-width: 100px;
+    padding: 3px 8px;
+  }
+
+  .depth-number {
+    font-size: 0.88rem;
+  }
+
+  /* On very small screens, hide capacity and shield from HUD left to save space */
+  .capacity-display,
+  .shield-display {
+    display: none !important;
   }
 }
-
-
-

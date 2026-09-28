@@ -688,35 +688,10 @@ export class UIManager {
     const tensionContainer = document.getElementById('hud-tension-container');
     const heatContainer = document.getElementById('hud-heat-container');
 
+    // Tension meter is hidden — reeling is automatic, no manual tension mechanic
+    if (tensionContainer) tensionContainer.style.display = 'none';
+
     if (hook && gameState === 'REELING') {
-      if (tensionContainer) {
-        tensionContainer.style.display = 'flex';
-        const tensionPct = Math.min(100, Math.max(0, (hook.tension / hook.maxTension) * 100));
-        const fillEl = document.getElementById('hud-tension-fill');
-        const pctEl = document.getElementById('hud-tension-percent');
-        const sweetEl = document.getElementById('hud-tension-sweet-spot');
-
-        if (fillEl) fillEl.style.width = `${tensionPct}%`;
-        if (pctEl) pctEl.textContent = `${Math.round(tensionPct)}%`;
-
-        if (sweetEl) {
-          const sMinPct = (hook.sweetSpotMin / hook.maxTension) * 100;
-          const sMaxPct = (hook.sweetSpotMax / hook.maxTension) * 100;
-          sweetEl.style.left = `${sMinPct}%`;
-          sweetEl.style.width = `${sMaxPct - sMinPct}%`;
-        }
-
-        if (fillEl) {
-          if (hook.isInSweetSpot) {
-            fillEl.style.background = '#22c55e'; // Green sweet spot!
-          } else if (tensionPct > 80) {
-            fillEl.style.background = '#ef4444'; // Red snap danger
-          } else {
-            fillEl.style.background = '#38bdf8'; // Normal tension
-          }
-        }
-      }
-
       if (heatContainer) {
         if (this.zoneManager?.activeZone?.mechanic?.heatBuildup) {
           heatContainer.style.display = 'flex';
@@ -730,7 +705,6 @@ export class UIManager {
         }
       }
     } else {
-      if (tensionContainer) tensionContainer.style.display = 'none';
       if (heatContainer) heatContainer.style.display = 'none';
     }
 
