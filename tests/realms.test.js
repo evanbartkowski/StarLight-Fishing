@@ -51,14 +51,14 @@ test('every realm has 35 real native fish, distinct content, and complete journa
 });
 
 test('charter prices and common rewards rise together; gates charge the authoritative price', () => {
-  assert.deepEqual(FANTASY_SEAS.map(s => s.gates.unlockFee), [0,3000,17500,75000,325000,1250000,5000000]);
+  assert.deepEqual(FANTASY_SEAS.map(s => s.gates.unlockFee), [0,3000,17500,35000,70000,140000,1000000]);
   for (let i = 1; i < FANTASY_SEAS.length; i++) {
     const sea = FANTASY_SEAS[i], previous = FANTASY_SEAS[i-1];
     assert.equal(sea.gates.unlockFee, REALM_PROFILES[sea.id].fee);
     const meanValue = zone => FISH_SPECIES.filter(f => f.zone === zone).reduce((sum, f) => sum + f.baseValue, 0) / 35;
-    assert.ok(meanValue(sea.id) > meanValue(previous.id) * 3);
-    assert.ok(REALM_RELICS.find(r => r.zone === sea.id).restoredValue > REALM_RELICS.find(r => r.zone === previous.id).restoredValue * 3);
-    assert.ok(REALM_PROFILES[sea.id].commonValue > REALM_PROFILES[previous.id].commonValue * 3);
+    assert.ok(meanValue(sea.id) > meanValue(previous.id) * 1.5);
+    assert.ok(REALM_RELICS.find(r => r.zone === sea.id).restoredValue > REALM_RELICS.find(r => r.zone === previous.id).restoredValue * 1.5);
+    assert.ok(REALM_PROFILES[sea.id].commonValue > REALM_PROFILES[previous.id].commonValue * 1.5);
     const save = advancedSave();
     save.data.unlockedSeas = [1];
     save.checkAchievements = () => {}; // Isolate charter deductions from unrelated level/upgrade achievement rewards.
@@ -149,6 +149,8 @@ test('appearance, aquarium decor, and displayed treasure survive reload without 
   const save = new SaveSystem();
   save.setAppearance('coat', '#0d9488');
   save.setAppearance('hat', 'beanie');
+  save.setUpgradeLevel('personalAquarium', 1);
+  save.data.coins = 2000;
   save.setAquariumDecoration('substrate', 'pearl');
   save.setAquariumDecoration('decoration', 'crystals');
   save.setAquariumDecoration('lighting', 'moonlight');
@@ -186,5 +188,71 @@ test('shop places completed upgrades after every available upgrade', async () =>
     for (const upgrade of Object.values(UPGRADE_DEFINITIONS)) {
       if (upgrade.id !== 'lineLength') assert.ok(html.indexOf(`<h3>${upgrade.name}</h3>`) < completedPosition);
     }
+  } finally { globalThis.document = oldDocument; }
+});
+
+
+test('aquarium purchases persist, owned styles are free, and feeding costs exactly one coin', () => {
+  const save = new SaveSystem();
+  save.setUpgradeLevel('personalAquarium', 1);
+  save.data.aquarium.decor = { substrate: 'sand' };
+  save.data.aquarium.ownedStyles = [];
+  save.data.coins = 99;
+  assert.equal(save.setAquariumDecoration('substrate', 'pebbles'), false);
+  assert.equal(save.data.aquarium.decor.substrate, 'sand');
+  assert.equal(save.data.coins, 99);
+  save.data.coins = 101;
+  assert.equal(save.setAquariumDecoration('substrate', 'pebbles'), true);
+  assert.equal(save.data.coins, 1);
+  assert.equal(save.feedAquarium(), true);
+  assert.equal(save.data.coins, 0);
+  assert.equal(save.feedAquarium(), false);
+  save.save(); save.load();
+  assert.equal(save.setAquariumDecoration('substrate', 'sand'), true);
+  assert.equal(save.setAquariumDecoration('substrate', 'pebbles'), true);
+  assert.equal(save.data.coins, 0);
+  assert.equal(save.setAquariumTheme('nebula'), false);
+  assert.equal(save.setAquariumDecoration('substrate', 'invalid'), false);
+});
+
+test('journal opens every realm and renders the current realm roster', async () => {
+  const { UIManager } = await import('../src/ui/UIManager.js');
+  const oldDocument = globalThis.document;
+  const element = { addEventListener() {}, classList: { add() {}, remove() {} }, style: {} };
+  globalThis.document = { getElementById: () => element, querySelectorAll: () => [] };
+  try {
+    const save = advancedSave();
+    for (const sea of FANTASY_SEAS) {
+      save.data.currentSea = sea.id;
+      const ui = Object.create(UIManager.prototype);
+      ui.saveSystem = save;
+      let html = '';
+      ui.openModal = (title, body) => { html = body; };
+      ui.openJournalLogbook('journal', 'fieldlog');
+      assert.ok(html.includes(`${sea.name} Almanac`));
+      for (const realm of FANTASY_SEAS) assert.ok(html.includes(`data-zone="sea_${realm.id}"`));
+    }
+  } finally { globalThis.document = oldDocument; }
+});
+
+
+test('scoreboard switches between level and money order with deterministic tie breaks', async () => {
+  const { UIManager } = await import('../src/ui/UIManager.js');
+  const oldDocument = globalThis.document;
+  const container = { innerHTML: '', querySelectorAll: () => [], querySelector: () => null };
+  globalThis.document = { getElementById: () => container };
+  try {
+    const ui = Object.create(UIManager.prototype);
+    const base = { xp: 0, coins: 0, totalGoldEarned: 0, totalFishCaught: 0, maxDepthReached: 0, createdAt: 100, isCurrent: false };
+    const entries = [
+      { ...base, username: 'Wealthy', level: 2, coins: 500 },
+      { ...base, username: 'Veteran', level: 8, xp: 10 },
+      { ...base, username: 'Leader', level: 8, xp: 20 },
+    ];
+    await ui.renderScoreboardTab('level', { entries, online: true });
+    assert.ok(container.innerHTML.indexOf('>Leader</span>') < container.innerHTML.indexOf('>Veteran</span>'));
+    assert.ok(container.innerHTML.indexOf('>Veteran</span>') < container.innerHTML.indexOf('>Wealthy</span>'));
+    await ui.renderScoreboardTab('money', { entries, online: true });
+    assert.ok(container.innerHTML.indexOf('>Wealthy</span>') < container.innerHTML.indexOf('>Leader</span>'));
   } finally { globalThis.document = oldDocument; }
 });

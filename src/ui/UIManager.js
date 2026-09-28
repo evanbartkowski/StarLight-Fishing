@@ -1,3 +1,5 @@
+import { Fish } from '../entities/Fish.js';
+import { FANTASY_SEAS } from '../entities/SeasData.js';
 import { Treasure } from '../entities/Treasure.js';
 import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization, drawAngler, drawAquariumDecor } from '../data/CustomizationData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
@@ -2022,19 +2024,13 @@ export class UIManager {
     const caughtSpeciesCount = Object.keys(save.data.journal).length;
     const fossilCount = Object.keys(save.data.fossils).length;
 
-    let currentAlmanacZone = 'sunken_shallows';
+    let currentAlmanacZone = `sea_${save.getCurrentSea()}`;
 
     const renderAlmanacHtml = (zoneKey = currentAlmanacZone) => {
       currentAlmanacZone = zoneKey;
       const isAberrations = zoneKey === 'aberrations';
 
-      const zonePills = [
-        { id: 'sunken_shallows', name: 'Sunken Shallows', icon: '🏖️' },
-        { id: 'whispering_mangrove', name: 'Whispering Mangrove', icon: '🌿' },
-        { id: 'abyssal_rift', name: 'Abyssal Rift', icon: '🔮' },
-        { id: 'volcanic_caldera', name: 'Volcanic Caldera', icon: '🌋' },
-        { id: 'aberrations', name: 'Aberrations', icon: '☣️' },
-      ];
+      const zonePills = [...FANTASY_SEAS.map(sea => ({ id: `sea_${sea.id}`, name: sea.name, icon: sea.icon })), { id: 'aberrations', name: 'Aberrations', icon: '??' }];
 
       let navHtml = '<div class="almanac-zone-pills">';
       zonePills.forEach((z) => {
@@ -2125,7 +2121,7 @@ export class UIManager {
       }
 
       // Zone Bestiary
-      const zoneData = ZONE_ALMANAC_DATA[zoneKey] || ZONE_ALMANAC_DATA.sunken_shallows;
+      const zoneData = ZONE_ALMANAC_DATA[zoneKey] || ZONE_ALMANAC_DATA.sea_1;
       const progress = getZoneProgress(zoneKey, save);
 
       let perkStatusHtml = '';
@@ -2176,7 +2172,7 @@ export class UIManager {
 
         const entry = save.getSpeciesJournalEntry(species.id);
         const isDiscovered = !!entry;
-        const zoneName = DEPTH_ZONES[species.zone - 1]?.name || 'Deep Abyssal Ocean';
+        const zoneName = FANTASY_SEAS.find(sea => sea.id === species.zone)?.name || 'Unknown Realm';
         const hint = zoneData.hints[species.id] || {};
 
         if (isDiscovered) {
@@ -2196,9 +2192,7 @@ export class UIManager {
                 <span class="zone-tag">${gradeBadge}</span>
               </div>
               <div class="journal-visual">
-                <div class="journal-fish-preview" style="color: ${species.primaryColor}; font-size: ${1.8 * (species.scaleFactor || 1)}rem;">
-                  ${species.isMythic ? '🌟' : '🐟'}
-                </div>
+                <canvas class="journal-fish-preview" data-species="${species.id}" width="240" height="100" aria-label="${species.name}"></canvas>
               </div>
               <div class="journal-card-info">
                 <h4>${species.name} ${goldCrownBadge} ${silverCrownBadge}</h4>
@@ -2223,7 +2217,7 @@ export class UIManager {
                 <span class="zone-tag">Dwells: ${hint.depth || (species.minDepth + '-' + species.maxDepth + 'm')}</span>
               </div>
               <div class="journal-visual">
-                <div class="journal-fish-preview silhouette">${species.isMythic ? '🌟' : '🐟'}</div>
+                <canvas class="journal-fish-preview silhouette" data-species="${species.id}" width="240" height="100" aria-label="Undiscovered fish silhouette"></canvas>
               </div>
               <div class="journal-card-info">
                 <h4>??? Undiscovered Species</h4>
@@ -2489,7 +2483,7 @@ export class UIManager {
               <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
             </div>
             <div id="journal-tab-content">
-              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml('sunken_shallows')}
+              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml(currentAlmanacZone)}
             </div>
           </div>
         </div>
@@ -2527,6 +2521,14 @@ export class UIManager {
     });
 
     const bindAlmanacEvents = () => {
+      document.querySelectorAll('canvas[data-species]').forEach(canvas => {
+        const species = allSpecies.find(fish => fish.id === canvas.dataset.species);
+        if (!species) return;
+        const fish = new Fish(species, 0, 0);
+        fish.isShiny = false; fish.crown = null; fish.scale = 0.65;
+        const ctx = canvas.getContext('2d');
+        ctx.translate(120, 50); fish.render(ctx, 0);
+      });
       document.querySelectorAll('.almanac-pill-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
           soundManager.playButtonClick();
@@ -3102,19 +3104,19 @@ export class UIManager {
           </div>
           <div class="aq-theme-selector">
             <span class="aq-lbl">Theme:</span>
-            <button class="theme-btn ${theme === 'reef' ? 'active' : ''}" data-theme="reef">🪸 Reef</button>
-            <button class="theme-btn ${theme === 'abyss' ? 'active' : ''}" data-theme="abyss">🌌 Abyss</button>
-            <button class="theme-btn ${theme === 'atlantis' ? 'active' : ''}" data-theme="atlantis">🏛️ Atlantis</button>
-            <button class="theme-btn ${theme === 'nebula' ? 'active' : ''}" data-theme="nebula">✨ Nebula</button>
+            <button class="theme-btn ${theme === 'reef' ? 'active' : ''}" data-theme="reef">🪸 Reef ${save.getAquariumStyleCost('theme', 'reef') ? '$' + save.getAquariumStyleCost('theme', 'reef') : '(Owned)'}</button>
+            <button class="theme-btn ${theme === 'abyss' ? 'active' : ''}" data-theme="abyss">🌌 Abyss ${save.getAquariumStyleCost('theme', 'abyss') ? '$' + save.getAquariumStyleCost('theme', 'abyss') : '(Owned)'}</button>
+            <button class="theme-btn ${theme === 'atlantis' ? 'active' : ''}" data-theme="atlantis">🏛️ Atlantis ${save.getAquariumStyleCost('theme', 'atlantis') ? '$' + save.getAquariumStyleCost('theme', 'atlantis') : '(Owned)'}</button>
+            <button class="theme-btn ${theme === 'nebula' ? 'active' : ''}" data-theme="nebula">✨ Nebula ${save.getAquariumStyleCost('theme', 'nebula') ? '$' + save.getAquariumStyleCost('theme', 'nebula') : '(Owned)'}</button>
           </div>
           <div class="aq-actions-col">
-            <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish</button>
+            <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish ($1)</button>
             <button class="btn btn-outline btn-sm" id="btn-aq-upgrade">🛒 Upgrade</button>
           </div>
         </div>
 
-        <div class="customize-grid aquarium-decor-controls">${this.customizationControls(AQUARIUM_OPTIONS, save.data.aquarium.decor, 'aquarium-decor')}</div>
-        <p class="customize-note">Display fish, treasures, fossils, and relics. Decorations use tank slots; only fish earn visitor tips.</p>
+        <div class="customize-grid aquarium-decor-controls">${Object.entries(AQUARIUM_OPTIONS).map(([key, config]) => `<label class="customize-field">${config.label}<select data-aquarium-decor="${key}">${config.choices.map(([value, label]) => `<option value="${value}" ${value === (save.data.aquarium.decor?.[key] || config.default) ? 'selected' : ''}>${label} - ${save.getAquariumStyleCost(key, value) ? '$' + save.getAquariumStyleCost(key, value) : 'Owned'}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" data-buy-decor="${key}">Buy / Apply</button></label>`).join('')}</div>
+        <p class="customize-note">Display fish, treasures, fossils, and relics. Displayed items use tank slots; only fish earn visitor tips. Buy styles once, then switch between owned styles for free.</p>
         <div class="aquarium-canvas-box">
           <canvas id="aquarium-canvas" width="760" height="380"></canvas>
           <div class="aquarium-canvas-hint">Click tank to tap the glass • Food attracts fish • Relics rest on seabed</div>
@@ -3135,8 +3137,11 @@ export class UIManager {
     `;
 
     this.startAquariumCanvas(items, theme);
-    document.querySelectorAll('[data-aquarium-decor]').forEach(select => select.addEventListener('change', () => {
-      this.saveSystem.setAquariumDecoration(select.dataset.aquariumDecor, select.value);
+    document.querySelectorAll('[data-buy-decor]').forEach(button => button.addEventListener('click', () => {
+      const key = button.dataset.buyDecor;
+      const value = document.querySelector(`[data-aquarium-decor="${key}"]`).value;
+      if (!save.setAquariumDecoration(key, value)) this.showToast('Not enough coins for this aquarium style.');
+      this.renderAquariumTab();
     }));
 
     // Event listeners
@@ -3152,7 +3157,7 @@ export class UIManager {
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const newTheme = e.currentTarget.dataset.theme;
-        this.saveSystem.setAquariumTheme(newTheme);
+        if (!this.saveSystem.setAquariumTheme(newTheme)) { this.showToast('Not enough coins for this aquarium theme.'); return; }
         soundManager.playButtonClick();
         this.renderAquariumTab();
       });
@@ -3251,6 +3256,7 @@ export class UIManager {
     const feedBtn = document.getElementById('btn-feed-fish');
     if (feedBtn) {
       feedBtn.addEventListener('click', () => {
+        if (!this.saveSystem.feedAquarium()) { this.showToast('You need $1 to feed the fish.'); return; }
         for (let i = 0; i < 7; i++) {
           foodPellets.push({
             x: 60 + Math.random() * (canvas.width - 120),

@@ -5,10 +5,10 @@ export const REALM_PROFILES = {
   1: { fee: 0, commonValue: 6, xpMultiplier: 1, colors: ['#fbbf24', '#fb7185', '#2dd4bf', '#38bdf8', '#f97316'], trail: 'bubbles', habitat: 'coral gardens and sunlit seagrass', style: 'reef', hazardDensity: 1, treasureChance: 0.2 },
   2: { fee: 3000, commonValue: 30, xpMultiplier: 1.3, colors: ['#22d3ee', '#a3e635', '#c084fc', '#34d399', '#818cf8'], trail: 'biolum', habitat: 'glowing fungal shelves and lantern kelp', style: 'spore', hazardDensity: 1.1, treasureChance: 0.22 },
   3: { fee: 17500, commonValue: 130, xpMultiplier: 1.7, colors: ['#818cf8', '#e0e7ff', '#c4b5fd', '#67e8f9', '#f0abfc'], trail: 'stardust', habitat: 'meteor craters and falling starlight', style: 'crystal', hazardDensity: 1.2, treasureChance: 0.24 },
-  4: { fee: 75000, commonValue: 600, xpMultiplier: 2.2, colors: ['#facc15', '#10b981', '#d97706', '#fef3c7', '#2dd4bf'], trail: 'emerald', habitat: 'marble courtyards and clockwork aqueducts', style: 'ruins', hazardDensity: 1.3, treasureChance: 0.26 },
-  5: { fee: 325000, commonValue: 2500, xpMultiplier: 2.9, colors: ['#f0abfc', '#e9d5ff', '#7dd3fc', '#f9a8d4', '#a5b4fc'], trail: 'aether', habitat: 'cloud reefs and floating root islands', style: 'cloud', hazardDensity: 1.4, treasureChance: 0.28 },
-  6: { fee: 1250000, commonValue: 10500, xpMultiplier: 3.8, colors: ['#fb923c', '#ef4444', '#facc15', '#a8a29e', '#f97316'], trail: 'embers', habitat: 'black smokers and rivers of molten basalt', style: 'lava', hazardDensity: 1.5, treasureChance: 0.3 },
-  7: { fee: 5000000, commonValue: 44000, xpMultiplier: 5, colors: ['#a855f7', '#22d3ee', '#f43f5e', '#818cf8', '#e2e8f0'], trail: 'aurora', habitat: 'gravity wells and shattered timelines', style: 'void', hazardDensity: 1.6, treasureChance: 0.32 },
+  4: { fee: 35000, commonValue: 280, xpMultiplier: 2.2, colors: ['#facc15', '#10b981', '#d97706', '#fef3c7', '#2dd4bf'], trail: 'emerald', habitat: 'marble courtyards and clockwork aqueducts', style: 'ruins', hazardDensity: 1.3, treasureChance: 0.26 },
+  5: { fee: 70000, commonValue: 538, xpMultiplier: 2.9, colors: ['#f0abfc', '#e9d5ff', '#7dd3fc', '#f9a8d4', '#a5b4fc'], trail: 'aether', habitat: 'cloud reefs and floating root islands', style: 'cloud', hazardDensity: 1.4, treasureChance: 0.28 },
+  6: { fee: 140000, commonValue: 1176, xpMultiplier: 3.8, colors: ['#fb923c', '#ef4444', '#facc15', '#a8a29e', '#f97316'], trail: 'embers', habitat: 'black smokers and rivers of molten basalt', style: 'lava', hazardDensity: 1.5, treasureChance: 0.3 },
+  7: { fee: 1000000, commonValue: 8800, xpMultiplier: 5, colors: ['#a855f7', '#22d3ee', '#f43f5e', '#818cf8', '#e2e8f0'], trail: 'aurora', habitat: 'gravity wells and shattered timelines', style: 'void', hazardDensity: 1.6, treasureChance: 0.32 },
 };
 
 // Hand-named species use different silhouettes, swimming behaviors, depth niches,

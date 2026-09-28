@@ -70,8 +70,6 @@ export class MinimapUI {
           </div>
 
           <p class="sea-card-desc">${sea.description}</p>
-          <p class="sea-card-desc">35 native fish + special mythics ? 4 signature hazards ? 7 native treasures and caches</p>
-          <p class="sea-card-desc">Common fish base value: ~$${profile.commonValue.toLocaleString()} ? Fish XP: ${profile.xpMultiplier}x ? Charter: $${sea.gates.unlockFee.toLocaleString()}</p>
 
           <!-- Hotspots list -->
           <div class="sea-card-hotspots">

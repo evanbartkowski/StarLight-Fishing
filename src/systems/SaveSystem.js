@@ -1,4 +1,4 @@
-import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization } from '../data/CustomizationData.js';
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization } from '../data/CustomizationData.js';
 import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
@@ -193,7 +193,7 @@ export class SaveSystem {
       let currentSea = 1;
 
       if (isCurrent) {
-        level = (this.data.level === 1 && (!this.data.xp || this.data.xp === 0) && (!this.data.stats?.totalFishCaught || this.data.stats.totalFishCaught === 0)) ? 0 : Math.max(0, this.data.level ?? 0);
+        level = Math.max(0, this.data.level ?? 0);
         xp = Math.max(0, this.data.xp || 0);
         coins = Math.max(0, this.data.coins || 0);
         totalGoldEarned = Math.max(0, this.data.stats?.totalGoldEarned ?? coins);
@@ -207,7 +207,7 @@ export class SaveSystem {
           const raw = localStorage.getItem(key);
           if (raw) {
             const parsed = JSON.parse(raw);
-            level = (parsed.level === 1 && (!parsed.xp || parsed.xp === 0) && (!parsed.stats?.totalFishCaught || parsed.stats.totalFishCaught === 0)) ? 0 : Math.max(0, parsed.level ?? 0);
+            level = Math.max(0, parsed.level ?? 0);
             xp = Math.max(0, parsed.xp || 0);
             coins = Math.max(0, parsed.coins || 0);
             totalGoldEarned = Math.max(0, parsed.stats?.totalGoldEarned ?? coins);
@@ -941,14 +941,44 @@ export class SaveSystem {
   }
 
   setAquariumDecoration(key, value) {
+    if (!this.purchaseAquariumStyle(key, value)) return false;
     this.data.aquarium.decor = normalizeCustomization(AQUARIUM_OPTIONS, { ...this.data.aquarium.decor, [key]: value });
     this.save();
+    return true;
+  }
+
+  getAquariumStyleCost(key, value) {
+    if (!Object.hasOwn(AQUARIUM_PRICES, key) || !Object.hasOwn(AQUARIUM_PRICES[key], value)) return null;
+    const aquarium = this.data.aquarium;
+    const current = key === 'theme' ? aquarium.theme || 'reef' : aquarium.decor?.[key] || AQUARIUM_OPTIONS[key]?.default;
+    return current === value || aquarium.ownedStyles?.includes(`${key}:${value}`) ? 0 : AQUARIUM_PRICES[key][value];
+  }
+
+  purchaseAquariumStyle(key, value) {
+    const cost = this.getAquariumStyleCost(key, value);
+    if (cost === null || !this.hasAquarium() || this.data.coins < cost) return false;
+    const aquarium = this.data.aquarium;
+    aquarium.ownedStyles ||= [];
+    const previous = key === 'theme' ? aquarium.theme || 'reef' : aquarium.decor?.[key] || AQUARIUM_OPTIONS[key]?.default;
+    for (const item of [`${key}:${previous}`, `${key}:${value}`]) {
+      if (!aquarium.ownedStyles.includes(item)) aquarium.ownedStyles.push(item);
+    }
+    this.data.coins -= cost;
+    return true;
+  }
+
+  feedAquarium() {
+    if (!this.hasAquarium() || this.data.coins < 1) return false;
+    this.data.coins -= 1;
+    this.save();
+    return true;
   }
 
   setAquariumTheme(themeId) {
-    if (!this.data.aquarium) return;
+    if (!this.purchaseAquariumStyle('theme', themeId)) return false;
     this.data.aquarium.theme = themeId;
     this.save();
+    return true;
   }
 
   getVisitorTipRate() {

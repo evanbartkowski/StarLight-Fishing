@@ -11,6 +11,13 @@ export const AQUARIUM_OPTIONS = {
   lighting: { label: 'Lighting', default: 'daylight', choices: [['daylight', 'Daylight'], ['moonlight', 'Moonlight blue'], ['sunset', 'Warm sunset'], ['rose', 'Rose glow']] },
   bubbles: { label: 'Bubbles', default: 'normal', choices: [['off', 'Off'], ['gentle', 'Gentle'], ['normal', 'Lively']] },
 };
+export const AQUARIUM_PRICES = {
+  substrate: { sand: 0, pebbles: 100, obsidian: 250, pearl: 500 },
+  decoration: { kelp: 0, coral: 200, ruins: 500, crystals: 750, none: 0 },
+  lighting: { daylight: 0, moonlight: 100, sunset: 150, rose: 200 },
+  bubbles: { normal: 0, off: 0, gentle: 50 },
+  theme: { reef: 0, abyss: 300, atlantis: 500, nebula: 750 },
+};
 export function normalizeCustomization(options, values = {}) {
   return Object.fromEntries(Object.entries(options).map(([key, config]) => [key, config.choices.some(([value]) => value === values?.[key]) ? values[key] : config.default]));
 }

@@ -18,7 +18,7 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(56, 189, 248, 0.4)',
     particleType: 'light_rays',
     ambientLight: 1.0,
-    description: 'Breezy coastal blues, warm sunbeams, and gentle sandy shoals teeming with lively reef species.',
+    description: 'Warm blue shallows with coral outcrops, seagrass fish, shell treasures, and scattered reef hazards.',
     lore: 'Where every novice mariner casts their first line. The tide is gentle and the gulls sing welcoming melodies.',
     gates: {
       reqLevel: 0,
@@ -49,7 +49,7 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(168, 85, 247, 0.45)',
     particleType: 'biolum_plankton',
     ambientLight: 0.75,
-    description: 'A deep violet and neon-cyan abyss illuminated by floating photophores, pulsating jellies, and glowing plankton.',
+    description: 'Violet water lit by glowing plankton and lantern fish. Fungal shelves, tangled roots, and luminous treasures fill the trench.',
     lore: 'Sunlight never pierces this canyon; instead, ancient algae and crystal corals radiate their own cold, ethereal twilight.',
     gates: {
       reqLevel: 3,
@@ -80,7 +80,7 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(99, 102, 241, 0.4)',
     particleType: 'starlight_dust',
     ambientLight: 0.78,
-    description: 'Starlit crystalline waters mirroring brilliant nebula skies, with cascades of meteor dust and floating crystal shards.',
+    description: 'Starlit indigo water with crystal formations, comet-colored fish, meteor fragments, and sharp astral debris.',
     lore: 'Legend tells of a fallen comet that shattered upon the sea, embedding starlight into the scales of every creature that dwells here.',
     gates: {
       reqLevel: 5,
@@ -111,13 +111,13 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(16, 185, 129, 0.35)',
     particleType: 'emerald_bubbles',
     ambientLight: 0.70,
-    description: 'Submerged classical marble pillars, emerald currents, ancient brass automatons, and moss-draped amphitheaters.',
+    description: 'Emerald water surrounds sunken columns and broken machinery. Gilded fish swim among ancient coins, relics, and ruined stonework.',
     lore: 'The sovereign metropolis swallowed by an ancient deluge. Its clocks still tick and its gilded treasures rest untouched.',
     gates: {
       reqLevel: 8,
       reqVessel: 2, // Expedition Trawler
       reqTackle: { id: 'treasureSonar', level: 1, label: 'Treasure Sonar Lv. 1' },
-      unlockFee: 75000,
+      unlockFee: 35000,
     },
     hotspots: [
       { name: "Sunken Amphitheater", type: "Gilded Relic Field", bonus: "High Ancient Relic Dredging Rate", coords: [140, 240] },
@@ -142,13 +142,13 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(217, 70, 239, 0.35)',
     particleType: 'lilac_winds',
     ambientLight: 0.65,
-    description: 'Cloud-shrouded floating sky-islands, lilac winds, shimmering cloud-fins, and gentle celestial wind chimes.',
+    description: 'Lilac skies hang over a deep blue sea of feather-finned fish, drifting cloud reefs, and aether treasures.',
     lore: 'An impossible sea lifted towards the clouds by volcanic aetherium. Fish here navigate between sea spray and low clouds with equal ease.',
     gates: {
       reqLevel: 11,
       reqVessel: 2, // Expedition Trawler
       reqTackle: { id: 'hookAgility', level: 2, label: 'Hook Agility Lv. 2' },
-      unlockFee: 325000,
+      unlockFee: 70000,
     },
     hotspots: [
       { name: "Sky-Isle Shallows", type: "Floating Shoal", bonus: "Aetherial XP Multiplier (+50%)", coords: [160, 310] },
@@ -173,13 +173,13 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(239, 68, 68, 0.4)',
     particleType: 'volcanic_embers',
     ambientLight: 0.58,
-    description: 'Volcanic reefs, cooled obsidian spires, floating glowing embers, and superheated hydrothermal vents.',
+    description: 'Red volcanic water surrounds obsidian spires and thermal vents. Ember-colored fish and mineral treasures reward careful casts through the hazards.',
     lore: 'The beating thermal heart of the Seven Seas. Only heavily armored vessels and heat-forged lines dare plumb these bubbling depths.',
     gates: {
       reqLevel: 14,
       reqVessel: 3, // Grand Schooner
       reqTackle: { id: 'lineArmor', level: 3, label: 'Line Armor Lv. 3 (Shields)' },
-      unlockFee: 1250000,
+      unlockFee: 140000,
     },
     hotspots: [
       { name: "Obsidian Spire", type: "Volcanic Chimney", bonus: "Golden Coelacanth Habitat", coords: [190, 420] },
@@ -204,13 +204,13 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(56, 189, 248, 0.5)',
     particleType: 'cosmic_aurora',
     ambientLight: 0.52,
-    description: 'Iridescent aurora waves, space-whale silhouettes drifting in the background, time distortion rings, and cosmic silence.',
+    description: 'A dark cosmic sea of strange deep-water fish, fractured rings, and ancient timeworn treasures. Its deepest catches demand a fully extended line.',
     lore: 'Where time curves back upon itself. Reaching the Chrono Tide is the crowning triumph of only the most patient masters of the rod.',
     gates: {
       reqLevel: 18,
       reqVessel: 4, // Mythic Celestial Ketch
       reqTackle: { id: 'fishingRod', level: 4, label: 'Gilded Sovereign Rod+' },
-      unlockFee: 5000000,
+      unlockFee: 1000000,
     },
     hotspots: [
       { name: "Singularity Well", type: "Chrono Eddy", bonus: "Celestial Reliquary Crate Vault", coords: [210, 560] },

@@ -2864,3 +2864,30 @@ html, body {
 .angler-customization { max-width: 560px; margin: auto; }
 #angler-preview { display: block; margin: auto; border: 1px solid #38bdf8; border-radius: 16px; max-width: 100%; }
 .customize-note { color: #94a3b8; font-size: 0.85rem; line-height: 1.5; }
+
+/* Journal navigation and public standings share the game's panel styling. */
+.almanac-zone-pills, .scoreboard-header-actions, .scoreboard-toggle-pill-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.almanac-pill-btn, .scoreboard-pill-btn { padding: 8px 12px; border: 1px solid #475569; border-radius: 12px; background: #1e293b; color: #cbd5e1; cursor: pointer; font: inherit; }
+.almanac-pill-btn.active, .scoreboard-pill-btn.active { background: #164e63; border-color: #38bdf8; color: #f8fafc; }
+.journal-card-top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.journal-visual { height: 100px; overflow: hidden; }
+canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; object-fit: contain; }
+.journal-grid { grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); }
+.scoreboard-header-card, .scoreboard-user-banner, .scoreboard-guest-banner { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.scoreboard-header-left, .scoreboard-user-banner, .scoreboard-guest-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.scoreboard-trophy-badge { font-size: 2rem; }
+.scoreboard-subtitle, .user-banner-label { color: #94a3b8; font-size: .82rem; }
+.user-banner-col { display: flex; flex-direction: column; gap: 4px; }
+.scoreboard-header-actions { margin-top: 12px; margin-bottom: 0; }
+.scoreboard-table-wrap { overflow-x: auto; border: 1px solid #334155; border-radius: 12px; }
+.scoreboard-table { width: 100%; border-collapse: collapse; min-width: 620px; font-size: .85rem; }
+.scoreboard-table th { background: #1e293b; color: #94a3b8; padding: 12px; }
+.scoreboard-table td { padding: 12px; border-top: 1px solid #334155; }
+.scoreboard-row:nth-child(even) { background: rgba(30,41,59,.4); }
+.scoreboard-row.row-current-user { background: rgba(14,116,144,.3); }
+.captain-cell { display: flex; align-items: center; gap: 8px; }
+.badge-you { font-size: .65rem; color: #67e8f9; }
+.rank-gold, .coin-gold-tag { color: #facc15; }
+.rank-silver { color: #cbd5e1; }
+.rank-bronze { color: #fb923c; }
+.scoreboard-empty-state { text-align: center; padding: 24px; color: #94a3b8; }

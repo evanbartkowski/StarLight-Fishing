@@ -374,6 +374,7 @@ export const ZONE_ALMANAC_DATA = {
 // Build the bestiary from the live roster so additions and moved species are discoverable.
 for (const sea of FANTASY_SEAS) {
   const entry = ZONE_ALMANAC_DATA[`sea_${sea.id}`];
+  entry.description = sea.description;
   entry.speciesIds = [...FISH_SPECIES, ...LEGENDARY_SPECIES].filter(fish => fish.zone === sea.id).map(fish => fish.id);
   entry.relicIds = REALM_RELICS.filter(relic => relic.zone === sea.id).map(relic => relic.id);
   entry.depthRange = `0 - ${sea.maxDepth}m`;

@@ -22,10 +22,10 @@ Every realm has **35 native fish** (245 regular species total), plus special myt
 | Sunlit Shoals | Free | $6 | 1x |
 | Bioluminescent Trench | $3,000 | $30 | 1.3x |
 | Astral Shimmerfall | $17,500 | $130 | 1.7x |
-| Sunken Atlantis | $75,000 | $600 | 2.2x |
-| Whispering Aether Sea | $325,000 | $2,500 | 2.9x |
-| Magma Caldera Trench | $1,250,000 | $10,500 | 3.8x |
-| Eldritch Chrono Void | $5,000,000 | $44,000 | 5x |
+| Sunken Atlantis | $35,000 | $280 | 2.2x |
+| Whispering Aether Sea | $70,000 | $538 | 2.9x |
+| Magma Caldera Trench | $140,000 | $1,176 | 3.8x |
+| Eldritch Chrono Void | $1,000,000 | $8,800 | 5x |
 
 Actual sale values also depend on species, size, rarity, shiny/crown status, and gear. Previously unlocked realms remain unlocked.
 
@@ -161,3 +161,5 @@ See the official [Firebase Hosting GitHub integration guide](https://firebase.go
 | `src/ui/UIManager.js` | HUD, menus, inventory, and aquarium |
 | `src/audio/` | Sound and music management |
 | `public/` | Static assets copied into the production build |
+
+Aquarium food costs $1 per feeding. Seabeds, scenery, lighting, bubble settings, and water themes show their purchase prices; purchased styles remain owned and can be reapplied for free.
