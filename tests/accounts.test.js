@@ -95,3 +95,38 @@ test('save conflicts leave local progress intact and do not advance the revision
   assert.equal(storage.get('ssf_save_user_captain'), '{"level":11}');
   assert.match(f.manager.cloudStatus, /Newer progress/);
 });
+
+test('registration starts clean while autosaves stay with the previously loaded captain', async () => {
+  const { accountManager } = await import('../src/systems/AccountManager.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  storage.clear();
+  accountManager.activeUser = 'Previous';
+  accountManager.accounts = {};
+  const save = new SaveSystem();
+  save.data.level = 28;
+  save.data.coins = 12000;
+  save.save();
+  const oldLoader = accountManager.loadCloud;
+  storage.set('ssf_save_user_newcaptain', '{"level":90,"coins":99999}');
+  accountManager.loadCloud = async () => ({
+    authenticate: async () => ({ uid: 'new-uid', createdAt: 1 }),
+    readCloudSave: async () => { save.save(); return null; },
+    writeCloudSave: async () => { throw new Error('New registration must not upload inherited progress'); },
+  });
+  try {
+    assert.equal((await accountManager.register('NewCaptain', 'password')).success, true);
+    save.save(); // Game loop can autosave before the UI finishes switching.
+    assert.equal(storage.get('ssf_save_user_newcaptain'), undefined);
+    assert.equal(JSON.parse(storage.get('ssf_save_user_previous')).level, 28);
+    save.switchToAccount('NewCaptain');
+    assert.equal(save.data.level, 0);
+    assert.equal(save.data.coins, 0);
+    save.save();
+    assert.equal(JSON.parse(storage.get('ssf_save_user_newcaptain')).coins, 0);
+    assert.equal(JSON.parse(storage.get('ssf_save_user_previous')).coins, 12000);
+  } finally {
+    accountManager.loadCloud = oldLoader;
+    accountManager.activeUser = null;
+    accountManager.cloudSession = null;
+  }
+});

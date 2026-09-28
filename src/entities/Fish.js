@@ -497,14 +497,17 @@ export class Fish {
 
     if (s.rarity === 'uncommon' || this.isShiny || isRainbow || isEpic || isRare || this.isMythic || this.isSpecialDeep || s.glowColor) {
       ctx.save();
+      // A feathered oval wash, with no solid center or hard ring.
       const color = RARITY_CONFIG[s.rarity]?.color || '#c084fc';
-      const radius = s.isLeviathan ? 52 : 42;
+      const rgb = [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16)).join(',');
+      const radius = s.isLeviathan ? 58 : 46;
       const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-      glow.addColorStop(0, color);
-      glow.addColorStop(0.45, color);
-      glow.addColorStop(1, 'transparent');
-      ctx.globalAlpha *= 0.55 + Math.sin(this.wiggleTimer * 2) * 0.05;
-      ctx.scale(1, 0.65);
+      glow.addColorStop(0, `rgba(${rgb},0.30)`);
+      glow.addColorStop(0.25, `rgba(${rgb},0.24)`);
+      glow.addColorStop(0.55, `rgba(${rgb},0.11)`);
+      glow.addColorStop(1, `rgba(${rgb},0)`);
+      ctx.globalAlpha *= 0.92 + Math.sin(this.wiggleTimer * 1.2) * 0.04;
+      ctx.scale(1.15, 0.72);
       ctx.fillStyle = glow;
       ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
       ctx.restore();

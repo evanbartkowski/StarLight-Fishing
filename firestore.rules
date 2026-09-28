@@ -1,6 +1,26 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /fleetSenders/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['sentAt', 'messageId'])
+        && request.resource.data.sentAt == request.time
+        && request.resource.data.messageId is string
+        && (!exists(/databases/$(database)/documents/fleetSenders/$(uid))
+          || request.time >= resource.data.sentAt + duration.value(2, 's'));
+    }
+    match /fleetMessages/{id} {
+      allow list: if request.auth != null && request.query.limit != null && request.query.limit <= 50;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['senderId', 'sender', 'text', 'kind', 'createdAt'])
+        && request.resource.data.senderId == request.auth.uid
+        && request.resource.data.sender is string && request.resource.data.sender.size() >= 1 && request.resource.data.sender.size() <= 40
+        && request.resource.data.text is string && request.resource.data.text.size() >= 1 && request.resource.data.text.size() <= 180
+        && request.resource.data.kind == 'player' && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/fleetSenders/$(request.auth.uid)).data.sentAt == request.time
+        && getAfter(/databases/$(database)/documents/fleetSenders/$(request.auth.uid)).data.messageId == id;
+    }
     match /captainSaves/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid

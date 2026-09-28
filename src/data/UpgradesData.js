@@ -277,7 +277,7 @@ export const UPGRADE_DEFINITIONS = {
     description: 'Unlocks the Chart Navigation Minimap, revealing ocean realm coordinates, live school currents, and fast travel routes.',
     tiers: [
       { level: 0, cost: 0, reqLevel: 0, label: 'Uncalibrated (Chart Locked)' },
-      { level: 1, cost: 850, reqLevel: 3, label: 'Calibrated Brass Astrolabe (Minimap Unlocked)' },
+      { level: 1, cost: 1700, reqLevel: 3, label: 'Calibrated Brass Astrolabe (Minimap Unlocked)' },
     ],
   },
 
@@ -288,7 +288,7 @@ export const UPGRADE_DEFINITIONS = {
     description: 'Installs an onboard shortwave radio transceiver on your vessel, unlocking live Fleet Chat with fellow captains across the open seas.',
     tiers: [
       { level: 0, cost: 0, reqLevel: 0, label: 'Uninstalled (Chat Locked)' },
-      { level: 1, cost: 350, reqLevel: 2, label: 'Crystal Fleet Transceiver (Live Chat Unlocked)' },
+      { level: 1, cost: 1000, reqLevel: 2, label: 'Crystal Fleet Transceiver (Live Chat Unlocked)' },
     ],
   },
 };

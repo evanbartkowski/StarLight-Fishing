@@ -52,7 +52,7 @@ export class UIManager {
     panel.id = 'fleet-radio';
     panel.hidden = true;
     panel.innerHTML = `<div class="fleet-header"><strong>Fleet Radio</strong><button type="button" id="fleet-toggle" aria-label="Minimize Fleet Radio" aria-expanded="true" aria-controls="fleet-content" title="Minimize Fleet Radio">&minus;</button></div>
-      <div id="fleet-content"><small>Players in other tabs on this browser</small>
+      <div id="fleet-content"><small>Live messages from captains across the seas</small>
       <div id="fleet-messages" aria-live="polite"></div>
       <form id="fleet-form"><input id="fleet-input" maxlength="180" aria-label="Fleet message" placeholder="Message players..."><button type="submit">Send</button></form></div>`;
     document.body.appendChild(panel);
@@ -86,10 +86,17 @@ export class UIManager {
       list.scrollTop = list.scrollHeight;
     };
     panel.addEventListener('keydown', event => event.stopPropagation());
-    panel.querySelector('form').addEventListener('submit', event => {
+    panel.querySelector('form').addEventListener('submit', async event => {
       event.preventDefault();
       const input = panel.querySelector('input');
-      if (manager.sendMessage(input.value)) input.value = '';
+      const button = panel.querySelector('button[type=submit]');
+      if (button.disabled || !input.value.trim()) return;
+      const text = input.value;
+      button.disabled = true;
+      const sent = await manager.sendMessage(text);
+      button.disabled = false;
+      if (sent && input.value === text) input.value = '';
+      if (!sent) this.showToast('Message not sent. Check your connection, wait a moment, and try again.');
     });
   }
 
@@ -628,6 +635,7 @@ export class UIManager {
   }
 
   updateHUD(hook, gameState) {
+    this.chatManager?.connect();
     const fleet = document.getElementById('fleet-radio');
     if (fleet) fleet.hidden = !this.saveSystem.isChatUnlocked() || gameState !== 'SURFACE_IDLE';
     const isDiving = (gameState === 'CASTING' || gameState === 'DESCENDING' || gameState === 'REELING');

@@ -371,3 +371,17 @@ test('Atlantis columns scroll past the camera and disappear below their world de
   world.renderSunkenAtlantisPillars(ctx, 2000, 720);
   assert.equal(rectangles.length, 0, 'columns must leave the viewport on deeper dives');
 });
+
+test('stars and plankton stay at world positions as a dive begins', () => {
+  const world = new OceanWorld({ width: 1280, height: 720 });
+  world.causticTimer = 15;
+  for (const method of ['renderAstralStarlightCascades', 'renderBioluminescentPlankton']) {
+    const points = [];
+    const ctx = new Proxy({}, { get: (_, key) => key === 'arc' ? (x, y) => points.push([x, y]) : () => {}, set: () => true });
+    world[method](ctx, 300, 720);
+    const before = points.splice(0).filter(([, y]) => y > 100 && y < 600);
+    world[method](ctx, 350, 720);
+    assert.ok(before.length > 5);
+    for (const [x, y] of before) assert.ok(points.some(([nx, ny]) => nx === x && Math.abs(ny - (y - 50)) < 0.001), `${method}: particle jumped with camera`);
+  }
+});

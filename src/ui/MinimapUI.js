@@ -1,3 +1,4 @@
+import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { REALM_PROFILES } from '../data/RealmContent.js';
 // MinimapUI.js — Chart Navigation & Fantasy World Minimap
 // Parchment/fantasy styled navigation chart, radial compass, coordinates, and fast travel
@@ -155,7 +156,7 @@ export class MinimapUI {
             ${playerLevel >= 4 ? '✓' : '✗'} <strong>Angler Level 4+</strong> (Current: Lv. ${playerLevel})
           </div>
           <div style="color:${astrolabeLvl >= 1 ? '#22c55e' : '#ef4444'};">
-            ${astrolabeLvl >= 1 ? '✓' : '✗'} <strong>Brass Astrolabe & Nautical Compass</strong> (Purchase in Tackle Shop for $550)
+            ${astrolabeLvl >= 1 ? '✓' : '✗'} <strong>Brass Astrolabe & Nautical Compass</strong> (Purchase in Tackle Shop for $${UPGRADE_DEFINITIONS.nauticalAstrolabe.tiers[1].cost.toLocaleString()})
           </div>
         </div>
         <button class="btn btn-primary" id="btn-goto-shop-minimap">Open Tackle Shop 🛒</button>

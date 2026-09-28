@@ -910,21 +910,16 @@ export class OceanWorld {
 
   // Sea 2: Bioluminescent Trench Plankton & Jellies
   renderBioluminescentPlankton(ctx, cameraY, screenHeight) {
-    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
-    const seaEndY = cameraY + screenHeight + 120;
-    const drawStartY = seaStartY - cameraY;
-    const drawEndY = seaEndY - cameraY;
-
-    if (drawEndY < 0 || drawStartY > screenHeight) return;
-
     ctx.save();
     const time = this.causticTimer;
-    for (let i = 0; i < 18; i++) {
-      const px = ((i * 137 + time * 12) % (this.worldWidth - 40)) + 20;
-      const progress = (i * 41 + time * 8) % (seaEndY - seaStartY);
-      const py = (seaStartY + progress) - cameraY;
-
-      if (py < 0 || py > screenHeight) continue;
+    const spacing = 48;
+    const drift = time * 8;
+    const first = Math.floor((cameraY - this.surfaceY - drift - 20) / spacing);
+    const last = Math.floor((cameraY + screenHeight - this.surfaceY - drift + 20) / spacing);
+    for (let i = first; i <= last; i++) {
+      const px = (((i * 137 + time * 12) % Math.max(1, this.worldWidth - 40) + Math.max(1, this.worldWidth - 40)) % Math.max(1, this.worldWidth - 40)) + 20;
+      const py = this.surfaceY + 20 + i * spacing + drift - cameraY;
+      if (py < Math.max(0, this.surfaceY - cameraY) || py > screenHeight) continue;
 
       const pulse = 0.4 + Math.sin(time * 3 + i) * 0.4;
       const isCyan = i % 2 === 0;
@@ -940,20 +935,17 @@ export class OceanWorld {
 
   // Sea 3: Astral Shimmerfall Starlight Cascades
   renderAstralStarlightCascades(ctx, cameraY, screenHeight) {
-    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
-    const seaEndY = cameraY + screenHeight + 120;
-    const drawStartY = seaStartY - cameraY;
-    const drawEndY = seaEndY - cameraY;
-
-    if (drawEndY < 0 || drawStartY > screenHeight) return;
-
     ctx.save();
     const time = this.causticTimer * 1.5;
-    for (let i = 0; i < 22; i++) {
-      const driftX = ((i * 179 + time * 25) % (this.worldWidth + 100)) - 50;
-      const driftY = (seaStartY + ((i * 73 + time * 45) % (seaEndY - seaStartY))) - cameraY;
-
-      if (driftY < 0 || driftY > screenHeight) continue;
+    const spacing = 40;
+    const drift = time * 45;
+    const first = Math.floor((cameraY - this.surfaceY - drift - 20) / spacing);
+    const last = Math.floor((cameraY + screenHeight - this.surfaceY - drift + 20) / spacing);
+    for (let i = first; i <= last; i++) {
+      const span = this.worldWidth + 100;
+      const driftX = ((i * 179 + time * 25) % span + span) % span - 50;
+      const driftY = this.surfaceY + 20 + i * spacing + drift - cameraY;
+      if (driftY < Math.max(18, this.surfaceY - cameraY + 18) || driftY > screenHeight) continue;
 
       const alpha = 0.35 + Math.sin(time * 2 + i) * 0.35;
       ctx.fillStyle = `rgba(254, 240, 138, ${alpha})`;

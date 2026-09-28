@@ -150,9 +150,15 @@ export class AccountManager {
     };
     this.saveAccounts();
 
+    // Registration always creates a fresh captain; legacy migration uses login.
+    const key = this.getSaveKeyForUser(trimmed);
+    const staleSave = localStorage.getItem(key);
+    if (staleSave) localStorage.setItem(`${key}_before_registration`, staleSave);
+    localStorage.removeItem(key);
+    localStorage.removeItem(`${key}_cloud_revision`);
+    const notice = await this.restoreCloudSave(this.accounts[norm], true);
     this.activeUser = trimmed;
     this.saveActiveSession(trimmed);
-    const notice = await this.restoreCloudSave(this.accounts[norm], true);
     return { success: true, username: trimmed, notice };
   }
 

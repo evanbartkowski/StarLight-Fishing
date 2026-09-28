@@ -1,3 +1,4 @@
+import { REALM_MUSIC } from './RealmMusic.js';
 // Web Audio API procedural sound synthesizer + HTML5 Audio music manager
 export class SoundManager {
   constructor() {
@@ -93,27 +94,16 @@ export class SoundManager {
       this.radioGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.45, this.audioCtx.currentTime);
     }
     if (this.seaGain && this.audioCtx) {
-      this.seaGain.gain.setValueAtTime(this.isMuted || this.activeStation ? 0 : this.musicVolume * 0.38, this.audioCtx.currentTime);
+      this.seaGain.gain.setValueAtTime(this.isMuted || this.activeStation || this.currentMusicMode === 'none' ? 0 : this.musicVolume * 0.38, this.audioCtx.currentTime);
     }
   }
 
   setMusicMode(mode) {
-    if (this.currentMusicMode === mode) return;
     this.currentMusicMode = mode;
-
-    if (this.isMuted || this.activeStation) return;
-
-    if (mode === 'surface') {
-      this.underwaterMusic.pause();
-      this.surfaceMusic.currentTime = 0;
-      this.surfaceMusic.play().catch(() => {});
-    } else if (mode === 'underwater') {
-      this.surfaceMusic.pause();
-      this.underwaterMusic.play().catch(() => {});
-    } else {
-      this.surfaceMusic.pause();
-      this.underwaterMusic.pause();
-    }
+    this.surfaceMusic.pause();
+    this.underwaterMusic.pause();
+    this.setSeaTrack(this.currentSeaId);
+    this.applyVolumes();
   }
 
   // Pure Web Audio API: Procedural Soft Ambient Water & Rain Loops
@@ -791,12 +781,7 @@ export class SoundManager {
       this.radioGain = null;
     }
 
-    // Resume standard surface/underwater music if applicable
-    if (this.currentMusicMode === 'surface' && !this.isMuted) {
-      this.surfaceMusic.play().catch(() => {});
-    } else if (this.currentMusicMode === 'underwater' && !this.isMuted) {
-      this.underwaterMusic.play().catch(() => {});
-    }
+    this.applyVolumes();
   }
 
   startRadioStation(stationId) {
@@ -805,6 +790,7 @@ export class SoundManager {
     if (!this.audioCtx) return;
 
     this.activeStation = stationId;
+    this.applyVolumes();
     this.surfaceMusic.pause();
     this.underwaterMusic.pause();
 
@@ -1035,8 +1021,8 @@ export class SoundManager {
 
   setSeaTrack(seaId) {
     const id = parseInt(seaId, 10) || 1;
-    if (this.currentSeaId === id && this.seaGain) return;
     this.ensureAudio();
+    if (this.currentSeaId === id && this.seaGain) return;
     if (!this.audioCtx) return;
 
     this.currentSeaId = id;
@@ -1047,6 +1033,7 @@ export class SoundManager {
       const oldGain = this.seaGain;
       const oldNodes = [...this.seaNodes];
       const oldTimers = [...this.seaTimers];
+      oldTimers.forEach(timer => clearInterval(timer));
       this.seaNodes = [];
       this.seaTimers = [];
       try {
@@ -1064,367 +1051,50 @@ export class SoundManager {
 
     // Create new Sea Gain Node and crossfade in
     this.seaGain = ctx.createGain();
-    const targetVol = (this.isMuted || this.activeStation) ? 0 : this.musicVolume * 0.38;
+    const targetVol = (this.isMuted || this.activeStation || this.currentMusicMode === 'none') ? 0 : this.musicVolume * 0.38;
     this.seaGain.gain.setValueAtTime(0.001, ctx.currentTime);
     this.seaGain.gain.linearRampToValueAtTime(targetVol, ctx.currentTime + 1.5);
     this.seaGain.connect(ctx.destination);
 
-    // Launch synthesizer based on Sea realm
-    switch (id) {
-      case 1: this._startSea1SunlitShoals(); break;
-      case 2: this._startSea2BiolumTrench(); break;
-      case 3: this._startSea3AstralShimmerfall(); break;
-      case 4: this._startSea4SunkenAtlantis(); break;
-      case 5: this._startSea5WhisperingAether(); break;
-      case 6: this._startSea6MagmaCaldera(); break;
-      case 7: this._startSea7EldritchVoid(); break;
-      default: this._startSea1SunlitShoals(); break;
-    }
+    this._startRealmTheme(id);
   }
 
-  // Sea 1: Sunlit Shoals — Breezy coastal blues, gentle gulls, calm acoustic/kalimba tones
-  _startSea1SunlitShoals() {
-    if (!this.audioCtx || !this.seaGain) return;
+  _startRealmTheme(id) {
+    const theme = REALM_MUSIC[id] || REALM_MUSIC[1];
     const ctx = this.audioCtx;
-
-    // Kalimba / Acoustic plucks in D Major pentatonic
-    const notes = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33];
-    let noteIdx = 0;
-
-    const pluckInterval = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 1) return;
+    const output = this.seaGain;
+    const beat = 60 / theme.bpm;
+    let step = 0;
+    const note = (midi, duration, volume, type = theme.voice) => {
       const now = ctx.currentTime;
-      const freq = notes[noteIdx % notes.length];
-      noteIdx = (noteIdx + 1 + Math.floor(Math.random() * 2)) % notes.length;
-
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(this.sfxVolume * 0.22, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
-
+      osc.type = type;
+      osc.frequency.setValueAtTime(440 * 2 ** ((midi - 69) / 12), now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(volume, now + 0.035);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       osc.connect(gain);
-      gain.connect(this.seaGain);
+      gain.connect(output);
+      osc.onended = () => { osc.disconnect(); gain.disconnect(); };
       osc.start(now);
-      osc.stop(now + 0.95);
-    }, 1100);
-    this.seaTimers.push(pluckInterval);
-
-    // Occasional gentle gull glide sound
-    const gullInterval = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 1) return;
-      const now = ctx.currentTime;
-      const gOsc = ctx.createOscillator();
-      const gGain = ctx.createGain();
-      gOsc.type = 'sine';
-      gOsc.frequency.setValueAtTime(1750, now);
-      gOsc.frequency.exponentialRampToValueAtTime(1350, now + 0.35);
-
-      gGain.gain.setValueAtTime(0.001, now);
-      gGain.gain.linearRampToValueAtTime(this.sfxVolume * 0.12, now + 0.1);
-      gGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
-
-      gOsc.connect(gGain);
-      gGain.connect(this.seaGain);
-      gOsc.start(now);
-      gOsc.stop(now + 0.55);
-    }, 14000);
-    this.seaTimers.push(gullInterval);
+      osc.stop(now + duration + 0.02);
+    };
+    const tick = () => {
+      if (this.currentSeaId !== id || ctx.state !== 'running') return;
+      const melody = theme.melody[step % theme.melody.length];
+      const chord = theme.chords[Math.floor(step / 8) % theme.chords.length];
+      if (melody !== null) note(theme.root + melody, beat * theme.sustain, 0.18);
+      if (step % 4 === 0) note(theme.root - 24 + chord, beat * 3.5, 0.12, 'sine');
+      if (step % 8 === 0) {
+        [0, theme.minor ? 3 : 4, 7].forEach(interval => note(theme.root - 12 + chord + interval, beat * 7, 0.035, 'sine'));
+      }
+      step++;
+    };
+    tick();
+    this.seaTimers.push(setInterval(tick, beat * 1000));
   }
 
-  // Sea 2: Bioluminescent Trench — Deep violet/neon-cyan abyss, deep resonant synth pads with chime arpeggios
-  _startSea2BiolumTrench() {
-    if (!this.audioCtx || !this.seaGain) return;
-    const ctx = this.audioCtx;
-
-    // Deep resonant pad (85Hz root & 127Hz fifth)
-    [85, 127.5].forEach(freq => {
-      const osc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const gain = ctx.createGain();
-
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(180, ctx.currentTime);
-
-      gain.gain.setValueAtTime(0.12, ctx.currentTime);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(this.seaGain);
-
-      osc.start();
-      this.seaNodes.push(osc);
-    });
-
-    // Chime arpeggios
-    const chimes = [880.00, 1046.50, 1318.51, 1567.98, 1760.00];
-    let chimeIdx = 0;
-    const chimeTimer = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 2) return;
-      const now = ctx.currentTime;
-      const freq = chimes[chimeIdx % chimes.length];
-      chimeIdx++;
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(this.sfxVolume * 0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-
-      osc.connect(gain);
-      gain.connect(this.seaGain);
-      osc.start(now);
-      osc.stop(now + 1.25);
-    }, 1400);
-    this.seaTimers.push(chimeTimer);
-  }
-
-  // Sea 3: Astral Shimmerfall — Starlit crystalline waters, glass-harp & ambient piano chords
-  _startSea3AstralShimmerfall() {
-    if (!this.audioCtx || !this.seaGain) return;
-    const ctx = this.audioCtx;
-
-    // Glass-harp high chord pad (C5, E5, G5, B5)
-    const glassNotes = [523.25, 659.25, 783.99, 987.77];
-    glassNotes.forEach(freq => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq + (Math.random() - 0.5) * 0.6, ctx.currentTime);
-
-      gain.gain.setValueAtTime(0.035, ctx.currentTime);
-
-      // Vibrato
-      const lfo = ctx.createOscillator();
-      lfo.frequency.setValueAtTime(4.5, ctx.currentTime);
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.setValueAtTime(1.5, ctx.currentTime);
-      lfo.connect(lfoGain);
-      lfoGain.connect(osc.frequency);
-
-      osc.connect(gain);
-      gain.connect(this.seaGain);
-      osc.start();
-      lfo.start();
-      this.seaNodes.push(osc, lfo);
-    });
-
-    // Ambient piano chords
-    const pianoTimer = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 3) return;
-      const now = ctx.currentTime;
-      const chord = [261.63, 329.63, 392.00, 523.25];
-      chord.forEach((f, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(f, now + idx * 0.05);
-
-        gain.gain.setValueAtTime(this.sfxVolume * 0.16, now + idx * 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 2.2);
-
-        osc.connect(gain);
-        gain.connect(this.seaGain);
-        osc.start(now + idx * 0.05);
-        osc.stop(now + idx * 0.05 + 2.3);
-      });
-    }, 3600);
-    this.seaTimers.push(pianoTimer);
-  }
-
-  // Sea 4: Sunken Atlantis — Sunken marble pillars, soothing harp & flute harmonies
-  _startSea4SunkenAtlantis() {
-    if (!this.audioCtx || !this.seaGain) return;
-    const ctx = this.audioCtx;
-
-    // Soothing Celtic harp arpeggios
-    const harpNotes = [369.99, 440.00, 554.37, 659.25, 739.99]; // F# minor
-    let hIdx = 0;
-    const harpTimer = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 4) return;
-      const now = ctx.currentTime;
-      const freq = harpNotes[hIdx % harpNotes.length];
-      hIdx++;
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(this.sfxVolume * 0.24, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
-
-      osc.connect(gain);
-      gain.connect(this.seaGain);
-      osc.start(now);
-      osc.stop(now + 1.15);
-    }, 950);
-    this.seaTimers.push(harpTimer);
-
-    // Warm wooden flute breath tone
-    const fluteTimer = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 4) return;
-      const now = ctx.currentTime;
-      const fOsc = ctx.createOscillator();
-      const filter = ctx.createBiquadFilter();
-      const fGain = ctx.createGain();
-
-      fOsc.type = 'triangle';
-      fOsc.frequency.setValueAtTime(440, now);
-      fOsc.frequency.exponentialRampToValueAtTime(554.37, now + 1.2);
-
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(750, now);
-      filter.Q.setValueAtTime(1.8, now);
-
-      fGain.gain.setValueAtTime(0.001, now);
-      fGain.gain.linearRampToValueAtTime(this.sfxVolume * 0.18, now + 0.5);
-      fGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.4);
-
-      fOsc.connect(filter);
-      filter.connect(fGain);
-      fGain.connect(this.seaGain);
-      fOsc.start(now);
-      fOsc.stop(now + 2.5);
-    }, 7000);
-    this.seaTimers.push(fluteTimer);
-  }
-
-  // Sea 5: Whispering Aether Sea — Lilac winds, wind chimes, celestial choral pads
-  _startSea5WhisperingAether() {
-    if (!this.audioCtx || !this.seaGain) return;
-    const ctx = this.audioCtx;
-
-    // Celestial choral pad (detuned warm sine waves)
-    [220, 277.18, 329.63].forEach(freq => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq + (Math.random() - 0.5) * 0.4, ctx.currentTime);
-
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
-
-      osc.connect(gain);
-      gain.connect(this.seaGain);
-      osc.start();
-      this.seaNodes.push(osc);
-    });
-
-    // Delicate wind chimes
-    const chimeTimer = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 5) return;
-      const now = ctx.currentTime;
-      const randomFreq = 1200 + Math.random() * 1200;
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(randomFreq, now);
-
-      gain.gain.setValueAtTime(this.sfxVolume * 0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
-
-      osc.connect(gain);
-      gain.connect(this.seaGain);
-      osc.start(now);
-      osc.stop(now + 1.45);
-    }, 1800);
-    this.seaTimers.push(chimeTimer);
-  }
-
-  // Sea 6: Magma Caldera Trench — Volcanic reefs, warm bass drone with gentle handpan drums
-  _startSea6MagmaCaldera() {
-    if (!this.audioCtx || !this.seaGain) return;
-    const ctx = this.audioCtx;
-
-    // Warm bass drone
-    const droneOsc = ctx.createOscillator();
-    const droneFilter = ctx.createBiquadFilter();
-    const droneGain = ctx.createGain();
-
-    droneOsc.type = 'sawtooth';
-    droneOsc.frequency.setValueAtTime(55, ctx.currentTime); // A1 sub-bass
-
-    droneFilter.type = 'lowpass';
-    droneFilter.frequency.setValueAtTime(110, ctx.currentTime);
-
-    droneGain.gain.setValueAtTime(0.18, ctx.currentTime);
-
-    droneOsc.connect(droneFilter);
-    droneFilter.connect(droneGain);
-    droneGain.connect(this.seaGain);
-    droneOsc.start();
-    this.seaNodes.push(droneOsc);
-
-    // Handpan drum tap
-    const handpanTimer = setInterval(() => {
-      if (!this.seaGain || this.currentSeaId !== 6) return;
-      const now = ctx.currentTime;
-      const drumOsc = ctx.createOscillator();
-      const drumGain = ctx.createGain();
-
-      drumOsc.type = 'sine';
-      drumOsc.frequency.setValueAtTime(160, now);
-      drumOsc.frequency.exponentialRampToValueAtTime(65, now + 0.25);
-
-      drumGain.gain.setValueAtTime(this.sfxVolume * 0.26, now);
-      drumGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-
-      drumOsc.connect(drumGain);
-      drumGain.connect(this.seaGain);
-      drumOsc.start(now);
-      drumOsc.stop(now + 0.38);
-    }, 2100);
-    this.seaTimers.push(handpanTimer);
-  }
-
-  // Sea 7: Eldritch Chrono Void — Iridescent aurora waves, space-whale silhouettes, ethereal theremin
-  _startSea7EldritchVoid() {
-    if (!this.audioCtx || !this.seaGain) return;
-    const ctx = this.audioCtx;
-
-    // Ethereal theremin pitch glide
-    const theremin = ctx.createOscillator();
-    const thereminGain = ctx.createGain();
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-
-    theremin.type = 'sine';
-    theremin.frequency.setValueAtTime(260, ctx.currentTime);
-
-    // Slow 0.1Hz theremin pitch modulation
-    lfo.type = 'sine';
-    lfo.frequency.setValueAtTime(0.12, ctx.currentTime);
-    lfoGain.gain.setValueAtTime(60, ctx.currentTime);
-    lfo.connect(lfoGain);
-    lfoGain.connect(theremin.frequency);
-
-    thereminGain.gain.setValueAtTime(0.09, ctx.currentTime);
-
-    theremin.connect(thereminGain);
-    thereminGain.connect(this.seaGain);
-    theremin.start();
-    lfo.start();
-    this.seaNodes.push(theremin, lfo);
-
-    // Infrasonic deep space rumble
-    const spaceDrone = ctx.createOscillator();
-    const spaceGain = ctx.createGain();
-    spaceDrone.type = 'triangle';
-    spaceDrone.frequency.setValueAtTime(45, ctx.currentTime);
-    spaceGain.gain.setValueAtTime(0.15, ctx.currentTime);
-    spaceDrone.connect(spaceGain);
-    spaceGain.connect(this.seaGain);
-    spaceDrone.start();
-    this.seaNodes.push(spaceDrone);
-  }
 }
 
 export const soundManager = new SoundManager();

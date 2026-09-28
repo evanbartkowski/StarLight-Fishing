@@ -13,6 +13,7 @@ const LEGACY_STORAGE_KEY = 'fishing_game_save_v1';
 
 export class SaveSystem {
   constructor() {
+    this.storageKey = accountManager.getActiveSaveKey();
     this.data = this.getDefaultData();
     this.onAchievementUnlocked = null; // Callback for toast notification
     this.onLevelUp = null; // Callback for level up notification
@@ -151,7 +152,7 @@ export class SaveSystem {
   }
 
   getActiveStorageKey() {
-    return accountManager.getActiveSaveKey();
+    return this.storageKey;
   }
 
   getSaveDataForUser(username) {
@@ -249,6 +250,7 @@ export class SaveSystem {
 
   load() {
     try {
+      this.storageKey = accountManager.getActiveSaveKey();
       const storageKey = this.getActiveStorageKey();
       let raw = localStorage.getItem(storageKey);
       if (!raw && accountManager.isGuest()) {
