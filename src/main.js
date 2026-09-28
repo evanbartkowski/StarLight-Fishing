@@ -19,7 +19,7 @@ import { worldCycle } from './systems/WorldCycle.js';
 const canvas = document.querySelector('#game-canvas');
 const ctx = canvas.getContext('2d');
 
-let dpr = window.devicePixelRatio || 1;
+let dpr = Math.min(window.devicePixelRatio || 1, 2);
 let screenWidth = window.innerWidth;
 let screenHeight = window.innerHeight;
 
@@ -28,7 +28,7 @@ let uiManager = null;
 let zoneManager = null;
 
 function handleResize() {
-  dpr = window.devicePixelRatio || 1;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
   screenWidth = window.innerWidth;
   screenHeight = window.innerHeight;
 
@@ -43,6 +43,9 @@ function handleResize() {
 }
 
 window.addEventListener('resize', handleResize);
+window.addEventListener('orientationchange', () => {
+  setTimeout(handleResize, 150);
+});
 
 // Core systems
 const save = saveSystem;
@@ -176,8 +179,18 @@ oceanWorld.populateWorld(save);
 // Input handlers
 function getCanvasCoords(e) {
   const rect = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  let clientX = 0;
+  let clientY = 0;
+  if (e.touches && e.touches.length > 0) {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+  } else if (e.changedTouches && e.changedTouches.length > 0) {
+    clientX = e.changedTouches[0].clientX;
+    clientY = e.changedTouches[0].clientY;
+  } else {
+    clientX = e.clientX || 0;
+    clientY = e.clientY || 0;
+  }
   return {
     x: clientX - rect.left,
     y: clientY - rect.top,
@@ -296,7 +309,12 @@ function handlePointerMove(e) {
   }
 }
 
-function handlePointerUp() {
+function handlePointerUp(e) {
+  if (e) {
+    const coords = getCanvasCoords(e);
+    mousePos.x = coords.x;
+    mousePos.y = coords.y;
+  }
   if (gameState === 'AIMING') {
     triggerCast();
   }
@@ -315,11 +333,19 @@ canvas.addEventListener('touchstart', (e) => {
 }, { passive: false });
 
 window.addEventListener('touchmove', (e) => {
+  const overlay = document.getElementById('modal-overlay');
+  const isModalOpen = uiManager && uiManager.activeModal && overlay && overlay.classList.contains('modal-overlay-visible');
+  const welcomePopup = document.getElementById('welcome-popup');
+  const isWelcomeOpen = welcomePopup && !welcomePopup.classList.contains('welcome-overlay-hidden') && welcomePopup.style.display !== 'none';
+
+  if (!isModalOpen && !isWelcomeOpen) {
+    if (e.cancelable) e.preventDefault();
+  }
   handlePointerMove(e);
 }, { passive: false });
 
 window.addEventListener('touchend', (e) => {
-  handlePointerUp();
+  handlePointerUp(e);
 });
 
 // Keyboard controls

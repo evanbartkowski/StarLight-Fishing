@@ -148,18 +148,18 @@ export class UIManager {
       </div>
 
       <div class="hud-right">
-        <button class="icon-btn" id="btn-minimap" title="Charted Waters Map & World Navigation">🗺️ Map</button>
+        <button class="icon-btn" id="btn-minimap" title="Charted Waters Map & World Navigation">🗺️ <span class="btn-label">Map</span></button>
         <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
-          🪤 Traps <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
+          🪤 <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
         <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
-          📋 Quests <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
+          📋 <span class="btn-label">Quests</span> <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
         </button>
-        <button class="icon-btn" id="btn-inventory" title="Angler's Persistent Inventory & Tackle Box">🎒 Inventory</button>
-        <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 Shop</button>
-        <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 Journal</button>
-        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 Aquarium</button>
-        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 Radio</button>
+        <button class="icon-btn" id="btn-inventory" title="Angler's Persistent Inventory & Tackle Box">🎒 <span class="btn-label">Inventory</span></button>
+        <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 <span class="btn-label">Shop</span></button>
+        <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
+        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
+        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
         <button class="icon-btn" id="btn-mute" title="Toggle Sound">🔊</button>
