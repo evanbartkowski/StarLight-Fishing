@@ -5,18 +5,18 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🧵',
     description: 'Extends your fishing line to reach deeper oceanic seas and mythical zones.',
     tiers: [
-      { level: 0, cost: 0, depth: 50, reqLevel: 1, label: '50m (Sea 1: Sunlit Shoals)' },
-      { level: 1, cost: 160, depth: 100, reqLevel: 2, label: '100m Maximum Depth' },
-      { level: 2, cost: 420, depth: 160, reqLevel: 3, label: '160m Maximum Depth' },
-      { level: 3, cost: 1050, depth: 230, reqLevel: 5, label: '230m Maximum Depth' },
-      { level: 4, cost: 2600, depth: 310, reqLevel: 7, label: '310m Maximum Depth' },
-      { level: 5, cost: 6500, depth: 400, reqLevel: 9, label: '400m Maximum Depth' },
-      { level: 6, cost: 15500, depth: 500, reqLevel: 12, label: '500m Maximum Depth' },
-      { level: 7, cost: 36000, depth: 600, reqLevel: 15, label: '600m Maximum Depth' },
-      { level: 8, cost: 82000, depth: 700, reqLevel: 18, label: '700m Maximum Depth' },
-      { level: 9, cost: 180000, depth: 800, reqLevel: 22, label: '800m Maximum Depth' },
-      { level: 10, cost: 360000, depth: 900, reqLevel: 26, label: '900m Maximum Depth' },
-      { level: 11, cost: 680000, depth: 1000, reqLevel: 30, label: '1000m Maximum Depth' },
+      { level: 0, cost: 0, depth: 60, reqLevel: 0, label: '60m (Sea 1: Sunlit Shoals)' },
+      { level: 1, cost: 160, depth: 130, reqLevel: 1, label: '130m Maximum Depth' },
+      { level: 2, cost: 420, depth: 220, reqLevel: 2, label: '220m Maximum Depth' },
+      { level: 3, cost: 1050, depth: 350, reqLevel: 4, label: '350m Maximum Depth' },
+      { level: 4, cost: 2600, depth: 500, reqLevel: 6, label: '500m Maximum Depth' },
+      { level: 5, cost: 6500, depth: 700, reqLevel: 8, label: '700m Maximum Depth' },
+      { level: 6, cost: 15500, depth: 950, reqLevel: 11, label: '950m Maximum Depth' },
+      { level: 7, cost: 36000, depth: 1250, reqLevel: 14, label: '1250m Maximum Depth' },
+      { level: 8, cost: 82000, depth: 1600, reqLevel: 17, label: '1600m Maximum Depth' },
+      { level: 9, cost: 180000, depth: 2000, reqLevel: 21, label: '2000m Maximum Depth' },
+      { level: 10, cost: 360000, depth: 2450, reqLevel: 25, label: '2450m Maximum Depth' },
+      { level: 11, cost: 680000, depth: 3000, reqLevel: 29, label: '3000m Maximum Depth' },
     ],
   },
 
@@ -26,7 +26,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🪣',
     description: 'Allows your line to hold more fish, treasures, and fossils on a single cast.',
     tiers: [
-      { level: 0, cost: 0, capacity: 3, reqLevel: 1, label: '3 Catches' },
+      { level: 0, cost: 0, capacity: 3, reqLevel: 0, label: '3 Catches' },
       { level: 1, cost: 180, capacity: 4, reqLevel: 2, label: '4 Catches' },
       { level: 2, cost: 450, capacity: 5, reqLevel: 3, label: '5 Catches' },
       { level: 3, cost: 1100, capacity: 7, reqLevel: 4, label: '7 Catches' },
@@ -47,7 +47,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '⚙️',
     description: 'Hauls the fishing line back to the boat faster with higher mechanical torque.',
     tiers: [
-      { level: 0, cost: 0, multiplier: 1.0, reqLevel: 1, label: 'Manual Hand-Crank (1.0x)' },
+      { level: 0, cost: 0, multiplier: 1.0, reqLevel: 0, label: 'Manual Hand-Crank (1.0x)' },
       { level: 1, cost: 150, multiplier: 1.15, reqLevel: 2, label: 'Lubricated Spool (1.15x)' },
       { level: 2, cost: 400, multiplier: 1.32, reqLevel: 3, label: 'Bronze Bearings (1.32x)' },
       { level: 3, cost: 1000, multiplier: 1.52, reqLevel: 5, label: 'Carbon Drag Spool (1.52x)' },
@@ -67,7 +67,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🧵',
     description: 'Increases line snap threshold and widens sweet spot retrieval windows.',
     tiers: [
-      { level: 0, cost: 0, threshold: 100, sweetSpotMult: 1.0, reqLevel: 1, label: 'Mono-Filament (100 Strain)' },
+      { level: 0, cost: 0, threshold: 100, sweetSpotMult: 1.0, reqLevel: 0, label: 'Mono-Filament (100 Strain)' },
       { level: 1, cost: 180, threshold: 115, sweetSpotMult: 1.10, reqLevel: 2, label: 'Dual-Core Nylon (115 Strain)' },
       { level: 2, cost: 450, threshold: 132, sweetSpotMult: 1.20, reqLevel: 4, label: 'Braided Spectra (132 Strain)' },
       { level: 3, cost: 1150, threshold: 152, sweetSpotMult: 1.32, reqLevel: 6, label: 'Fluorocarbon Weave (152 Strain)' },
@@ -85,7 +85,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🧭',
     description: 'Sharper steering response underwater to weave between hazards and snatch high-value fish.',
     tiers: [
-      { level: 0, cost: 0, speedMult: 1.0, reqLevel: 1, label: 'Standard Lead Sinker (1.0x)' },
+      { level: 0, cost: 0, speedMult: 1.0, reqLevel: 0, label: 'Standard Lead Sinker (1.0x)' },
       { level: 1, cost: 160, speedMult: 1.12, reqLevel: 2, label: 'Hydro Sinker (1.12x)' },
       { level: 2, cost: 420, speedMult: 1.26, reqLevel: 3, label: 'Finned Hydro-Weight (1.26x)' },
       { level: 3, cost: 1050, speedMult: 1.42, reqLevel: 5, label: 'Acrobatic Glider (1.42x)' },
@@ -103,7 +103,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🎣',
     description: 'Increases casting arc trajectory and gives a permanent cash bonus on all sales.',
     tiers: [
-      { level: 0, cost: 0, castRange: 1.0, sellBonus: 0, reqLevel: 1, label: 'Old Bamboo Pole (+0% Gold)' },
+      { level: 0, cost: 0, castRange: 1.0, sellBonus: 0, reqLevel: 0, label: 'Old Bamboo Pole (+0% Gold)' },
       { level: 1, cost: 250, castRange: 1.10, sellBonus: 0.05, reqLevel: 2, label: 'Cedar Casting Rod (+5% Gold)' },
       { level: 2, cost: 640, castRange: 1.22, sellBonus: 0.11, reqLevel: 4, label: 'Fiberglass Rod (+11% Gold)' },
       { level: 3, cost: 1600, castRange: 1.36, sellBonus: 0.18, reqLevel: 6, label: 'Graphite Elite (+18% Gold)' },
@@ -123,7 +123,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '⛵',
     description: 'Upgrade your seafaring craft with greater deck space, stability, and maritime prestige.',
     tiers: [
-      { level: 0, cost: 0, vesselName: 'Weathered Dinghy', xpBonus: 0, reqLevel: 1, label: 'Weathered Dinghy (Starter)' },
+      { level: 0, cost: 0, vesselName: 'Weathered Dinghy', xpBonus: 0, reqLevel: 0, label: 'Weathered Dinghy (Starter)' },
       { level: 1, cost: 420, vesselName: 'Reinforced Skiff', xpBonus: 0.08, reqLevel: 2, label: 'Reinforced Skiff (+8% XP)' },
       { level: 2, cost: 1150, vesselName: 'Coastal Dory', xpBonus: 0.18, reqLevel: 4, label: 'Coastal Dory (+18% XP)' },
       { level: 3, cost: 3000, vesselName: 'Harbor Cutter', xpBonus: 0.30, reqLevel: 7, label: 'Harbor Cutter (+30% XP)' },
@@ -141,7 +141,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🏮',
     description: 'Pierces the murky darkness of Midnight, Magma, and Hadal trenches.',
     tiers: [
-      { level: 0, cost: 0, radius: 55, reqLevel: 1, label: 'Candle Beacon (55px)' },
+      { level: 0, cost: 0, radius: 55, reqLevel: 0, label: 'Candle Beacon (55px)' },
       { level: 1, cost: 220, radius: 85, reqLevel: 2, label: 'Kerosene Lantern (85px)' },
       { level: 2, cost: 560, radius: 120, reqLevel: 4, label: 'Halogen Lamp (120px)' },
       { level: 3, cost: 1400, radius: 165, reqLevel: 6, label: 'Phosphor Lamp (165px)' },
@@ -159,7 +159,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '📡',
     description: 'Emits sonar pings and directional radar arrows pointing to sunken riches and titans.',
     tiers: [
-      { level: 0, cost: 0, levelName: 'None', reqLevel: 1, label: 'Disabled' },
+      { level: 0, cost: 0, levelName: 'None', reqLevel: 0, label: 'Disabled' },
       { level: 1, cost: 350, levelName: 'Acoustic', reqLevel: 2, label: 'Acoustic Pings' },
       { level: 2, cost: 1400, levelName: 'Radar', reqLevel: 5, label: 'Directional Arrows' },
       { level: 3, cost: 5500, levelName: 'SonarPulse', reqLevel: 10, label: 'Wide Pulse Visualizer' },
@@ -174,7 +174,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🦴',
     description: 'Specialized geo-resonance scanner that boosts fossil discovery rates in deep seabed silt.',
     tiers: [
-      { level: 0, cost: 0, fossilBonus: 1.0, reqLevel: 1, label: 'Uncalibrated (1.0x)' },
+      { level: 0, cost: 0, fossilBonus: 1.0, reqLevel: 0, label: 'Uncalibrated (1.0x)' },
       { level: 1, cost: 480, fossilBonus: 1.25, reqLevel: 3, label: 'Resonance Tuner (+25% Fossils)' },
       { level: 2, cost: 1350, fossilBonus: 1.55, reqLevel: 6, label: 'Geo-Acoustic Radar (+55% Fossils)' },
       { level: 3, cost: 4000, fossilBonus: 1.95, reqLevel: 10, label: 'Sub-Bottom Profiler (+95% Fossils)' },
@@ -190,7 +190,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '✨',
     description: 'Gradually raises discovery of Rare, Epic, Legendary species and prized Golden Shinies.',
     tiers: [
-      { level: 0, cost: 0, rareBoost: 1.0, shinyChance: 0.010, reqLevel: 1, label: 'Standard Bait (1% Shiny)' },
+      { level: 0, cost: 0, rareBoost: 1.0, shinyChance: 0.010, reqLevel: 0, label: 'Standard Bait (1% Shiny)' },
       { level: 1, cost: 260, rareBoost: 1.12, shinyChance: 0.014, reqLevel: 2, label: 'Silver Spinner (+12% Rare, 1.4% Shiny)' },
       { level: 2, cost: 680, rareBoost: 1.28, shinyChance: 0.019, reqLevel: 4, label: 'Glow Squid Lure (+28% Rare, 1.9% Shiny)' },
       { level: 3, cost: 1850, rareBoost: 1.48, shinyChance: 0.026, reqLevel: 7, label: 'Pearl Attractor (+48% Rare, 2.6% Shiny)' },
@@ -208,7 +208,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🛡️',
     description: 'Absorbs hazard impacts (mines, shocks, urchins) without losing hooked fish.',
     tiers: [
-      { level: 0, cost: 0, shields: 0, reqLevel: 1, label: 'No Shield (0 Hits)' },
+      { level: 0, cost: 0, shields: 0, reqLevel: 0, label: 'No Shield (0 Hits)' },
       { level: 1, cost: 240, shields: 1, reqLevel: 2, label: 'Padded Coating (1 Hit)' },
       { level: 2, cost: 700, shields: 2, reqLevel: 4, label: 'Reinforced Kevlar (2 Hits)' },
       { level: 3, cost: 1900, shields: 3, reqLevel: 7, label: 'Hardened Composite (3 Hits)' },
@@ -225,7 +225,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🪤',
     description: 'Deploy idle drift traps that passively catch coastal crabs, oysters, and prehistoric bone fragments.',
     tiers: [
-      { level: 0, cost: 0, trapCount: 0, maxStorage: 0, reqLevel: 1, label: 'Not Purchased (0 Pots)' },
+      { level: 0, cost: 0, trapCount: 0, maxStorage: 0, reqLevel: 0, label: 'Not Purchased (0 Pots)' },
       { level: 1, cost: 420, trapCount: 1, maxStorage: 8, reqLevel: 2, label: '1 Drift Pot (8 Capacity)' },
       { level: 2, cost: 1250, trapCount: 2, maxStorage: 15, reqLevel: 4, label: '2 Drift Pots (15 Capacity)' },
       { level: 3, cost: 3600, trapCount: 3, maxStorage: 24, reqLevel: 8, label: '3 Coastal Pots (24 Capacity)' },
@@ -241,7 +241,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🐠',
     description: 'A luxurious glass marine tank for your vessel cabin. Houses live swimming specimens and ancient relics while generating passive visitor tips.',
     tiers: [
-      { level: 0, cost: 0, capacity: 0, reqLevel: 1, label: 'Not Purchased (Locked)' },
+      { level: 0, cost: 0, capacity: 0, reqLevel: 0, label: 'Not Purchased (Locked)' },
       { level: 1, cost: 1200, capacity: 4, reqLevel: 3, label: 'Starter Marine Tank (4 Slots)' },
       { level: 2, cost: 2800, capacity: 8, reqLevel: 6, label: 'Expanded Coral Tank (8 Slots)' },
       { level: 3, cost: 7500, capacity: 13, reqLevel: 10, label: 'Tropical Reef Enclosure (13 Slots)' },
@@ -264,7 +264,7 @@ export const UPGRADE_DEFINITIONS = {
         level: lvl,
         cost,
         capacity,
-        reqLevel,
+        reqLevel: lvl === 0 ? 0 : reqLevel,
         label: lvl === 0 ? `Starter Tackle Box (${capacity} Slots)` : `Lvl ${lvl} Tackle Box (${capacity} Slots, +5)`,
       };
     }),
@@ -276,7 +276,7 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🧭',
     description: 'Unlocks the Chart Navigation Minimap, revealing ocean realm coordinates, live school currents, and fast travel routes.',
     tiers: [
-      { level: 0, cost: 0, reqLevel: 1, label: 'Uncalibrated (Chart Locked)' },
+      { level: 0, cost: 0, reqLevel: 0, label: 'Uncalibrated (Chart Locked)' },
       { level: 1, cost: 850, reqLevel: 3, label: 'Calibrated Brass Astrolabe (Minimap Unlocked)' },
     ],
   },

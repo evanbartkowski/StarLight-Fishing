@@ -1289,7 +1289,7 @@ export const FISH_SPECIES = [
     name: 'Nebular Phantom-Fin',
     zone: 7,
     minDepth: 535,
-    maxDepth: 620,
+    maxDepth: 1800,
     rarity: 'common',
     baseValue: 195, // rebalanced from 245 (-20%)
     baseWeight: 12.0,
@@ -1311,7 +1311,7 @@ export const FISH_SPECIES = [
     name: 'Chrono-Tide Whale',
     zone: 7,
     minDepth: 550,
-    maxDepth: 640,
+    maxDepth: 2500,
     isSpecialDeep: true,
     rarity: 'uncommon',
     baseValue: 430, // rebalanced from 540 (-20%)
@@ -1334,7 +1334,7 @@ export const FISH_SPECIES = [
     name: 'Eldritch Tentacled Maw',
     zone: 7,
     minDepth: 575,
-    maxDepth: 655,
+    maxDepth: 2800,
     isSpecialDeep: true,
     rarity: 'rare',
     baseValue: 920, // rebalanced from 1150 (-20%)
@@ -1357,7 +1357,7 @@ export const FISH_SPECIES = [
     name: 'Cosmic Voidray',
     zone: 7,
     minDepth: 600,
-    maxDepth: 660,
+    maxDepth: 3000,
     isSpecialDeep: true,
     rarity: 'epic',
     baseValue: 1950, // rebalanced from 2450 (-20%)
@@ -1380,7 +1380,7 @@ export const FISH_SPECIES = [
     name: 'Temporal Ribbon Siphon',
     zone: 7,
     minDepth: 540,
-    maxDepth: 630,
+    maxDepth: 2200,
     rarity: 'uncommon',
     baseValue: 405, // rebalanced from 510 (-21%)
     baseWeight: 15.0,

@@ -21,7 +21,7 @@ export const FANTASY_SEAS = [
     description: 'Breezy coastal blues, warm sunbeams, and gentle sandy shoals teeming with lively reef species.',
     lore: 'Where every novice mariner casts their first line. The tide is gentle and the gulls sing welcoming melodies.',
     gates: {
-      reqLevel: 1,
+      reqLevel: 0,
       reqVessel: 0, // Weathered Dinghy
       reqTackle: null,
       unlockFee: 0,
@@ -195,7 +195,7 @@ export const FANTASY_SEAS = [
     icon: '🌌',
     coordinates: "??° ??' ??, ??° ??' ??",
     minDepth: 530,
-    maxDepth: 660,
+    maxDepth: 2650,
     topColor: '#09090b',
     bottomColor: '#000000',
     skyTop: '#020617',

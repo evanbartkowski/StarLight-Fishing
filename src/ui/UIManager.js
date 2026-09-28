@@ -411,6 +411,10 @@ export class UIManager {
 
     const startAsGuest = () => {
       this.saveSystem.switchToAccount(null);
+      if (this.saveSystem.data.xp === 0 && (!this.saveSystem.data.stats?.totalFishCaught || this.saveSystem.data.stats.totalFishCaught === 0)) {
+        this.saveSystem.data.level = 0;
+        this.saveSystem.save();
+      }
       this.showToast('⛵ Sailing as Guest Mariner!');
       launchGame();
     };
@@ -3867,8 +3871,8 @@ export class UIManager {
         <div class="tutorial-step">
           <div class="step-num">1</div>
           <div class="step-text">
-            <h4>Dual-Sided Aiming & Casting</h4>
-            <p>You can cast to the <strong>left or right</strong> side of the boat! Click and pull back to set your trajectory arc. Release to launch!</p>
+            <h4>Aiming & Casting</h4>
+            <p>Aim into the waters with ease! Click or touch and drag backwards to adjust your cast trajectory arc, then release to launch your line.</p>
           </div>
         </div>
 

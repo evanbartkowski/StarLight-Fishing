@@ -161,7 +161,7 @@ export class SaveSystem {
       const journal = parsed.journal || {};
       const speciesCount = Object.keys(journal).filter(k => (journal[k]?.count > 0 || journal[k]?.timesCaught > 0)).length;
       return {
-        level: Math.max(0, parsed.level ?? 0),
+        level: (parsed.level === 1 && (!parsed.xp || parsed.xp === 0) && (!parsed.stats?.totalFishCaught || parsed.stats.totalFishCaught === 0)) ? 0 : Math.max(0, parsed.level ?? 0),
         coins: Math.max(0, parsed.coins || 0),
         speciesCount,
       };
@@ -201,7 +201,7 @@ export class SaveSystem {
       this.data = {
         ...def,
         ...parsed,
-        level: Math.max(0, parsed.level ?? 0),
+        level: (parsed.level === 1 && (!parsed.xp || parsed.xp === 0) && (!parsed.stats?.totalFishCaught || parsed.stats.totalFishCaught === 0)) ? 0 : Math.max(0, parsed.level ?? 0),
         xp: Math.max(0, parsed.xp || 0),
         coins: Math.max(0, parsed.coins || 0),
         upgrades: { ...def.upgrades, ...(parsed.upgrades || {}) },

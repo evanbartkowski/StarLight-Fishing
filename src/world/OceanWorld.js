@@ -19,7 +19,7 @@ export class OceanWorld {
     this.worldWidth = canvas.width;
     this.surfaceY = 220; // Y position of ocean surface
     this.pixelsPerMeter = 15;
-    this.maxDepthMeters = 660;
+    this.maxDepthMeters = 3050;
     this.totalWorldHeight = this.surfaceY + this.maxDepthMeters * this.pixelsPerMeter;
     this.trapSystem = trapSystem;
     this.currentSeaId = 1;
