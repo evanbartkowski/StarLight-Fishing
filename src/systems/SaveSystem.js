@@ -1,3 +1,4 @@
+import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
 import { FISH_SPECIES } from '../data/FishData.js';
@@ -424,8 +425,6 @@ export class SaveSystem {
 
   recordCatchItem(item) {
     if (item.isCrate || item.category === 'crate') {
-      this.data.stats.totalCratesOpened = (this.data.stats.totalCratesOpened || 0) + 1;
-      this.save();
       return;
     }
 
@@ -728,6 +727,15 @@ export class SaveSystem {
     if (!Array.isArray(this.data.inventory)) {
       this.data.inventory = [];
     }
+    // Recover crate metadata for catches saved before inventory supported opening.
+    for (const item of this.data.inventory) {
+      const definition = TREASURE_ITEMS.find(entry => entry.id === item.id && entry.isCrate);
+      if (definition && item.isCrate === undefined) {
+        item.isCrate = true;
+        item.crateRank = definition.crateRank;
+        item.unboxed = item.value === 0;
+      }
+    }
     return this.data.inventory;
   }
 
@@ -744,6 +752,10 @@ export class SaveSystem {
 
     return {
       instanceId,
+      isCrate,
+      category: item.category,
+      crateRank: item.crateRank || 1,
+      unboxed: !!item.unboxed,
       id: item.id || item.speciesId || 'item',
       speciesId: item.species?.id || item.speciesId || item.id || null,
       name: item.name || 'Mysterious Catch',

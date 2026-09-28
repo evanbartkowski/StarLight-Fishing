@@ -226,12 +226,12 @@ export const UPGRADE_DEFINITIONS = {
     description: 'Deploy idle drift traps that passively catch coastal crabs, oysters, and prehistoric bone fragments.',
     tiers: [
       { level: 0, cost: 0, trapCount: 0, maxStorage: 0, reqLevel: 0, label: 'Not Purchased (0 Pots)' },
-      { level: 1, cost: 420, trapCount: 1, maxStorage: 8, reqLevel: 2, label: '1 Drift Pot (8 Capacity)' },
-      { level: 2, cost: 1250, trapCount: 2, maxStorage: 15, reqLevel: 4, label: '2 Drift Pots (15 Capacity)' },
-      { level: 3, cost: 3600, trapCount: 3, maxStorage: 24, reqLevel: 8, label: '3 Coastal Pots (24 Capacity)' },
-      { level: 4, cost: 10000, trapCount: 4, maxStorage: 35, reqLevel: 13, label: '4 Heavy Pots (35 Capacity)' },
-      { level: 5, cost: 26000, trapCount: 5, maxStorage: 48, reqLevel: 19, label: '5 Commercial Pots (48 Capacity)' },
-      { level: 6, cost: 65000, trapCount: 6, maxStorage: 65, reqLevel: 26, label: '6 Abyssal Dredge Cages (65 Capacity)' },
+      { level: 1, cost: 420, trapCount: 1, maxStorage: 4, reqLevel: 2, label: '1 Drift Pot (4 Capacity)' },
+      { level: 2, cost: 1250, trapCount: 2, maxStorage: 7, reqLevel: 4, label: '2 Drift Pots (7 Capacity)' },
+      { level: 3, cost: 3600, trapCount: 3, maxStorage: 12, reqLevel: 8, label: '3 Coastal Pots (12 Capacity)' },
+      { level: 4, cost: 10000, trapCount: 4, maxStorage: 17, reqLevel: 13, label: '4 Heavy Pots (17 Capacity)' },
+      { level: 5, cost: 26000, trapCount: 5, maxStorage: 24, reqLevel: 19, label: '5 Commercial Pots (24 Capacity)' },
+      { level: 6, cost: 65000, trapCount: 6, maxStorage: 32, reqLevel: 26, label: '6 Abyssal Dredge Cages (32 Capacity)' },
     ],
   },
 

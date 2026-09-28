@@ -109,8 +109,9 @@ export class Fish {
     this.erraticVx = 0;
     this.erraticVy = 0;
     this.swimAngle = 0;
-    this.minY = Math.max(70, (species.minDepth || 0) * 15);
-    this.maxY = (species.maxDepth || 9999) * 15;
+    this.minY = (options.surfaceY ?? 220) + Math.max(this.radius + 16, (species.minDepth || 0) * 15);
+    this.maxY = Math.max(this.minY, (options.surfaceY ?? 220) + (species.maxDepth || 9999) * 15);
+    this.y = Math.max(this.minY, Math.min(this.maxY, this.y));
   }
 
   update(dt, worldWidth, hook, particles = null) {
@@ -494,72 +495,17 @@ export class Fish {
     const isEpic = s.rarity === 'epic' && !this.isShiny;
     const isRare = s.rarity === 'rare' && !this.isShiny;
 
-    if (this.isShiny) {
+    if (this.isShiny || isRainbow || isEpic || isRare || this.isMythic || this.isSpecialDeep || s.glowColor) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(254, 240, 138, 0.9)';
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = '#fef08a';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 25, 15, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    } else if (isRainbow || s.isLeviathan) {
-      // Dazzling prismatic rainbow aura for legendaries & leviathans
-      ctx.save();
-      const hue = (this.wiggleTimer * 60 + this.x * 0.2) % 360;
-      ctx.strokeStyle = `hsla(${hue}, 100%, 65%, 0.85)`;
-      ctx.lineWidth = s.isLeviathan ? 3.5 : 2.5;
-      ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
-      ctx.shadowBlur = s.isLeviathan ? 16 : 12;
-      ctx.beginPath();
-      const rX = s.isLeviathan ? 34 : 26;
-      const rY = s.isLeviathan ? 20 : 15;
-      ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Additional secondary pulsing halo ring
-      const pulseR = 1.0 + Math.sin(this.wiggleTimer * 3) * 0.12;
-      ctx.strokeStyle = `hsla(${(hue + 60) % 360}, 100%, 75%, 0.45)`;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, rX * pulseR * 1.25, rY * pulseR * 1.25, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    } else if (isEpic) {
-      // Neon violet / magenta pulsing chromatic aura with star glints
-      ctx.save();
-      const pulse = Math.sin(this.wiggleTimer * 2.5) * 0.15;
-      ctx.strokeStyle = 'rgba(217, 70, 239, 0.85)';
-      ctx.lineWidth = 2.2;
-      ctx.shadowColor = '#e879f9';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 26 * (1 + pulse), 15 * (1 + pulse), 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    } else if (isRare) {
-      // Shimmering aquamarine / electric cyan aura
-      ctx.save();
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
-      ctx.lineWidth = 1.8;
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 9;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 24, 14, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    } else if (this.isMythic || this.isSpecialDeep || s.glowColor) {
-      // Celestial mythic or special deep titan aura
-      ctx.save();
-      const auraColor = s.glowColor || (this.isSpecialDeep ? 'rgba(56, 189, 248, 0.8)' : 'rgba(196, 181, 253, 0.7)');
-      ctx.strokeStyle = auraColor;
-      ctx.lineWidth = this.isSpecialDeep ? 2.5 : 2;
-      ctx.shadowColor = s.glowColor || (this.isSpecialDeep ? '#38bdf8' : '#c084fc');
-      ctx.shadowBlur = this.isSpecialDeep ? 12 : 8;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 26, 15, 0, 0, Math.PI * 2);
-      ctx.stroke();
+      const color = RARITY_CONFIG[s.rarity]?.color || '#c084fc';
+      const radius = s.isLeviathan ? 44 : 34;
+      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      glow.addColorStop(0, color);
+      glow.addColorStop(1, 'transparent');
+      ctx.globalAlpha *= 0.45 + Math.sin(this.wiggleTimer * 2) * 0.05;
+      ctx.scale(1, 0.65);
+      ctx.fillStyle = glow;
+      ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
       ctx.restore();
     }
 

@@ -34,39 +34,19 @@ export class ShipsCat {
     }
   }
 
-  // Gives gifts less frequently (every 3-4 in-game days) with rich variety of cat treasures
+  // Once every in-game morning (DAWN), paws up a gift
   checkMorningGift(timeOfDay, dayCount) {
-    if (this.lastGiftDay === -1) {
+    if (timeOfDay === 'DAWN' && dayCount !== this.lastGiftDay && !this.hasMorningGift) {
       this.lastGiftDay = dayCount;
-      return;
-    }
-
-    const daysSinceGift = dayCount - this.lastGiftDay;
-    if (timeOfDay === 'DAWN' && daysSinceGift >= 3 && !this.hasMorningGift) {
-      const roll = Math.random();
-      if (daysSinceGift >= 4 || roll < 0.60) {
-        this.lastGiftDay = dayCount;
-        this.hasMorningGift = true;
-        const gifts = [
-          { name: 'Rare Ambergris Chunk', icon: '✨', value: 140 },
-          { name: 'Sunken Pirate Doubloon', icon: '🪙', value: 100 },
-          { name: 'Deep-Sea Black Pearl', icon: '🔮', value: 120 },
-          { name: 'Antique Brass Compass', icon: '🧭', value: 90 },
-          { name: 'Sunken Pocket Watch', icon: '⏱️', value: 110 },
-          { name: 'Iridescent Abalone Shell', icon: '🐚', value: 60 },
-          { name: 'Dried Catnip Kelp', icon: '🌿', value: 45 },
-          { name: 'Bioluminescent Starfish', icon: '⭐', value: 75 },
-          { name: 'Luminous Squid Jig', icon: '🦑', value: 85 },
-          { name: 'Polished Sea Glass', icon: '💎', value: 55 },
-          { name: 'Message in a Tiny Vial', icon: '📜', value: 95 },
-          { name: 'Ancient Copper Fishhook', icon: '🪝', value: 70 },
-          { name: 'Rainbow Coral Frond', icon: '🪸', value: 80 },
-          { name: 'Gilded Scallop Shell', icon: '🦪', value: 65 },
-          { name: 'Lucky Carved Runestone', icon: '🪨', value: 50 },
-          { name: 'Fresh Silver Minnow', icon: '🐟', value: 50 },
-        ];
-        this.pendingGift = gifts[Math.floor(Math.random() * gifts.length)];
-      }
+      this.hasMorningGift = true;
+      const gifts = [
+        { name: 'Drift Shell', icon: '🐚', value: 25 },
+        { name: 'Sea Glass', icon: '💎', value: 35 },
+        { name: 'Lucky Pebble', icon: '🪨', value: 20 },
+        { name: 'Silver Herring Bait', icon: '🐟', value: 40 },
+        { name: 'Golden Scallop', icon: '🦪', value: 50 },
+      ];
+      this.pendingGift = gifts[Math.floor(Math.random() * gifts.length)];
     }
   }
 

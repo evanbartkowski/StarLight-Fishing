@@ -1,4 +1,10 @@
+import { CRATE_RANKS } from './CrateData.js';
+
 export const TREASURE_ITEMS = [
+  ...CRATE_RANKS.map(crate => ({
+    ...crate, category: 'crate', isCrate: true, crateRank: crate.rank,
+    value: [0, 60, 160, 390, 900, 1950][crate.rank], lore: crate.desc,
+  })),
   // Standard Sunken Treasures (Rebalanced slightly lower)
   {
     id: 'shell',
@@ -38,6 +44,8 @@ export const TREASURE_ITEMS = [
   },
   {
     id: 'pirate_chest',
+    isCrate: true,
+    crateRank: 3,
     name: 'Sunken Pirate Chest',
     category: 'treasure',
     minDepth: 90,
@@ -62,6 +70,8 @@ export const TREASURE_ITEMS = [
   },
   {
     id: 'royal_relic',
+    isCrate: true,
+    crateRank: 5,
     name: 'Gilded Royal Relic Chest',
     category: 'treasure',
     minDepth: 250,

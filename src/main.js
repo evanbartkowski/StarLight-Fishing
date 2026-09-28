@@ -92,11 +92,7 @@ function notifyRareCatch(fish) {
   const name = typeof fish === 'string' ? fish : fish?.name || 'Rare Fish';
   soundManager.playRareChime();
   notifyTitle(`🌟 Rare Catch: ${name}!`);
-  if (typeof fish === 'object' && fish && chatManager) {
-    if (fish.rarity === 'legendary' || fish.isMythic || fish.crown === 'gold' || fish.isShiny) {
-      chatManager.broadcastCatch(fish.name, fish.rarity, fish.crown, fish.weight);
-    }
-  }
+
 }
 
 trapSystem.onTrapFull = () => {
@@ -627,29 +623,10 @@ const update = (dt) => {
       }
 
       const unpickedSafe = hook.caughtItems.find(i => i.isSunkenSafe && !i.unlocked);
-      const unboxedCrates = hook.caughtItems.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed);
+      const showSummary = () => uiManager.openCatchSummary(hook, () => startDive(), ranOutOfStorage);
+      if (unpickedSafe) uiManager.openLockpickMinigame(unpickedSafe, showSummary);
+      else showSummary();
 
-      if (unpickedSafe) {
-        uiManager.openLockpickMinigame(unpickedSafe, () => {
-          if (unboxedCrates.length > 0) {
-            uiManager.openCratesModal(unboxedCrates, hook, () => {
-              startDive();
-            });
-          } else {
-            uiManager.openCatchSummary(hook, () => {
-              startDive();
-            }, ranOutOfStorage);
-          }
-        });
-      } else if (unboxedCrates.length > 0) {
-        uiManager.openCratesModal(unboxedCrates, hook, () => {
-          startDive();
-        });
-      } else {
-        uiManager.openCatchSummary(hook, () => {
-          startDive();
-        }, ranOutOfStorage);
-      }
     }
 
     // Continuous swept-line collision helper to prevent high-speed tunneling

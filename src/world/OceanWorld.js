@@ -209,7 +209,7 @@ export class OceanWorld {
       for (let i = 0; i < count; i++) {
         const x = 60 + Math.random() * (this.worldWidth - 120);
         const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-        const fish = new Fish(species, x, y, { shinyChance });
+        const fish = new Fish(species, x, y, { shinyChance, surfaceY: this.surfaceY });
         this.entities.fish.push(fish);
       }
     });
@@ -226,7 +226,7 @@ export class OceanWorld {
         if (minSpawnY < maxSpawnY) {
           const x = 70 + Math.random() * (this.worldWidth - 140);
           const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-          const mythicFish = new Fish(mythic, x, y, { shinyChance });
+          const mythicFish = new Fish(mythic, x, y, { shinyChance, surfaceY: this.surfaceY });
           this.entities.fish.push(mythicFish);
         }
       }
@@ -246,7 +246,7 @@ export class OceanWorld {
           if (minSpawnY < maxSpawnY) {
             const x = 70 + Math.random() * (this.worldWidth - 140);
             const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-            const leviathanFish = new Fish(chosen, x, y, { shinyChance });
+            const leviathanFish = new Fish(chosen, x, y, { shinyChance, surfaceY: this.surfaceY });
             this.entities.fish.push(leviathanFish);
           }
         }
