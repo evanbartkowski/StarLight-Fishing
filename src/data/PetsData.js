@@ -2,35 +2,41 @@
 // Found randomly by chance from spending time fishing across the Seven Seas
 
 export const PET_DEFINITIONS = {
+  shark: {
+    id: 'shark', name: 'Irene the Shark', species: 'Friendly Reef Shark', icon: '??', reqLevel: 36,
+    perk: 'Swims beside your boat, keeping you company on every voyage.',
+    lore: 'A curious reef shark with a silver dorsal fin and a surprisingly gentle smile.',
+    unlockHint: 'Irene joins your crew automatically at Angler Level 36.',
+  },
   cat: {
     id: 'cat',
     name: 'Angela the Cat',
     species: 'Calico Shorthair',
     icon: '🐱',
-    reqLevel: 4,
+    reqLevel: 8,
     perk: 'Purrs when stroked on deck. At Dawn every morning, brings gifts of sea shells, glass, or coins.',
-    lore: 'A loving, quiet calico that enjoys ocean breezes and gentle pats. She climbs aboard seasoned captains boats at Angler Level 4+.',
-    unlockHint: 'Has a random chance to climb aboard as you level up and explore deeper seas (Requires Level 4).',
+    lore: 'A loving, quiet calico that enjoys ocean breezes and gentle pats. She climbs aboard seasoned captains boats at Angler Level 8+.',
+    unlockHint: 'Has a random chance to climb aboard as you level up and explore deeper seas (Requires Level 8).',
   },
   pelican: {
     id: 'pelican',
     name: 'Evan the Bird',
     species: 'Coastal Seafarer Pelican',
     icon: '🦤',
-    reqLevel: 7,
+    reqLevel: 14,
     perk: 'Perches on the bowsprit spar. Feed him fish to raise trust; occasionally dives into the surf for sunken gold.',
-    lore: 'A loyal, wise coastal pelican who watches over the vessel bowsprit. Befriends skilled mariners at Angler Level 7+.',
-    unlockHint: 'Has a random chance to swoop down and join your crew as you reach Angler Level 7+.',
+    lore: 'A loyal, wise coastal pelican who watches over the vessel bowsprit. Befriends skilled mariners at Angler Level 14+.',
+    unlockHint: 'Has a random chance to swoop down and join your crew as you reach Angler Level 14+.',
   },
   dolphin: {
     id: 'dolphin',
     name: 'Echo the Bottlenose Dolphin',
     species: 'Bottlenose Dolphin',
     icon: '🐬',
-    reqLevel: 11,
+    reqLevel: 22,
     perk: 'Leaps and breaches through ocean waves during clear weather, bringing good luck and serenity.',
     lore: 'A spirited dolphin that loves accompanying friendly fishing boats, riding the bow waves across the open sea.',
-    unlockHint: 'Has a chance to befriend your vessel after long voyages across the Seven Seas (Requires Level 11).',
+    unlockHint: 'Has a chance to befriend your vessel after long voyages across the Seven Seas (Requires Level 22).',
   },
 };
 

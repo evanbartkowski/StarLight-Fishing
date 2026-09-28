@@ -1,3 +1,7 @@
+import { drawAngler } from '../data/CustomizationData.js';
+import { REALM_RELICS } from '../data/RelicsData.js';
+import { Relic } from '../entities/Relic.js';
+import { belongsToRealm, REALM_PROFILES } from '../data/RealmContent.js';
 import { DEPTH_ZONES, FISH_SPECIES } from '../data/FishData.js';
 import { FANTASY_SEAS, getSeaById } from '../entities/SeasData.js';
 import { soundManager } from '../audio/SoundManager.js';
@@ -8,7 +12,7 @@ import { Hazard } from '../entities/Hazard.js';
 import { Treasure } from '../entities/Treasure.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { worldCycle } from '../systems/WorldCycle.js';
-import { ShipsCat, PerchingPelican, BackgroundDolphin } from '../entities/BoatCompanions.js';
+import { ShipsCat, PerchingPelican, BackgroundDolphin, BoatShark } from '../entities/BoatCompanions.js';
 import { DriftItemManager } from '../entities/DriftItems.js';
 import { HotspotManager } from '../entities/Hotspots.js';
 import { isConditionMet } from '../data/weather.config.js';
@@ -63,6 +67,7 @@ export class OceanWorld {
     this.shipsCat = new ShipsCat();
     this.pelican = new PerchingPelican();
     this.dolphin = new BackgroundDolphin(this.worldWidth);
+    this.shark = new BoatShark();
 
     // Drift items (bottles + driftwood) floating on surface
     this.driftItems = new DriftItemManager(this.worldWidth, this.surfaceY);
@@ -135,6 +140,7 @@ export class OceanWorld {
     this.entities.fish = [];
     this.entities.hazards = [];
     this.entities.treasures = [];
+    this.entities.relics = [];
 
     this.boat.vesselLevel = saveSystem.getUpgradeLevel('boatVessel') || 0;
 
@@ -150,12 +156,13 @@ export class OceanWorld {
     const maxLineTier = UPGRADE_DEFINITIONS.lineLength.tiers[saveSystem.getUpgradeLevel('lineLength')] || UPGRADE_DEFINITIONS.lineLength.tiers[0];
     const activeMaxDepth = Math.min(this.maxDepthMeters, maxLineTier.depth + 30);
 
-    const activeZone = this.zoneManager ? this.zoneManager.getCurrentZone() : null;
-    const activeZoneCatches = activeZone?.catches || [];
+    const realmProfile = REALM_PROFILES[this.currentSeaId];
 
     // Populate Fish across the Seven Seas
     // Deep waters now spawn diverse abyssal, volcanic, starlight, and void species!
     FISH_SPECIES.forEach((species) => {
+      if (!belongsToRealm(species, this.currentSeaId)) return;
+      if (species.zone !== this.currentSeaId && Math.random() > 0.12) return;
       // Must be reachable within line limit
       if (species.minDepth > activeMaxDepth) return;
 
@@ -220,6 +227,7 @@ export class OceanWorld {
     const weather = worldCycle.getWeather();
 
     LEGENDARY_SPECIES.forEach((mythic) => {
+      if (!belongsToRealm(mythic, this.currentSeaId)) return;
       if (mythic.minDepth > activeMaxDepth) return;
       if (checkMythicSpawn(mythic, timeOfDay, weather, activeMaxDepth)) {
         const minSpawnY = this.surfaceY + mythic.minDepth * this.pixelsPerMeter;
@@ -238,7 +246,7 @@ export class OceanWorld {
       const hasLeviathan = this.entities.fish.some((f) => f.species && f.species.isLeviathan);
       if (!hasLeviathan) {
         const eligibleLeviathans = LEGENDARY_SPECIES.filter(
-          (m) => m.isLeviathan && m.minDepth <= activeMaxDepth
+          (m) => m.isLeviathan && belongsToRealm(m, this.currentSeaId) && m.minDepth <= activeMaxDepth
         );
         if (eligibleLeviathans.length > 0) {
           const chosen = eligibleLeviathans[Math.floor(Math.random() * eligibleLeviathans.length)];
@@ -256,6 +264,7 @@ export class OceanWorld {
 
     // Populate Treasures, Ranked Loot Crates, and Prehistoric Fossils (made slightly less common)
     TREASURE_ITEMS.forEach((item) => {
+      if (!belongsToRealm(item, this.currentSeaId)) return;
       if (item.minDepth > activeMaxDepth) return;
 
       const minSpawnY = this.surfaceY + item.minDepth * this.pixelsPerMeter;
@@ -263,7 +272,10 @@ export class OceanWorld {
       if (minSpawnY >= maxSpawnY) return;
 
       let count = 0;
-      if (item.category === 'fossil') {
+      if (item.zone === this.currentSeaId && item.id.startsWith('realm_')) {
+        const rarityChance = { common: 1, uncommon: 0.8, rare: 0.6, epic: 0.35, legendary: 0.15 };
+        count = Math.random() < realmProfile.treasureChance * (rarityChance[item.rarity] || 1) ? 1 : 0;
+      } else if (item.category === 'fossil') {
         count = Math.random() < 0.12 * fossilBonus ? 1 : 0;
       } else if (item.category === 'crate') {
         // Mystery Loot Crate spawning chance based on rank (rarer encounter)
@@ -288,8 +300,17 @@ export class OceanWorld {
       }
     });
 
+    REALM_RELICS.filter(relic => relic.zone === this.currentSeaId).forEach(relic => {
+      const reachableDepth = Math.min(activeMaxDepth, relic.maxDepth);
+      if (relic.minDepth >= reachableDepth || Math.random() > 0.08 * fossilBonus) return;
+      const x = 70 + Math.random() * (this.worldWidth - 140);
+      const y = this.surfaceY + (relic.minDepth + Math.random() * (reachableDepth - relic.minDepth)) * this.pixelsPerMeter;
+      this.entities.relics.push(new Relic(relic, x, y));
+    });
+
     // Populate Hazards (Standard + Colossal Bad Obstacles - spawn more big obstacles)
     HAZARD_TYPES.forEach((haz) => {
+      if (!belongsToRealm(haz, this.currentSeaId)) return;
       if (haz.minDepth > activeMaxDepth) return;
 
       const minSpawnY = this.surfaceY + haz.minDepth * this.pixelsPerMeter;
@@ -298,7 +319,7 @@ export class OceanWorld {
 
       const count = haz.isColossal
         ? (1 + (Math.random() < 0.65 ? 1 : 0)) // 1 to 2 imposing colossal obstacles
-        : (1 + Math.floor(Math.random() * 2)); // 1-2 standard hazards
+        : (1 + Math.floor(Math.random() * 2 * realmProfile.hazardDensity));
 
       for (let i = 0; i < count; i++) {
         const x = 70 + Math.random() * (this.worldWidth - 140);
@@ -361,6 +382,7 @@ export class OceanWorld {
         this.pendingBottleMessage = { type: 'pelican_retrieve', value: pelicanResult.value };
       }
     }
+    if (this.saveSystem?.hasPet('shark')) this.shark.update(dt, this.boat, this.surfaceY);
     if (this.dolphin && this.saveSystem?.hasPet('dolphin')) {
       this.dolphin.update(dt, this.surfaceY, worldCycle.getWeather());
     }
@@ -530,6 +552,8 @@ export class OceanWorld {
     const drawBoatY = this.boat.y - cameraY;
     const b = this.boat;
     const vessel = b.vesselLevel || 0;
+
+    if (this.saveSystem?.hasPet('shark')) this.shark.render(ctx, cameraY);
 
     // Render dolphin behind boat (background layer - only if unlocked)
     if (this.dolphin && this.saveSystem?.hasPet('dolphin')) this.dolphin.render(ctx, cameraY);
@@ -838,37 +862,7 @@ export class OceanWorld {
     const fX = -2;
     const fY = -12;
 
-    // Body (Yellow raincoat)
-    ctx.fillStyle = '#eab308';
-    ctx.beginPath();
-    ctx.moveTo(fX - 9, fY - 26);
-    ctx.lineTo(fX + 9, fY - 26);
-    ctx.lineTo(fX + 11, fY - 2);
-    ctx.lineTo(fX - 11, fY - 2);
-    ctx.closePath();
-    ctx.fill();
-
-    // Head
-    ctx.fillStyle = '#fde68a';
-    ctx.beginPath();
-    ctx.arc(fX, fY - 32, 7, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Sou'wester yellow rain hat
-    ctx.fillStyle = '#ca8a04';
-    ctx.beginPath();
-    ctx.arc(fX, fY - 35, 9, Math.PI, 0);
-    ctx.fill();
-    ctx.fillRect(fX - 13, fY - 35, 26, 4);
-
-    // Arm holding rod
-    ctx.strokeStyle = '#eab308';
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(fX + 4, fY - 18);
-    ctx.lineTo(fX + 22, fY - 16);
-    ctx.stroke();
+    drawAngler(ctx, this.saveSystem?.data.appearance, fX, fY);
 
     // 3. Fishing Rod
     ctx.strokeStyle = '#38bdf8';
@@ -905,42 +899,9 @@ export class OceanWorld {
 
     try {
       const sea = getSeaById(this.currentSeaId) || FANTASY_SEAS[0];
-      const activeZone = this.zoneManager ? this.zoneManager.getCurrentZone() : null;
-      const zTopColor = visibleTopM < 45 ? (sea.topColor || activeZone?.aesthetics?.topColor || DEPTH_ZONES[0].topColor) : (activeZone?.aesthetics?.topColor || DEPTH_ZONES[0].topColor);
-      const zBottomColor = sea.bottomColor || activeZone?.aesthetics?.bottomColor || DEPTH_ZONES[DEPTH_ZONES.length - 1].bottomColor;
-
       const grad = ctx.createLinearGradient(0, topY, 0, bottomY);
-      const stops = [];
-      stops.push({ t: 0, color: zTopColor });
-
-      DEPTH_ZONES.forEach((zone) => {
-        const startT = (zone.minDepth - visibleTopM) / depthSpan;
-        const endT = (zone.maxDepth - visibleTopM) / depthSpan;
-
-        if (startT >= 0.01 && startT <= 0.99) {
-          stops.push({ t: startT, color: zone.topColor });
-        }
-        if (endT >= 0.01 && endT <= 0.99) {
-          stops.push({ t: endT, color: zone.bottomColor });
-        }
-      });
-
-      let bottomZone = DEPTH_ZONES[DEPTH_ZONES.length - 1];
-      for (const z of DEPTH_ZONES) {
-        if (visibleBottomM >= z.minDepth && visibleBottomM <= z.maxDepth) {
-          bottomZone = z;
-          break;
-        }
-      }
-      stops.push({ t: 1, color: activeZone ? zBottomColor : bottomZone.bottomColor });
-
-      stops.sort((a, b) => a.t - b.t);
-
-      stops.forEach((s) => {
-        const clampedT = Math.max(0, Math.min(1, s.t));
-        grad.addColorStop(clampedT, s.color);
-      });
-
+      grad.addColorStop(0, sea.topColor);
+      grad.addColorStop(1, sea.bottomColor);
       ctx.fillStyle = grad;
     } catch (e) {
       ctx.fillStyle = '#0284c7';
@@ -948,40 +909,45 @@ export class OceanWorld {
 
     ctx.fillRect(0, topY, this.worldWidth, bottomY - topY);
 
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, topY, this.worldWidth, bottomY - topY); ctx.clip();
+
     // Sea 1: Sunlit Caustics (0 - 45m)
-    if (visibleTopM < 50) {
+    if (this.currentSeaId === 1) {
       this.renderCaustics(ctx, topY);
     }
 
     // Sea 2: Bioluminescent Trench Plankton & Jellies (45 - 105m)
-    if (visibleTopM < 110 && visibleBottomM > 40) {
+    if (this.currentSeaId === 2) {
       this.renderBioluminescentPlankton(ctx, cameraY, screenHeight);
     }
 
     // Sea 3: Astral Shimmerfall Starlight Cascades (105 - 180m)
-    if (visibleTopM < 190 && visibleBottomM > 100) {
+    if (this.currentSeaId === 3) {
       this.renderAstralStarlightCascades(ctx, cameraY, screenHeight);
     }
 
     // Sea 4: Sunken Atlantis Marble Pillars & Gears (180 - 280m)
-    if (visibleTopM < 290 && visibleBottomM > 170) {
+    if (this.currentSeaId === 4) {
       this.renderSunkenAtlantisPillars(ctx, cameraY, screenHeight);
     }
 
     // Sea 5: Whispering Aether Sea Sky-Islands & Lilac Winds (280 - 410m)
-    if (visibleTopM < 420 && visibleBottomM > 270) {
+    if (this.currentSeaId === 5) {
       this.renderAetherSkyIslands(ctx, cameraY, screenHeight);
     }
 
     // Sea 6: Magma Caldera Trench Embers & Volcanic Spire (410 - 530m)
-    if (visibleTopM < 540 && visibleBottomM > 400) {
+    if (this.currentSeaId === 6) {
       this.renderThermalVentBackground(ctx, cameraY, screenHeight);
     }
 
     // Sea 7: Eldritch Chrono Void Auroras & Space-Whales (530 - 660m+)
-    if (visibleBottomM > 520) {
+    if (this.currentSeaId === 7) {
       this.renderEldritchVoidWhales(ctx, cameraY, screenHeight);
     }
+
+    ctx.restore();
 
     // Render Weather Effects: Rain ripples, fog drift, night stars & biolum plankton
     worldCycle.renderWeatherEffects(ctx, cameraY, this.worldWidth, screenHeight, this.surfaceY);
@@ -1014,8 +980,8 @@ export class OceanWorld {
 
   // Sea 2: Bioluminescent Trench Plankton & Jellies
   renderBioluminescentPlankton(ctx, cameraY, screenHeight) {
-    const seaStartY = this.surfaceY + 45 * this.pixelsPerMeter;
-    const seaEndY = this.surfaceY + 105 * this.pixelsPerMeter;
+    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
+    const seaEndY = cameraY + screenHeight + 120;
     const drawStartY = seaStartY - cameraY;
     const drawEndY = seaEndY - cameraY;
 
@@ -1044,8 +1010,8 @@ export class OceanWorld {
 
   // Sea 3: Astral Shimmerfall Starlight Cascades
   renderAstralStarlightCascades(ctx, cameraY, screenHeight) {
-    const seaStartY = this.surfaceY + 105 * this.pixelsPerMeter;
-    const seaEndY = this.surfaceY + 180 * this.pixelsPerMeter;
+    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
+    const seaEndY = cameraY + screenHeight + 120;
     const drawStartY = seaStartY - cameraY;
     const drawEndY = seaEndY - cameraY;
 
@@ -1081,7 +1047,7 @@ export class OceanWorld {
 
   // Sea 4: Sunken Atlantis Marble Pillars & Ancient Gilded Gears
   renderSunkenAtlantisPillars(ctx, cameraY, screenHeight) {
-    const seaStartY = this.surfaceY + 180 * this.pixelsPerMeter;
+    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
     const basePillarY = (seaStartY + 60 * this.pixelsPerMeter) - cameraY;
 
     if (basePillarY < -300 || basePillarY > screenHeight + 300) return;
@@ -1130,8 +1096,8 @@ export class OceanWorld {
 
   // Sea 5: Whispering Aether Sea Clouds & Sky-Islands
   renderAetherSkyIslands(ctx, cameraY, screenHeight) {
-    const seaStartY = this.surfaceY + 280 * this.pixelsPerMeter;
-    const aetherDrawY = (seaStartY + 50 * this.pixelsPerMeter) - cameraY;
+    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
+    const aetherDrawY = Math.max(this.surfaceY - cameraY + 100, screenHeight * 0.55);
 
     if (aetherDrawY < -200 || aetherDrawY > screenHeight + 200) return;
 
@@ -1173,7 +1139,7 @@ export class OceanWorld {
 
   // Sea 6: Magma Caldera Trench Embers & Thermal Chimneys
   renderThermalVentBackground(ctx, cameraY, screenHeight) {
-    const ventY = this.surfaceY + 410 * this.pixelsPerMeter - cameraY;
+    const ventY = Math.max(this.surfaceY - cameraY + 100, screenHeight * 0.55);
     if (ventY < -250 || ventY > screenHeight + 250) return;
 
     ctx.save();
@@ -1226,7 +1192,7 @@ export class OceanWorld {
 
   // Sea 7: Eldritch Chrono Void Auroras & Space-Whales
   renderEldritchVoidWhales(ctx, cameraY, screenHeight) {
-    const seaStartY = this.surfaceY + 530 * this.pixelsPerMeter;
+    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
     const voidY = seaStartY - cameraY;
 
     ctx.save();

@@ -1,6 +1,10 @@
+import { REALM_HAZARDS, REALM_TREASURES } from './RealmContent.js';
+import { LEGACY_SALVAGE_SPECIES } from './FishData.js';
 import { CRATE_RANKS } from './CrateData.js';
 
 export const TREASURE_ITEMS = [
+  ...REALM_TREASURES,
+  ...LEGACY_SALVAGE_SPECIES.map(item => ({ ...item, zone: ['lava_geode', 'obsidian_rock'].includes(item.id) ? 6 : item.zone, category: 'treasure', value: item.baseValue, color: item.primaryColor, glow: item.secondaryColor })),
   ...CRATE_RANKS.map(crate => ({
     ...crate, category: 'crate', isCrate: true, crateRank: crate.rank,
     value: [0, 60, 160, 390, 900, 1950][crate.rank], lore: crate.desc,
@@ -160,6 +164,7 @@ export const TREASURE_ITEMS = [
 
 // 11 Unique Hazard Obstacles across the 7 Seas
 export const HAZARD_TYPES = [
+  ...REALM_HAZARDS,
   // Sea 1 Hazards
   {
     id: 'boot',
@@ -364,3 +369,10 @@ export const HAZARD_TYPES = [
     lore: 'An ancient, towering obelisk pulsing with strange gravitational distortion.',
   },
 ];
+
+// Legacy salvage remains available only in its native sea; crates are limited to
+// neighboring realms rather than appearing everywhere at sufficient depth.
+const legacySeas = { shell: [1], bottle: [1, 2], coin_bag: [2], pirate_chest: [4], giant_pearl: [5], royal_relic: [4], ocean_heart: [7], fossil_trilobite: [1], fossil_ammonite: [2], fossil_megalodon: [3], fossil_pliosaur: [6], fossil_atlantis: [4], crate_wood: [1], crate_iron: [2], crate_gold: [3, 4], crate_abyssal: [5, 6], crate_celestial: [7] };
+for (const item of TREASURE_ITEMS) if (!item.zone) item.seas = legacySeas[item.id] || [Math.min(7, item.crateRank || 1)];
+const hazardSeas = { boot: [1], driftwood: [1], pufferfish: [1], ghost_net: [2], electric_eel: [2], anchor: [4], jellyfish: [2], sea_mine: [4], urchin: [1], thermal_vent: [6], void_tentacle: [7], sunken_galleon_hull: [4], megalodon_ribcage: [3], deep_sea_minefield: [4], caldera_lava_pillar: [6], eldritch_monolith: [7] };
+for (const hazard of HAZARD_TYPES) if (!hazard.zone) hazard.seas = hazardSeas[hazard.id] || [1];

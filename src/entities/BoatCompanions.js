@@ -415,3 +415,25 @@ export class BackgroundDolphin {
   }
 }
 
+
+// Irene cruises under the surface alongside the player's vessel.
+export class BoatShark {
+  constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; }
+  update(dt, boat, surfaceY) {
+    this.timer += dt / 1000;
+    this.x = boat.x + Math.sin(this.timer * 0.35) * 125;
+    this.y = surfaceY + 28 + Math.sin(this.timer * 0.7) * 6;
+    this.direction = Math.cos(this.timer * 0.35) >= 0 ? 1 : -1;
+  }
+  render(ctx, cameraY = 0) {
+    ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.scale(this.direction, 1);
+    ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.ellipse(0, 0, 33, 11, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.ellipse(3, 4, 25, 5, 0, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(-5, -8); ctx.lineTo(2, -29); ctx.lineTo(13, -7); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-28, 0); ctx.lineTo(-46, -16 + Math.sin(this.timer * 3) * 3); ctx.lineTo(-40, 0); ctx.lineTo(-45, 14); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(-8, 21); ctx.lineTo(15, 7); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(23, -3, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(24, -3, 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}

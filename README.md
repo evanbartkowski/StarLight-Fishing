@@ -11,21 +11,27 @@ An atmospheric browser fishing game about exploring seven fantasy seas, collecti
 - Complete quests and achievements, encounter wandering NPCs, and unlock boat companions and seabed traps.
 - Fish through changing weather and time of day with ambient ocean audio.
 
-Fresh games begin at **level 0**. The starting line reaches **50m**; purchased line upgrades reach **100, 160, 230, 310, 400, 500, 600, 700, 800, 900, and 1,000m**. Line reach is separate from habitat depth: the current sea habitats extend to 660m.
+Fresh games begin at **level 0**. Fishing line upgrades reach from **60m to 3,000m**. Chartering a realm unlocks its native ecosystem; a longer line alone does not unlock another realm's fish or treasure.
 
-## The seven seas
+## Seven distinct ecosystems
 
-| Sea | Habitat depth |
-| --- | --- |
-| Sunlit Shoals | 0?45m |
-| Bioluminescent Trench | 45?105m |
-| Astral Shimmerfall | 105?180m |
-| Sunken Atlantis | 180?280m |
-| Whispering Aether Sea | 280?410m |
-| Magma Caldera Trench | 410?530m |
-| Eldritch Chrono Void | 530?660m |
+Every realm has **35 native fish** (245 regular species total), plus special mythic encounters where available. Fish differ in silhouette, markings, movement, size, depth niche, and rarity. Only one migrating species from a neighboring realm can occasionally appear; most catches are exclusive to their home waters.
 
-Use the nautical chart to inspect sea gates and travel. The chart requires Angler Level 4 and the Nautical Astrolabe upgrade. Depth alone does not unlock a sea.
+| Realm | Charter fee | Typical common fish base value | Fish XP multiplier |
+| --- | ---: | ---: | ---: |
+| Sunlit Shoals | Free | $6 | 1x |
+| Bioluminescent Trench | $3,000 | $30 | 1.3x |
+| Astral Shimmerfall | $17,500 | $130 | 1.7x |
+| Sunken Atlantis | $75,000 | $600 | 2.2x |
+| Whispering Aether Sea | $325,000 | $2,500 | 2.9x |
+| Magma Caldera Trench | $1,250,000 | $10,500 | 3.8x |
+| Eldritch Chrono Void | $5,000,000 | $44,000 | 5x |
+
+Actual sale values also depend on species, size, rarity, shiny/crown status, and gear. Previously unlocked realms remain unlocked.
+
+Each realm adds four signature hazards, six treasures/fossils, a native mystery cache, and two restorable relics. Coral thickets, glowing spores, meteor shards, clockwork ruins, aether cyclones, volcanic chimneys, and temporal fractures give the waters their own visual identity. Later realms have denser hazards and much more valuable fish, treasures, restored relics, and cache rewards.
+
+Native species occupy shallow nurseries as well as deep habitats, so arriving in a new realm immediately offers new catches. The journal and nautical chart reflect the expanded rosters and economics. The chart requires Angler Level 4 and the Nautical Astrolabe upgrade; realm gates also require the listed level, vessel, and tackle.
 
 ## Playing
 
@@ -35,9 +41,17 @@ Use the nautical chart to inspect sea gates and travel. The chart requires Angle
 4. Press **Space** during descent to retrieve early. The hook reels automatically; continue steering on the way up.
 5. Manage catches in your inventory, sell them for upgrades, or display favorites in your aquarium.
 
+## Make it your own
+
+Open **Settings ? Customize Appearance** to choose your angler's skin tone, coat, hair, hat color, and headwear, with a live preview. Choices save with the active local profile.
+
+Four companions can join your voyages: Angela the cat (eligible from level 8), Evan the pelican (14), Echo the dolphin (22), and **Irene the shark**, who joins automatically at level 36. Existing level-36+ saves also receive Irene.
+
+Maxed-out upgrades move to the bottom of the shop, leaving available purchases first.
+
 ## Personal aquarium
 
-Purchase the Personal Marine Aquarium in the tackle shop, then assign catches from your inventory. Upgrades increase capacity from 4 to 45 slots. Display fish and relics, choose a tank theme, tap the glass, and drop food into the water. Fish pursue food and gradually return to a calmer cruising speed once it is gone.
+Purchase the Personal Marine Aquarium in the tackle shop, then assign catches from your inventory. Upgrades increase capacity from 4 to 45 slots. Display fish, treasures, fossils, and relics. Choose a tank theme, golden sand/pebbles/obsidian/pearl gravel, kelp/coral/ruins/crystal scenery, lighting, and bubble density. Tap the glass and drop food into the water. Treasures use display slots and only fish generate tips; unopened crates must be opened or sold instead. Fish pursue food and gradually return to a calmer cruising speed once it is gone.
 
 Visitor tips add up for every displayed fish:
 
@@ -54,9 +68,13 @@ Shiny fish earn an extra 10 coins per minute. Relics do not generate tips. The a
 
 ## Saves and accounts
 
-Guest progress and Captain accounts are stored in this browser's `localStorage`. Returning guests resume their saved progress. Captain accounts have separate local saves, but they are **not Firebase Authentication accounts or cloud saves**.
+Guest progress and Captain accounts are stored in this browser's `localStorage`. Returning guests resume their saved progress. Captain accounts have separate local saves; their passwords and full saves are not uploaded.
 
 Progress does not sync across devices or browsers. Localhost, a Firebase domain, and a custom domain each have separate browser storage; clearing site data removes local saves.
+
+The World Angler Scoreboard uses Firestore for shared Top 100 rankings by level or coins. Registered captains publish public stats once a minute when changed, and when opening or refreshing the scoreboard. Guests can view rankings but cannot join them. Network failures show explicitly labelled browser-only standings and preserve local progress.
+
+Each local captain gets a separate persisted Firebase anonymous identity for ownership of their score. Captain names are display names, not globally unique logins. Clearing browser storage creates a new identity, and existing captains appear online after they next play. Rankings are client-reported, not protected against edited local saves; rules restrict writes to the owner's row and validate public fields.
 
 ## Run locally
 
@@ -74,14 +92,15 @@ Open the URL printed by Vite, normally `http://localhost:5173`.
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Start the development server |
+| `npm test` | Run gameplay data and realm regression checks |
 | `npm run build` | Generate the production site in `dist/` |
 | `npm run preview` | Preview the existing production build locally |
 
-There is currently no automated test script in `package.json`. Build and check affected gameplay flows before publishing.
+Run `npm test` for realm roster, spawning, economy, journal, inventory, and rendering regression checks. Run `npm run build` before publishing.
 
 ## Firebase Hosting deployment
 
-`firebase.json` serves **`dist/`** and rewrites routes to `index.html`. The build folder is intentionally ignored by Git. This checkout currently has **no GitHub Actions deployment workflow**, and `.firebaserc` is empty, so no default Firebase project is recorded.
+`firebase.json` serves **`dist/`** and rewrites routes to `index.html`. The build folder is intentionally ignored by Git. This checkout currently has **no GitHub Actions deployment workflow**. `.firebaserc` selects `starlight-fishing`.
 
 **Pushing to GitHub updates source code; it does not publish this site's Firebase Hosting release.** Build the site and deploy it separately, or configure an automatic deployment workflow.
 
@@ -104,6 +123,16 @@ firebase deploy --only hosting --project YOUR_PROJECT_ID
 ```
 
 Always rebuild before deploying; otherwise Firebase uploads the previous contents of `dist/`. Confirm the Hosting URL and release in the deployment output. Optionally run `firebase use --add` to save a default project alias in `.firebaserc`.
+
+For the shared leaderboard, the project also needs a default Firestore database in an explicitly chosen region. Once it exists, deploy the anonymous authentication provider, security rules, and both ranking indexes before publishing the client:
+
+```sh
+firebase deploy --only auth,firestore --project starlight-fishing
+npm run build
+firebase deploy --only hosting --project starlight-fishing
+```
+
+Allow both Firestore indexes to finish building before verifying the level and money rankings. The Firebase client configuration in `LeaderboardFirebase.js` is public; database access is controlled by `firestore.rules`.
 
 ### Automatic deployments from GitHub
 

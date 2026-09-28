@@ -1,6 +1,9 @@
 export class Hazard {
   constructor(typeConfig, x, y) {
     this.type = typeConfig.id;
+    this.realmStyle = typeConfig.realmStyle;
+    this.variant = typeConfig.variant || 0;
+    this.zone = typeConfig.zone;
     this.name = typeConfig.name;
     this.damage = typeConfig.damage;
     this.knockback = typeConfig.knockback;
@@ -31,6 +34,65 @@ export class Hazard {
 
     // Subtle vertical wave undulation
     this.y += Math.sin(this.timer * 1.5) * 0.35;
+  }
+
+  renderRealmHazard(ctx) {
+    const r = this.radius / this.sizeScale;
+    ctx.save();
+    ctx.fillStyle = this.color;
+    ctx.strokeStyle = this.glow;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = this.glow;
+    ctx.shadowBlur = 9;
+    if (this.realmStyle === 'reef' || this.realmStyle === 'lava') {
+      // Branching coral versus jagged basalt chimneys.
+      const branches = this.realmStyle === 'reef' ? 7 : 4;
+      for (let i = 0; i < branches; i++) {
+        const x = (i / (branches - 1) - 0.5) * r * 1.5;
+        const h = r * (0.55 + Math.abs(Math.sin(i * 8 + this.variant)) * 0.9);
+        ctx.beginPath(); ctx.moveTo(x - 6, r * 0.55);
+        ctx.lineTo(x - 4, -h * 0.65); ctx.lineTo(x + 5, -h);
+        ctx.lineTo(x + 9, r * 0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+    } else if (this.realmStyle === 'ruins') {
+      // Rotating gear teeth, hanging chains, and broken arches.
+      if (this.variant === 1) ctx.rotate(this.timer * 0.3);
+      ctx.beginPath();
+      for (let i = 0; i < 24; i++) {
+        const angle = i * Math.PI / 12;
+        const length = i % 2 ? r * 0.65 : r;
+        ctx.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#064e3b'; ctx.fillRect(-r * 0.22, -r * 0.35, r * 0.44, r * 0.85);
+    } else if (this.realmStyle === 'crystal') {
+      for (let i = 0; i < 3 + this.variant; i++) {
+        ctx.save(); ctx.rotate(i * Math.PI * 2 / (3 + this.variant) + this.timer * 0.08);
+        ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.22, 0);
+        ctx.lineTo(0, r * 0.5); ctx.lineTo(-r * 0.22, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+      }
+    } else if (this.realmStyle === 'spore') {
+      for (let i = 0; i < 6 + this.variant; i++) {
+        const a = i * 2.4;
+        const x = Math.cos(a) * r * 0.55, y = Math.sin(a) * r * 0.55;
+        ctx.beginPath(); ctx.arc(x, y, r * (0.18 + 0.03 * Math.sin(this.timer + i)), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 8, y + r * 0.3, x - 4, y + r * 0.5); ctx.stroke();
+      }
+    } else {
+      // Aether cyclones and void fractures have different moving silhouettes.
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        const y = (i - 2) * r * 0.32;
+        if (this.realmStyle === 'cloud') {
+          ctx.ellipse(Math.sin(this.timer + i) * 4, y, r * (0.2 + i * 0.13), r * 0.17, 0, 0, Math.PI * 2);
+        } else {
+          ctx.moveTo(-r * 0.7, y); ctx.lineTo(-r * 0.2, y - 9);
+          ctx.lineTo(r * 0.2, y + 9); ctx.lineTo(r * 0.7, y - 4);
+        }
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
   }
 
   render(ctx, cameraY = 0) {
@@ -71,7 +133,9 @@ export class Hazard {
 
     ctx.scale(this.sizeScale, this.sizeScale);
     try {
-      if (this.type === 'boot') {
+      if (this.realmStyle) {
+        this.renderRealmHazard(ctx);
+      } else if (this.type === 'boot') {
         // Encrusted Old Sea Boot
         ctx.fillStyle = '#44403c';
         ctx.beginPath();

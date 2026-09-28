@@ -1,3 +1,4 @@
+import { REALM_PROFILES } from '../data/RealmContent.js';
 // MinimapUI.js — Chart Navigation & Fantasy World Minimap
 // Parchment/fantasy styled navigation chart, radial compass, coordinates, and fast travel
 
@@ -36,7 +37,7 @@ export class MinimapUI {
             <span class="compass-rose-icon">🧭</span>
             <div>
               <div style="font-weight:700; color:#f8fafc; font-size:1.05rem;">${currentSea.name} (${currentSea.subtitle})</div>
-              <div style="color:#94a3b8; font-size:0.8rem; font-family:monospace;">COORDINATES: ${currentSea.coordinates} | DEPTH: ${currentSea.minDepth}m - ${currentSea.maxDepth}m</div>
+              <div style="color:#94a3b8; font-size:0.8rem; font-family:monospace;">COORDINATES: ${currentSea.coordinates} | DEPTH: 0m - ${currentSea.maxDepth}m</div>
             </div>
           </div>
           <div class="minimap-weather-current">
@@ -53,6 +54,7 @@ export class MinimapUI {
       const isUnlocked = unlockedSeas.includes(sea.id);
       const isCurrent = currentSeaId === sea.id;
       const unlockStatus = canUnlockSea(sea, this.saveSystem);
+      const profile = REALM_PROFILES[sea.id];
 
       html += `
         <div class="sea-chart-card ${isCurrent ? 'sea-card-active' : ''} ${!isUnlocked ? 'sea-card-locked' : 'sea-card-unlocked'}" data-sea-id="${sea.id}">
@@ -68,6 +70,8 @@ export class MinimapUI {
           </div>
 
           <p class="sea-card-desc">${sea.description}</p>
+          <p class="sea-card-desc">35 native fish + special mythics ? 4 signature hazards ? 7 native treasures and caches</p>
+          <p class="sea-card-desc">Common fish base value: ~$${profile.commonValue.toLocaleString()} ? Fish XP: ${profile.xpMultiplier}x ? Charter: $${sea.gates.unlockFee.toLocaleString()}</p>
 
           <!-- Hotspots list -->
           <div class="sea-card-hotspots">

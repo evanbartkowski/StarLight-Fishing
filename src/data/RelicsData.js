@@ -1,3 +1,5 @@
+import { REALM_PROFILES } from './RealmContent.js';
+import { FANTASY_SEAS } from '../entities/SeasData.js';
 // RelicsData.js — Archaeological artifacts dredged from the seafloor
 // Each relic has barnacle grime that the player brushes away at the Restoration Desk
 
@@ -206,3 +208,24 @@ export const RELIC_SPAWN = {
   spawnChance: 0.40,
 };
 
+
+const realmRelicNames = [
+  ['Coral Navigator Compass', 'Pearl Diver Memorial'],
+  ['Lantern Keeper Lens', 'Sporeglass Pilgrim Seal'],
+  ['Fallen Observatory Astrolabe', 'Moonwatcher Star Map'],
+  ['Atlantean Coronation Seal', 'Imperial Clockwork Heart'],
+  ['Skyfarer Wind Compass', 'Aether Harp Fragment'],
+  ['Caldera Forge Dial', 'Obsidian Dragon Tablet'],
+  ['Chrononaut Memory Compass', 'Last Epoch Testament'],
+];
+const relicTemplates = [...RELIC_TYPES];
+export const REALM_RELICS = FANTASY_SEAS.flatMap(sea => realmRelicNames[sea.id - 1].map((name, i) => ({
+  ...relicTemplates[i % relicTemplates.length],
+  id: `realm_${sea.id}_relic_${i}`, name, zone: sea.id,
+  era: `${sea.name} antiquity`,
+  description: `A lost relic from the ${REALM_PROFILES[sea.id].habitat}. Clean away the encrusted sediment to reveal its history.`,
+  rawValue: REALM_PROFILES[sea.id].commonValue * (15 + i * 15),
+  restoredValue: REALM_PROFILES[sea.id].commonValue * (75 + i * 75),
+  minDepth: 10 + Math.round(sea.maxDepth * (0.1 + i * 0.25)), maxDepth: sea.maxDepth,
+})));
+RELIC_TYPES.push(...REALM_RELICS);

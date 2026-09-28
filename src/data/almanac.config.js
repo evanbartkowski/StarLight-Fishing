@@ -1,3 +1,7 @@
+import { REALM_RELICS } from './RelicsData.js';
+import { FISH_SPECIES } from './FishData.js';
+import { LEGENDARY_SPECIES } from './legendaries.js';
+import { FANTASY_SEAS } from '../entities/SeasData.js';
 // almanac.config.js — The Angler's Almanac (Bestiary) Config & Zone Milestones
 // Complete 7 Fantasy Seas coverage with discovery hints, grading tiers, and permanent zone perks
 
@@ -366,6 +370,16 @@ export const ZONE_ALMANAC_DATA = {
     },
   },
 };
+
+// Build the bestiary from the live roster so additions and moved species are discoverable.
+for (const sea of FANTASY_SEAS) {
+  const entry = ZONE_ALMANAC_DATA[`sea_${sea.id}`];
+  entry.speciesIds = [...FISH_SPECIES, ...LEGENDARY_SPECIES].filter(fish => fish.zone === sea.id).map(fish => fish.id);
+  entry.relicIds = REALM_RELICS.filter(relic => relic.zone === sea.id).map(relic => relic.id);
+  entry.depthRange = `0 - ${sea.maxDepth}m`;
+  // Old hard-coded depth hints no longer describe the expanded ecology.
+  for (const id of entry.speciesIds) if (entry.hints[id]) delete entry.hints[id].depth;
+}
 
 // Aliases for legacy saves & backwards compatibility
 ZONE_ALMANAC_DATA.sunken_shallows = ZONE_ALMANAC_DATA.sea_1;

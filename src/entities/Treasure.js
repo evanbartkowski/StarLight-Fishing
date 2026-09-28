@@ -7,6 +7,8 @@ export class Treasure {
     this.isCrate = !!itemConfig.isCrate || itemConfig.category === 'crate';
     this.crateRank = itemConfig.crateRank || 1;
     this.itemConfig = itemConfig;
+    this.zone = itemConfig.zone;
+    this.rewardMultiplier = itemConfig.rewardMultiplier || 1;
     this.id = itemConfig.id;
     this.name = itemConfig.name;
     this.rarity = itemConfig.rarity;
@@ -72,7 +74,25 @@ export class Treasure {
     ctx.shadowColor = this.rarityGlow;
     ctx.shadowBlur = 16;
 
-    if (this.isCrate || this.category === 'crate') {
+    if (this.itemConfig.realmStyle && !this.isCrate) {
+      const shape = this.itemConfig.treasureShape;
+      ctx.fillStyle = this.itemConfig.color;
+      ctx.strokeStyle = this.itemConfig.glow;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (shape === 0) {
+        ctx.moveTo(0, -20); ctx.lineTo(16, -5); ctx.lineTo(11, 13);
+        ctx.lineTo(0, 20); ctx.lineTo(-14, 8); ctx.lineTo(-16, -8); ctx.closePath();
+      } else if (shape === 1) {
+        ctx.rect(-14, -17, 28, 34);
+      } else {
+        ctx.ellipse(0, 0, 19, 13, Math.sin(this.timer) * 0.15, 0, Math.PI * 2);
+      }
+      ctx.fill(); ctx.stroke();
+      ctx.font = '17px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText({ reef: '?', spore: '?', crystal: '?', ruins: '?', cloud: '?', lava: '?', void: '?' }[this.itemConfig.realmStyle], 0, 0);
+    } else if (this.isCrate || this.category === 'crate') {
       // RANKED MYSTERY CRATES (Ranks 1 to 5)
       const rank = this.crateRank || 1;
       const hw = this.radius;

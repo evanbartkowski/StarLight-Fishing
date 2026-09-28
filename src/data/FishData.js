@@ -1,3 +1,4 @@
+import { buildRealmFish, isSalvageSpecies } from './RealmContent.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
 
 export const RARITY_CONFIG = {
@@ -24,7 +25,7 @@ export const DEPTH_ZONES = FANTASY_SEAS.map((sea) => ({
 }));
 
 // Comprehensive Fantasy Species Catalog (5 species per Sea = 35 species)
-export const FISH_SPECIES = [
+const ORIGINAL_SPECIES = [
   // ==========================================
   // SEA 1: Sunken Shallows (0 - 45m)
   // Rebalanced early economy (-25% to -35%, starter fish 1-3 coins)
@@ -1399,3 +1400,6 @@ export const FISH_SPECIES = [
   },
 ];
 
+
+export const LEGACY_SALVAGE_SPECIES = ORIGINAL_SPECIES.filter(isSalvageSpecies);
+export const FISH_SPECIES = buildRealmFish(ORIGINAL_SPECIES);

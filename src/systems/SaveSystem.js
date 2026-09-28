@@ -1,3 +1,5 @@
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization } from '../data/CustomizationData.js';
+import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
@@ -24,6 +26,7 @@ export class SaveSystem {
 
     return {
       level: 0,
+      appearance: normalizeCustomization(ANGLER_OPTIONS),
       xp: 0,
       coins: 0,
       upgrades,
@@ -36,6 +39,7 @@ export class SaveSystem {
         cat: false,
         pelican: false,
         dolphin: false,
+        shark: false,
       },
       skeletons: {
         megalodonJaw: 0, // 0 / 4 pieces
@@ -122,6 +126,8 @@ export class SaveSystem {
       this.data.xp -= xpReq;
       this.data.level += 1;
       leveledUp = true;
+
+      if (this.data.level >= 36) this.data.pets.shark = true;
 
       // Level up cash reward
       const bonusGold = this.data.level * 100;
@@ -290,6 +296,8 @@ export class SaveSystem {
         aberrations: parsed.aberrations || {},
         settings: { ...def.settings, ...(parsed.settings || {}) },
       };
+
+      if (this.data.level >= 36) this.data.pets.shark = true;
 
       // Recalculate unique species count and fossils count
       this.data.stats.uniqueSpeciesCaught = Object.keys(this.data.journal).length;
@@ -505,7 +513,7 @@ export class SaveSystem {
         xpGain += 75;
       }
 
-      this.addXp(xpGain);
+      this.addXp(Math.round(xpGain * (item.species?.xpMultiplier || 1)));
 
       // Grade evaluation
       if (!item.gradeTier && item.species) {
@@ -632,7 +640,7 @@ export class SaveSystem {
 
   unlockPet(petId) {
     if (!this.data.pets) {
-      this.data.pets = { cat: false, pelican: false, dolphin: false };
+      this.data.pets = { cat: false, pelican: false, dolphin: false, shark: false };
     }
     if (!this.data.pets[petId]) {
       this.data.pets[petId] = true;
@@ -663,12 +671,12 @@ export class SaveSystem {
     return Array.isArray(this.data.unlockedSeas) && this.data.unlockedSeas.includes(id);
   }
 
-  unlockSea(seaId, cost = 0) {
+  unlockSea(seaId) {
     const id = parseInt(seaId, 10) || 1;
     if (this.isSeaUnlocked(id)) return true;
-    if (cost > 0) {
-      if (!this.spendCoins(cost)) return false;
-    }
+    const sea = FANTASY_SEAS.find(entry => entry.id === id);
+    if (!sea || !canUnlockSea(sea, this).canUnlock) return false;
+    if (!this.spendCoins(sea.gates.unlockFee)) return false;
     if (!Array.isArray(this.data.unlockedSeas)) {
       this.data.unlockedSeas = [1];
     }
@@ -755,6 +763,8 @@ export class SaveSystem {
       isCrate,
       category: item.category,
       crateRank: item.crateRank || 1,
+      rewardMultiplier: item.rewardMultiplier || 1,
+      zone: item.zone || item.species?.zone,
       unboxed: !!item.unboxed,
       id: item.id || item.speciesId || 'item',
       speciesId: item.species?.id || item.speciesId || item.id || null,
@@ -905,6 +915,7 @@ export class SaveSystem {
     }
     const item = this.getInventory().find((i) => i.instanceId === instanceId);
     if (!item) return { success: false, reason: 'not_found' };
+    if (item.isCrate) return { success: false, reason: 'Open or sell this crate first' };
 
     this.accrueVisitorTips();
     this.data.aquarium.slottedItemIds.push(instanceId);
@@ -922,6 +933,16 @@ export class SaveSystem {
       return true;
     }
     return false;
+  }
+
+  setAppearance(key, value) {
+    this.data.appearance = normalizeCustomization(ANGLER_OPTIONS, { ...this.data.appearance, [key]: value });
+    this.save();
+  }
+
+  setAquariumDecoration(key, value) {
+    this.data.aquarium.decor = normalizeCustomization(AQUARIUM_OPTIONS, { ...this.data.aquarium.decor, [key]: value });
+    this.save();
   }
 
   setAquariumTheme(themeId) {

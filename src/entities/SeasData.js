@@ -54,8 +54,8 @@ export const FANTASY_SEAS = [
     gates: {
       reqLevel: 3,
       reqVessel: 1, // Coastal Dory
-      reqTackle: { id: 'lineLength', level: 1, label: 'Line Length Lv. 1 (80m+)' },
-      unlockFee: 200,
+      reqTackle: { id: 'lineLength', level: 1, label: 'Line Length Lv. 1 (130m)' },
+      unlockFee: 3000,
     },
     hotspots: [
       { name: "Glow-Squid Rift", type: "Luminescent Trench", bonus: "+25% Rare Neon Catch Rate", coords: [150, 140] },
@@ -86,7 +86,7 @@ export const FANTASY_SEAS = [
       reqLevel: 5,
       reqVessel: 1, // Coastal Dory
       reqTackle: { id: 'abyssalLantern', level: 1, label: 'Abyssal Lantern Lv. 1' },
-      unlockFee: 500,
+      unlockFee: 17500,
     },
     hotspots: [
       { name: "Nebula Eddy", type: "Starlight Vortex", bonus: "+30% Meteor Dust & Gem Drops", coords: [180, 160] },
@@ -117,7 +117,7 @@ export const FANTASY_SEAS = [
       reqLevel: 8,
       reqVessel: 2, // Expedition Trawler
       reqTackle: { id: 'treasureSonar', level: 1, label: 'Treasure Sonar Lv. 1' },
-      unlockFee: 1200,
+      unlockFee: 75000,
     },
     hotspots: [
       { name: "Sunken Amphitheater", type: "Gilded Relic Field", bonus: "High Ancient Relic Dredging Rate", coords: [140, 240] },
@@ -148,7 +148,7 @@ export const FANTASY_SEAS = [
       reqLevel: 11,
       reqVessel: 2, // Expedition Trawler
       reqTackle: { id: 'hookAgility', level: 2, label: 'Hook Agility Lv. 2' },
-      unlockFee: 2500,
+      unlockFee: 325000,
     },
     hotspots: [
       { name: "Sky-Isle Shallows", type: "Floating Shoal", bonus: "Aetherial XP Multiplier (+50%)", coords: [160, 310] },
@@ -179,7 +179,7 @@ export const FANTASY_SEAS = [
       reqLevel: 14,
       reqVessel: 3, // Grand Schooner
       reqTackle: { id: 'lineArmor', level: 3, label: 'Line Armor Lv. 3 (Shields)' },
-      unlockFee: 5000,
+      unlockFee: 1250000,
     },
     hotspots: [
       { name: "Obsidian Spire", type: "Volcanic Chimney", bonus: "Golden Coelacanth Habitat", coords: [190, 420] },
@@ -195,7 +195,7 @@ export const FANTASY_SEAS = [
     icon: '🌌',
     coordinates: "??° ??' ??, ??° ??' ??",
     minDepth: 530,
-    maxDepth: 2650,
+    maxDepth: 3000,
     topColor: '#1e1b4b',
     bottomColor: '#090d22',
     skyTop: '#020617',
@@ -210,7 +210,7 @@ export const FANTASY_SEAS = [
       reqLevel: 18,
       reqVessel: 4, // Mythic Celestial Ketch
       reqTackle: { id: 'fishingRod', level: 4, label: 'Gilded Sovereign Rod+' },
-      unlockFee: 12000,
+      unlockFee: 5000000,
     },
     hotspots: [
       { name: "Singularity Well", type: "Chrono Eddy", bonus: "Celestial Reliquary Crate Vault", coords: [210, 560] },

@@ -1,3 +1,4 @@
+import { REALM_PROFILES } from './RealmContent.js';
 // Dedicated Mythic & Legendary Fish Roster
 // Features atmospheric spawn conditions, size variance, and crown algorithms
 
@@ -341,4 +342,13 @@ export function checkMythicSpawn(species, timeOfDay, weather, depthMeters) {
     return false;
   }
   return Math.random() < (cond.chance || 0.15);
+}
+
+// Mythics retain their identities and conditions, with rewards tied to home waters.
+for (const fish of LEGENDARY_SPECIES) {
+  const profile = REALM_PROFILES[fish.zone];
+  if (profile) {
+    fish.baseValue = Math.max(fish.baseValue, profile.commonValue * 60);
+    fish.xpMultiplier = profile.xpMultiplier;
+  }
 }

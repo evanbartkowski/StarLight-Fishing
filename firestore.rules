@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public, client-reported scores. Every captain can only update their own row.
+    match /leaderboard/{uid} {
+      function bounded(value, maximum) {
+        return value is int && value >= 0 && value <= maximum;
+      }
+      function validScore() {
+        let score = request.resource.data;
+        return score.keys().hasAll(['username', 'level', 'xp', 'coins', 'totalGoldEarned', 'totalFishCaught', 'maxDepthReached', 'createdAt', 'updatedAt'])
+          && score.keys().hasOnly(['username', 'level', 'xp', 'coins', 'totalGoldEarned', 'totalFishCaught', 'maxDepthReached', 'createdAt', 'updatedAt'])
+          && score.username is string && score.username.size() >= 3 && score.username.size() <= 20
+          && score.username.matches('^[a-zA-Z0-9_ -]+$')
+          && bounded(score.level, 1000000)
+          && bounded(score.xp, 1000000000000000)
+          && bounded(score.coins, 1000000000000000)
+          && bounded(score.totalGoldEarned, 1000000000000000)
+          && bounded(score.totalFishCaught, 1000000000000000)
+          && bounded(score.maxDepthReached, 1000000000000000)
+          && bounded(score.createdAt, 1000000000000000)
+          && score.updatedAt == request.time;
+      }
+      allow get: if true;
+      allow list: if request.query.limit != null && request.query.limit <= 100;
+      allow create: if request.auth != null && request.auth.uid == uid && validScore();
+      allow update: if request.auth != null && request.auth.uid == uid && validScore()
+        && request.resource.data.username == resource.data.username
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

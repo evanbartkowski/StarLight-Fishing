@@ -15,6 +15,7 @@ import { MinimapUI } from './ui/MinimapUI.js';
 import { ZoneManager } from './systems/ZoneManager.js';
 import { worldCycle } from './systems/WorldCycle.js';
 import { ChatManager } from './systems/ChatManager.js';
+import { leaderboardManager } from './systems/LeaderboardManager.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -51,6 +52,13 @@ window.addEventListener('orientationchange', () => {
 // Core systems
 const save = saveSystem;
 save.load();
+
+// Publish changed public scores at most once a minute during normal play.
+// Local saving remains independent of the network.
+const syncLeaderboard = () => leaderboardManager.sync(save).catch(() => {});
+setInterval(syncLeaderboard, 60000);
+window.addEventListener('online', syncLeaderboard);
+syncLeaderboard();
 
 const trapSystem = new TrapSystem(save);
 const particles = new ParticleSystem();
@@ -147,6 +155,7 @@ uiManager.setZoneManager(zoneManager);
 const minimapUI = new MinimapUI(save, soundManager, uiManager, oceanWorld, zoneManager);
 uiManager.setMinimapUI(minimapUI);
 uiManager.onAccountSwitched = () => {
+  syncLeaderboard();
   hook.applyUpgrades(save);
   oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
   oceanWorld.populateWorld(save);

@@ -1431,6 +1431,28 @@ export class Fish {
       ctx.fill();
     }
 
+    // Species markings make members of a realm distinguishable at a glance.
+    if (s.pattern) {
+      ctx.save();
+      ctx.globalAlpha *= 0.7;
+      ctx.strokeStyle = secondary;
+      ctx.fillStyle = secondary;
+      ctx.lineWidth = 2;
+      if (s.pattern === 'stripe') {
+        ctx.beginPath(); ctx.moveTo(-12, -1); ctx.lineTo(10, -1); ctx.stroke();
+      } else {
+        for (let n = 0; n < 4; n++) {
+          const x = -10 + n * 5;
+          ctx.beginPath();
+          if (s.pattern === 'spots') ctx.arc(x, -3 + n % 2 * 4, 1.8, 0, Math.PI * 2);
+          else if (s.pattern === 'bands') ctx.rect(x, -6, 2, 11);
+          else { ctx.moveTo(x, -5); ctx.lineTo(x + 2, -2); ctx.lineTo(x, 1); ctx.lineTo(x - 2, -2); ctx.closePath(); }
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
     // Eye (custom leviathans already rendered their unique eyes)
     if (s.shape === 'magikart') {
       const eyeX = 12;

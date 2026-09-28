@@ -2788,22 +2788,22 @@ html, body {
 
 
 
-/* One-row HUD: compact controls, with horizontal scrolling on narrow screens. */
+/* One-row HUD: use the full width and compact controls instead of scrolling. */
 #game-hud { box-sizing: border-box; flex-wrap: nowrap; gap: 8px; }
 .hud-left, .hud-right, .hud-center { min-width: 0; max-width: 100%; flex-wrap: nowrap; }
 .hud-left { flex-shrink: 0; }
-.hud-right { margin-left: auto; flex-shrink: 1; justify-content: flex-start; overflow-x: auto; }
+.hud-right { margin-left: auto; flex-shrink: 1; justify-content: flex-end; overflow: visible; }
 .hud-right .icon-btn { flex-shrink: 0; white-space: nowrap; }
-#btn-mute { position: sticky; right: 0; z-index: 1; background: #0f172a; }
-@media (max-width: 1400px) {
+#btn-mute { background: #0f172a; }
+@media (max-width: 1600px) {
   .hud-right .btn-label { display: none; }
   .hud-right .icon-btn { padding: 7px; min-width: 34px; }
 }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .hud-left .xp-container, .hud-left .weather-display { display: none; }
   .hud-left { gap: 4px; }
 }
-@media (max-width: 600px) {
+@media (max-width: 800px) {
   #game-hud { padding: 8px; gap: 4px; }
   .hud-right { gap: 4px; }
   .hud-left .level-display { padding: 4px; }
@@ -2833,11 +2833,34 @@ html, body {
 /* Depth and heat panels must not vertically recenter the currency row. */
 #game-hud { align-items: flex-start; }
 .hud-left { height: 42px; align-items: center; }
-#hud-coins { box-sizing: border-box; width: 144px; }
+#hud-coins { box-sizing: border-box; width: auto; max-width: 160px; }
 #coin-amount { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-#hud-capacity { visibility: hidden; pointer-events: none; }
+.hud-wallet { position: relative; flex-shrink: 0; }
+#hud-capacity { position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); visibility: hidden; pointer-events: none; }
 #game-hud.hud-diving-mode #hud-capacity { visibility: visible; }
 #capacity-amount { min-width: 6ch; font-variant-numeric: tabular-nums; }
-@media (max-width: 600px) {
-  #hud-coins { width: 108px; }
+@media (max-width: 800px) {
+  #hud-coins { max-width: 88px; }
+  #game-hud { padding: 6px 4px; gap: 3px; }
+  .hud-left { gap: 3px; }
+  .hud-left .level-display { padding: 3px; }
+  .hud-left .level-badge { padding: 2px 3px; font-size: 10px; letter-spacing: 0; }
+  .hud-left .coin-display { gap: 3px; padding: 4px; font-size: 11px; }
+  .hud-right { flex: 1; gap: 2px; height: 42px; }
+  .hud-right .icon-btn { position: relative; flex: 1 1 0; min-width: 0; padding: 5px 0; font-size: clamp(11px, 3vw, 16px); gap: 0; }
+  .hud-right .trap-badge-num { position: absolute; top: -5px; right: -2px; font-size: 9px; padding: 1px 3px; }
 }
+
+/* Effects and dive instruments never take space away from the top controls. */
+#game-hud .hud-center { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: min(520px, calc(100vw - 16px)); gap: 6px; pointer-events: none; }
+.hud-center button { pointer-events: auto; }
+.hud-buffs-container { justify-content: center; margin-top: 0; }
+.hud-buffs-container:empty { display: none; }
+
+.customize-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; margin: 14px 0; }
+.customize-field { display: flex; flex-direction: column; gap: 6px; color: #cbd5e1; font-size: 0.85rem; }
+.customize-field select { width: 100%; padding: 10px; background: #1e293b; border: 1px solid #475569; border-radius: 8px; color: #f8fafc; font: inherit; }
+.customize-field select:focus-visible { outline: 2px solid #38bdf8; }
+.angler-customization { max-width: 560px; margin: auto; }
+#angler-preview { display: block; margin: auto; border: 1px solid #38bdf8; border-radius: 16px; max-width: 100%; }
+.customize-note { color: #94a3b8; font-size: 0.85rem; line-height: 1.5; }

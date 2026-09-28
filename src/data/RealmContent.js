@@ -1,0 +1,109 @@
+// Native ecology and economy shared by world generation, the chart, and the journal.
+import { FANTASY_SEAS } from '../entities/SeasData.js';
+
+export const REALM_PROFILES = {
+  1: { fee: 0, commonValue: 6, xpMultiplier: 1, colors: ['#fbbf24', '#fb7185', '#2dd4bf', '#38bdf8', '#f97316'], trail: 'bubbles', habitat: 'coral gardens and sunlit seagrass', style: 'reef', hazardDensity: 1, treasureChance: 0.2 },
+  2: { fee: 3000, commonValue: 30, xpMultiplier: 1.3, colors: ['#22d3ee', '#a3e635', '#c084fc', '#34d399', '#818cf8'], trail: 'biolum', habitat: 'glowing fungal shelves and lantern kelp', style: 'spore', hazardDensity: 1.1, treasureChance: 0.22 },
+  3: { fee: 17500, commonValue: 130, xpMultiplier: 1.7, colors: ['#818cf8', '#e0e7ff', '#c4b5fd', '#67e8f9', '#f0abfc'], trail: 'stardust', habitat: 'meteor craters and falling starlight', style: 'crystal', hazardDensity: 1.2, treasureChance: 0.24 },
+  4: { fee: 75000, commonValue: 600, xpMultiplier: 2.2, colors: ['#facc15', '#10b981', '#d97706', '#fef3c7', '#2dd4bf'], trail: 'emerald', habitat: 'marble courtyards and clockwork aqueducts', style: 'ruins', hazardDensity: 1.3, treasureChance: 0.26 },
+  5: { fee: 325000, commonValue: 2500, xpMultiplier: 2.9, colors: ['#f0abfc', '#e9d5ff', '#7dd3fc', '#f9a8d4', '#a5b4fc'], trail: 'aether', habitat: 'cloud reefs and floating root islands', style: 'cloud', hazardDensity: 1.4, treasureChance: 0.28 },
+  6: { fee: 1250000, commonValue: 10500, xpMultiplier: 3.8, colors: ['#fb923c', '#ef4444', '#facc15', '#a8a29e', '#f97316'], trail: 'embers', habitat: 'black smokers and rivers of molten basalt', style: 'lava', hazardDensity: 1.5, treasureChance: 0.3 },
+  7: { fee: 5000000, commonValue: 44000, xpMultiplier: 5, colors: ['#a855f7', '#22d3ee', '#f43f5e', '#818cf8', '#e2e8f0'], trail: 'aurora', habitat: 'gravity wells and shattered timelines', style: 'void', hazardDensity: 1.6, treasureChance: 0.32 },
+};
+
+// Hand-named species use different silhouettes, swimming behaviors, depth niches,
+// sizes, markings, and native palettes. Existing species IDs are retained.
+const NATIVE_ROSTERS = {
+  1: `Honeycomb Boxfish|disc;Ribbon Wrasse|eel;Saffron Goby|oval;Painted Triggerfish|disc;Seagrass Pipefish|eel;Lagoon Needlefish|swordfish;Copper Grunt|oval;Tidepool Blenny|oval;Sunbeam Damselfish|disc;Spotted Garden Eel|eel;Apricot Anthias|oval;Reef Trumpetfish|swordfish;Mosaic Filefish|disc;Pebble Puffer|disc;Sailfin Molly|oval;Pearl Jawfish|oval;Sunset Goatfish|oval;Coconut Cusk|eel;Lemon Surgeonfish|disc;Harbor Mullet|oval;Shellback Cowfish|disc;Rosy Cardinalfish|oval;Sandbar Guitar Ray|ray;Tangerine Hawkfish|oval;Turtlegrass Snipefish|swordfish;Lagoon Glassfish|disc;Rosewater Lionfish|disc;Crown Coral Grouper|oval;Dawn Marlin|swordfish;Golden Lagoon Shark|shark;Amber Reef Skate|ray;Crested Seahorse|seahorse;Polka Dot Sole|disc;Moonpool Tarpon|oval;Coral Emperor|disc`,
+  2: `Lantern Hatchetfish|disc;Glowgill Tetra|oval;Violet Lantern Eel|eel;Sporebell Squid|squid;Radiant Glass Catfish|oval;Neon Bristlefish|oval;Bluewick Dragonfish|eel;Prismatic Cave Loach|eel;Jade Photophore Perch|oval;Fungal Ribbonfish|eel;Pulsefin Rasbora|oval;Lucent Fangtooth|oval;Glowroot Seahorse|seahorse;Midnight Lantern Ray|ray;Coldflame Cuttlefish|squid;Abyssal Firefly Fish|oval;Mushroom Cap Puffer|disc;Opal Cave Char|oval;Indigo Flashfish|oval;Violet Combfish|disc;Sporethread Pipefish|eel;Neon Sawtooth|shark;Iridescent Cave Skate|ray;Glowworm Grenadier|eel;Lanternjaw Hunter|oval;Electric Moss Eel|eel;Moonspore Octopus|octopus;Emerald Lampfish|oval;Blacklight Ribbon Eel|eel;Crystal Eyed Sleeper|oval;Pulseheart Shark|shark;Luminous Crown Ray|ray;Lantern King|disc;Violet Ghost Marlin|swordfish;Trench Fire Opah|disc`,
+  3: `Meteor Glassfish|disc;Zodiac Ribbonfish|eel;Shooting Star Smelt|oval;Moonstone Tetra|oval;Sundial Seahorse|seahorse;Eclipse Sailfish|swordfish;Celestial Glass Eel|eel;Orbitfin Pomfret|disc;Quasar Lanternfish|oval;Silver Comet Loach|eel;Nebula Crownfish|disc;Asteroid Cusk|oval;Stardrop Cuttlefish|squid;Crescent Veil Ray|ray;Prismtail Char|oval;Constellation Perch|oval;Cosmic Needlefish|swordfish;Moonring Discus|disc;Stellar Chimaera|shark;Meteor Shower Sprat|oval;Equinox Pipefish|eel;Falling Star Octopus|octopus;Solstice Puffer|disc;Cometstream Mackerel|oval;Lunar Mirror Sole|disc;Starglass Sturgeon|shark;Silver Zenith Eel|eel;Celestial Compass Ray|ray;Dawnstar Oarfish|eel;Nebula Thorn Shark|shark;Astral Crown Marlin|swordfish;Twilight Orbit Opah|disc;Supernova Sailfin|oval;Moonfall Emperor|disc;Perihelion Whale|whale`,
+  4: `Mosaic Tilefish|disc;Imperial Canal Carp|oval;Bronze Cog Loach|eel;Marble Vein Discus|disc;Palace Fountain Koi|oval;Verdigris Pipefish|eel;Corinthian Seahorse|seahorse;Clocktower Needlefish|swordfish;Jade Plaza Perch|oval;Gilded Arch Ray|ray;Aqueduct Silverfish|oval;Orichalcum Bream|disc;Patina Ribbon Eel|eel;Laurel Crownfish|disc;Amphitheater Sole|disc;Porcelain Lanternfish|oval;Sunken Throne Grouper|oval;Sapphire Gearfish|disc;Coin Scale Mullet|oval;Emerald Mosaic Skate|ray;Bronze Sentinel Shark|shark;Aureate Cuttlefish|squid;Temple Bell Puffer|disc;Royal Seal Octopus|octopus;Pearl Column Wrasse|eel;Cistern Shadowfish|oval;Crowned Clockwork Pike|swordfish;Golden Chariot Ray|ray;Imperial Scepter Marlin|swordfish;Atlantean Oracle|disc;Sovereign Coral Shark|shark;Opal Basilica Eel|eel;Palace Guard Sturgeon|shark;Sunken Dynasty Whale|whale;Emerald Throne Emperor|disc`,
+  5: `Nimbus Ribbonfish|eel;Zephyr Featherfin|oval;Cloudlace Seahorse|seahorse;Gossamer Wing Ray|ray;Rainbell Cuttlefish|squid;Lavender Kitefish|disc;Dewdrop Glassfish|oval;Cirrus Needlefish|swordfish;Thistledown Loach|eel;Sky Petal Discus|disc;Mistral Sailfish|swordfish;Cottoncloud Puffer|disc;Silver Updraft Smelt|oval;Aether Harp Eel|eel;Rosemist Char|oval;Cloudroot Goby|oval;Halo Feather Ray|ray;Floating Lotus Koi|oval;Whisperwing Skate|ray;Violet Rain Opah|disc;Windsong Pipefish|eel;Stormveil Octopus|octopus;Horizon Threadfish|eel;Lilac Sky Sturgeon|shark;Sunshower Butterflyfish|disc;Cloudcrown Angelfish|disc;Galecrest Shark|shark;Aether Sail Emperor|swordfish;Mooncloud Whale|whale;Seraphic Ribbon Eel|eel;Heavenfall Manta|ray;Windchime Crownfish|disc;Aurora Cloudrunner|oval;Dusk Petal Wrasse|eel;Stratosphere Monarch|disc`,
+  6: `Sulfur Goby|oval;Basalt Glassfish|disc;Emberstripe Wrasse|eel;Furnace Jawfish|oval;Scoria Puffer|disc;Molten Copper Eel|eel;Blacksmoker Cusk|oval;Cinder Veil Skate|ray;Lavaflow Needlefish|swordfish;Iron Vent Sturgeon|shark;Pyrite Scale Bream|disc;Obsidian Lanternfish|oval;Crimson Rift Loach|eel;Magma Bell Squid|squid;Sootfin Perch|oval;Brimstone Seahorse|seahorse;Smoldering Coral Grouper|oval;Flarecrest Marlin|swordfish;Ashfall Sole|disc;Volcanic Glass Ray|ray;Caldera Crownfish|disc;Fire Opal Octopus|octopus;Emberheart Opah|disc;Lava Ribbon Oarfish|eel;Charcoal Hammerhead|shark;Thermal Plume Char|oval;Golden Furnace Pike|swordfish;Magma Throne Manta|ray;Eruption Sail Emperor|swordfish;Crucible Whale|whale;Pyroclast Serpent|eel;Obsidian Crown Shark|shark;Redhot Glass Discus|disc;Sulfur Bloom Tetra|oval;Ashwing Dragonfish|eel`,
+  7: `Paradox Glassfish|disc;Eventide Needlefish|swordfish;Chronal Ribbon Eel|eel;Darkmatter Puffer|disc;Gravity Well Loach|eel;Nullfin Tetra|oval;Hourglass Seahorse|seahorse;Singularity Lanternfish|oval;Memory Shard Skate|ray;Timeworn Crownfish|disc;Entropy Threadfish|eel;Echo Loop Cuttlefish|squid;Wormhole Sturgeon|shark;Void Petal Discus|disc;Antimatter Smelt|oval;Quantum Veil Ray|ray;Fracturefin Perch|oval;Forgotten Epoch Koi|oval;Nightmare Compass Eel|eel;Infinite Orbit Opah|disc;Unwritten Starfish|disc;Abyssal Clockjaw|shark;Eon Needle Marlin|swordfish;Causality Ribbonfish|eel;Dreamless Octopus|octopus;Vacuum Crown Manta|ray;Zero Hour Shark|shark;Eternity Sail Emperor|swordfish;Last Light Whale|whale;World End Serpent|eel;Black Sun Monarch|disc;Timeless Oracle Fish|disc;Redshift Dragonfish|eel;Pale Horizon Sleeper|oval;Stolen Tomorrow Ray|ray`,
+};
+
+const SALVAGE_IDS = new Set(['driftwood_branch', 'kelp_strand', 'rusty_can', 'mangrove_roots', 'glowing_moss', 'sunken_artifact', 'phosphor_crystal', 'sunken_anchor', 'abyssal_vent', 'lava_geode', 'obsidian_rock']);
+const VOLCANIC_IDS = new Set(['obsidian_pike', 'magma_ray', 'fire_conch', 'cinder_coelacanth']);
+const VALUE_BY_RARITY = { common: 1, uncommon: 2, rare: 5, epic: 12, legendary: 30 };
+export const isSalvageSpecies = species => SALVAGE_IDS.has(species.id);
+
+export function buildRealmFish(originals) {
+  const result = [];
+  for (const sea of FANTASY_SEAS) {
+    const profile = REALM_PROFILES[sea.id];
+    const natives = originals.filter(f => !isSalvageSpecies(f) && (VOLCANIC_IDS.has(f.id) ? 6 : f.zone) === sea.id)
+      .map(f => ({ ...f, zone: sea.id, baseValue: Math.round(profile.commonValue * (VALUE_BY_RARITY[f.rarity] || 1) * (f.isSpecialDeep ? 1.5 : 1)), xpMultiplier: profile.xpMultiplier }));
+    const additions = NATIVE_ROSTERS[sea.id].split(';');
+    for (let i = 0; natives.length < 35; i++) {
+      const [name, shape] = additions[i].split('|');
+      const rank = i % 10;
+      const rarity = rank < 4 ? 'common' : rank < 7 ? 'uncommon' : rank < 9 ? 'rare' : (i < 20 ? 'epic' : 'legendary');
+      const niche = i % 5;
+      const minDepth = Math.max(2, Math.round(sea.maxDepth * [0.015, 0.08, 0.22, 0.43, 0.67][niche]));
+      const maxDepth = Math.min(sea.maxDepth, Math.round(minDepth + sea.maxDepth * (0.25 + (i % 3) * 0.08)));
+      const length = 8 + (i % 8) * 7 + (shape === 'shark' || shape === 'whale' ? 80 : 0);
+      const movementType = ['eel', 'swordfish'].includes(shape) ? 'sine_wave' : shape === 'ray' ? 'diagonal_glide' : shape === 'seahorse' ? 'vertical_drift' : shape === 'squid' ? 'vertical_pulse' : i % 4 === 0 ? 'hover' : i % 4 === 1 ? 'erratic' : 'horizontal';
+      natives.push({
+        id: `realm_${sea.id}_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, name, zone: sea.id, rarity,
+        minDepth, maxDepth, baseValue: Math.round(profile.commonValue * VALUE_BY_RARITY[rarity] * (0.9 + (i % 5) * 0.08)),
+        baseWeight: Math.round(length * length / 1200 * 100) / 100, sizeRange: [length, Math.round(length * 1.9)],
+        scaleFactor: 0.65 + (i % 7) * 0.16, shape, movementType,
+        primaryColor: profile.colors[i % 5], secondaryColor: profile.colors[(i + 2) % 5], finColor: profile.colors[(i + 3) % 5], eyeColor: '#ffffff',
+        swimSpeed: 0.55 + (i % 6) * 0.22 + sea.id * 0.04, wiggleSpeed: 3 + i % 7,
+        pattern: ['spots', 'bands', 'stripe', 'diamonds'][i % 4], fantasyTrail: profile.trail, xpMultiplier: profile.xpMultiplier,
+        lore: `${name} inhabits the ${['sheltered surface nurseries', 'kelp-lined ledges', 'open currents', 'shadowed shelves', 'deep sanctuaries'][niche]} of ${sea.name}. It ${['grazes on mineral blooms', 'hunts drifting larvae', 'sifts tiny shells', 'stalks luminous plankton', 'follows warm upwellings'][i % 5]} among ${profile.habitat}.`,
+      });
+    }
+    // Exactly one modest migrant from each realm may visit the next realm.
+    natives[0].sharedSeas = sea.id < 7 ? [sea.id + 1] : [];
+    result.push(...natives);
+  }
+  return result;
+}
+
+export function belongsToRealm(item, seaId) {
+  return item.zone === seaId || item.sharedSeas?.includes(seaId) || item.seas?.includes(seaId);
+}
+
+const HAZARDS = {
+  1: ['Fire Coral Thicket', 'Tidal Urchin Garden', 'Snagging Kelp Wall', 'Broken Coastal Wreck'],
+  2: ['Stinging Spore Cloud', 'Electric Anemone Colony', 'Lantern Jelly Swarm', 'Fungal Reef Tower'],
+  3: ['Razor Meteor Shards', 'Pulsar Shock Field', 'Orbiting Crystal Cage', 'Fallen Comet Spire'],
+  4: ['Collapsing Marble Arch', 'Clockwork Saw Array', 'Imperial Chain Curtain', 'Sunken Palace Gate'],
+  5: ['Thunderhead Bloom', 'Shearing Wind Funnel', 'Skyroot Tangle', 'Falling Aether Island'],
+  6: ['Boiling Sulfur Vent', 'Erupting Basalt Spikes', 'Molten Chain Cluster', 'Caldera Lava Chimney'],
+  7: ['Temporal Fracture', 'Gravity Snare', 'Entropy Tendrils', 'Event Horizon Monolith'],
+};
+const TREASURES = {
+  1: ['Rose Coral Cameo', 'Abalone Music Box', 'Sunbleached Pearl Comb', 'Lagoon Amber', 'Fossil Coral Fan', 'Reef King Crown'],
+  2: ['Bottled Coldfire', 'Lantern Opal', 'Fungal Crystal Chalice', 'Neon Pearl', 'Petrified Lantern Sponge', 'Bioluminescent Heart'],
+  3: ['Meteorite Compass', 'Moonstone Orrery', 'Starglass Diadem', 'Comet Tear', 'Meteor Trilobite Fossil', 'Supernova Prism'],
+  4: ['Imperial Signet', 'Orichalcum Cog', 'Emerald Throne Key', 'Marble Oracle Mask', 'Marble Nautilus Fossil', 'Atlantean Sun Crown'],
+  5: ['Zephyr Harp', 'Cloudglass Tiara', 'Aether Silk Spool', 'Storm Pearl', 'Petrified Sky Fern', 'Sky Sovereign Feather'],
+  6: ['Fire Opal Cluster', 'Obsidian Scepter', 'Molten Gold Crucible', 'Pyrite Sun Disk', 'Basalt Dragon Egg Fossil', 'Heart of the Caldera'],
+  7: ['Stopped Hourglass', 'Darkmatter Sigil', 'Chronal Memory Shard', 'Quantum Crown', 'Fossil of an Unborn Star', 'Seed of a Lost Universe'],
+};
+export const REALM_HAZARDS = FANTASY_SEAS.flatMap(sea => HAZARDS[sea.id].map((name, i) => ({
+  id: `realm_${sea.id}_hazard_${i}`, name, zone: sea.id, realmStyle: REALM_PROFILES[sea.id].style, variant: i,
+  minDepth: 5 + Math.round(sea.maxDepth * i * 0.06), maxDepth: sea.maxDepth,
+  damage: 1 + Math.floor((sea.id + i) / 3), knockback: 22 + sea.id * 5 + i * 4,
+  radius: i === 3 ? 48 : 18 + i * 6, isColossal: i === 3,
+  color: REALM_PROFILES[sea.id].colors[i], glow: REALM_PROFILES[sea.id].colors[(i + 1) % 5],
+})));
+export const REALM_TREASURES = FANTASY_SEAS.flatMap(sea => {
+  const profile = REALM_PROFILES[sea.id];
+  const items = TREASURES[sea.id].map((name, i) => ({
+    id: `realm_${sea.id}_treasure_${i}`, name, zone: sea.id, category: i === 4 ? 'fossil' : 'treasure',
+    realmStyle: profile.style, treasureShape: i % 3, color: profile.colors[i % 5], glow: profile.colors[(i + 1) % 5],
+    minDepth: 4 + Math.round(sea.maxDepth * i * 0.1), maxDepth: sea.maxDepth,
+    rarity: ['common', 'uncommon', 'rare', 'rare', 'epic', 'legendary'][i],
+    value: profile.commonValue * [5, 10, 20, 28, 50, 110][i],
+    lore: `Recovered from ${profile.habitat}. Collectors prize this artifact of ${sea.name}.`,
+  }));
+  items.push({ id: `realm_${sea.id}_cache`, name: `${sea.name} Sealed Cache`, zone: sea.id, category: 'crate', isCrate: true,
+    crateRank: Math.min(5, sea.id), minDepth: 8, maxDepth: sea.maxDepth, rarity: 'rare',
+    value: profile.commonValue * 12, rewardMultiplier: Math.max(1, profile.commonValue / [0, 6, 20, 60, 180, 600][Math.min(5, sea.id)]),
+    lore: `A sealed cache from ${sea.name}. Its mystery rewards scale with this realm's charter cost.` });
+  return items;
+});

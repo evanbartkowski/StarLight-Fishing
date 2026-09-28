@@ -1,3 +1,5 @@
+import { Treasure } from '../entities/Treasure.js';
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization, drawAngler, drawAquariumDecor } from '../data/CustomizationData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
 import { FISH_SPECIES, DEPTH_ZONES, RARITY_CONFIG } from '../data/FishData.js';
@@ -11,6 +13,9 @@ import { worldCycle } from '../systems/WorldCycle.js';
 import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/almanac.config.js';
 import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
+import { leaderboardManager } from '../systems/LeaderboardManager.js';
+
+const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
 export class UIManager {
   constructor(saveSystem, onCastTrigger, onStartDive, trapSystem = null, questSystem = null) {
@@ -137,6 +142,7 @@ export class UIManager {
           </div>
         </div>
 
+        <div class="hud-wallet">
         <div class="coin-display" id="hud-coins">
           <span class="coin-icon">🪙</span>
           <span id="coin-amount">$0</span>
@@ -145,6 +151,7 @@ export class UIManager {
         <div class="capacity-display" id="hud-capacity">
           <span class="basket-icon">🪣</span>
           <span id="capacity-amount">0 / 3</span>
+        </div>
         </div>
 
         <div class="weather-display" id="hud-weather" title="Atmospheric Time & Weather">
@@ -157,10 +164,10 @@ export class UIManager {
           <span id="shield-amount">0</span>
         </div>
 
-        <div class="hud-buffs-container" id="hud-buffs"></div>
       </div>
 
       <div class="hud-center">
+        <div class="hud-buffs-container" id="hud-buffs"></div>
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
           <div class="depth-number" id="hud-depth">0.0m</div>
           <div class="zone-badge" id="hud-zone">🏖️ Sunken Shallows</div>
@@ -260,19 +267,19 @@ export class UIManager {
       if (usernameOrGuest === '__new_account__') {
         if (lvlEl) lvlEl.textContent = 'Lv. 0';
         if (coinsEl) coinsEl.textContent = '$0';
-        if (speciesEl) speciesEl.textContent = '0 / 66';
+        if (speciesEl) speciesEl.textContent = `0 / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`;
         return;
       }
       if (usernameOrGuest === '__not_found__') {
         if (lvlEl) lvlEl.textContent = 'Lv. —';
         if (coinsEl) coinsEl.textContent = '$—';
-        if (speciesEl) speciesEl.textContent = '— / 66';
+        if (speciesEl) speciesEl.textContent = '— / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}';
         return;
       }
       const data = this.saveSystem.getSaveDataForUser(usernameOrGuest);
       if (lvlEl) lvlEl.textContent = `Lv. ${data.level ?? 0}`;
       if (coinsEl) coinsEl.textContent = `$${(data.coins || 0).toLocaleString()}`;
-      if (speciesEl) speciesEl.textContent = `${data.speciesCount || 0} / 66`;
+      if (speciesEl) speciesEl.textContent = `${data.speciesCount || 0} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`;
     };
 
     const loggedInView = document.getElementById('auth-logged-in-view');
@@ -993,7 +1000,11 @@ export class UIManager {
 
     let itemsHtml = '<div class="shop-grid">';
 
-    Object.values(upgrades).forEach((upg) => {
+    Object.values(upgrades).sort((a, b) => {
+      const aMaxed = save.getUpgradeLevel(a.id) >= a.tiers.length - 1;
+      const bMaxed = save.getUpgradeLevel(b.id) >= b.tiers.length - 1;
+      return Number(aMaxed) - Number(bMaxed);
+    }).forEach((upg) => {
       const currentLvl = save.getUpgradeLevel(upg.id);
       const currentTier = upg.tiers[currentLvl] || upg.tiers[0];
       const nextTier = upg.tiers[currentLvl + 1] || null;
@@ -1346,7 +1357,7 @@ export class UIManager {
         <div style="font-size: 0.85rem; text-transform: uppercase; color: #facc15; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px;">
           Rank ${rankInfo.rank} Mystery Crate (${crates.length} Remaining)
         </div>
-        <h3 style="margin: 0 0 16px 0; color: #f8fafc; font-size: 1.4rem;">${rankInfo.name}</h3>
+        <h3 style="margin: 0 0 16px 0; color: #f8fafc; font-size: 1.4rem;">${currentCrate.name || rankInfo.name}</h3>
 
         <div id="crate-display-stage" style="margin: 20px auto; width: 140px; height: 140px; background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(15, 23, 42, 0) 70%); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
           <span id="crate-icon-anim" style="font-size: 4.8rem; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6)); transition: transform 0.2s;">
@@ -1355,7 +1366,7 @@ export class UIManager {
         </div>
 
         <p id="crate-status-desc" style="color: #cbd5e1; font-size: 0.95rem; max-width: 380px; margin: 0 auto 20px auto; line-height: 1.5;">
-          ${rankInfo.desc}
+          ${currentCrate.lore || rankInfo.desc}
         </p>
 
         <div id="crate-loot-result" style="display: none; margin-bottom: 20px;"></div>
@@ -1395,6 +1406,9 @@ export class UIManager {
             if (currentCrate.unboxed || (!hook && !this.saveSystem.getInventory().includes(currentCrate))) return;
             // Roll loot
             const loot = rollCrateLoot(currentCrate.crateRank, this.saveSystem);
+            const realmReward = currentCrate.rewardMultiplier || 1;
+            loot.coins = Math.round(loot.coins * realmReward);
+            loot.xp = Math.round(loot.xp * Math.min(5, Math.sqrt(realmReward)));
             currentCrate.unboxed = true;
             currentCrate.loot = loot;
             const storedCrateId = currentCrate.instanceId || currentCrate.inventoryRef?.instanceId;
@@ -2447,7 +2461,7 @@ export class UIManager {
     const relicData = save.data.relics || {};
     const restoredRelicsCount = Object.values(relicData).filter(r => r.restored).length;
     const activeTrapCount = this.trapSystem ? this.trapSystem.getTrapCount() : 0;
-    const unlockedPetCount = ['cat', 'pelican', 'dolphin'].filter(id => save.hasPet(id)).length;
+    const unlockedPetCount = Object.keys(PET_DEFINITIONS).filter(id => save.hasPet(id)).length;
 
     const modalBody = `
       <div class="journal-logbook-container">
@@ -2468,7 +2482,7 @@ export class UIManager {
               <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog">📖 Angler's Almanac (${caughtSpeciesCount} / ${allSpecies.length})</button>
               <button class="tab-btn ${defaultSubTab === 'scoreboard' ? 'active' : ''}" id="tab-scoreboard" style="border: 1px solid #facc15; color: #facc15; font-weight: 700;">🏆 Scoreboard</button>
               <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;">🐠 Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
-              <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / 3)</button>
+              <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / ${Object.keys(PET_DEFINITIONS).length})</button>
               <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
               <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Skeletons</button>
               <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
@@ -2633,12 +2647,26 @@ export class UIManager {
     }
   }
 
-  // World Angler Scoreboard: Ranks top 100 created accounts by level and by money (strictly excludes guests)
-  renderScoreboardTab(sortMode = 'level') {
+  // Fetch shared rankings; local standings are explicitly labelled if offline.
+  async renderScoreboardTab(sortMode = 'level', board = null) {
     const container = document.getElementById('journal-tab-content');
     if (!container) return;
 
-    const rawEntries = this.saveSystem.getScoreboardData();
+    if (!board) {
+      const request = this.scoreboardRequest = (this.scoreboardRequest || 0) + 1;
+      const username = accountManager.getCurrentUser();
+      container.innerHTML = '<p role="status" class="scoreboard-loading">Connecting to the World Angler Scoreboard…</p>';
+      const loading = container.firstElementChild;
+      try { board = await leaderboardManager.getBoard(this.saveSystem, sortMode); }
+      catch {
+        board = { entries: this.saveSystem.getScoreboardData(), online: false };
+      }
+      // A delayed response must never replace a different journal tab/account.
+      if (request !== this.scoreboardRequest || !container.isConnected ||
+          container.firstElementChild !== loading || username !== accountManager.getCurrentUser()) return;
+    }
+
+    const rawEntries = board.entries;
     const isGuest = accountManager.isGuest();
     const currentUser = accountManager.getCurrentUser();
 
@@ -2667,7 +2695,7 @@ export class UIManager {
     let userStats = null;
     if (!isGuest && currentUser) {
       userRank = sorted.findIndex(e => e.isCurrent) + 1;
-      userStats = sorted.find(e => e.isCurrent);
+      userStats = sorted.find(e => e.isCurrent) || board.ownScore;
     }
 
     let html = `
@@ -2679,11 +2707,12 @@ export class UIManager {
             <div>
               <h3 class="scoreboard-title">World Angler Scoreboard</h3>
               <p class="scoreboard-subtitle">
-                Official rankings of registered captain accounts across the Seven Seas (Guest records are unranked).
+                ${board.online ? 'Shared rankings across the Seven Seas. Scores update every minute; guests are unranked.' : 'Offline: showing accounts saved in this browser only. World rankings are currently unavailable.'}
               </p>
             </div>
           </div>
           <div class="scoreboard-header-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-scoreboard-refresh">Refresh</button>
             <div class="scoreboard-toggle-pill-group">
               <button class="scoreboard-pill-btn ${sortMode === 'level' ? 'active' : ''}" data-sort="level">
                 🎖️ Rank by Level (Top 100)
@@ -2714,11 +2743,11 @@ export class UIManager {
         <div class="scoreboard-user-banner">
           <div class="user-banner-col">
             <span class="user-banner-label">Your Captain Account</span>
-            <span class="user-banner-val">👤 <strong>${currentUser}</strong></span>
+            <span class="user-banner-val">👤 <strong>${escapeScoreboardText(currentUser)}</strong></span>
           </div>
           <div class="user-banner-col">
             <span class="user-banner-label">Current Standing</span>
-            <span class="user-banner-val" style="color: #facc15;">#${userRank > 0 ? userRank : 'Unranked'}</span>
+            <span class="user-banner-val" style="color: #facc15;">${userRank > 0 ? `#${userRank}` : board.syncFailed ? 'Sync pending' : 'Outside Top 100'}</span>
           </div>
           <div class="user-banner-col">
             <span class="user-banner-label">Level</span>
@@ -2740,10 +2769,10 @@ export class UIManager {
       html += `
         <div class="scoreboard-empty-state">
           <div style="font-size: 3.2rem; margin-bottom: 8px;">📜</div>
-          <h4>No Registered Accounts Found</h4>
+          <h4>No Ranked Captains Yet</h4>
           <p>
-            No player accounts have been created yet on this vessel. Guest accounts are not ranked.
-            Create an account to be ranked #1 on the scoreboard!
+            ${board.online ? 'Captains appear here after playing online with a registered account.' : 'No registered captain saves were found in this browser.'}
+            Guest accounts are not ranked.
           </p>
           <button class="btn btn-primary" id="btn-scoreboard-register-empty">
             ⚓ Create First Captain Account
@@ -2808,7 +2837,7 @@ export class UIManager {
             <td style="text-align: left;">
               <div class="captain-cell">
                 <span class="captain-avatar">${item.level >= 20 ? '👑' : item.level >= 10 ? '⚓' : '⛵'}</span>
-                <span class="captain-username">${item.username}</span>
+                <span class="captain-username">${escapeScoreboardText(item.username)}</span>
                 ${item.isCurrent ? '<span class="badge-you">YOU</span>' : ''}
               </div>
             </td>
@@ -2828,11 +2857,13 @@ export class UIManager {
       `;
     }
 
+    if (board.syncFailed) html += '<p role="status">Your score could not be uploaded yet. Your game is saved locally; use Refresh to retry.</p>';
     html += `</div>`;
 
     container.innerHTML = html;
 
     // Bind events for sorting & account buttons
+    container.querySelector('#btn-scoreboard-refresh')?.addEventListener('click', () => this.renderScoreboardTab(sortMode));
     container.querySelectorAll('.scoreboard-pill-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         soundManager.playButtonClick();
@@ -3082,6 +3113,8 @@ export class UIManager {
           </div>
         </div>
 
+        <div class="customize-grid aquarium-decor-controls">${this.customizationControls(AQUARIUM_OPTIONS, save.data.aquarium.decor, 'aquarium-decor')}</div>
+        <p class="customize-note">Display fish, treasures, fossils, and relics. Decorations use tank slots; only fish earn visitor tips.</p>
         <div class="aquarium-canvas-box">
           <canvas id="aquarium-canvas" width="760" height="380"></canvas>
           <div class="aquarium-canvas-hint">Click tank to tap the glass • Food attracts fish • Relics rest on seabed</div>
@@ -3102,6 +3135,9 @@ export class UIManager {
     `;
 
     this.startAquariumCanvas(items, theme);
+    document.querySelectorAll('[data-aquarium-decor]').forEach(select => select.addEventListener('change', () => {
+      this.saveSystem.setAquariumDecoration(select.dataset.aquariumDecor, select.value);
+    }));
 
     // Event listeners
     document.getElementById('btn-collect-tips')?.addEventListener('click', () => {
@@ -3155,6 +3191,10 @@ export class UIManager {
 
     const aquariumFish = [];
     const aquariumRelics = [];
+    const displayTreasures = new Map(items.map(item => {
+      const config = TREASURE_ITEMS.find(treasure => treasure.id === item.id);
+      return [item.instanceId, config && !config.isCrate ? new Treasure(config, 0, 0) : null];
+    }));
 
     items.forEach((item) => {
       if (item.type === 'fish' || (!item.type && !item.isRelic)) {
@@ -3223,6 +3263,7 @@ export class UIManager {
     }
 
     let aqRaf = null;
+    let decorTime = 0;
     const renderAq = () => {
       if (this.activeModal !== 'journal' || document.getElementById('aquarium-canvas') !== canvas) {
         cancelAnimationFrame(aqRaf);
@@ -3264,9 +3305,13 @@ export class UIManager {
       ctx.fillStyle = floorColor2;
       ctx.fillRect(0, canvas.height - 40, canvas.width, 5);
 
+      decorTime += 0.016;
+      const decor = normalizeCustomization(AQUARIUM_OPTIONS, this.saveSystem.data.aquarium.decor);
+      drawAquariumDecor(ctx, canvas.width, canvas.height, decor, decorTime);
+
       // Ambient bubbles
       ctx.fillStyle = theme === 'abyss' ? 'rgba(56, 189, 248, 0.4)' : theme === 'nebula' ? 'rgba(232, 121, 249, 0.4)' : 'rgba(255, 255, 255, 0.3)';
-      bubbles.forEach((b) => {
+      bubbles.slice(0, decor.bubbles === 'off' ? 0 : decor.bubbles === 'gentle' ? 7 : 20).forEach((b) => {
         b.y -= b.vy;
         if (b.y < 0) {
           b.y = canvas.height - 40;
@@ -3429,7 +3474,7 @@ export class UIManager {
     const inv = this.saveSystem.getInventory();
     const save = this.saveSystem;
     const eligible = inv.filter((item) => {
-      const isEligibleType = item.type === 'fish' || item.type === 'relic' || item.isRelic;
+      const isEligibleType = !item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type);
       return isEligibleType && !save.isItemInAquarium(item.instanceId);
     });
 
@@ -3439,7 +3484,7 @@ export class UIManager {
         <div style="text-align: center; padding: 40px; color: #94a3b8;">
           <p style="font-size: 3rem;">🪹</p>
           <h4>No Available Catches Found</h4>
-          <p>All eligible fish and relics in your tackle box are already in the tank, or you haven't caught any yet.</p>
+          <p>All eligible fish, treasures, fossils, and relics in your tackle box are already in the tank, or you haven't caught any yet.</p>
         </div>
       `;
     } else {
@@ -3600,7 +3645,7 @@ export class UIManager {
               
               ${inTank ? `
                 <button class="btn btn-sm btn-secondary btn-tank-remove" data-id="${item.instanceId}" title="Remove from personal aquarium back to tackle box">↩️ Remove</button>
-              ` : (isFish || isRelic) ? `
+              ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
                 ${hasAq ? `
                   <button class="btn btn-sm btn-outline btn-tank-add" data-id="${item.instanceId}" ${tankCount >= aqCap ? 'disabled title="Aquarium is at max capacity"' : 'title="Place in personal aquarium"'}>🐠 To Tank</button>
                 ` : `
@@ -3852,7 +3897,7 @@ export class UIManager {
             
             ${inTank ? `
               <button class="btn btn-warning" id="btn-inspect-tank">↩️ Remove from Aquarium</button>
-            ` : (isFish || isRelic) ? `
+            ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
               ${hasAq ? `
                 <button class="btn btn-primary" id="btn-inspect-tank" ${tankFull ? 'disabled title="Aquarium is full"' : ''}>🐠 Move to Aquarium</button>
               ` : `
@@ -4034,6 +4079,36 @@ export class UIManager {
     this.openJournalLogbook('logbook');
   }
 
+  customizationControls(options, values, prefix) {
+    const selected = normalizeCustomization(options, values);
+    return Object.entries(options).map(([key, config]) => `<label class="customize-field">${config.label}
+      <select data-${prefix}="${key}" aria-label="${config.label}">${config.choices.map(([value, label]) => `<option value="${value}" ${selected[key] === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`).join('');
+  }
+
+  openAppearance() {
+    this.activeModal = 'appearance';
+    this.openModal('Your Angler', `<div class="angler-customization"><canvas id="angler-preview" width="260" height="220" aria-label="Preview of your angler"></canvas>
+      <div class="customize-grid">${this.customizationControls(ANGLER_OPTIONS, this.saveSystem.data.appearance, 'appearance')}</div>
+      <p class="customize-note">Make yourself at home on the water. Your look saves automatically.</p>
+      <button class="btn btn-secondary" id="appearance-back">Back to Settings</button></div>`);
+    const preview = document.getElementById('angler-preview');
+    const ctx = preview.getContext('2d');
+    const redraw = () => {
+      ctx.clearRect(0, 0, preview.width, preview.height);
+      const water = ctx.createLinearGradient(0, 0, 0, 220);
+      water.addColorStop(0, '#0f172a'); water.addColorStop(1, '#0e7490');
+      ctx.fillStyle = water; ctx.fillRect(0, 0, 260, 220);
+      ctx.save(); ctx.translate(125, 190); ctx.scale(3.2, 3.2);
+      drawAngler(ctx, this.saveSystem.data.appearance); ctx.restore();
+    };
+    document.querySelectorAll('[data-appearance]').forEach(select => select.addEventListener('change', () => {
+      this.saveSystem.setAppearance(select.dataset.appearance, select.value);
+      redraw();
+    }));
+    document.getElementById('appearance-back').addEventListener('click', () => this.openSettings());
+    redraw();
+  }
+
   openSettings() {
     this.activeModal = 'settings';
     const stats = this.saveSystem.data.stats;
@@ -4041,6 +4116,7 @@ export class UIManager {
 
     const modalBody = `
       <div class="settings-wrapper">
+        <div class="settings-section"><h3>Your Angler</h3><p>Choose your colors and headwear.</p><button class="btn btn-primary" id="btn-customize-angler">Customize Appearance</button></div>
         <div class="settings-section">
           <h3>🎮 Career Statistics</h3>
           <div class="stats-table">
@@ -4051,7 +4127,7 @@ export class UIManager {
             <div class="stat-row"><span>Mythic Titans Landed:</span><strong>🌟 ${stats.mythicsCaught || 0}</strong></div>
             <div class="stat-row"><span>Max Depth Reached:</span><strong>${stats.maxDepthReached}m</strong></div>
             <div class="stat-row"><span>Total Gold Earned:</span><strong>$${stats.totalGoldEarned.toLocaleString()}</strong></div>
-            <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / 66</strong></div>
+            <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}</strong></div>
             <div class="stat-row"><span>Prehistoric Fossils Found:</span><strong>${stats.totalFossilsCollected} / 5</strong></div>
             <div class="stat-row"><span>Biggest Catch:</span><strong>${stats.biggestCatchName} (${stats.biggestCatchCm} cm, ${stats.heaviestCatchKg} kg)</strong></div>
           </div>
@@ -4088,6 +4164,8 @@ export class UIManager {
     `;
 
     this.openModal('⚙️ Settings & Career Records', modalBody);
+
+    document.getElementById('btn-customize-angler')?.addEventListener('click', () => this.openAppearance());
 
     document.getElementById('setting-always-ask')?.addEventListener('change', (e) => {
       this.saveSystem.data.settings.alwaysAskOnCatch = e.target.checked;

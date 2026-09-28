@@ -1,0 +1,26 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "leaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "level", "order": "DESCENDING" },
+        { "fieldPath": "xp", "order": "DESCENDING" },
+        { "fieldPath": "coins", "order": "DESCENDING" },
+        { "fieldPath": "totalFishCaught", "order": "DESCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "leaderboard",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "coins", "order": "DESCENDING" },
+        { "fieldPath": "totalGoldEarned", "order": "DESCENDING" },
+        { "fieldPath": "level", "order": "DESCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
