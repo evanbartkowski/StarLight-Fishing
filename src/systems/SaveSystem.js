@@ -22,7 +22,7 @@ export class SaveSystem {
     });
 
     return {
-      level: 1,
+      level: 0,
       xp: 0,
       coins: 0,
       upgrades,
@@ -151,22 +151,22 @@ export class SaveSystem {
     try {
       const key = accountManager.getSaveKeyForUser(username);
       let raw = localStorage.getItem(key);
-      if (!raw && (!username || accountManager.isGuest())) {
+      if (!raw && !username) {
         raw = localStorage.getItem(LEGACY_STORAGE_KEY);
       }
       if (!raw) {
-        return { level: 1, coins: 0, speciesCount: 0 };
+        return { level: 0, coins: 0, speciesCount: 0 };
       }
       const parsed = JSON.parse(raw);
       const journal = parsed.journal || {};
       const speciesCount = Object.keys(journal).filter(k => (journal[k]?.count > 0 || journal[k]?.timesCaught > 0)).length;
       return {
-        level: Math.max(1, parsed.level || 1),
+        level: Math.max(0, parsed.level ?? 0),
         coins: Math.max(0, parsed.coins || 0),
         speciesCount,
       };
     } catch (e) {
-      return { level: 1, coins: 0, speciesCount: 0 };
+      return { level: 0, coins: 0, speciesCount: 0 };
     }
   }
 
@@ -201,7 +201,7 @@ export class SaveSystem {
       this.data = {
         ...def,
         ...parsed,
-        level: Math.max(1, parsed.level || 1),
+        level: Math.max(0, parsed.level ?? 0),
         xp: Math.max(0, parsed.xp || 0),
         coins: Math.max(0, parsed.coins || 0),
         upgrades: { ...def.upgrades, ...(parsed.upgrades || {}) },
@@ -735,6 +735,7 @@ export class SaveSystem {
     const inv = this.getInventory();
     const idx = inv.findIndex((i) => i.instanceId === instanceId);
     if (idx !== -1) {
+      if (this.isItemInAquarium(instanceId)) this.accrueVisitorTips();
       const removed = inv.splice(idx, 1)[0];
       // Also remove from aquarium if it was slotted
       if (this.data.aquarium?.slottedItemIds) {
@@ -829,6 +830,7 @@ export class SaveSystem {
     const item = this.getInventory().find((i) => i.instanceId === instanceId);
     if (!item) return { success: false, reason: 'not_found' };
 
+    this.accrueVisitorTips();
     this.data.aquarium.slottedItemIds.push(instanceId);
     this.save();
     return { success: true, item };
@@ -836,6 +838,7 @@ export class SaveSystem {
 
   removeItemFromAquarium(instanceId) {
     if (!this.data.aquarium?.slottedItemIds) return false;
+    this.accrueVisitorTips();
     const initialLen = this.data.aquarium.slottedItemIds.length;
     this.data.aquarium.slottedItemIds = this.data.aquarium.slottedItemIds.filter((id) => id !== instanceId);
     if (this.data.aquarium.slottedItemIds.length !== initialLen) {
@@ -851,39 +854,45 @@ export class SaveSystem {
     this.save();
   }
 
-  calculatePendingVisitorTips() {
+  getVisitorTipRate() {
     if (!this.hasAquarium()) return 0;
-    const items = this.getAquariumItems();
-    const fishInAquarium = items.filter((i) => i.type === 'fish');
-    if (fishInAquarium.length === 0) return 0;
+    const rates = { common: 3, uncommon: 5, rare: 9, epic: 18, legendary: 32, mythic: 52 };
+    return this.getAquariumItems().reduce((total, fish) => {
+      if (fish.type !== 'fish') return total;
+      let rate = rates[fish.rarity] ?? rates.common;
+      if (fish.isMythic) rate = Math.max(rate, rates.mythic);
+      if (fish.isShiny) rate += 10;
+      return total + rate;
+    }, 0);
+  }
 
-    const now = Date.now();
-    const lastCollected = this.data.aquarium.lastTipCollectedAt || now;
+  getPendingVisitorTips(now = Date.now()) {
+    if (!this.hasAquarium()) return 0;
+    const aquarium = this.data.aquarium;
+    const lastCollected = aquarium.lastTipCollectedAt ?? now;
     const elapsedMinutes = Math.max(0, (now - lastCollected) / 60000);
+    const rate = this.getVisitorTipRate();
+    const banked = Math.max(0, aquarium.bankedVisitorTips || 0);
+    // Store up to an hour of tips for this collection, preserving tips already earned.
+    return Math.min(Math.max(banked, rate * 60), banked + elapsedMinutes * rate);
+  }
 
-    let ratePerMin = 0;
-    fishInAquarium.forEach((fish) => {
-      let base = 3;
-      if (fish.rarity === 'uncommon') base = 5;
-      else if (fish.rarity === 'rare') base = 9;
-      else if (fish.rarity === 'epic') base = 18;
-      else if (fish.rarity === 'legendary') base = 32;
-      if (fish.isMythic) base += 20;
-      if (fish.isShiny) base += 10;
-      ratePerMin += base;
-    });
+  accrueVisitorTips() {
+    const now = Date.now();
+    this.data.aquarium.bankedVisitorTips = this.getPendingVisitorTips(now);
+    this.data.aquarium.lastTipCollectedAt = now;
+  }
 
-    const tier = Math.max(1, this.getUpgradeLevel('personalAquarium') || 1);
-    const maxTipCap = tier * 750;
-    const pending = Math.min(maxTipCap, Math.floor(elapsedMinutes * ratePerMin));
-    return pending;
+  calculatePendingVisitorTips() {
+    return Math.floor(this.getPendingVisitorTips());
   }
 
   collectVisitorTips() {
     const tips = this.calculatePendingVisitorTips();
     if (tips > 0) {
+      this.accrueVisitorTips();
+      this.data.aquarium.bankedVisitorTips -= tips;
       this.addCoins(tips);
-      this.data.aquarium.lastTipCollectedAt = Date.now();
       this.save();
     }
     return tips;

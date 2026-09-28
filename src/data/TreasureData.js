@@ -290,7 +290,7 @@ export const HAZARD_TYPES = [
   // ==========================================
   {
     id: 'sunken_galleon_hull',
-    name: 'Colossal Sunken Galleon Hull',
+    name: 'Sunken Galleon Hull',
     minDepth: 25,
     maxDepth: 180,
     damage: 3,
@@ -354,4 +354,3 @@ export const HAZARD_TYPES = [
     lore: 'An ancient, towering obelisk pulsing with strange gravitational distortion.',
   },
 ];
-

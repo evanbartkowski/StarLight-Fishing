@@ -7,7 +7,9 @@ export class Hazard {
     this.color = typeConfig.color;
     this.glow = typeConfig.glow || '#ef4444';
     this.isColossal = !!typeConfig.isColossal;
-    this.radius = typeConfig.radius || (this.isColossal ? 35 : 20);
+    // Choose a permanent size per giant so its artwork and collision bounds agree.
+    this.sizeScale = this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : 1;
+    this.radius = (typeConfig.radius || (this.isColossal ? 35 : 20)) * this.sizeScale;
 
     this.x = x;
     this.y = y;
@@ -22,8 +24,10 @@ export class Hazard {
 
     // Horizontal drift
     this.x += this.driftX * 30 * deltaSec;
-    if (this.x < 35) this.driftX = Math.abs(this.driftX);
-    if (this.x > worldWidth - 35) this.driftX = -Math.abs(this.driftX);
+    const margin = Math.min(worldWidth / 2, Math.max(35, this.radius + 12));
+    this.x = Math.max(margin, Math.min(worldWidth - margin, this.x));
+    if (this.x <= margin) this.driftX = Math.abs(this.driftX);
+    if (this.x >= worldWidth - margin) this.driftX = -Math.abs(this.driftX);
 
     // Subtle vertical wave undulation
     this.y += Math.sin(this.timer * 1.5) * 0.35;
@@ -63,13 +67,9 @@ export class Hazard {
     ctx.textBaseline = 'middle';
     ctx.fillText('⚠️', 0, -this.radius - 8);
 
-    if (this.isColossal) {
-      ctx.fillStyle = '#ef4444';
-      ctx.font = 'bold 10px sans-serif';
-      ctx.fillText('COLOSSAL', 0, -this.radius - 20);
-    }
     ctx.restore();
 
+    ctx.scale(this.sizeScale, this.sizeScale);
     try {
       if (this.type === 'boot') {
         // Encrusted Old Sea Boot
@@ -526,4 +526,3 @@ export class Hazard {
     ctx.restore();
   }
 }
-
