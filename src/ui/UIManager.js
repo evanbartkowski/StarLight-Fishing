@@ -44,10 +44,32 @@ export class UIManager {
     const panel = document.createElement('section');
     panel.id = 'fleet-radio';
     panel.hidden = true;
-    panel.innerHTML = `<strong>Fleet Radio</strong><small>Players in other tabs on this browser</small>
+    panel.innerHTML = `<div class="fleet-header"><strong>Fleet Radio</strong><button type="button" id="fleet-toggle" aria-label="Minimize Fleet Radio" aria-expanded="true" aria-controls="fleet-content" title="Minimize Fleet Radio">&minus;</button></div>
+      <div id="fleet-content"><small>Players in other tabs on this browser</small>
       <div id="fleet-messages" aria-live="polite"></div>
-      <form id="fleet-form"><input id="fleet-input" maxlength="180" aria-label="Fleet message" placeholder="Message players..."><button type="submit">Send</button></form>`;
+      <form id="fleet-form"><input id="fleet-input" maxlength="180" aria-label="Fleet message" placeholder="Message players..."><button type="submit">Send</button></form></div>`;
     document.body.appendChild(panel);
+    const toggle = panel.querySelector('#fleet-toggle');
+    const content = panel.querySelector('#fleet-content');
+    toggle.addEventListener('click', () => {
+      const minimized = panel.classList.toggle('fleet-minimized');
+      content.hidden = minimized;
+      toggle.innerHTML = minimized ? '&#128251;' : '&minus;';
+      toggle.setAttribute('aria-expanded', String(!minimized));
+      toggle.setAttribute('aria-label', minimized ? 'Open Fleet Radio' : 'Minimize Fleet Radio');
+      toggle.title = minimized ? 'Open Fleet Radio' : 'Minimize Fleet Radio';
+      if (!minimized) {
+        panel.querySelector('input').focus();
+        list.scrollTop = list.scrollHeight;
+      }
+    });
+    const hud = document.getElementById('game-hud');
+    const positionFleet = () => {
+      panel.style.top = `${hud.getBoundingClientRect().bottom + 6}px`;
+    };
+    this.fleetHudObserver = new ResizeObserver(positionFleet);
+    this.fleetHudObserver.observe(hud);
+    positionFleet();
     const list = panel.querySelector('#fleet-messages');
     manager.onMessageReceived = (msg) => {
       const row = document.createElement('p');
@@ -184,7 +206,7 @@ export class UIManager {
         <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 <span class="btn-label">Shop</span></button>
         <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
         <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
-        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
+        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">📻</button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
         <button class="icon-btn" id="btn-mute" title="Toggle Sound">🔊</button>

@@ -2788,21 +2788,29 @@ html, body {
 
 
 
-/* Keep the complete toolbar inside the viewport, including sound controls. */
-#game-hud { box-sizing: border-box; flex-wrap: wrap; gap: 8px; }
-.hud-left, .hud-right, .hud-center { min-width: 0; max-width: 100%; flex-wrap: wrap; }
-.hud-right { margin-left: auto; flex-shrink: 1; justify-content: flex-end; }
-@media (max-width: 1100px) {
+/* One-row HUD: compact controls, with horizontal scrolling on narrow screens. */
+#game-hud { box-sizing: border-box; flex-wrap: nowrap; gap: 8px; }
+.hud-left, .hud-right, .hud-center { min-width: 0; max-width: 100%; flex-wrap: nowrap; }
+.hud-left { flex-shrink: 0; }
+.hud-right { margin-left: auto; flex-shrink: 1; justify-content: flex-start; overflow-x: auto; }
+.hud-right .icon-btn { flex-shrink: 0; white-space: nowrap; }
+#btn-mute { position: sticky; right: 0; z-index: 1; background: #0f172a; }
+@media (max-width: 1400px) {
   .hud-right .btn-label { display: none; }
   .hud-right .icon-btn { padding: 7px; min-width: 34px; }
 }
+@media (max-width: 900px) {
+  .hud-left .xp-container, .hud-left .weather-display { display: none; }
+  .hud-left { gap: 4px; }
+}
 @media (max-width: 600px) {
-  #game-hud { padding: 8px; align-items: flex-start; }
-  .hud-left { flex-shrink: 1; gap: 4px; }
+  #game-hud { padding: 8px; gap: 4px; }
   .hud-right { gap: 4px; }
+  .hud-left .level-display { padding: 4px; }
+  .hud-left .coin-display, .hud-left .capacity-display { padding: 4px; font-size: 12px; }
 }
 #fleet-radio {
-  position: fixed; left: 12px; bottom: 14px; z-index: 15;
+  position: fixed; right: 12px; top: 70px; z-index: 15;
   width: min(280px, calc(100vw - 24px)); box-sizing: border-box;
   padding: 10px; border: 1px solid #475569; border-radius: 10px;
   background: rgba(15, 23, 42, 0.92); color: #e2e8f0; font-size: 12px;
@@ -2814,3 +2822,10 @@ html, body {
 #fleet-form { display: flex; gap: 6px; }
 #fleet-input { min-width: 0; flex: 1; color: white; background: #1e293b; border: 1px solid #64748b; border-radius: 5px; padding: 6px; }
 #fleet-form button { background: #38bdf8; border: 0; border-radius: 5px; padding: 6px 10px; cursor: pointer; }
+
+.fleet-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#fleet-toggle { width: 30px; height: 30px; border: 1px solid #64748b; border-radius: 6px; background: #1e293b; color: #e2e8f0; font-size: 20px; cursor: pointer; }
+#fleet-toggle:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+#fleet-radio.fleet-minimized { width: 40px; padding: 4px; }
+.fleet-minimized .fleet-header strong { display: none; }
+#fleet-content[hidden] { display: none; }
