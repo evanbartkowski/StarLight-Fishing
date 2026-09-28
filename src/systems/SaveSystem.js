@@ -866,21 +866,33 @@ export class SaveSystem {
     }, 0);
   }
 
-  getPendingVisitorTips(now = Date.now()) {
+  getPendingVisitorTips() {
     if (!this.hasAquarium()) return 0;
-    const aquarium = this.data.aquarium;
-    const lastCollected = aquarium.lastTipCollectedAt ?? now;
-    const elapsedMinutes = Math.max(0, (now - lastCollected) / 60000);
-    const rate = this.getVisitorTipRate();
-    const banked = Math.max(0, aquarium.bankedVisitorTips || 0);
-    // Store up to an hour of tips for this collection, preserving tips already earned.
-    return Math.min(Math.max(banked, rate * 60), banked + elapsedMinutes * rate);
+    return this.data.aquarium?.bankedVisitorTips || 0;
   }
 
   accrueVisitorTips() {
-    const now = Date.now();
-    this.data.aquarium.bankedVisitorTips = this.getPendingVisitorTips(now);
-    this.data.aquarium.lastTipCollectedAt = now;
+    if (!this.hasAquarium()) return;
+    const tier = Math.max(1, this.getUpgradeLevel('personalAquarium') || 1);
+    const maxTipCap = tier * 750;
+    if ((this.data.aquarium.bankedVisitorTips || 0) > maxTipCap) {
+      this.data.aquarium.bankedVisitorTips = maxTipCap;
+    }
+  }
+
+  updateAquariumPlaytime(deltaSec) {
+    if (!this.hasAquarium() || !deltaSec || deltaSec <= 0) return;
+    const ratePerMin = this.getVisitorTipRate();
+    if (ratePerMin <= 0) return;
+    const tier = Math.max(1, this.getUpgradeLevel('personalAquarium') || 1);
+    const maxTipCap = tier * 750;
+
+    const current = this.data.aquarium.bankedVisitorTips || 0;
+    if (current >= maxTipCap) return;
+
+    // Tips accumulate strictly while playing the game
+    const tipsToAdd = (ratePerMin / 60) * deltaSec;
+    this.data.aquarium.bankedVisitorTips = Math.min(maxTipCap, current + tipsToAdd);
   }
 
   calculatePendingVisitorTips() {
@@ -890,8 +902,7 @@ export class SaveSystem {
   collectVisitorTips() {
     const tips = this.calculatePendingVisitorTips();
     if (tips > 0) {
-      this.accrueVisitorTips();
-      this.data.aquarium.bankedVisitorTips -= tips;
+      this.data.aquarium.bankedVisitorTips = Math.max(0, (this.data.aquarium.bankedVisitorTips || 0) - tips);
       this.addCoins(tips);
       this.save();
     }

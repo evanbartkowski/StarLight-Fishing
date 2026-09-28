@@ -135,6 +135,7 @@ oceanWorld.setZoneManager(zoneManager);
 uiManager.setZoneManager(zoneManager);
 
 const minimapUI = new MinimapUI(save, soundManager, uiManager, oceanWorld, zoneManager);
+uiManager.setMinimapUI(minimapUI);
 uiManager.onAccountSwitched = () => {
   hook.applyUpgrades(save);
   oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
@@ -417,10 +418,21 @@ function startDive() {
 }
 
 let surfaceIdleTimer = 0;
+let aquariumAutosaveTimer = 0;
 
 // Fixed-step Update Logic (60fps)
 const update = (dt) => {
   const deltaSec = dt / 1000;
+
+  // Accumulate aquarium tips strictly while actively playing the game
+  save.updateAquariumPlaytime?.(deltaSec);
+  aquariumAutosaveTimer += deltaSec;
+  if (aquariumAutosaveTimer >= 30) {
+    aquariumAutosaveTimer = 0;
+    if (save.hasAquarium?.()) {
+      save.save();
+    }
+  }
 
   // Update NPC director cooldowns
   npcSystem.update(dt);
