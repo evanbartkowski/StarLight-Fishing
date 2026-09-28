@@ -151,7 +151,7 @@ uiManager.onAccountSwitched = () => {
   oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
   oceanWorld.populateWorld(save);
   zoneManager.setZone(save.data.currentZone || 'sunken_shallows');
-  soundManager.setZoneSoundscape(zoneManager.getZoneId());
+  soundManager.setSeaTrack(save.getCurrentSea());
 };
 
 uiManager.onModalClosed = () => {
@@ -163,7 +163,8 @@ uiManager.onModalClosed = () => {
 
 minimapUI.onSailToSea = (sea) => {
   oceanWorld.populateWorld(save);
-  soundManager.setZoneSoundscape(zoneManager.getZoneId());
+  soundManager.setSeaTrack(sea.id);
+  uiManager.updateHUD(hook, gameState);
 };
 
 uiManager.onManualReel = () => {
@@ -179,7 +180,7 @@ if (worldCycle && typeof worldCycle.deserialize === 'function') {
 }
 
 // Initialize current zone soundscape
-soundManager.setZoneSoundscape(zoneManager.getZoneId());
+soundManager.setSeaTrack(save.getCurrentSea());
 
 hook.applyUpgrades(save);
 hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);

@@ -606,6 +606,12 @@ export class UIManager {
     const fleet = document.getElementById('fleet-radio');
     if (fleet) fleet.hidden = !this.saveSystem.isChatUnlocked() || gameState !== 'SURFACE_IDLE';
     const isDiving = (gameState === 'CASTING' || gameState === 'DESCENDING' || gameState === 'REELING');
+    if ((isDiving || gameState === 'AIMING') && this.toastDismissOnFishing) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+      this.toastDismissOnFishing = false;
+      document.getElementById('toast-notification')?.classList.replace('toast-visible', 'toast-hidden');
+    }
     const hudEl = document.getElementById('game-hud');
     if (hudEl) {
       hudEl.classList.toggle('hud-diving-mode', isDiving);
@@ -782,7 +788,8 @@ export class UIManager {
     }
   }
 
-  showToast(message) {
+  showToast(message, { dismissOnFishing = false } = {}) {
+    this.toastDismissOnFishing = dismissOnFishing;
     const toast = document.getElementById('toast-notification');
     toast.textContent = message;
     toast.className = 'toast-visible';
@@ -790,6 +797,8 @@ export class UIManager {
     if (this.toastTimer) clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => {
       toast.className = 'toast-hidden';
+      this.toastDismissOnFishing = false;
+      this.toastTimer = null;
     }, 4500);
   }
 
@@ -1271,7 +1280,7 @@ export class UIManager {
           remainingGold = Math.max(0, remainingGold - res.gold);
           const totalEl = document.getElementById('summary-total-cash');
           if (totalEl) totalEl.textContent = `+$${remainingGold.toLocaleString()}`;
-          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
+          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`, { dismissOnFishing: true });
         }
       });
     });
@@ -1301,7 +1310,7 @@ export class UIManager {
       });
       if (soldCount > 0) {
         soundManager.playCoin();
-        this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`);
+        this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`, { dismissOnFishing: true });
       }
       this._onCatchSummaryContinue = null;
       this.closeModal();
@@ -3731,7 +3740,7 @@ export class UIManager {
         const res = this.saveSystem.sellInventoryItem(id, sellMultiplier);
         if (res) {
           soundManager.playCoin();
-          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
+          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`, { dismissOnFishing: true });
           this.openInventory(filter);
         }
       });
@@ -3766,7 +3775,7 @@ export class UIManager {
     document.getElementById('btn-confirm-bulk-sale')?.addEventListener('click', () => {
       const result = this.saveSystem.sellAllItems(sellMultiplier);
       soundManager.playCoin();
-      this.showToast(`🪙 Sold ${result.count} items for +$${result.totalGold.toLocaleString()}!`);
+      this.showToast(`🪙 Sold ${result.count} items for +$${result.totalGold.toLocaleString()}!`, { dismissOnFishing: true });
       this.openInventory(returnFilter);
     });
 
@@ -3886,7 +3895,7 @@ export class UIManager {
       const res = this.saveSystem.sellInventoryItem(instanceId, sellMultiplier);
       if (res) {
         soundManager.playCoin();
-        this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
+        this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`, { dismissOnFishing: true });
         this.openInventory(returnFilter);
       }
     });

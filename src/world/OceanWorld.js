@@ -131,6 +131,7 @@ export class OceanWorld {
   }
 
   populateWorld(saveSystem) {
+    this.setCurrentSea(saveSystem.getCurrentSea());
     this.entities.fish = [];
     this.entities.hazards = [];
     this.entities.treasures = [];

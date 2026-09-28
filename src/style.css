@@ -2813,7 +2813,7 @@ html, body {
   position: fixed; right: 12px; top: 70px; z-index: 15;
   width: min(280px, calc(100vw - 24px)); box-sizing: border-box;
   padding: 10px; border: 1px solid #475569; border-radius: 10px;
-  background: rgba(15, 23, 42, 0.92); color: #e2e8f0; font-size: 12px;
+  background: rgba(15, 23, 42, 0.65); color: #e2e8f0; font-size: 12px;
 }
 #fleet-radio[hidden] { display: none; }
 #fleet-radio small { display: block; color: #94a3b8; margin-top: 3px; }
@@ -2829,3 +2829,15 @@ html, body {
 #fleet-radio.fleet-minimized { width: 40px; padding: 4px; }
 .fleet-minimized .fleet-header strong { display: none; }
 #fleet-content[hidden] { display: none; }
+
+/* Depth and heat panels must not vertically recenter the currency row. */
+#game-hud { align-items: flex-start; }
+.hud-left { height: 42px; align-items: center; }
+#hud-coins { box-sizing: border-box; width: 144px; }
+#coin-amount { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+#hud-capacity { visibility: hidden; pointer-events: none; }
+#game-hud.hud-diving-mode #hud-capacity { visibility: visible; }
+#capacity-amount { min-width: 6ch; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  #hud-coins { width: 108px; }
+}
