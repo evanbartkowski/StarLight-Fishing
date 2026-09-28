@@ -162,10 +162,10 @@ export function calculateCrown(species, size) {
   const range = maxCm - minCm;
   if (range <= 0) return null;
 
-  if (size >= minCm + range * 0.85) {
+  if (size >= minCm + range * 0.95) {
     return 'gold';
   }
-  if (size <= minCm + range * 0.15) {
+  if (size <= minCm + range * 0.05) {
     return 'silver';
   }
   return null;

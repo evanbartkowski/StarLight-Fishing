@@ -466,14 +466,27 @@ export class Fish {
     // Tail fin
     ctx.save();
     ctx.translate(-16, 0);
-    ctx.rotate(wiggle * 0.08);
+    ctx.rotate(wiggle * (s.shape === 'magikart' ? 0.12 : 0.08));
     ctx.fillStyle = finColor;
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(-12, -8);
-    ctx.quadraticCurveTo(-7, 0, -14, 8);
-    ctx.closePath();
-    ctx.fill();
+    if (s.shape === 'magikart') {
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-14, -14);
+      ctx.quadraticCurveTo(-18, -4, -22, -10);
+      ctx.quadraticCurveTo(-15, 0, -22, 10);
+      ctx.quadraticCurveTo(-18, 4, -14, 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else {
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-12, -8);
+      ctx.quadraticCurveTo(-7, 0, -14, 8);
+      ctx.closePath();
+      ctx.fill();
+    }
     ctx.restore();
 
     // Body based on shape
@@ -535,6 +548,95 @@ export class Fish {
         ctx.arc(sc, 0, 6, -Math.PI / 2, Math.PI / 2);
         ctx.stroke();
       }
+    } else if (s.shape === 'magikart') {
+      // Magikart: Iconic orange-red carp with 3-pointed golden crown fin, yellow whiskers & derpy eyes!
+      // 1. Chunky orange-red carp body
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 24, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flank scale pattern (cream diamond scales)
+      ctx.fillStyle = secondary;
+      ctx.beginPath();
+      ctx.moveTo(-6, -8);
+      ctx.lineTo(-2, -3);
+      ctx.lineTo(-6, 2);
+      ctx.lineTo(-10, -3);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(3, -7);
+      ctx.lineTo(7, -2);
+      ctx.lineTo(3, 3);
+      ctx.lineTo(-1, -2);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. 3-Pointed Golden Royal Crown Fin on Back (Dorsal)
+      ctx.fillStyle = finColor;
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-14, -12);
+      ctx.lineTo(-11, -24);
+      ctx.lineTo(-6, -15);
+      ctx.lineTo(0, -27);
+      ctx.lineTo(6, -15);
+      ctx.lineTo(11, -24);
+      ctx.lineTo(14, -12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 3. 3-Pointed Golden Ventral Fin on Belly
+      ctx.beginPath();
+      ctx.moveTo(-10, 12);
+      ctx.lineTo(-8, 22);
+      ctx.lineTo(-4, 15);
+      ctx.lineTo(0, 24);
+      ctx.lineTo(4, 15);
+      ctx.lineTo(8, 22);
+      ctx.lineTo(10, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 4. Pectoral Fin (white/cream flapping fin)
+      const flap = Math.sin(this.wiggleTimer * 1.5) * 6;
+      ctx.fillStyle = '#fef9c3';
+      ctx.strokeStyle = '#ca8a04';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(-2, 4, 8, 5, 0.4 + flap * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 5. Open Pink 'O' Gasping Mouth at front
+      ctx.fillStyle = '#fb7185';
+      ctx.strokeStyle = '#e11d48';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(22, 2, 4.5, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 6. Long Golden Wavy Whiskers (Barbels) streaming from cheek
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      const whiskerWiggle = Math.sin(this.wiggleTimer * 1.2) * 5;
+      // Top whisker
+      ctx.beginPath();
+      ctx.moveTo(14, 5);
+      ctx.bezierCurveTo(24, 12 + whiskerWiggle, 28, 22 - whiskerWiggle, 36, 28 + whiskerWiggle);
+      ctx.stroke();
+      // Bottom whisker
+      ctx.beginPath();
+      ctx.moveTo(11, 8);
+      ctx.bezierCurveTo(18, 18 - whiskerWiggle, 22, 28 + whiskerWiggle, 28, 36 - whiskerWiggle);
+      ctx.stroke();
     } else if (s.shape === 'siren_ray') {
       // The Whispering Siren Ray: Royal manta ray
       ctx.moveTo(0, -22);
@@ -698,30 +800,55 @@ export class Fish {
     }
     ctx.fill();
 
-    // Belly stripe accent
-    ctx.fillStyle = secondary;
-    ctx.beginPath();
-    ctx.ellipse(0, 4, 14, 5, 0, 0, Math.PI);
-    ctx.fill();
+    // Belly stripe accent (skip for magikart which has custom flank scales)
+    if (s.shape !== 'magikart') {
+      ctx.fillStyle = secondary;
+      ctx.beginPath();
+      ctx.ellipse(0, 4, 14, 5, 0, 0, Math.PI);
+      ctx.fill();
+    }
 
     // Eye
-    const eyeX = s.shape === 'squid' ? 6 : s.shape === 'octopus' ? 4 : 11;
-    const eyeY = -3;
-    ctx.fillStyle = s.eyeColor || '#ffffff';
-    ctx.beginPath();
-    ctx.arc(eyeX, eyeY, 3.5, 0, Math.PI * 2);
-    ctx.fill();
+    if (s.shape === 'magikart') {
+      const eyeX = 12;
+      const eyeY = -4;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
 
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(eyeX + 0.5, eyeY, 1.8, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(eyeX + 0.5, eyeY, 2.4, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Eye catchlight
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(eyeX + 1.2, eyeY - 1, 0.9, 0, Math.PI * 2);
-    ctx.fill();
+      // Eye catchlight
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeX + 1.8, eyeY - 1.5, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      const eyeX = s.shape === 'squid' ? 6 : s.shape === 'octopus' ? 4 : 11;
+      const eyeY = -3;
+      ctx.fillStyle = s.eyeColor || '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(eyeX + 0.5, eyeY, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eye catchlight
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeX + 1.2, eyeY - 1, 0.9, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.restore();
   }

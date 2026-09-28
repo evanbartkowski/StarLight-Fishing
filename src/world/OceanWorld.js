@@ -759,7 +759,7 @@ export class OceanWorld {
       if (this.hoveredCompanion === 'angela') {
         const catPos = this.shipsCat.getDeckPosition(vessel);
         ctx.save();
-        ctx.translate(catPos.x, catPos.y - 22);
+        ctx.translate(catPos.x - 55, catPos.y - 30);
         ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
         ctx.strokeStyle = '#f59e0b';
         ctx.lineWidth = 1.5;
@@ -786,7 +786,7 @@ export class OceanWorld {
       if (this.hoveredCompanion === 'evan') {
         const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
         ctx.save();
-        ctx.translate(birdPos.x, birdPos.y - 24);
+        ctx.translate(birdPos.x + 55, birdPos.y - 32);
         ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
         ctx.strokeStyle = '#38bdf8';
         ctx.lineWidth = 1.5;

@@ -586,9 +586,6 @@ const update = (dt) => {
             uiManager.openCratesModal(unboxedCrates, hook, () => {
               startDive();
             });
-          } else if (!ranOutOfStorage && !save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
-            uiManager.showToast(`🎒 Stored ${hook.caughtItems.length} catches directly in your inventory!`);
-            startDive();
           } else {
             uiManager.openCatchSummary(hook, () => {
               startDive();
@@ -599,9 +596,6 @@ const update = (dt) => {
         uiManager.openCratesModal(unboxedCrates, hook, () => {
           startDive();
         });
-      } else if (!ranOutOfStorage && !save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
-        uiManager.showToast(`🎒 Stored ${hook.caughtItems.length} catches directly in your inventory!`);
-        startDive();
       } else {
         uiManager.openCatchSummary(hook, () => {
           startDive();

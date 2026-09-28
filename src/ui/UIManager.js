@@ -1190,13 +1190,6 @@ export class UIManager {
             <button class="btn btn-buy" id="btn-sell-all-catches">🪙 Sell All Catches Now</button>
             <button class="btn btn-secondary" id="btn-summary-inventory">🎒 View Inventory</button>
           </div>
-        </div>
-        <div class="catch-toggle-row">
-          <label class="catch-toggle-label">
-            <input type="checkbox" id="chk-always-ask-catch" ${this.saveSystem.data.settings.alwaysAskOnCatch ? 'checked' : ''}>
-            <span>Always ask on catch (uncheck to send catches directly to inventory)</span>
-          </label>
-        </div>
       </div>
     `;
 
@@ -1294,13 +1287,6 @@ export class UIManager {
       this.closeModal();
       if (onContinue) onContinue();
       this.openInventory();
-    });
-
-    // Quick toggle
-    document.getElementById('chk-always-ask-catch')?.addEventListener('change', (e) => {
-      this.saveSystem.data.settings.alwaysAskOnCatch = e.target.checked;
-      this.saveSystem.save();
-      this.showToast(e.target.checked ? '🔔 Catch resolution popup active.' : '🎒 Catches will now be added directly to inventory.');
     });
   }
 
