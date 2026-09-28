@@ -5,18 +5,18 @@ export const UPGRADE_DEFINITIONS = {
     icon: '🧵',
     description: 'Extends your fishing line to reach deeper oceanic seas and mythical zones.',
     tiers: [
-      { level: 0, cost: 0, depth: 35, reqLevel: 1, label: '35m (Sea 1: Sunlit Shoals)' },
-      { level: 1, cost: 160, depth: 55, reqLevel: 2, label: '55m (Sunlit Shallows Edge)' },
-      { level: 2, cost: 450, depth: 80, reqLevel: 3, label: '80m (Sea 2: Bioluminescent Trench)' },
-      { level: 3, cost: 1200, depth: 115, reqLevel: 5, label: '115m (Bioluminescent Depths)' },
-      { level: 4, cost: 3200, depth: 155, reqLevel: 7, label: '155m (Sea 3: Astral Shimmerfall)' },
-      { level: 5, cost: 8500, depth: 200, reqLevel: 9, label: '200m (Astral Starlight Trench)' },
-      { level: 6, cost: 22000, depth: 250, reqLevel: 12, label: '250m (Sea 4: Sunken Atlantis)' },
-      { level: 7, cost: 55000, depth: 310, reqLevel: 15, label: '310m (Atlantis Sub-Ruins)' },
-      { level: 8, cost: 135000, depth: 380, reqLevel: 18, label: '380m (Sea 5: Whispering Aether)' },
-      { level: 9, cost: 320000, depth: 460, reqLevel: 22, label: '460m (Aether Abyssal Rift)' },
-      { level: 10, cost: 680000, depth: 540, reqLevel: 26, label: '540m (Sea 6: Magma Caldera)' },
-      { level: 11, cost: 1350000, depth: 630, reqLevel: 30, label: '630m (Sea 7: Eldritch Chrono Void)' },
+      { level: 0, cost: 0, depth: 50, reqLevel: 1, label: '50m (Sea 1: Sunlit Shoals)' },
+      { level: 1, cost: 160, depth: 75, reqLevel: 2, label: '75m (Sunlit Shallows Edge)' },
+      { level: 2, cost: 450, depth: 110, reqLevel: 3, label: '110m (Sea 2: Bioluminescent Trench)' },
+      { level: 3, cost: 1200, depth: 155, reqLevel: 5, label: '155m (Bioluminescent Depths)' },
+      { level: 4, cost: 3200, depth: 210, reqLevel: 7, label: '210m (Sea 3: Astral Shimmerfall)' },
+      { level: 5, cost: 8500, depth: 275, reqLevel: 9, label: '275m (Astral Starlight Trench)' },
+      { level: 6, cost: 22000, depth: 350, reqLevel: 12, label: '350m (Sea 4: Sunken Atlantis)' },
+      { level: 7, cost: 55000, depth: 430, reqLevel: 15, label: '430m (Atlantis Sub-Ruins)' },
+      { level: 8, cost: 135000, depth: 520, reqLevel: 18, label: '520m (Sea 5: Whispering Aether)' },
+      { level: 9, cost: 320000, depth: 610, reqLevel: 22, label: '610m (Aether Abyssal Rift)' },
+      { level: 10, cost: 680000, depth: 700, reqLevel: 26, label: '700m (Sea 6: Magma Caldera)' },
+      { level: 11, cost: 1350000, depth: 800, reqLevel: 30, label: '800m (Sea 7: Eldritch Chrono Void)' },
     ],
   },
 
@@ -253,20 +253,21 @@ export const UPGRADE_DEFINITIONS = {
 
   tackleBox: {
     id: 'tackleBox',
-    name: 'Backpack Tackle Box',
+    name: 'Storage Tackle Box',
     icon: '🎒',
-    description: 'Expands your permanent inventory storage capacity so you can hold more prized fish, relics, and bait.',
-    tiers: [
-      { level: 0, cost: 0, capacity: 15, reqLevel: 1, label: 'Basic Canvas Sack (15 Slots)' },
-      { level: 1, cost: 240, capacity: 20, reqLevel: 2, label: 'Reinforced Tackle Bag (20 Slots)' },
-      { level: 2, cost: 720, capacity: 26, reqLevel: 4, label: 'Waterproof Angler Satchel (26 Slots)' },
-      { level: 3, cost: 2100, capacity: 33, reqLevel: 7, label: 'Multi-Compartment Case (33 Slots)' },
-      { level: 4, cost: 6200, capacity: 42, reqLevel: 11, label: 'Sealed Hardcase Chest (42 Slots)' },
-      { level: 5, cost: 17500, capacity: 54, reqLevel: 16, label: 'Expedition Cooler Pack (54 Slots)' },
-      { level: 6, cost: 48000, capacity: 70, reqLevel: 22, label: 'Grand Captains Locker (70 Slots)' },
-      { level: 7, cost: 135000, capacity: 90, reqLevel: 28, label: 'Sub-Dimensional Storage (90 Slots)' },
-      { level: 8, cost: 360000, capacity: 120, reqLevel: 35, label: 'Infinite Void Cache (120 Slots)' },
-    ],
+    description: 'Expands your permanent inventory storage capacity by +5 slots per upgrade up to Level 100.',
+    tiers: Array.from({ length: 101 }, (_, lvl) => {
+      const capacity = 15 + lvl * 5;
+      const cost = lvl === 0 ? 0 : Math.round(180 * Math.pow(lvl, 1.7) + lvl * 60);
+      const reqLevel = Math.min(50, Math.floor(1 + lvl * 0.35));
+      return {
+        level: lvl,
+        cost,
+        capacity,
+        reqLevel,
+        label: lvl === 0 ? `Starter Tackle Box (${capacity} Slots)` : `Lvl ${lvl} Tackle Box (${capacity} Slots, +5)`,
+      };
+    }),
   },
 
   nauticalAstrolabe: {

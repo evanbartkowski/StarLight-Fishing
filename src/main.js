@@ -257,14 +257,14 @@ function handlePointerDown(e) {
           save.data.coins += gift.value;
           save.save();
           soundManager.playCoin();
-          uiManager.showToast(`🐱 The ship's cat gifted you: ${gift.icon} ${gift.name} (+${gift.value} coins)!`);
+          uiManager.showToast(`🐱 Angela the Cat gifted you: ${gift.icon} ${gift.name} (+${gift.value} coins)!`);
           return;
         }
       }
       oceanWorld.shipsCat.onClick(soundManager);
       if (questSystem) questSystem.dispatch({ type: 'pet_companion', pet: 'cat' });
       particles.addFloatingText('Purr... ♪', oceanWorld.boat.x - 20, oceanWorld.boat.y - 30, '#f59e0b', 16);
-      uiManager.showToast("🐱 The ship's cat purrs cozily as you stroke its warm fur.");
+      uiManager.showToast("🐱 Angela the Cat purrs cozily as you stroke her warm fur.");
       return;
     }
 
@@ -274,7 +274,7 @@ function handlePointerDown(e) {
       if (questSystem) questSystem.dispatch({ type: 'pet_companion', pet: 'pelican' });
       soundManager.playPelicanChirp();
       particles.addFloatingText('Chirp! 🦤', oceanWorld.boat.x + 50, oceanWorld.boat.y - 30, '#38bdf8', 16);
-      uiManager.showToast(`🦤 Fed the perching pelican! Trust: ${oceanWorld.pelican.trust}%`);
+      uiManager.showToast(`🦤 Fed Evan the Bird! Trust: ${oceanWorld.pelican.trust}%`);
       return;
     }
 
@@ -301,10 +301,28 @@ function handlePointerMove(e) {
   }
 
   if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
-    // Dynamically update fisherman orientation (left or right side of boat)
+    // Companion hover detection for floating name badges
+    const vessel = save.getUpgradeLevel('boatHull') || 1;
+    const dy = (mousePos.y + cameraY) - oceanWorld.boat.y;
     const dx = mousePos.x - oceanWorld.boat.x;
+    const boatAngle = oceanWorld.boat.angle || 0;
+    const cos = Math.cos(-boatAngle);
+    const sin = Math.sin(-boatAngle);
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
+
+    if (save.hasPet('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
+      oceanWorld.hoveredCompanion = 'angela';
+    } else if (save.hasPet('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
+      oceanWorld.hoveredCompanion = 'evan';
+    } else {
+      oceanWorld.hoveredCompanion = null;
+    }
+
+    // Dynamically update fisherman orientation (left or right side of boat)
     oceanWorld.setAimDirection(dx < 0 ? -1 : 1);
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
+    oceanWorld.hoveredCompanion = null;
     hook.setTargetX(mousePos.x);
   }
 }
@@ -525,13 +543,21 @@ const update = (dt) => {
       }
 
       // Record items to journal, stats, achievements, and persistent inventory!
+      let ranOutOfStorage = false;
       hook.caughtItems.forEach((item) => {
         if (!item._recordedInInventory) {
           save.recordCatchItem(item);
           item.inventoryRef = save.addItemToInventory(item);
+          if (!item.inventoryRef) {
+            ranOutOfStorage = true;
+          }
           item._recordedInInventory = true;
         }
       });
+
+      if (ranOutOfStorage) {
+        uiManager.showToast('⚠️ You ran out of storage and need to sell items!');
+      }
 
       if (hook.caughtItems.length >= hook.capacity) {
         save.recordFullHaul();
@@ -560,26 +586,26 @@ const update = (dt) => {
             uiManager.openCratesModal(unboxedCrates, hook, () => {
               startDive();
             });
-          } else if (!save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
+          } else if (!ranOutOfStorage && !save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
             uiManager.showToast(`🎒 Stored ${hook.caughtItems.length} catches directly in your inventory!`);
             startDive();
           } else {
             uiManager.openCatchSummary(hook, () => {
               startDive();
-            });
+            }, ranOutOfStorage);
           }
         });
       } else if (unboxedCrates.length > 0) {
         uiManager.openCratesModal(unboxedCrates, hook, () => {
           startDive();
         });
-      } else if (!save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
+      } else if (!ranOutOfStorage && !save.data.settings.alwaysAskOnCatch && hook.caughtItems.length > 0) {
         uiManager.showToast(`🎒 Stored ${hook.caughtItems.length} catches directly in your inventory!`);
         startDive();
       } else {
         uiManager.openCatchSummary(hook, () => {
           startDive();
-        });
+        }, ranOutOfStorage);
       }
     }
 
@@ -708,7 +734,7 @@ const update = (dt) => {
     if (msg.type === 'pelican_retrieve') {
       save.data.coins += msg.value;
       save.save();
-      uiManager.showToast(`🦤 Your pelican dove into the surf and brought you +$${msg.value} in coins!`);
+      uiManager.showToast(`🦤 Evan the Bird dove into the surf and brought you +$${msg.value} in coins!`);
       soundManager.playCoin();
     }
   }

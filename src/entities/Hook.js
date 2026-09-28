@@ -60,8 +60,8 @@ export class Hook {
   applyUpgrades(saveSystem) {
     const getLvl = (key) => (saveSystem?.getUpgradeLevel ? saveSystem.getUpgradeLevel(key) : 0);
 
-    const lineTier = UPGRADE_DEFINITIONS.lineLength?.tiers?.[getLvl('lineLength')] || { depth: 45 };
-    this.maxDepthMeters = lineTier.depth || 45;
+    const lineTier = UPGRADE_DEFINITIONS.lineLength?.tiers?.[getLvl('lineLength')] || { depth: 50 };
+    this.maxDepthMeters = lineTier.depth || 50;
 
     const capTier = UPGRADE_DEFINITIONS.hookCapacity?.tiers?.[getLvl('hookCapacity')] || { capacity: 3 };
     this.capacity = capTier.capacity || 3;

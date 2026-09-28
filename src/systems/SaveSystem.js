@@ -697,7 +697,7 @@ export class SaveSystem {
       crown: item.crown || null,
       isMythic: !!item.isMythic,
       lore: item.lore || item.species?.lore || '',
-      isLocked: false,
+      isLocked: item.isLocked !== undefined ? !!item.isLocked : (item.rarity === 'legendary' || item.rarity === 'mythic' || !!item.isMythic),
       caughtAt: Date.now(),
       era: item.relicType?.era || item.era || null,
       restored: !!item.restored,
@@ -715,13 +715,16 @@ export class SaveSystem {
   }
 
   addItemToInventory(item) {
-    const invItem = item.instanceId ? item : this.createInventoryItem(item);
     if (!Array.isArray(this.data.inventory)) {
       this.data.inventory = [];
     }
     const cap = this.getInventoryCapacity();
     if (this.data.inventory.length >= cap) {
-      invItem.isOverflow = true;
+      return null;
+    }
+    const invItem = item.instanceId ? item : this.createInventoryItem(item);
+    if (invItem.rarity === 'legendary' || invItem.rarity === 'mythic' || invItem.isMythic) {
+      invItem.isLocked = true;
     }
     this.data.inventory.push(invItem);
     this.save();
@@ -765,27 +768,31 @@ export class SaveSystem {
     return { item, gold };
   }
 
-  sellAllFish(multiplier = 1) {
+  sellAllItems(multiplier = 1) {
     const inv = this.getInventory();
-    const fishToSell = inv.filter((item) =>
-      item.type === 'fish' && !item.isLocked && !this.isItemInAquarium(item.instanceId)
+    const itemsToSell = inv.filter((item) =>
+      !item.isLocked && !this.isItemInAquarium(item.instanceId)
     );
 
-    if (fishToSell.length === 0) {
+    if (itemsToSell.length === 0) {
       return { count: 0, totalGold: 0 };
     }
 
     let totalGold = 0;
-    const sellIds = new Set(fishToSell.map((f) => f.instanceId));
+    const sellIds = new Set(itemsToSell.map((f) => f.instanceId));
 
-    fishToSell.forEach((f) => {
+    itemsToSell.forEach((f) => {
       totalGold += Math.max(1, Math.round(f.value * multiplier));
     });
 
     this.data.inventory = inv.filter((i) => !sellIds.has(i.instanceId));
     this.addCoins(totalGold);
     this.save();
-    return { count: fishToSell.length, totalGold };
+    return { count: itemsToSell.length, totalGold };
+  }
+
+  sellAllFish(multiplier = 1) {
+    return this.sellAllItems(multiplier);
   }
 
   // --- Aquarium Management ---

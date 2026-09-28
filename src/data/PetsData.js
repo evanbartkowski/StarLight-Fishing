@@ -4,30 +4,33 @@
 export const PET_DEFINITIONS = {
   cat: {
     id: 'cat',
-    name: "Barnaby the Ship's Cat",
+    name: 'Angela the Cat',
     species: 'Calico Shorthair',
     icon: '🐱',
+    reqLevel: 4,
     perk: 'Purrs when stroked on deck. At Dawn every morning, brings gifts of sea shells, glass, or coins.',
-    lore: 'A quiet, curious calico that loves the salty ocean air and fresh fish. Stows away aboard boats that bring in bountiful catches.',
-    unlockHint: 'Has a chance to climb aboard as you catch fish and haul bountiful catches.',
+    lore: 'A loving, quiet calico that enjoys ocean breezes and gentle pats. She climbs aboard seasoned captains boats at Angler Level 4+.',
+    unlockHint: 'Has a random chance to climb aboard as you level up and explore deeper seas (Requires Level 4).',
   },
   pelican: {
     id: 'pelican',
-    name: 'Captain Pete the Pelican',
-    species: 'Brown Coastal Pelican',
+    name: 'Evan the Bird',
+    species: 'Coastal Seafarer Pelican',
     icon: '🦤',
+    reqLevel: 7,
     perk: 'Perches on the bowsprit spar. Feed him fish to raise trust; occasionally dives into the surf for sunken gold.',
-    lore: 'A wild, seafaring pelican with an eye for shiny things. He adopts lucky fishing vessels as his personal coastal sanctuary.',
-    unlockHint: 'Has a chance to swoop down and claim your bowsprit as you explore coastal waters.',
+    lore: 'A loyal, wise coastal pelican who watches over the vessel bowsprit. Befriends skilled mariners at Angler Level 7+.',
+    unlockHint: 'Has a random chance to swoop down and join your crew as you reach Angler Level 7+.',
   },
   dolphin: {
     id: 'dolphin',
     name: 'Echo the Bottlenose Dolphin',
     species: 'Bottlenose Dolphin',
     icon: '🐬',
+    reqLevel: 11,
     perk: 'Leaps and breaches through ocean waves during clear weather, bringing good luck and serenity.',
     lore: 'A spirited dolphin that loves accompanying friendly fishing boats, riding the bow waves across the open sea.',
-    unlockHint: 'Has a chance to befriend your vessel after long voyages across the Seven Seas.',
+    unlockHint: 'Has a chance to befriend your vessel after long voyages across the Seven Seas (Requires Level 11).',
   },
 };
 
@@ -38,23 +41,27 @@ export const PET_DEFINITIONS = {
 export function checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager) {
   if (!save) return null;
 
-  const unowned = Object.keys(PET_DEFINITIONS).filter((k) => !save.hasPet(k));
-  if (unowned.length === 0) return null; // All companions already unlocked
+  const playerLvl = save.data?.level || 1;
+  const unowned = Object.keys(PET_DEFINITIONS).filter((k) => {
+    if (save.hasPet(k)) return false;
+    const pet = PET_DEFINITIONS[k];
+    return playerLvl >= (pet.reqLevel || 1);
+  });
+  if (unowned.length === 0) return null; // No companions currently eligible or all owned
 
   const totalDives = save.data?.stats?.totalCasts || 0;
   const totalFish = save.data?.stats?.totalFishCaught || 0;
 
-  // Escalating random chance:
-  // Starts at 8%, grows with dives and total fish caught so playing a lot ensures encounters
+  // Rare, rewarding random chance later on as you level up
   const pityCount = save.data.petPityDives || 0;
-  const baseChance = 0.08;
-  const activityBoost = Math.min(0.20, (totalDives * 0.008) + (totalFish * 0.004));
-  const pityBoost = pityCount * 0.025; // +2.5% per dive without pet
+  const baseChance = 0.05;
+  const activityBoost = Math.min(0.15, (totalDives * 0.005) + (totalFish * 0.002));
+  const pityBoost = pityCount * 0.015;
 
-  const totalChance = Math.min(0.45, baseChance + activityBoost + pityBoost);
+  const totalChance = Math.min(0.35, baseChance + activityBoost + pityBoost);
 
   if (Math.random() < totalChance) {
-    // Randomly pick one of the remaining unowned pets
+    // Randomly pick one of the eligible unowned pets
     const chosenId = unowned[Math.floor(Math.random() * unowned.length)];
     const pet = PET_DEFINITIONS[chosenId];
 

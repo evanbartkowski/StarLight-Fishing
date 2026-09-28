@@ -379,6 +379,126 @@ export class Hazard {
           ctx.bezierCurveTo(i + wave, 14, i - wave, 28, i + wave * 0.5, 42);
           ctx.stroke();
         }
+      } else if (this.type === 'sunken_galleon_hull') {
+        // Colossal Sunken Galleon Hull
+        ctx.fillStyle = '#3e2723';
+        ctx.beginPath();
+        ctx.moveTo(-38, -14);
+        ctx.lineTo(38, -14);
+        ctx.quadraticCurveTo(42, 10, 30, 24);
+        ctx.lineTo(-30, 24);
+        ctx.quadraticCurveTo(-42, 10, -38, -14);
+        ctx.closePath();
+        ctx.fill();
+
+        // Planks & Ribs
+        ctx.strokeStyle = '#5d4037';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Broken mast
+        ctx.fillStyle = '#4e342e';
+        ctx.fillRect(-6, -34, 12, 20);
+
+        // Barnacles
+        ctx.fillStyle = '#d7ccc8';
+        for (let b = -26; b <= 26; b += 12) {
+          ctx.beginPath();
+          ctx.arc(b, 12 + (b % 5), 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (this.type === 'megalodon_ribcage') {
+        // Ancient Megalodon Fossil Ribcage
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        for (let r = -24; r <= 24; r += 12) {
+          ctx.beginPath();
+          ctx.arc(r, -4, 22, 0.4, Math.PI - 0.4);
+          ctx.stroke();
+        }
+        // Spine
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(-34, -6, 68, 8);
+      } else if (this.type === 'deep_sea_minefield') {
+        // Titan Deep Sea Moored Mine
+        ctx.fillStyle = '#212121';
+        ctx.beginPath();
+        ctx.arc(0, 0, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#424242';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Contact Spikes
+        ctx.fillStyle = '#616161';
+        for (let a = 0; a < 8; a++) {
+          const ang = (a * Math.PI) / 4;
+          const sx = Math.cos(ang) * 28;
+          const sy = Math.sin(ang) * 28;
+          const tx = Math.cos(ang) * 38;
+          const ty = Math.sin(ang) * 38;
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(tx, ty);
+          ctx.lineWidth = 4;
+          ctx.stroke();
+        }
+
+        // Blinking Red LED
+        const ledBlink = Math.sin(this.timer * 6) > 0;
+        ctx.fillStyle = ledBlink ? '#ef4444' : '#7f1d1d';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = ledBlink ? 12 : 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      } else if (this.type === 'caldera_lava_pillar') {
+        // Volcanic Basalt Column
+        ctx.fillStyle = '#261c14';
+        ctx.beginPath();
+        ctx.moveTo(-22, -36);
+        ctx.lineTo(22, -36);
+        ctx.lineTo(26, 36);
+        ctx.lineTo(-26, 36);
+        ctx.closePath();
+        ctx.fill();
+
+        // Magma fissures
+        ctx.strokeStyle = '#ff5722';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#ff5722';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(-10, -28);
+        ctx.lineTo(4, -8);
+        ctx.lineTo(-8, 14);
+        ctx.lineTo(12, 30);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      } else if (this.type === 'eldritch_monolith') {
+        // Abyssal Chrono Monolith
+        ctx.fillStyle = '#1e1135';
+        ctx.beginPath();
+        ctx.moveTo(0, -42);
+        ctx.lineTo(20, -18);
+        ctx.lineTo(16, 38);
+        ctx.lineTo(-16, 38);
+        ctx.lineTo(-20, -18);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cosmic runes
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#c084fc';
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 2, 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
       } else {
         // Driftwood Log
         ctx.fillStyle = '#78350f';

@@ -1044,7 +1044,7 @@ export class UIManager {
     });
   }
 
-  openCatchSummary(hook, onContinue) {
+  openCatchSummary(hook, onContinue, storageOverflow = false) {
     this.activeModal = 'catchSummary';
     this._onCatchSummaryContinue = onContinue;
     soundManager.playCoin();
@@ -1056,6 +1056,7 @@ export class UIManager {
     let listHtml = '<div class="catch-summary-list">';
     const hasUnrestoredRelic = hook.caughtItems.some(i => i.isRelic && !i.restored);
     const soldIds = new Set();
+    const isStorageFull = storageOverflow || this.saveSystem.isInventoryFull();
 
     if (hook.caughtItems.length === 0) {
       listHtml += `
@@ -1155,6 +1156,11 @@ export class UIManager {
 
     const modalBody = `
       <div class="summary-container">
+        ${isStorageFull ? `
+          <div style="background: rgba(239, 68, 68, 0.22); border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; text-align: center; color: #fecaca; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+            ⚠️ You ran out of storage and need to sell items!
+          </div>
+        ` : ''}
         <div class="summary-header-stats">
           <div class="stat-box">
             <span class="stat-label">Max Depth</span>
@@ -3247,8 +3253,8 @@ export class UIManager {
     const tankCount = inv.filter(i => save.isItemInAquarium(i.instanceId)).length;
     const lockedCount = inv.filter(i => i.isLocked).length;
 
-    const sellableFish = inv.filter(i => i.type === 'fish' && !i.isLocked && !save.isItemInAquarium(i.instanceId));
-    const totalSellableValue = sellableFish.reduce((acc, f) => acc + Math.max(1, Math.round(f.value * sellMultiplier)), 0);
+    const sellableItems = inv.filter(i => !i.isLocked && !save.isItemInAquarium(i.instanceId));
+    const totalSellableValue = sellableItems.reduce((acc, f) => acc + Math.max(1, Math.round(f.value * sellMultiplier)), 0);
 
     let filteredItems = inv;
     if (filter === 'fish') {
@@ -3385,8 +3391,8 @@ export class UIManager {
             <button class="tab-btn ${filter === 'locked' ? 'active' : ''}" data-filter="locked">🔒 Locked (${lockedCount})</button>
           </div>
           <div class="inv-top-actions">
-            <button class="btn ${sellableFish.length > 0 ? 'btn-buy' : 'btn-disabled'} btn-bulk-sell" id="btn-inv-bulk-sell" ${sellableFish.length > 0 ? '' : 'disabled'}>
-              🪙 Sell All Fish (${sellableFish.length} • +$${totalSellableValue.toLocaleString()})
+            <button class="btn ${sellableItems.length > 0 ? 'btn-buy' : 'btn-disabled'} btn-bulk-sell" id="btn-inv-bulk-sell" ${sellableItems.length > 0 ? '' : 'disabled'}>
+              🪙 Sell All (${sellableItems.length} • +$${totalSellableValue.toLocaleString()})
             </button>
             ${hasAq ? `
               <button class="btn btn-secondary" id="btn-inv-visit-aquarium">🐠 Visit Aquarium</button>
@@ -3407,7 +3413,7 @@ export class UIManager {
     });
 
     document.getElementById('btn-inv-bulk-sell')?.addEventListener('click', () => {
-      this.openBulkSellConfirm(sellableFish, totalSellableValue, sellMultiplier);
+      this.openBulkSellConfirm(sellableItems, totalSellableValue, sellMultiplier, filter);
     });
 
     document.getElementById('btn-inv-visit-aquarium')?.addEventListener('click', () => {
@@ -3467,24 +3473,24 @@ export class UIManager {
     });
   }
 
-  openBulkSellConfirm(sellableFish, totalPayout, sellMultiplier) {
+  openBulkSellConfirm(sellableItems, totalPayout, sellMultiplier, returnFilter = 'all') {
     this.activeModal = 'bulkSellConfirm';
     const modalBody = `
       <div class="confirm-bulk-sell-modal" style="text-align: center; padding: 20px 10px;">
         <div style="font-size: 3.5rem; margin-bottom: 12px;">🪙</div>
-        <h3 style="font-size: 1.5rem; color: #f8fafc; margin-bottom: 10px;">Confirm Bulk Fish Sale</h3>
+        <h3 style="font-size: 1.5rem; color: #f8fafc; margin-bottom: 10px;">Confirm Bulk Sale</h3>
         <p style="font-size: 1.05rem; color: #cbd5e1; max-width: 480px; margin: 0 auto 16px;">
-          Sell <strong>${sellableFish.length} fish</strong> from your tackle box for a total of <strong style="color: #facc15; font-size: 1.25rem;">+$${totalPayout.toLocaleString()}</strong>?
+          Sell <strong>${sellableItems.length} items</strong> from your inventory for a total of <strong style="color: #facc15; font-size: 1.25rem;">+$${totalPayout.toLocaleString()}</strong>?
         </p>
         <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 12px; max-width: 480px; margin: 0 auto 20px; font-size: 0.85rem; color: #94a3b8; text-align: left;">
           🛡️ <strong>Safety Protection Active:</strong>
           <ul style="margin: 6px 0 0 16px; padding: 0;">
-            <li>Favorited and locked fish (🔒) will <strong>NOT</strong> be sold.</li>
-            <li>Fish currently swimming in your aquarium (🐠) are protected and will <strong>NOT</strong> be sold.</li>
+            <li>Favorited and locked items (🔒) will <strong>NOT</strong> be sold.</li>
+            <li>Specimens currently swimming in your aquarium (🐠) are protected and will <strong>NOT</strong> be sold.</li>
           </ul>
         </div>
         <div style="display: flex; justify-content: center; gap: 12px;">
-          <button class="btn btn-buy btn-lg" id="btn-confirm-bulk-sale">🪙 Sell ${sellableFish.length} Fish (+$${totalPayout.toLocaleString()})</button>
+          <button class="btn btn-buy btn-lg" id="btn-confirm-bulk-sale">🪙 Sell All (+$${totalPayout.toLocaleString()})</button>
           <button class="btn btn-secondary btn-lg" id="btn-cancel-bulk-sale">Cancel & Return</button>
         </div>
       </div>
@@ -3493,14 +3499,14 @@ export class UIManager {
     this.openModal('Confirm Bulk Sale', modalBody);
 
     document.getElementById('btn-confirm-bulk-sale')?.addEventListener('click', () => {
-      const result = this.saveSystem.sellAllFish(sellMultiplier);
+      const result = this.saveSystem.sellAllItems(sellMultiplier);
       soundManager.playCoin();
-      this.showToast(`🪙 Sold ${result.count} fish for +$${result.totalGold.toLocaleString()}!`);
-      this.openInventory('fish');
+      this.showToast(`🪙 Sold ${result.count} items for +$${result.totalGold.toLocaleString()}!`);
+      this.openInventory(returnFilter);
     });
 
     document.getElementById('btn-cancel-bulk-sale')?.addEventListener('click', () => {
-      this.openInventory('fish');
+      this.openInventory(returnFilter);
     });
   }
 

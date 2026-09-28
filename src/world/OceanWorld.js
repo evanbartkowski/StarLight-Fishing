@@ -184,11 +184,18 @@ export class OceanWorld {
         count = Math.random() < 0.85 ? 1 : 0;
       } else {
         if (species.rarity === 'common') {
-          // Healthy shoals across all depths (2-3 fish)
-          count = Math.random() < 0.5 ? 2 : 3;
+          // If in top shallows (minDepth < 25m), spawn slightly fewer fish to prevent overcrowding at the surface
+          if (species.minDepth < 25) {
+            count = Math.random() < 0.65 ? 1 : 2;
+          } else {
+            count = Math.random() < 0.5 ? 2 : 3;
+          }
         } else if (species.rarity === 'uncommon') {
-          // 1-2 fish
-          count = Math.random() < 0.75 * affinityMult ? 2 : 1;
+          if (species.minDepth < 25) {
+            count = 1;
+          } else {
+            count = Math.random() < 0.75 * affinityMult ? 2 : 1;
+          }
         } else if (species.rarity === 'rare') {
           // Reliable encounters for rare deep fish
           count = Math.random() < Math.min(0.95, 0.65 * rareBoost * affinityMult) ? 1 : 0;
@@ -225,8 +232,7 @@ export class OceanWorld {
       }
     });
 
-    // Populate Treasures and Prehistoric Fossils
-    // Populate Treasures, Ranked Loot Crates, and Prehistoric Fossils
+    // Populate Treasures, Ranked Loot Crates, and Prehistoric Fossils (made slightly less common)
     TREASURE_ITEMS.forEach((item) => {
       if (item.minDepth > activeMaxDepth) return;
 
@@ -236,21 +242,21 @@ export class OceanWorld {
 
       let count = 0;
       if (item.category === 'fossil') {
-        count = Math.random() < 0.18 * fossilBonus ? 1 : 0;
+        count = Math.random() < 0.12 * fossilBonus ? 1 : 0;
       } else if (item.category === 'crate') {
         // Mystery Loot Crate spawning chance based on rank (rarer encounter)
-        if (item.crateRank === 1) count = Math.random() < 0.20 ? 1 : 0;
-        else if (item.crateRank === 2) count = Math.random() < 0.15 ? 1 : 0;
-        else if (item.crateRank === 3) count = Math.random() < 0.10 ? 1 : 0;
-        else if (item.crateRank === 4) count = Math.random() < 0.07 ? 1 : 0;
-        else count = Math.random() < 0.04 ? 1 : 0;
+        if (item.crateRank === 1) count = Math.random() < 0.14 ? 1 : 0;
+        else if (item.crateRank === 2) count = Math.random() < 0.10 ? 1 : 0;
+        else if (item.crateRank === 3) count = Math.random() < 0.07 ? 1 : 0;
+        else if (item.crateRank === 4) count = Math.random() < 0.04 ? 1 : 0;
+        else count = Math.random() < 0.025 ? 1 : 0;
       } else {
-        // Sunken relics and treasures are rare rewards
-        if (item.rarity === 'common') count = Math.random() < 0.32 ? 1 : 0;
-        else if (item.rarity === 'uncommon') count = Math.random() < 0.22 ? 1 : 0;
-        else if (item.rarity === 'rare') count = Math.random() < 0.14 ? 1 : 0;
-        else if (item.rarity === 'epic') count = Math.random() < 0.08 ? 1 : 0;
-        else if (item.rarity === 'legendary') count = Math.random() < 0.04 ? 1 : 0;
+        // Sunken relics and treasures made slightly less common
+        if (item.rarity === 'common') count = Math.random() < 0.22 ? 1 : 0;
+        else if (item.rarity === 'uncommon') count = Math.random() < 0.15 ? 1 : 0;
+        else if (item.rarity === 'rare') count = Math.random() < 0.09 ? 1 : 0;
+        else if (item.rarity === 'epic') count = Math.random() < 0.05 ? 1 : 0;
+        else if (item.rarity === 'legendary') count = Math.random() < 0.025 ? 1 : 0;
       }
 
       for (let i = 0; i < count; i++) {
@@ -260,7 +266,7 @@ export class OceanWorld {
       }
     });
 
-    // Populate Hazards (Standard + Colossal Bad Obstacles)
+    // Populate Hazards (Standard + Colossal Bad Obstacles - spawn more big obstacles)
     HAZARD_TYPES.forEach((haz) => {
       if (haz.minDepth > activeMaxDepth) return;
 
@@ -269,7 +275,7 @@ export class OceanWorld {
       if (minSpawnY >= maxSpawnY) return;
 
       const count = haz.isColossal
-        ? (Math.random() < 0.75 ? 1 : 0) // 1 imposing colossal obstacle
+        ? (1 + (Math.random() < 0.65 ? 1 : 0)) // 1 to 2 imposing colossal obstacles
         : (1 + Math.floor(Math.random() * 2)); // 1-2 standard hazards
 
       for (let i = 0; i < count; i++) {
@@ -748,8 +754,60 @@ export class OceanWorld {
     }
 
     // Companions (rendered relative to boat transform - only if unlocked)
-    if (this.shipsCat && this.saveSystem?.hasPet('cat')) this.shipsCat.render(ctx, vessel);
-    if (this.pelican && this.saveSystem?.hasPet('pelican')) this.pelican.render(ctx, vessel);
+    if (this.shipsCat && this.saveSystem?.hasPet('cat')) {
+      this.shipsCat.render(ctx, vessel);
+      if (this.hoveredCompanion === 'angela') {
+        const catPos = this.shipsCat.getDeckPosition(vessel);
+        ctx.save();
+        ctx.translate(catPos.x, catPos.y - 22);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.5;
+        const text = '🐱 Angela the Cat';
+        ctx.font = 'bold 11px Outfit, sans-serif';
+        const tw = ctx.measureText(text).width;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+        } else {
+          ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#fef3c7';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      }
+    }
+    if (this.pelican && this.saveSystem?.hasPet('pelican')) {
+      this.pelican.render(ctx, vessel);
+      if (this.hoveredCompanion === 'evan') {
+        const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
+        ctx.save();
+        ctx.translate(birdPos.x, birdPos.y - 24);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        const text = '🦤 Evan the Bird';
+        ctx.font = 'bold 11px Outfit, sans-serif';
+        const tw = ctx.measureText(text).width;
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+        } else {
+          ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+        }
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#e0f2fe';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      }
+    }
 
     // 2. Fisherman (flips left or right based on aimDirection)
     ctx.save();

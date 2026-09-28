@@ -34,10 +34,10 @@ export class Fish {
     const shinyThreshold = options.shinyChance || 0.04;
     this.isShiny = shinyRoll < shinyThreshold;
 
-    // Bigger fish sell for exponentially more + crown bonus
+    // Bigger fish sell for exponentially more + crown bonus (boosted +35% for rewarding fishing)
     const sizeMultiplier = Math.pow(sizeRatio, 1.85);
-    let val = Math.round(species.baseValue * sizeMultiplier * crownMult * (this.isShiny ? 3.5 : 1.0));
-    this.value = Math.max(1, val);
+    let val = Math.round(species.baseValue * 1.35 * sizeMultiplier * crownMult * (this.isShiny ? 3.5 : 1.0));
+    this.value = Math.max(2, val);
 
     // Visual scale based on species base scale + individual fish size
     const baseScale = species.scaleFactor || 1.0;

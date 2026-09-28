@@ -4,7 +4,7 @@
 export const NPC_DEFINITIONS = [
   {
     id: 'drifting_merchant',
-    name: 'Barnaby the Drifting Merchant',
+    name: 'Tony the Drifting Merchant',
     title: 'Wandering Maritime Trader',
     avatar: '🧔‍♂️⛵',
     themeColor: '#f59e0b',
@@ -42,18 +42,18 @@ export const NPC_DEFINITIONS = [
       {
         id: 'sell_trinkets',
         label: 'Trade Beachcomber Drift Trinkets (+$150)',
-        desc: 'Barnaby happily buys extra drift shells and scrap driftwood from your deck.',
+        desc: 'Tony happily buys extra drift shells and scrap driftwood from your deck.',
         cost: 0,
         action: (saveSystem) => {
           saveSystem.addCoins(150);
-          return { success: true, message: '🪙 Traded beachcomber scraps to Barnaby for +$150 coins!' };
+          return { success: true, message: '🪙 Traded beachcomber scraps to Tony for +$150 coins!' };
         },
       },
     ],
   },
   {
     id: 'blind_siren',
-    name: 'Lyra the Stargazer Siren',
+    name: 'Issara the Stargazer Siren',
     title: 'Whispering Oracle of the Tide',
     avatar: '🧜‍♀️✨',
     themeColor: '#38bdf8',
@@ -87,7 +87,7 @@ export const NPC_DEFINITIONS = [
         action: (saveSystem) => {
           if (saveSystem.spendCoins(100)) {
             saveSystem.addXp(250);
-            return { success: true, message: '⭐ Lyra smiled upon your tribute: Received +250 Angler XP!' };
+            return { success: true, message: '⭐ Issara smiled upon your tribute: Received +250 Angler XP!' };
           }
           return { success: false, message: 'You lack $100 coins for the tribute.' };
         },
@@ -96,7 +96,7 @@ export const NPC_DEFINITIONS = [
   },
   {
     id: 'ghost_smuggler',
-    name: 'Captain Vane the Ghost Smuggler',
+    name: 'Curtis the Ghost Smuggler',
     title: 'Spectral Corsair Phantom',
     avatar: '🏴‍☠️👻',
     themeColor: '#a855f7',
@@ -110,7 +110,7 @@ export const NPC_DEFINITIONS = [
         action: (saveSystem) => {
           if (saveSystem.spendCoins(75)) {
             saveSystem.addXp(90);
-            return { success: true, message: '⚓ Paid the $75 toll. Captain Vane tipped his spectral tricorn hat (+90 XP).' };
+            return { success: true, message: '⚓ Paid the $75 toll. Curtis tipped his spectral tricorn hat (+90 XP).' };
           }
           return { success: false, message: 'You cannot afford the $75 toll!' };
         },
@@ -126,7 +126,7 @@ export const NPC_DEFINITIONS = [
             saveSystem.addCoins(450);
             saveSystem.addXp(180);
             saveSystem.recordPerfectReel();
-            return { success: true, message: "🏆 Victory! Ye out-reeled Captain Vane! Won Corsair's Cursed Cache (+$450, +180 XP)!" };
+            return { success: true, message: "🏆 Victory! Ye out-reeled Curtis! Won Corsair's Cursed Cache (+$450, +180 XP)!" };
           } else {
             saveSystem.breakPerfectReelStreak();
             return { success: false, message: "💀 The phantom's cutlass severed your line lead! Reel struggle lost." };
