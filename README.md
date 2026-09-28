@@ -1,143 +1,134 @@
-# Starlight Fishing 🎣✨
+# Starlight Fishing
 
-A relaxing, atmospheric high-fantasy ocean angling and exploration game built with **HTML5 Canvas**, **Web Audio API**, and **Vite**.
+An atmospheric browser fishing game about exploring seven fantasy seas, collecting unusual catches, and building a personal aquarium. Built with JavaScript, HTML5 Canvas, Web Audio, and Vite.
 
-Embark on a voyage across seven fantastical ocean realms—from sunlit coastal shoals to starlit nebula waters, ancient gilded ruins, floating sky-seas, smoldering caldera trenches, and the cosmic chronovoid.
+## Explore, collect, and upgrade
 
----
+- Discover fish from coastal shoals to the Eldritch Chrono Void, including shiny catches, crown records, legendary creatures, and mythics.
+- Earn coins and Angler XP, upgrade your tackle and boat, and meet the requirements to unlock new seas.
+- Dodge underwater hazards, including giant wrecks, fossil ribcages, mines, volcanic columns, and monoliths with varied sizes.
+- Recover treasure, open loot crates, restore relics, assemble fossils, and track discoveries in the journal.
+- Complete quests and achievements, encounter wandering NPCs, and unlock boat companions and seabed traps.
+- Fish through changing weather and time of day with ambient ocean audio.
 
-## 🌊 The Seven Fantasy Seas
+Fresh games begin at **level 0**. The starting line reaches **50m**; purchased line upgrades reach **100, 160, 230, 310, 400, 500, 600, 700, 800, 900, and 1,000m**. Line reach is separate from habitat depth: the current sea habitats extend to 660m.
 
-Each sea features unique depth ranges, gate requirements, distinct ambient audio soundscapes, and native fantasy species:
+## The seven seas
 
-| Realm | Subtitle | Depth Range | Landmark & Atmosphere | Audio Profile |
-|---|---|---|---|---|
-| **Sea 1: Sunlit Shoals** | *The Golden Coast* | 0m – 50m | Breezy azure shallows, playful gulls, sunny caustics | Calm acoustic nylon guitar & kalimba tones |
-| **Sea 2: Bioluminescent Trench** | *The Neon Abyss* | 50m – 120m | Deep violet depths, neon plankton motes, glowing anemones | Resonant deep synth pads & crystalline chime arpeggios |
-| **Sea 3: Astral Shimmerfall** | *The Celestial Depths* | 120m – 220m | Starlit crystalline currents under cosmic nebulae | Glass-harp resonance & ambient piano chords |
-| **Sea 4: Sunken Atlantis** | *The Gilded Sunken Ruins* | 220m – 340m | Ancient brass gearworks, emerald currents, marble pillars | Soothing orchestral harp & flute harmonies |
-| **Sea 5: Whispering Aether Sea** | *The Cloud-Reef Stratosphere* | 340m – 440m | Cloud-shrouded floating sky-islands, lilac winds | Wind chimes & celestial choral pads |
-| **Sea 6: Magma Caldera Trench** | *Smoldering Abyssal Depths* | 440m – 530m | Volcanic hydrothermal vents, obsidian spires, rising embers | Warm sub-bass drone with gentle handpan drums |
-| **Sea 7: Eldritch Chrono Void** | *The Edge of Horizon* | 530m – 660m | Iridescent auroras, cosmic space-whale silhouettes | Ethereal space drones & theremin harmonics |
+| Sea | Habitat depth |
+| --- | --- |
+| Sunlit Shoals | 0?45m |
+| Bioluminescent Trench | 45?105m |
+| Astral Shimmerfall | 105?180m |
+| Sunken Atlantis | 180?280m |
+| Whispering Aether Sea | 280?410m |
+| Magma Caldera Trench | 410?530m |
+| Eldritch Chrono Void | 530?660m |
 
----
+Use the nautical chart to inspect sea gates and travel. The chart requires Angler Level 4 and the Nautical Astrolabe upgrade. Depth alone does not unlock a sea.
 
-## 🎮 How to Play & Controls
+## Playing
 
-### 1. Dual-Sided Aiming & Casting
-- **Aim**: Move your cursor or touch to either side of the boat to aim left or right. The boat and angler turn to face your direction.
-- **Cast**: Click/touch and drag away from the boat to pull back tension, then release to launch the hook arcing through the air.
+1. Continue as a guest or select a local Captain account.
+2. Press and hold on the water to aim, then release to cast. Mouse and touch input are supported.
+3. Move the pointer or drag to steer the hook toward catches and away from hazards.
+4. Press **Space** during descent to retrieve early. The hook reels automatically; continue steering on the way up.
+5. Manage catches in your inventory, sell them for upgrades, or display favorites in your aquarium.
 
-### 2. Subsea Descent
-- **Steer**: Use the **Mouse**, **A / D keys**, or **Left / Right Arrow keys** to steer your hook left and right.
-- **Avoid Hazards**: Dodge spiky sea-urchins, shock jellyfish, thermal vents, and phantom hazards.
-- **Line Armor**: Hull and line armor shields deflect hazardous hits. Unshielded impacts during retrieval can cause hooked fish to slip off!
-- **Manual Retrieve**: Press **Spacebar** or click during descent to stop diving early and start reeling.
+## Personal aquarium
 
-### 3. Reeling & Rhythm Tension
-- Reeling snagged fish upward earns gold and Angler XP.
-- When battling **Epic**, **Legendary**, or **Mythic** fish, the relaxed rhythm meter activates:
-  - 🌊 **Lull Phase**: Calm water window with retrieval speed boost.
-  - 〰️ **Swell Phase**: Water resistance slows retrieval gently without punishing line snaps.
-- Avoid hazards on the way up to maintain your **"Patience of the Tide"** perfect reel streak!
+Purchase the Personal Marine Aquarium in the tackle shop, then assign catches from your inventory. Upgrades increase capacity from 4 to 45 slots. Display fish and relics, choose a tank theme, tap the glass, and drop food into the water. Fish pursue food and gradually return to a calmer cruising speed once it is gone.
 
-### 4. Depth Density & Special Deep Titans
-- **Gradual Sparsity Decay**: Fish density scales inversely with depth. While shallow waters (0m–50m) are lively and packed with bustling schools of fish, the deep ocean abyss gradually becomes quiet, vast, and sparse.
-- **Special Deep Titans**: Several majestic deep-water species are exempt from the depth sparsity penalty. When diving to extreme depths, anglers will encounter these solitary wonders:
-  - **Cosmic Voidray** *(Sea 7, 600m–660m)*: Celestial monarch trailing iridescent auroral starlight.
-  - **Chrono-Tide Whale** *(Sea 7, 550m–640m)*: Singing infrasonic space leviathan.
-  - **Eldritch Tentacled Maw** *(Sea 7, 575m–655m)*: Undulating tentacles with glowing cosmic eyes.
-  - **Obsidian Spire Shark** *(Sea 6, 465m–530m)*: Glassy razor-scaled volcanic apex hunter.
-  - **Pyroclastic Ray** *(Sea 6, 445m–520m)*: Glider across superheated hydrothermal vents.
-  - **Celestial Seraph-Fish** *(Sea 5, 350m–410m)*: Six-winged sacred stratosphere wonder.
-  - **Atlantis Sun-Core Dory** *(Sea 4, 235m–280m)*: Bearer of the resonant ancient solar crystal.
-  - **Abyssal Star-Weaver & Golden Coelacanth**: Prehistoric celestial mythics.
+Visitor tips add up for every displayed fish:
 
----
+| Fish rarity | Coins per minute, per fish |
+| --- | ---: |
+| Common | 3 |
+| Uncommon | 5 |
+| Rare | 9 |
+| Epic | 18 |
+| Legendary | 32 |
+| Mythic | 52 |
 
-## 🧭 Chart Navigation & Minimap
+Shiny fish earn an extra 10 coins per minute. Relics do not generate tips. The aquarium displays the combined rate and stores up to one hour of tips for the current collection. Adding or removing fish preserves tips already earned; a newly added fish does not earn tips for time before it was displayed. Collect tips from the aquarium panel.
 
-Unlock the **Nautical Chart** (`🧭 Chart` button in the HUD) by meeting the navigation requisites:
-- **Angler Level 4+**
-- Purchase the **"Brass Astrolabe & Nautical Compass"** tackle upgrade in the Tackle Shop ($350)
+## Saves and accounts
 
-### Chart Features:
-- Real-time nautical coordinates and weather currents.
-- Discovery and tracking of known fishing hotspots per sea.
-- Realm gates showing required hull tiers, engine power, line durability, and charter fees.
-- Instant sailing between charted ocean realms.
+Guest progress and Captain accounts are stored in this browser's `localStorage`. Returning guests resume their saved progress. Captain accounts have separate local saves, but they are **not Firebase Authentication accounts or cloud saves**.
 
----
+Progress does not sync across devices or browsers. Localhost, a Firebase domain, and a custom domain each have separate browser storage; clearing site data removes local saves.
 
-## 🧔 Atmospheric NPC Encounters
+## Run locally
 
-While fishing and exploring the surface waters, wandering seafarers and entities may approach (~3.5% chance per completed dive):
+Install Node.js and npm compatible with Vite 6, then:
 
-1. **Barnaby the Drifting Merchant**: Sells enchanted **Star-Bait** (+35% rare catch rate), antique pearl bobbers, or buys beachcomber scraps.
-2. **Lyra the Stargazer Siren**: Bestows **Siren's Grace** (+25% rare catch rate for 3 minutes) or **Starlight Oracle Sight** (reveals subsea fish silhouettes).
-3. **Captain Vane the Ghost Smuggler**: Pay a safe toll or challenge him to a high-stakes reel struggle for his **Cursed Doubloon Cache** (+$450).
-4. **Professor Alden the Cartographer**: Trades survey soundings and fossil bounties for Angler XP and secret hotspot charts.
-
----
-
-## 📦 Mystery Loot Crates
-
-Dredge mysterious treasure crates from seabed trenches across 5 rarity tiers:
-- **Wooden Salvage Crate** (Common)
-- **Ironclad Sea Chest** (Uncommon)
-- **Gilded Sunken Trunk** (Rare)
-- **Abyssal Vault Crate** (Epic)
-- **Celestial Kraken Strongbox** (Legendary)
-
-Loot crates contain randomized rewards including gold bounties, rare pearl bobbers, archaeological relics, ancient fossil bones, or sudden mimic shocks!
-
----
-
-## 📜 Logbook, Field Journal & Museum
-
-- **🏆 Hall of Grand Milestones**:
-  - *Cartographer of the Unknown*: Chart and sail to all 7 fantasy realms.
-  - *Friend of the Deep*: Complete 10 atmospheric NPC interactions.
-  - *Titan Tamer*: Land a legendary specimen from each fantasy sea.
-  - *Patience of the Tide*: Achieve 20 "Perfect" tension reel-ins in a row.
-- **📜 Angler's Field Log**: Catalog 35+ unique fantasy fish species, recording crown records (Giant Gold 👑 & Mini Silver 🥈) and shiny variants.
-- **🏛️ Archaeological Restoration Desk**: Dredge barnacle-encrusted ancient relics and clean them with brush and solvent.
-- **🦴 Prehistoric Fossil Museum**: Assemble complete prehistoric titan skeletons (Megalodon, Dunkleosteus, Plesiosaur).
-- **🫧 Starlight Aquarium**: Visit your personal sanctuary where all discovered fish swim dynamically. Tap the glass and feed them!
-
----
-
-## 📻 Coastal Procedural Radio
-
-Tune into three procedural ambient radio stations without downloading large audio files:
-1. **Station 1: Harbor Breeze** (Acoustic guitar chords & swelling waves)
-2. **Station 2: Rainy Lighthouse** (Soft rain, distant thunder & low foghorn)
-3. **Station 3: Deep Blue Reverie** (Warm sub-aquatic synth pads)
-
----
-
-## 🛠️ Development & Running Locally
-
-### Prerequisites
-- Node.js (v18+)
-- npm
-
-### Installation
-```bash
-git clone https://github.com/evanbartkowski/seven-seas-fishing.git
-cd seven-seas-fishing
-npm install
-```
-
-### Development Server
-```bash
+```sh
+git clone https://github.com/evanbartkowski/StarLight-Fishing.git
+cd StarLight-Fishing
+npm ci
 npm run dev
 ```
-Navigate to `http://localhost:5173/` in your browser.
 
-### Production Build
-```bash
-npm run build
+Open the URL printed by Vite, normally `http://localhost:5173`.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Generate the production site in `dist/` |
+| `npm run preview` | Preview the existing production build locally |
+
+There is currently no automated test script in `package.json`. Build and check affected gameplay flows before publishing.
+
+## Firebase Hosting deployment
+
+`firebase.json` serves **`dist/`** and rewrites routes to `index.html`. The build folder is intentionally ignored by Git. This checkout currently has **no GitHub Actions deployment workflow**, and `.firebaserc` is empty, so no default Firebase project is recorded.
+
+**Pushing to GitHub updates source code; it does not publish this site's Firebase Hosting release.** Build the site and deploy it separately, or configure an automatic deployment workflow.
+
+### Manual deployment
+
+Install and authenticate the Firebase CLI:
+
+```sh
+npm install -g firebase-tools
+firebase login
+firebase projects:list
 ```
-Generates optimized static assets into `/dist`.
 
+Choose the existing project's ID from Firebase, then build and deploy. Replace `YOUR_PROJECT_ID` below with that ID:
+
+```sh
+npm ci
+npm run build
+firebase deploy --only hosting --project YOUR_PROJECT_ID
+```
+
+Always rebuild before deploying; otherwise Firebase uploads the previous contents of `dist/`. Confirm the Hosting URL and release in the deployment output. Optionally run `firebase use --add` to save a default project alias in `.firebaserc`.
+
+### Automatic deployments from GitHub
+
+For this existing Hosting setup, run:
+
+```sh
+firebase init hosting:github --project YOUR_PROJECT_ID
+```
+
+Connect `evanbartkowski/StarLight-Fishing`, configure the build command as `npm ci && npm run build`, and select `main` for live deployments. The setup configures deployment credentials in GitHub secrets and generates workflow files. Review and commit the generated files under `.github/workflows/`.
+
+The live workflow must trigger on pushes to `main`, build the site, and deploy to the `live` channel. A preview-channel deployment does not update the live site. Inspect the repository's **Actions** tab for failed builds, missing secrets, or deployment errors.
+
+See the official [Firebase Hosting GitHub integration guide](https://firebase.google.com/docs/hosting/github-integration) and [live deployment guide](https://firebase.google.com/docs/hosting/test-preview-deploy).
+
+## Code map
+
+| Path | Responsibility |
+| --- | --- |
+| `src/main.js` | Input, game state, and system integration |
+| `src/GameLoop.js` | Fixed-step update and rendering loop |
+| `src/world/OceanWorld.js` | Ocean rendering and entity population |
+| `src/entities/` | Hook, fish, hazards, treasure, and companions |
+| `src/data/` | Species, upgrades, zones, loot, quests, and achievements |
+| `src/systems/` | Saves, local accounts, weather, quests, and other game systems |
+| `src/ui/UIManager.js` | HUD, menus, inventory, and aquarium |
+| `src/audio/` | Sound and music management |
+| `public/` | Static assets copied into the production build |
