@@ -15,7 +15,7 @@ Fresh games begin at **level 0**. Fishing line upgrades reach from **60m to 3,00
 
 ## Seven distinct ecosystems
 
-Every realm has **35 native fish** (245 regular species total), plus special mythic encounters where available. Fish differ in silhouette, markings, movement, size, depth niche, and rarity. Only one migrating species from a neighboring realm can occasionally appear; most catches are exclusive to their home waters.
+Every realm has **38 native fish** (266 native species total), plus special mythic encounters where available. Fish differ in silhouette, markings, movement, size, depth niche, and rarity. Only one migrating species from a neighboring realm can occasionally appear; most catches are exclusive to their home waters.
 
 | Realm | Charter fee | Typical common fish base value | Fish XP multiplier |
 | --- | ---: | ---: | ---: |
@@ -29,7 +29,9 @@ Every realm has **35 native fish** (245 regular species total), plus special myt
 
 Actual sale values also depend on species, size, rarity, shiny/crown status, and gear. Previously unlocked realms remain unlocked.
 
-Each realm adds four signature hazards, six treasures/fossils, a native mystery cache, and two restorable relics. Coral thickets, glowing spores, meteor shards, clockwork ruins, aether cyclones, volcanic chimneys, and temporal fractures give the waters their own visual identity. Later realms have denser hazards and much more valuable fish, treasures, restored relics, and cache rewards.
+Deeper water favors rarer and more valuable fish, with unique deep-water species and occasional leviathans in every realm. Slow jellyfish groups start at 40m, solitary hunters at 250m, and rare giant sea monsters at 900m. Hunters pursue the hook briefly before resting.
+
+Each realm adds four signature static hazards, three marine threats, six treasures/fossils, a native mystery cache, and two restorable relics. Coral thickets, glowing spores, meteor shards, clockwork ruins, aether cyclones, volcanic chimneys, and temporal fractures give the waters their own visual identity. Later realms have denser hazards and much more valuable fish, treasures, restored relics, and cache rewards.
 
 Native species occupy shallow nurseries as well as deep habitats, so arriving in a new realm immediately offers new catches. The journal and nautical chart reflect the expanded rosters and economics. The chart requires Angler Level 4 and the Nautical Astrolabe upgrade; realm gates also require the listed level, vessel, and tackle.
 

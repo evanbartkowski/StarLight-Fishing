@@ -1,3 +1,4 @@
+import { MARINE_THREATS } from './MarineThreats.js';
 import { REALM_HAZARDS, REALM_TREASURES } from './RealmContent.js';
 import { LEGACY_SALVAGE_SPECIES } from './FishData.js';
 import { CRATE_RANKS } from './CrateData.js';
@@ -164,6 +165,7 @@ export const TREASURE_ITEMS = [
 
 // 11 Unique Hazard Obstacles across the 7 Seas
 export const HAZARD_TYPES = [
+  ...MARINE_THREATS,
   ...REALM_HAZARDS,
   // Sea 1 Hazards
   {

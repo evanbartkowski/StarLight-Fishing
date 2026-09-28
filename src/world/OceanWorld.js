@@ -167,7 +167,7 @@ export class OceanWorld {
         const end = Math.min(start + 50, limit);
         const candidates = pool.map(item => ({ item, low: Math.max(start, item.minDepth), high: Math.min(end, item.maxDepth) }))
           .filter(candidate => candidate.high > candidate.low);
-        const weights = candidates.map(({ item, low, high }) => weight(item) * (high - low) / (end - start));
+        const weights = candidates.map(({ item, low, high }) => weight(item, (low + high) / 2) * (high - low) / (end - start));
         const total = weights.reduce((sum, value) => sum + value, 0);
         if (!total) continue;
         const expected = density((start + end) / 2) * (end - start) / 50;
@@ -187,7 +187,8 @@ export class OceanWorld {
     const fishPool = FISH_SPECIES.filter(species => belongsToRealm(species, this.currentSeaId)
       && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
     populateBands(fishPool, depth => (5 - depthProgress(depth)) * 1.15,
-      species => (rarityWeight[species.rarity] || 0.01)
+      (species, depth) => (rarityWeight[species.rarity] || 0.01)
+        * ({ common: 1 / (1 + depth / 350), uncommon: 1, rare: 1 + depth / 450, epic: 1 + depth / 250, legendary: 1 + depth / 180 }[species.rarity] || 1)
         * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, { shinyChance, surfaceY: this.surfaceY })));
@@ -195,7 +196,7 @@ export class OceanWorld {
     // Special deep fish remain solitary and retain their environmental conditions.
     FISH_SPECIES.filter(species => species.isSpecialDeep && belongsToRealm(species, this.currentSeaId)).forEach(species => {
       const end = Math.min(activeMaxDepth, species.maxDepth);
-      if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= 0.85) return;
+      if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= (species.spawnChance ?? 0.85)) return;
       const y = this.surfaceY + (species.minDepth + Math.random() * (end - species.minDepth)) * this.pixelsPerMeter;
       this.entities.fish.push(new Fish(species, 70 + Math.random() * (this.worldWidth - 140), y, { shinyChance, surfaceY: this.surfaceY }));
     });
@@ -219,27 +220,6 @@ export class OceanWorld {
       }
     });
 
-    // Ensure that deep water casting (>= 260m) always features colossal leviathans
-    if (activeMaxDepth >= 260) {
-      const hasLeviathan = this.entities.fish.some((f) => f.species && f.species.isLeviathan);
-      if (!hasLeviathan) {
-        const eligibleLeviathans = LEGENDARY_SPECIES.filter(
-          (m) => m.isLeviathan && belongsToRealm(m, this.currentSeaId) && m.minDepth <= activeMaxDepth
-        );
-        if (eligibleLeviathans.length > 0) {
-          const chosen = eligibleLeviathans[Math.floor(Math.random() * eligibleLeviathans.length)];
-          const minSpawnY = this.surfaceY + chosen.minDepth * this.pixelsPerMeter;
-          const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, chosen.maxDepth) * this.pixelsPerMeter;
-          if (minSpawnY < maxSpawnY) {
-            const x = 70 + Math.random() * (this.worldWidth - 140);
-            const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-            const leviathanFish = new Fish(chosen, x, y, { shinyChance, surfaceY: this.surfaceY });
-            this.entities.fish.push(leviathanFish);
-          }
-        }
-      }
-    }
-
     populateBands(TREASURE_ITEMS.filter(item => belongsToRealm(item, this.currentSeaId)),
       depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2,
       item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : 1),
@@ -253,10 +233,31 @@ export class OceanWorld {
       this.entities.relics.push(new Relic(relic, x, y));
     });
 
-    populateBands(HAZARD_TYPES.filter(hazard => belongsToRealm(hazard, this.currentSeaId)),
+    populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && belongsToRealm(hazard, this.currentSeaId)),
       depth => (0.25 + 1.55 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25,
       hazard => hazard.isColossal ? 0.6 : 1,
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
+    // Creature encounters are sparse groups, separate from static obstacles.
+    for (const creature of HAZARD_TYPES.filter(h => h.marineKind && h.zone === this.currentSeaId)) {
+      const end = Math.min(activeMaxDepth, creature.maxDepth);
+      const spacing = creature.isColossal ? 750 : 250;
+      for (let depth = creature.minDepth; depth + 20 < end; depth += spacing) {
+        const chance = creature.isColossal ? .22 : creature.marineKind === 'jelly' ? .3 : .22;
+        if (Math.random() >= chance) continue;
+        const centerDepth = depth + 10 + Math.random() * Math.min(spacing - 20, end - depth - 20);
+        const centerX = 120 + Math.random() * Math.max(1, this.worldWidth - 240);
+        const count = creature.marineKind === 'jelly' ? 3 + Math.floor(Math.random() * 3) : 1;
+        for (let member = 0; member < count; member++) {
+          const x = Math.max(50, Math.min(this.worldWidth - 50, centerX + (member - (count - 1) / 2) * 55));
+          const y = this.surfaceY + centerDepth * this.pixelsPerMeter + Math.sin(member * 2.4) * 45;
+          const hazard = new Hazard(creature, x, y);
+          hazard.minY = this.surfaceY + creature.minDepth * this.pixelsPerMeter;
+          hazard.maxY = this.surfaceY + end * this.pixelsPerMeter;
+          this.entities.hazards.push(hazard);
+        }
+      }
+    }
+
   }
 
   update(dt, hook, particles = null) {
@@ -296,7 +297,7 @@ export class OceanWorld {
 
     // Update active entities
     this.entities.fish.forEach((fish) => fish.update(dt, this.worldWidth, hook, particles));
-    this.entities.hazards.forEach((hazard) => hazard.update(dt, this.worldWidth));
+    this.entities.hazards.forEach((hazard) => hazard.update(dt, this.worldWidth, hook));
     this.entities.treasures.forEach((treasure) => treasure.update(dt, this.worldWidth, hook));
 
     // Update vessel companions (only if unlocked)
@@ -1018,8 +1019,8 @@ export class OceanWorld {
 
   // Sea 5: Whispering Aether Sea Clouds & Sky-Islands
   renderAetherSkyIslands(ctx, cameraY, screenHeight) {
-    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
-    const aetherDrawY = Math.max(this.surfaceY - cameraY + 100, screenHeight * 0.55);
+    // These islands sit in the world, never pinned to a screen corner.
+    const aetherDrawY = this.surfaceY + 85 * this.pixelsPerMeter - cameraY;
 
     if (aetherDrawY < -200 || aetherDrawY > screenHeight + 200) return;
 
@@ -1036,7 +1037,7 @@ export class OceanWorld {
 
     // Floating sky island silhouette (Right)
     const isle2X = this.worldWidth - 240;
-    ctx.fillStyle = 'rgba(112, 26, 117, 0.4)';
+    ctx.fillStyle = 'rgba(125, 157, 205, 0.35)';
     ctx.beginPath();
     ctx.moveTo(isle2X, aetherDrawY - 40);
     ctx.quadraticCurveTo(isle2X + 70, aetherDrawY - 65, isle2X + 150, aetherDrawY - 40);

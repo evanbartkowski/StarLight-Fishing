@@ -27,20 +27,20 @@ function advancedSave() {
   return save;
 }
 
-test('every realm has 35 real native fish, distinct content, and complete journal coverage', () => {
+test('every realm has 38 real native fish, distinct content, and complete journal coverage', () => {
   const all = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
   assert.equal(new Set(all.map(f => f.id)).size, all.length);
-  assert.equal(FISH_SPECIES.length, 245);
+  assert.equal(FISH_SPECIES.length, 266);
   for (const sea of FANTASY_SEAS) {
     const natives = FISH_SPECIES.filter(f => f.zone === sea.id);
-    assert.equal(natives.length, 35);
+    assert.equal(natives.length, 38);
     assert.ok(new Set(natives.map(f => f.shape)).size >= 6);
     assert.ok(new Set(natives.map(f => f.movementType).filter(Boolean)).size >= 4);
     assert.equal(REALM_HAZARDS.filter(h => h.zone === sea.id).length, 4);
     assert.equal(REALM_TREASURES.filter(t => t.zone === sea.id).length, 7);
     assert.equal(REALM_RELICS.filter(r => r.zone === sea.id).length, 2);
     const ids = all.filter(f => f.zone === sea.id).map(f => f.id);
-    assert.ok(ids.length >= 30 && ids.length <= 40);
+    assert.ok(ids.length >= 30 && ids.length <= 45);
     assert.deepEqual(ZONE_ALMANAC_DATA[`sea_${sea.id}`].speciesIds, ids);
     const save = new SaveSystem();
     ids.forEach(id => { save.data.journal[id] = { count: 1 }; });
@@ -55,7 +55,7 @@ test('charter prices and common rewards rise together; gates charge the authorit
   for (let i = 1; i < FANTASY_SEAS.length; i++) {
     const sea = FANTASY_SEAS[i], previous = FANTASY_SEAS[i-1];
     assert.equal(sea.gates.unlockFee, REALM_PROFILES[sea.id].fee);
-    const meanValue = zone => FISH_SPECIES.filter(f => f.zone === zone).reduce((sum, f) => sum + f.baseValue, 0) / 35;
+    const meanValue = zone => FISH_SPECIES.filter(f => f.zone === zone).reduce((sum, f) => sum + f.baseValue, 0) / 38;
     assert.ok(meanValue(sea.id) > meanValue(previous.id) * 1.5);
     assert.ok(REALM_RELICS.find(r => r.zone === sea.id).restoredValue > REALM_RELICS.find(r => r.zone === previous.id).restoredValue * 1.5);
     assert.ok(REALM_PROFILES[sea.id].commonValue > REALM_PROFILES[previous.id].commonValue * 1.5);
@@ -94,7 +94,13 @@ test('repeated dives keep native fish, hazards, relics, and loot in their own re
           assert.ok(fish.y >= world.surfaceY + fish.radius);
           seen.add(fish.speciesId);
         }
-        for (const hazard of world.entities.hazards) assert.ok(belongsToRealm(HAZARD_TYPES.find(h => h.id === hazard.type), sea.id));
+        for (const hazard of world.entities.hazards) {
+          const config = HAZARD_TYPES.find(h => h.id === hazard.type);
+          assert.ok(belongsToRealm(config, sea.id));
+          if (hazard.marineKind) assert.ok((hazard.y - world.surfaceY) / world.pixelsPerMeter >= config.minDepth);
+        }
+        const jellies = world.entities.hazards.filter(h => h.marineKind === 'jelly');
+        assert.ok(jellies.length === 0 || jellies.length >= 3, 'jellyfish spawn in groups');
         for (const treasure of world.entities.treasures) assert.ok(belongsToRealm(treasure.itemConfig, sea.id));
         for (const relic of world.entities.relics) assert.equal(relic.relicType.zone, sea.id);
       }
@@ -125,7 +131,7 @@ test('new fish and all realm visuals can render with finite geometry', () => {
     return (...args) => { calls++; for (const value of args) if (typeof value === 'number') assert.ok(Number.isFinite(value), `${String(key)} received non-finite geometry`); };
   } });
   for (const species of FISH_SPECIES) new Fish(species, 300, 500).render(ctx, 0);
-  for (const hazard of REALM_HAZARDS) new Hazard(hazard, 300, 500).render(ctx, 0);
+  for (const hazard of HAZARD_TYPES) new Hazard(hazard, 300, 500).render(ctx, 0);
   for (const treasure of REALM_TREASURES) new Treasure(treasure, 300, 500).render(ctx, 0);
   assert.ok(calls > 1000);
 });
@@ -276,7 +282,7 @@ test('Sunlit Shoals has more small hazards and reserves giant obstacles for deep
   const world = new OceanWorld(1000, 700);
   world.populateWorld(save);
   assert.ok(world.entities.hazards.filter(h => !h.isColossal).length >= 12);
-  assert.ok(world.entities.hazards.every(h => ['plant', 'boulder', 'log', 'wreck'].includes(h.naturalKind)), 'starter hazards should use recognizable coastal objects');
+  assert.ok(world.entities.hazards.filter(h => !h.marineKind).every(h => ['plant', 'boulder', 'log', 'wreck'].includes(h.naturalKind)), 'starter hazards should use recognizable coastal objects');
   for (const hazard of world.entities.hazards.filter(h => h.isColossal)) assert.ok((hazard.y - world.surfaceY) / world.pixelsPerMeter >= 100);
 });
 
@@ -384,4 +390,66 @@ test('stars and plankton stay at world positions as a dive begins', () => {
     assert.ok(before.length > 5);
     for (const [x, y] of before) assert.ok(points.some(([nx, ny]) => nx === x && Math.abs(ny - (y - 50)) < 0.001), `${method}: particle jumped with camera`);
   }
+});
+
+test('deep water favors rarer valuable catches and leviathans remain occasional', () => {
+  const random = Math.random;
+  let seed = 54678;
+  Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  try {
+    const save = advancedSave();
+    const world = new OceanWorld({ width: 1280, height: 720 });
+    for (const sea of FANTASY_SEAS) {
+      save.data.currentSea = sea.id;
+      const rank = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
+      const bins = [{ count: 0, rarity: 0, value: 0 }, { count: 0, rarity: 0, value: 0 }];
+      let leviathanDives = 0;
+      for (let dive = 0; dive < 40; dive++) {
+        world.populateWorld(save);
+        if (world.entities.fish.some(f => f.species.id === `realm_${sea.id}_deep_2`)) leviathanDives++;
+        for (const f of world.entities.fish) {
+          const depth = (f.y - world.surfaceY) / world.pixelsPerMeter;
+          const bin = depth < 400 ? bins[0] : depth >= 2000 ? bins[1] : null;
+          if (bin) { bin.count++; bin.rarity += rank[f.rarity]; bin.value += f.value; }
+        }
+      }
+      assert.ok(bins[1].rarity / bins[1].count > bins[0].rarity / bins[0].count + .5, sea.name);
+      assert.ok(bins[1].value / bins[1].count > bins[0].value / bins[0].count, sea.name);
+      assert.ok(leviathanDives > 0 && leviathanDives < 25, `${sea.name}: leviathans should be occasional`);
+    }
+  } finally { Math.random = random; }
+});
+
+test('marine hunters chase briefly, respect habitat bounds, and jellyfish move slowly', () => {
+  const make = kind => new Hazard(HAZARD_TYPES.find(h => h.zone === 1 && h.marineKind === kind), 400, 5000);
+  const jelly = make('jelly'), shark = make('shark');
+  const hook = { x: 600, y: 5000, state: 'DESCENDING' };
+  for (let frame = 0; frame < 20; frame++) { jelly.update(16, 1280, hook); shark.update(16, 1280, hook); }
+  assert.ok(shark.x - 400 > 50);
+  assert.ok(Math.abs(jelly.x - 400) < 7);
+  for (let frame = 0; frame < 180; frame++) shark.update(16, 1280, hook);
+  assert.ok(shark.restTime > 0, 'hunter gives the player a break after pursuit');
+  shark.minY = 4900; shark.maxY = 5100;
+  hook.y = 8000;
+  for (let frame = 0; frame < 120; frame++) shark.update(16, 1280, hook);
+  assert.ok(shark.y >= 4900 && shark.y <= 5100);
+  const resting = make('shark');
+  resting.timer = 0;
+  hook.x = 650; hook.y = 5000; hook.state = 'IDLE';
+  resting.update(16, 1280, hook);
+  assert.ok(resting.chaseTime === 0, 'surface hook does not attract hunters');
+});
+
+test('Aether island scenery scrolls with world depth instead of sticking to the corner', () => {
+  const world = new OceanWorld({ width: 1280, height: 720 });
+  const points = [];
+  const ctx = new Proxy({}, { get: (_, key) => key === 'moveTo' ? (...args) => points.push(args) : () => {}, set: () => true });
+  world.renderAetherSkyIslands(ctx, 1000, 720);
+  const before = points.splice(0);
+  world.renderAetherSkyIslands(ctx, 1100, 720);
+  assert.equal(before.length, 2);
+  before.forEach((point, i) => assert.equal(points[i][1], point[1] - 100));
+  points.length = 0;
+  world.renderAetherSkyIslands(ctx, 2500, 720);
+  assert.equal(points.length, 0);
 });

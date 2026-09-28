@@ -95,6 +95,7 @@ export class Hook {
   }
 
   reset(surfaceX, surfaceY) {
+    this.hazardCooldown = 0;
     this.x = surfaceX;
     this.y = surfaceY;
     this.prevX = surfaceX;
@@ -205,6 +206,9 @@ export class Hook {
   }
 
   takeHazardHit(hazard, particles) {
+    if (this.hazardCooldown > 0) return;
+    this.hazardCooldown = 1.2;
+    hazard.restTime = 3;
     this.tookDamage = true;
     soundManager.playHazardShock();
 
@@ -259,6 +263,7 @@ export class Hook {
 
   update(dt, surfaceY, worldWidth, particles, isReelingInput = true, zoneManager = null) {
     const deltaSec = dt / 1000;
+    this.hazardCooldown = Math.max(0, (this.hazardCooldown || 0) - deltaSec);
     this.prevX = this.x;
     this.prevY = this.y;
 

@@ -747,7 +747,7 @@ const update = (dt) => {
         const dy = haz.y - hook.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < hookRadius + haz.radius) {
+        if (dist < hookRadius + haz.radius && !(hook.hazardCooldown > 0)) {
           hook.takeHazardHit(haz, particles);
           // Deflect hazard away to prevent rapid repeated hits
           haz.y += 45;
@@ -782,8 +782,8 @@ const update = (dt) => {
   if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
     targetCameraY = 0;
   } else if (gameState === 'REELING') {
-    // Keep hook lower on screen (~74% down) so player has a wide view of hazards and fish above
-    const verticalOffset = screenHeight * 0.74;
+    // Keep hook lower on screen (~84% down) so player has a wide view of hazards and fish above
+    const verticalOffset = screenHeight * 0.84;
     targetCameraY = Math.max(0, hook.y - verticalOffset);
   } else {
     // CASTING or DESCENDING: Keep hook at ~38% down so player can see deeper waters below
@@ -820,7 +820,7 @@ const render = () => {
 
   // 4. Hazards
   oceanWorld.entities.hazards.forEach((hazard) => {
-    if (hazard.y - cameraY > -60 && hazard.y - cameraY < screenHeight + 60) {
+    if (hazard.y - cameraY > -hazard.radius * 2 - 20 && hazard.y - cameraY < screenHeight + hazard.radius * 2 + 20) {
       hazard.render(ctx, cameraY);
     }
   });
@@ -843,7 +843,7 @@ const render = () => {
 
   // 6. Fish (with dynamic size scaling, shapes, and uncalibrated sonar silhouettes)
   oceanWorld.entities.fish.forEach((fish) => {
-    if (fish.y - cameraY > -70 && fish.y - cameraY < screenHeight + 70) {
+    if (fish.y - cameraY > -fish.scale * 130 && fish.y - cameraY < screenHeight + fish.scale * 130) {
       fish.render(ctx, cameraY, hook);
     }
   });

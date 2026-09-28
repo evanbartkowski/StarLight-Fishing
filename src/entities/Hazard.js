@@ -1,8 +1,16 @@
 import { drawNaturalHazard } from './NaturalHazardArt.js';
+import { drawMarineThreat } from './MarineThreatArt.js';
 
 export class Hazard {
   constructor(typeConfig, x, y) {
     this.type = typeConfig.id;
+    this.marineKind = typeConfig.marineKind;
+    this.behavior = typeConfig;
+    this.homeX = x;
+    this.homeY = y;
+    this.chaseTime = 0;
+    this.restTime = 0;
+    this.facing = 1;
     this.realmStyle = typeConfig.realmStyle;
     this.naturalKind = typeConfig.naturalKind || (typeConfig.realmStyle === 'reef' ? ['plant', 'boulder', 'log', 'wreck'][typeConfig.variant || 0] : typeConfig.id === 'driftwood' ? 'log' : null);
     this.variant = typeConfig.variant || 0;
@@ -24,9 +32,30 @@ export class Hazard {
     this.driftX = (Math.random() * 2 - 1) * (this.isColossal ? 0.25 : 0.45);
   }
 
-  update(dt, worldWidth) {
+  update(dt, worldWidth, hook = null) {
     const deltaSec = dt / 1000;
     this.timer += this.pulseSpeed * deltaSec;
+    if (this.marineKind) {
+      this.restTime = Math.max(0, this.restTime - deltaSec);
+      const config = this.behavior;
+      const active = hook && ['DESCENDING', 'REELING'].includes(hook.state);
+      const distance = active ? Math.hypot(hook.x - this.x, hook.y - this.y) : Infinity;
+      const chasing = active && this.restTime === 0 && distance < config.detectionRadius
+        && Math.abs(hook.y - this.homeY) < config.leash;
+      this.chaseTime = chasing ? this.chaseTime + deltaSec : 0;
+      if (this.chaseTime > 3) { this.restTime = 3; this.chaseTime = 0; }
+      const pursuing = chasing && this.restTime === 0;
+      const targetX = pursuing ? hook.x : this.homeX + Math.sin(this.timer * .3) * 55;
+      const targetY = pursuing ? hook.y : this.homeY + Math.sin(this.timer * .4) * 22;
+      const dx = targetX - this.x, dy = targetY - this.y;
+      const length = Math.hypot(dx, dy);
+      const step = Math.min(length, config.speed * (pursuing ? 1 : .25) * Math.min(deltaSec, .05));
+      if (length > 0) { this.x += dx / length * step; this.y += dy / length * step; }
+      if (Math.abs(dx) > 1) this.facing = Math.sign(dx);
+      this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.x));
+      this.y = Math.max(this.minY ?? 0, Math.min(this.maxY ?? Infinity, this.y));
+      return;
+    }
 
     // Horizontal drift
     this.x += this.driftX * 30 * deltaSec;
@@ -118,7 +147,9 @@ export class Hazard {
 
     ctx.scale(this.sizeScale, this.sizeScale);
     try {
-      if (this.naturalKind) {
+      if (this.marineKind) {
+        drawMarineThreat(ctx, this);
+      } else if (this.naturalKind) {
         drawNaturalHazard(ctx, this.naturalKind, this.radius / this.sizeScale, this.timer);
       } else if (this.realmStyle) {
         this.renderRealmHazard(ctx);

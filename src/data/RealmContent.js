@@ -55,10 +55,31 @@ export function buildRealmFish(originals) {
         lore: `${name} inhabits the ${['sheltered surface nurseries', 'kelp-lined ledges', 'open currents', 'shadowed shelves', 'deep sanctuaries'][niche]} of ${sea.name}. It ${['grazes on mineral blooms', 'hunts drifting larvae', 'sifts tiny shells', 'stalks luminous plankton', 'follows warm upwellings'][i % 5]} among ${profile.habitat}.`,
       });
     }
+    const deepNames = {
+      1: ['Pearlscale Dragonet', 'Royal Glass Nautilus', 'Crowned Reef Leviathan'],
+      2: ['Prismatic Lantern Eel', 'Blacklight Phantom Ray', 'Abyssal Lantern Leviathan'],
+      3: ['Nebula Mirrorfish', 'Quasar Crown Squid', 'Starfall World Serpent'],
+      4: ['Orichalcum Ghost Koi', 'Imperial Sapphire Sturgeon', 'Sovereign Palace Leviathan'],
+      5: ['Opaline Featherfin', 'Moonveil Sky Manta', 'Celestial Cloud Leviathan'],
+      6: ['Fireglass Dragonfish', 'Diamond Furnace Ray', 'Molten Crown Behemoth'],
+      7: ['Paradox Mirror Eel', 'Event Horizon Oracle', 'Eternity World Serpent'],
+    };
+    deepNames[sea.id].forEach((name, i) => natives.push({
+      id: `realm_${sea.id}_deep_${i}`, name, zone: sea.id,
+      rarity: i === 0 ? 'epic' : 'legendary', minDepth: [380, 800, 1400][i], maxDepth: 3000,
+      isSpecialDeep: i === 2, isLeviathan: i === 2, spawnChance: i === 2 ? .24 : undefined,
+      baseValue: profile.commonValue * [35, 75, 180][i], xpMultiplier: profile.xpMultiplier * (1.3 + i * .3),
+      baseWeight: [8, 40, 650][i], sizeRange: [[40, 100], [150, 350], [800, 1800]][i],
+      scaleFactor: [1.3, 2.8, 6][i], shape: i === 2 ? (sea.id % 2 ? 'world_serpent' : 'megalodon_behemoth') : i === 1 ? (sea.id % 2 ? 'squid' : 'ray') : (sea.id % 2 ? 'disc' : 'eel'),
+      primaryColor: profile.colors[(i + 1) % 5], secondaryColor: profile.colors[(i + 3) % 5],
+      finColor: profile.colors[i], eyeColor: '#fef3c7', pattern: 'diamonds', fantasyTrail: profile.trail,
+      swimSpeed: [1.1, .8, .55][i], wiggleSpeed: 3, movementType: i === 2 ? 'sine_wave' : 'horizontal',
+      lore: `${name} lives in the deep sanctuaries of ${sea.name}. ${i === 2 ? 'A solitary giant, rarely seen even by veteran captains.' : 'Its extraordinary markings and elusive nature make it a prized deep-water catch.'}`,
+    }));
     // A resident deep-water population remains available after line upgrades.
     // Keep surface specialists, but extend a varied subset into the deep shelves.
     natives.forEach((fish, index) => {
-      if (index % 3 === 0 && !fish.conditions && !fish.isSpecialDeep) fish.maxDepth = 3000;
+      if ((index % 3 === 0 || ['rare', 'epic', 'legendary'].includes(fish.rarity)) && !fish.conditions && !fish.isSpecialDeep) fish.maxDepth = 3000;
     });
     // Exactly one modest migrant from each realm may visit the next realm.
     natives[0].sharedSeas = sea.id < 7 ? [sea.id + 1] : [];
