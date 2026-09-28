@@ -39,9 +39,10 @@ export class Fish {
     let val = Math.round(species.baseValue * 1.35 * sizeMultiplier * crownMult * (this.isShiny ? 3.5 : 1.0));
     this.value = Math.max(2, val);
 
-    // Visual scale based on species base scale + individual fish size
+    // Visual scale based on species base scale + individual fish size (super large for leviathans)
     const baseScale = species.scaleFactor || 1.0;
-    this.scale = Math.min(3.8, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55)));
+    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8) ? 6.5 : 3.8;
+    this.scale = Math.min(maxScaleCap, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55)));
 
     // Movement & direction
     this.direction = Math.random() < 0.5 ? 1 : -1; // 1 = right, -1 = left
@@ -56,8 +57,8 @@ export class Fish {
     this.hookOffset = { x: 0, y: -22 };
     this.hookIndex = 0;
 
-    // Collision radius
-    this.radius = Math.max(14, 18 * this.scale);
+    // Collision radius (generous and responsive for big leviathans)
+    this.radius = Math.max(14, Math.min(48, 16 * this.scale));
 
     // Elusive / Evasive abilities for rare, epic, and mythical fish
     this.evasion = species.evasion || null;
@@ -370,19 +371,68 @@ export class Fish {
       ctx.restore();
     }
 
-    // Shiny shimmer aura (optimized for zero lag)
+    // Flashy visual auras & particles for rarer fish (rare, epic, legendary, leviathan, shiny)
+    const isRainbow = s.isRainbow || (s.rarity === 'legendary' && !this.isShiny);
+    const isEpic = s.rarity === 'epic' && !this.isShiny;
+    const isRare = s.rarity === 'rare' && !this.isShiny;
+
     if (this.isShiny) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(254, 240, 138, 0.85)';
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.9)';
       ctx.lineWidth = 2.5;
       ctx.shadowColor = '#fef08a';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 25, 15, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else if (isRainbow || s.isLeviathan) {
+      // Dazzling prismatic rainbow aura for legendaries & leviathans
+      ctx.save();
+      const hue = (this.wiggleTimer * 60 + this.x * 0.2) % 360;
+      ctx.strokeStyle = `hsla(${hue}, 100%, 65%, 0.85)`;
+      ctx.lineWidth = s.isLeviathan ? 3.5 : 2.5;
+      ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
+      ctx.shadowBlur = s.isLeviathan ? 16 : 12;
+      ctx.beginPath();
+      const rX = s.isLeviathan ? 34 : 26;
+      const rY = s.isLeviathan ? 20 : 15;
+      ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Additional secondary pulsing halo ring
+      const pulseR = 1.0 + Math.sin(this.wiggleTimer * 3) * 0.12;
+      ctx.strokeStyle = `hsla(${(hue + 60) % 360}, 100%, 75%, 0.45)`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rX * pulseR * 1.25, rY * pulseR * 1.25, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else if (isEpic) {
+      // Neon violet / magenta pulsing chromatic aura with star glints
+      ctx.save();
+      const pulse = Math.sin(this.wiggleTimer * 2.5) * 0.15;
+      ctx.strokeStyle = 'rgba(217, 70, 239, 0.85)';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = '#e879f9';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 26 * (1 + pulse), 15 * (1 + pulse), 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    } else if (isRare) {
+      // Shimmering aquamarine / electric cyan aura
+      ctx.save();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.8)';
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 9;
       ctx.beginPath();
       ctx.ellipse(0, 0, 24, 14, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     } else if (this.isMythic || this.isSpecialDeep || s.glowColor) {
-      // Celestial mythic or special deep titan aura (clean & efficient)
+      // Celestial mythic or special deep titan aura
       ctx.save();
       const auraColor = s.glowColor || (this.isSpecialDeep ? 'rgba(56, 189, 248, 0.8)' : 'rgba(196, 181, 253, 0.7)');
       ctx.strokeStyle = auraColor;
@@ -392,6 +442,52 @@ export class Fish {
       ctx.beginPath();
       ctx.ellipse(0, 0, 26, 15, 0, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+    }
+
+    // Trailing rainbow/stardust particle motes for rare/epic/legendary fish
+    if (isRainbow || s.rarity === 'legendary') {
+      ctx.save();
+      const t = this.wiggleTimer;
+      for (let p = 0; p < 4; p++) {
+        const px = -28 - p * 9 + Math.sin(t * 3 + p) * 4;
+        const py = Math.sin(t * 4 + p * 2) * 7;
+        const sparkHue = (this.wiggleTimer * 80 + p * 60) % 360;
+        ctx.fillStyle = `hsl(${sparkHue}, 100%, 70%)`;
+        ctx.shadowColor = `hsl(${sparkHue}, 100%, 60%)`;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    } else if (isEpic) {
+      ctx.save();
+      const t = this.wiggleTimer;
+      ctx.fillStyle = '#f472b6';
+      ctx.shadowColor = '#d946ef';
+      ctx.shadowBlur = 6;
+      for (let p = 0; p < 3; p++) {
+        const px = -26 - p * 8 + Math.sin(t * 2.5 + p) * 3;
+        const py = Math.cos(t * 3 + p) * 6;
+        ctx.beginPath();
+        ctx.arc(px, py, 2.0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    } else if (isRare) {
+      ctx.save();
+      const t = this.wiggleTimer;
+      ctx.fillStyle = '#67e8f9';
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 5;
+      for (let p = 0; p < 2; p++) {
+        const px = -24 - p * 7 + Math.sin(t * 3 + p) * 2;
+        const py = Math.sin(t * 2 + p) * 5;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
 
@@ -457,37 +553,74 @@ export class Fish {
       ctx.restore();
     }
 
-    // Always render authentic vibrant species colors with rich saturation and contrast
-    const primary = this.isShiny ? '#fbbf24' : (s.primaryColor || '#38bdf8');
-    const secondary = this.isShiny ? '#fef08a' : (s.secondaryColor || '#93c5fd');
-    const finColor = this.isShiny ? '#f59e0b' : (s.finColor || '#0284c7');
+    // Dynamic vibrant color gradients (rainbow for legendary, neon for epic, iridescent for rare)
+    let primary = this.isShiny ? '#fbbf24' : (s.primaryColor || '#38bdf8');
+    let secondary = this.isShiny ? '#fef08a' : (s.secondaryColor || '#93c5fd');
+    let finColor = this.isShiny ? '#f59e0b' : (s.finColor || '#0284c7');
+
+    if (isRainbow) {
+      const hue = (this.wiggleTimer * 65 + this.x * 0.15) % 360;
+      const rainbowGrad = ctx.createLinearGradient(-30, -15, 30, 15);
+      rainbowGrad.addColorStop(0, `hsl(${hue}, 95%, 60%)`);
+      rainbowGrad.addColorStop(0.2, `hsl(${(hue + 55) % 360}, 95%, 62%)`);
+      rainbowGrad.addColorStop(0.4, `hsl(${(hue + 110) % 360}, 95%, 65%)`);
+      rainbowGrad.addColorStop(0.6, `hsl(${(hue + 175) % 360}, 95%, 62%)`);
+      rainbowGrad.addColorStop(0.8, `hsl(${(hue + 235) % 360}, 95%, 65%)`);
+      rainbowGrad.addColorStop(1, `hsl(${(hue + 300) % 360}, 95%, 60%)`);
+      primary = rainbowGrad;
+      secondary = `hsl(${(hue + 180) % 360}, 90%, 75%)`;
+      finColor = `hsl(${(hue + 75) % 360}, 95%, 65%)`;
+    } else if (isEpic && !s.isLeviathan) {
+      const epicGrad = ctx.createLinearGradient(-25, -12, 25, 12);
+      epicGrad.addColorStop(0, s.primaryColor || '#9333ea');
+      epicGrad.addColorStop(0.5, '#ec4899');
+      epicGrad.addColorStop(1, s.secondaryColor || '#38bdf8');
+      primary = epicGrad;
+    } else if (isRare && !s.isLeviathan) {
+      const rareGrad = ctx.createLinearGradient(-22, -10, 22, 10);
+      rareGrad.addColorStop(0, s.primaryColor || '#0284c7');
+      rareGrad.addColorStop(0.5, '#38bdf8');
+      rareGrad.addColorStop(1, s.secondaryColor || '#67e8f9');
+      primary = rareGrad;
+    }
+
+    const isCustomTailLeviathan = [
+      'colossal_kraken',
+      'world_serpent',
+      'megalodon_behemoth',
+      'gargantuan_angler',
+      'void_wyrm',
+    ].includes(s.shape);
+
     const wiggle = Math.sin(this.wiggleTimer) * 4;
 
-    // Tail fin
-    ctx.save();
-    ctx.translate(-16, 0);
-    ctx.rotate(wiggle * (s.shape === 'magikart' ? 0.12 : 0.08));
-    ctx.fillStyle = finColor;
-    ctx.beginPath();
-    if (s.shape === 'magikart') {
-      ctx.moveTo(0, 0);
-      ctx.lineTo(-14, -14);
-      ctx.quadraticCurveTo(-18, -4, -22, -10);
-      ctx.quadraticCurveTo(-15, 0, -22, 10);
-      ctx.quadraticCurveTo(-18, 4, -14, 14);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#b45309';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    } else {
-      ctx.moveTo(0, 0);
-      ctx.lineTo(-12, -8);
-      ctx.quadraticCurveTo(-7, 0, -14, 8);
-      ctx.closePath();
-      ctx.fill();
+    // Tail fin (custom leviathans draw their own magnificent fins/tentacles)
+    if (!isCustomTailLeviathan) {
+      ctx.save();
+      ctx.translate(-16, 0);
+      ctx.rotate(wiggle * (s.shape === 'magikart' ? 0.12 : 0.08));
+      ctx.fillStyle = finColor;
+      ctx.beginPath();
+      if (s.shape === 'magikart') {
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-14, -14);
+        ctx.quadraticCurveTo(-18, -4, -22, -10);
+        ctx.quadraticCurveTo(-15, 0, -22, 10);
+        ctx.quadraticCurveTo(-18, 4, -14, 14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      } else {
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-12, -8);
+        ctx.quadraticCurveTo(-7, 0, -14, 8);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
     }
-    ctx.restore();
 
     // Body based on shape
     ctx.fillStyle = primary;
@@ -783,6 +916,432 @@ export class Fish {
         ctx.lineTo(44, 0);
         ctx.stroke();
       }
+    } else if (s.shape === 'colossal_kraken') {
+      // 1. Colossal Abyssal Kraken: Giant undulating mantle, 8 waving bioluminescent tentacles with suckers & hypnotic golden eye
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.moveTo(-6, -22);
+      ctx.bezierCurveTo(-36, -26, -58, -14, -58, 0);
+      ctx.bezierCurveTo(-58, 14, -36, 26, -6, 22);
+      ctx.bezierCurveTo(8, 18, 14, 10, 14, 0);
+      ctx.bezierCurveTo(14, -10, 8, -18, -6, -22);
+      ctx.closePath();
+      ctx.fill();
+
+      // Glowing bio-luminescent mantle runes
+      ctx.strokeStyle = s.glowColor || '#e879f9';
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = s.glowColor || '#e879f9';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(-22, -8, 5, 0, Math.PI * 2);
+      ctx.arc(-36, 0, 7, 0, Math.PI * 2);
+      ctx.arc(-22, 8, 5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 8 Undulating tentacles with glowing suction cups
+      for (let t = 0; t < 8; t++) {
+        const spreadY = (t - 3.5) * 6;
+        const tWave = Math.sin(this.wiggleTimer * 1.6 + t * 0.7) * 10;
+        const tLen = 46 + (t % 2 === 0 ? 14 : 0);
+
+        ctx.strokeStyle = primary;
+        ctx.lineWidth = Math.max(2, 4.5 - Math.abs(t - 3.5) * 0.4);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(10, spreadY * 0.5);
+        ctx.bezierCurveTo(
+          24, spreadY + tWave * 0.5,
+          36, spreadY * 1.2 + tWave,
+          10 + tLen, spreadY * 1.3 - tWave
+        );
+        ctx.stroke();
+
+        // Glowing suction cups
+        ctx.fillStyle = s.glowColor || '#38bdf8';
+        ctx.shadowColor = s.glowColor || '#38bdf8';
+        ctx.shadowBlur = 4;
+        for (let sIdx = 1; sIdx <= 3; sIdx++) {
+          const sx = 10 + (tLen * sIdx) / 3.8;
+          const sy = spreadY * 0.8 + tWave * (sIdx / 3);
+          ctx.beginPath();
+          ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Massive hypnotic golden kraken eye
+      const eyeX = -4;
+      const eyeY = -5;
+      ctx.fillStyle = '#facc15';
+      ctx.shadowColor = '#fef08a';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.ellipse(eyeX, eyeY, 6.5, 4.8, 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.ellipse(eyeX, eyeY, 1.8, 4.2, 0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeX + 1.8, eyeY - 1.5, 1.1, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.shape === 'world_serpent') {
+      // 2. Jörmungandr the Void Serpent: Undulating multi-segment sea dragon with rainbow dorsal spines
+      const segmentCount = 6;
+      for (let seg = segmentCount; seg >= 0; seg--) {
+        const segT = seg / segmentCount;
+        const segX = 22 - seg * 13;
+        const wave = Math.sin(this.wiggleTimer * 2.2 - seg * 0.55) * 11;
+        const radiusX = 13 * (1 - segT * 0.4);
+        const radiusY = 10 * (1 - segT * 0.4);
+
+        ctx.fillStyle = primary;
+        ctx.beginPath();
+        ctx.ellipse(segX, wave, radiusX, radiusY, wave * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glowing dorsal spines
+        if (seg > 0) {
+          ctx.fillStyle = s.glowColor || '#818cf8';
+          ctx.shadowColor = s.glowColor || '#818cf8';
+          ctx.shadowBlur = 7;
+          ctx.beginPath();
+          ctx.moveTo(segX - 3, wave - radiusY);
+          ctx.lineTo(segX, wave - radiusY - 9 * (1 - segT * 0.3));
+          ctx.lineTo(segX + 3, wave - radiusY);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // Dragon head with horns, whiskers and glowing eye
+      const headWave = Math.sin(this.wiggleTimer * 2.2) * 11;
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.moveTo(18, headWave - 9);
+      ctx.lineTo(38, headWave - 4);
+      ctx.lineTo(36, headWave + 5);
+      ctx.lineTo(18, headWave + 10);
+      ctx.closePath();
+      ctx.fill();
+
+      // Dragon horns sweeping back
+      ctx.fillStyle = s.finColor || '#6366f1';
+      ctx.beginPath();
+      ctx.moveTo(20, headWave - 8);
+      ctx.quadraticCurveTo(8, headWave - 22, -4, headWave - 18);
+      ctx.quadraticCurveTo(10, headWave - 13, 24, headWave - 6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cosmic whiskers
+      ctx.strokeStyle = s.secondaryColor || '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(34, headWave + 2);
+      ctx.quadraticCurveTo(46, headWave + 10 + Math.sin(this.wiggleTimer * 2) * 6, 56, headWave + 7);
+      ctx.stroke();
+
+      // Sharp fangs
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(28, headWave + 3);
+      ctx.lineTo(31, headWave + 8);
+      ctx.lineTo(34, headWave + 3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Radiant void eye
+      ctx.fillStyle = s.eyeColor || '#a5f3fc';
+      ctx.shadowColor = s.glowColor || '#818cf8';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(26, headWave - 3, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(27, headWave - 3, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.shape === 'megalodon_behemoth') {
+      // 3. Apex Abyssal Megalodon: Colossal apex shark with volcanic magma fissures and serrated jaws
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 42, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Giant apex dorsal fin with battle scar notches
+      ctx.fillStyle = finColor;
+      ctx.beginPath();
+      ctx.moveTo(-6, -14);
+      ctx.lineTo(4, -36);
+      ctx.lineTo(12, -26);
+      ctx.lineTo(10, -22);
+      ctx.lineTo(18, -14);
+      ctx.closePath();
+      ctx.fill();
+
+      // Huge crescent caudal tail
+      ctx.beginPath();
+      ctx.moveTo(-36, 0);
+      ctx.quadraticCurveTo(-46, -26, -58, -32);
+      ctx.quadraticCurveTo(-48, 0, -58, 28);
+      ctx.quadraticCurveTo(-44, 20, -36, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Volcanic magma scars pulsing across flanks
+      ctx.save();
+      ctx.strokeStyle = s.secondaryColor || '#f97316';
+      ctx.shadowColor = s.glowColor || '#fb923c';
+      ctx.shadowBlur = 10;
+      ctx.lineWidth = 2.4;
+      const pulseMagma = 0.8 + Math.sin(this.wiggleTimer * 3) * 0.2;
+      ctx.globalAlpha = pulseMagma;
+      ctx.beginPath();
+      ctx.moveTo(-16, -6);
+      ctx.lineTo(-4, 2);
+      ctx.lineTo(8, -4);
+      ctx.lineTo(20, 3);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(-8, 6);
+      ctx.lineTo(4, 10);
+      ctx.lineTo(14, 5);
+      ctx.stroke();
+      ctx.restore();
+
+      // Glowing volcanic gill slits
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      for (let g = 0; g < 3; g++) {
+        ctx.beginPath();
+        ctx.moveTo(10 + g * 4, -4);
+        ctx.lineTo(8 + g * 4, 8);
+        ctx.stroke();
+      }
+
+      // Cavernous jaw with triangular razor teeth
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      for (let tooth = 0; tooth < 4; tooth++) {
+        const tx = 25 + tooth * 4;
+        ctx.moveTo(tx, 3);
+        ctx.lineTo(tx + 2, 8);
+        ctx.lineTo(tx + 4, 3);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Glowing red predatory eye with heavy armored brow
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(28, -6, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = s.eyeColor || '#ef4444';
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(28, -6, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.shape === 'gargantuan_angler') {
+      // 4. Gargantuan Abyssal Dreadnought: Bulky armored angler with giant celestial star lure & crystal needle fangs
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 34, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Armored dorsal spines
+      ctx.fillStyle = finColor;
+      for (let sp = -18; sp <= 10; sp += 7) {
+        ctx.beginPath();
+        ctx.moveTo(sp - 3, -18);
+        ctx.lineTo(sp, -27);
+        ctx.lineTo(sp + 3, -18);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Wide fan tail fin
+      ctx.fillStyle = finColor;
+      ctx.beginPath();
+      ctx.moveTo(-30, 2);
+      ctx.lineTo(-48, -16);
+      ctx.quadraticCurveTo(-42, 2, -48, 20);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cavernous undershot jaw with needle crystal fangs
+      ctx.fillStyle = '#09090b';
+      ctx.beginPath();
+      ctx.moveTo(14, 2);
+      ctx.lineTo(34, 4);
+      ctx.lineTo(32, 18);
+      ctx.lineTo(14, 16);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#a5f3fc';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1;
+      for (let f = 0; f < 5; f++) {
+        const fx = 16 + f * 4;
+        ctx.beginPath();
+        ctx.moveTo(fx, 16);
+        ctx.lineTo(fx + 1.5, 5);
+        ctx.lineTo(fx + 3, 16);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Massive arching illicium lure stalk with glowing celestial star lantern
+      const lureWiggle = Math.sin(this.wiggleTimer * 2) * 5;
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(6, -20);
+      ctx.bezierCurveTo(12, -42, 32, -44 + lureWiggle, 36, -30 + lureWiggle);
+      ctx.stroke();
+
+      const lanternX = 36;
+      const lanternY = -30 + lureWiggle;
+      const bulbPulse = 1.0 + Math.sin(this.wiggleTimer * 4) * 0.25;
+
+      ctx.fillStyle = 'rgba(34, 211, 238, 0.45)';
+      ctx.beginPath();
+      ctx.arc(lanternX, lanternY, 14 * bulbPulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#22d3ee';
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(lanternX, lanternY, 5 * bulbPulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Lateral line photophores
+      ctx.fillStyle = s.secondaryColor || '#22d3ee';
+      ctx.shadowColor = s.secondaryColor || '#22d3ee';
+      ctx.shadowBlur = 6;
+      for (let p = -18; p <= 12; p += 6) {
+        ctx.beginPath();
+        ctx.arc(p, 4, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Piercing pale cyan eye
+      ctx.fillStyle = s.eyeColor || '#67e8f9';
+      ctx.shadowColor = '#22d3ee';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(20, -6, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#020617';
+      ctx.beginPath();
+      ctx.arc(20, -6, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.shape === 'void_wyrm') {
+      // 5. Astral Void Wyrm: Celestial dragon with 4 flapping nebula wings & constellation scales
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 44, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Astral tail frills
+      const tailWiggle = Math.sin(this.wiggleTimer * 2.5) * 8;
+      ctx.beginPath();
+      ctx.moveTo(-36, 0);
+      ctx.quadraticCurveTo(-54, tailWiggle - 14, -68, tailWiggle - 22);
+      ctx.quadraticCurveTo(-58, tailWiggle, -68, tailWiggle + 18);
+      ctx.quadraticCurveTo(-50, tailWiggle + 8, -36, 0);
+      ctx.closePath();
+      ctx.fillStyle = finColor;
+      ctx.fill();
+
+      // 4 Flapping glowing translucent nebula wings
+      const wingFlap = Math.sin(this.wiggleTimer * 2.8) * 16;
+      ctx.save();
+      ctx.fillStyle = 'rgba(236, 72, 153, 0.75)';
+      ctx.shadowColor = '#f472b6';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(-6, -10);
+      ctx.quadraticCurveTo(8, -36 + wingFlap, 24, -42 + wingFlap);
+      ctx.quadraticCurveTo(14, -20 + wingFlap * 0.5, 8, -10);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.7)';
+      ctx.beginPath();
+      ctx.moveTo(-22, -8);
+      ctx.quadraticCurveTo(-14, -28 + wingFlap * 0.8, -2, -32 + wingFlap * 0.8);
+      ctx.quadraticCurveTo(-10, -18 + wingFlap * 0.4, -12, -8);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
+      ctx.beginPath();
+      ctx.moveTo(-4, 10);
+      ctx.quadraticCurveTo(6, 28 - wingFlap * 0.6, 18, 32 - wingFlap * 0.6);
+      ctx.quadraticCurveTo(10, 18 - wingFlap * 0.3, 6, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Constellation stars across body
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#fef08a';
+      ctx.shadowBlur = 8;
+      const stars = [
+        [-22, -2], [-14, 4], [-4, -3], [6, 2], [16, -4], [26, 1]
+      ];
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(stars[0][0], stars[0][1]);
+      for (let sIdx = 1; sIdx < stars.length; sIdx++) {
+        ctx.lineTo(stars[sIdx][0], stars[sIdx][1]);
+      }
+      ctx.stroke();
+      for (const [sx, sy] of stars) {
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Astral horns
+      ctx.fillStyle = '#ec4899';
+      ctx.beginPath();
+      ctx.moveTo(24, -10);
+      ctx.quadraticCurveTo(12, -26, 0, -24);
+      ctx.quadraticCurveTo(16, -16, 28, -8);
+      ctx.closePath();
+      ctx.fill();
+
+      // Starlight whiskers
+      ctx.strokeStyle = '#f472b6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(36, 0);
+      ctx.quadraticCurveTo(50, 8 + Math.sin(this.wiggleTimer * 2) * 5, 58, 4);
+      ctx.stroke();
+
+      // Radiant celestial eye
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#ec4899';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(30, -4, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#4c0519';
+      ctx.beginPath();
+      ctx.arc(30.5, -4, 1.8, 0, Math.PI * 2);
+      ctx.fill();
     } else if (s.shape === 'ray') {
       ctx.moveTo(0, -18);
       ctx.lineTo(20, 0);
@@ -800,15 +1359,15 @@ export class Fish {
     }
     ctx.fill();
 
-    // Belly stripe accent (skip for magikart which has custom flank scales)
-    if (s.shape !== 'magikart') {
+    // Belly stripe accent (skip for magikart and custom leviathans which have custom flank art)
+    if (s.shape !== 'magikart' && !isCustomTailLeviathan) {
       ctx.fillStyle = secondary;
       ctx.beginPath();
       ctx.ellipse(0, 4, 14, 5, 0, 0, Math.PI);
       ctx.fill();
     }
 
-    // Eye
+    // Eye (custom leviathans already rendered their unique eyes)
     if (s.shape === 'magikart') {
       const eyeX = 12;
       const eyeY = -4;
@@ -830,7 +1389,7 @@ export class Fish {
       ctx.beginPath();
       ctx.arc(eyeX + 1.8, eyeY - 1.5, 1.2, 0, Math.PI * 2);
       ctx.fill();
-    } else {
+    } else if (!isCustomTailLeviathan) {
       const eyeX = s.shape === 'squid' ? 6 : s.shape === 'octopus' ? 4 : 11;
       const eyeY = -3;
       ctx.fillStyle = s.eyeColor || '#ffffff';

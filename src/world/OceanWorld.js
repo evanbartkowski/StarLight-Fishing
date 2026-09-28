@@ -232,6 +232,27 @@ export class OceanWorld {
       }
     });
 
+    // Ensure that deep water casting (>= 260m) always features colossal leviathans
+    if (activeMaxDepth >= 260) {
+      const hasLeviathan = this.entities.fish.some((f) => f.species && f.species.isLeviathan);
+      if (!hasLeviathan) {
+        const eligibleLeviathans = LEGENDARY_SPECIES.filter(
+          (m) => m.isLeviathan && m.minDepth <= activeMaxDepth
+        );
+        if (eligibleLeviathans.length > 0) {
+          const chosen = eligibleLeviathans[Math.floor(Math.random() * eligibleLeviathans.length)];
+          const minSpawnY = this.surfaceY + chosen.minDepth * this.pixelsPerMeter;
+          const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, chosen.maxDepth) * this.pixelsPerMeter;
+          if (minSpawnY < maxSpawnY) {
+            const x = 70 + Math.random() * (this.worldWidth - 140);
+            const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
+            const leviathanFish = new Fish(chosen, x, y, { shinyChance });
+            this.entities.fish.push(leviathanFish);
+          }
+        }
+      }
+    }
+
     // Populate Treasures, Ranked Loot Crates, and Prehistoric Fossils (made slightly less common)
     TREASURE_ITEMS.forEach((item) => {
       if (item.minDepth > activeMaxDepth) return;
@@ -1246,25 +1267,27 @@ export class OceanWorld {
 
   renderAbyssalDarkness(ctx, cameraY, screenHeight, hook) {
     const depthMeters = hook.depthMeters;
-    if (depthMeters < 80) return;
+    if (depthMeters < 130) return;
 
-    const darknessAlpha = Math.min(0.95, (depthMeters - 80) / 160);
+    // Softened darkness so deep waters remain visible and atmospheric
+    const darknessAlpha = Math.min(0.52, (depthMeters - 130) / 280);
     const hookDrawY = hook.y - cameraY;
 
     ctx.save();
     try {
-      const lanternRadius = Math.max(70, hook.lanternRadius);
+      const lanternRadius = Math.max(160, (hook.lanternRadius || 80) * 1.8);
       const grad = ctx.createRadialGradient(
         hook.x,
         hookDrawY,
-        lanternRadius * 0.2,
+        lanternRadius * 0.15,
         hook.x,
         hookDrawY,
         lanternRadius
       );
       grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      grad.addColorStop(0.7, `rgba(2, 6, 23, ${darknessAlpha * 0.4})`);
-      grad.addColorStop(1, `rgba(2, 6, 23, ${darknessAlpha})`);
+      grad.addColorStop(0.55, 'rgba(0, 0, 0, 0)');
+      grad.addColorStop(0.85, `rgba(6, 14, 38, ${darknessAlpha * 0.4})`);
+      grad.addColorStop(1, `rgba(4, 10, 30, ${darknessAlpha})`);
 
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, this.worldWidth, screenHeight);
