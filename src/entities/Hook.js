@@ -267,7 +267,7 @@ export class Hook {
       if (this.y >= surfaceY) {
         this.state = 'DESCENDING';
         this.y = surfaceY + 2;
-        this.vy = 120;
+        this.vy = 200;
         this.vx *= 0.4;
         soundManager.playSplash();
         if (particles) {
@@ -276,7 +276,7 @@ export class Hook {
         }
       }
     } else if (this.state === 'DESCENDING') {
-      const targetSinkSpeed = 160 + (this.caughtItems.length * 10);
+      const targetSinkSpeed = 240 + (this.caughtItems.length * 10);
       this.vy += (targetSinkSpeed - this.vy) * 4 * deltaSec;
 
       const steerDiff = this.targetX - this.x;
