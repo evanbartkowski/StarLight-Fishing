@@ -2891,3 +2891,18 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .rank-silver { color: #cbd5e1; }
 .rank-bronze { color: #fb923c; }
 .scoreboard-empty-state { text-align: center; padding: 24px; color: #94a3b8; }
+
+.aquarium-panel { gap: 18px; }
+.aquarium-header-bar { background: linear-gradient(120deg, #102d40, #132139); padding: 16px; border-color: #2b5266; }
+.aq-stat-pill { flex-wrap: wrap; }
+.aq-actions-col { flex-wrap: wrap; }
+.aquarium-canvas-box { padding: 10px; box-sizing: border-box; background: linear-gradient(#1e4052, #0f172a); border: 1px solid #42768a; border-radius: 18px; box-shadow: 0 10px 28px #02061766; }
+#aquarium-canvas { width: 100%; height: auto; border-radius: 12px; }
+.aquarium-style-shop { border: 1px solid #334155; border-radius: 14px; background: #0f172acc; padding: 14px; }
+.aquarium-style-shop summary { cursor: pointer; color: #e0f2fe; font-weight: 700; }
+.aquarium-style-shop summary span { display: block; color: #94a3b8; font-size: .78rem; font-weight: 400; margin: 5px 0 12px; }
+.aq-theme-selector { flex-wrap: wrap; margin-top: 12px; }
+.aquarium-style-shop .customize-field { background: #1e293b88; border-radius: 10px; padding: 12px; }
+.aquarium-style-shop .customize-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.inhabitants-header { flex-wrap: wrap; gap: 10px; }
+@media (max-width: 560px) { .aq-actions-col { width: 100%; } .aq-actions-col button { flex: 1; } .aq-tips-pill { width: 100%; box-sizing: border-box; } }

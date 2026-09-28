@@ -3,7 +3,7 @@
 
 export const PET_DEFINITIONS = {
   shark: {
-    id: 'shark', name: 'Irene the Shark', species: 'Friendly Reef Shark', icon: '??', reqLevel: 36,
+    id: 'shark', name: 'Irene the Shark', species: 'Friendly Reef Shark', icon: '\uD83E\uDD88', reqLevel: 36,
     perk: 'Swims beside your boat, keeping you company on every voyage.',
     lore: 'A curious reef shark with a silver dorsal fin and a surprisingly gentle smile.',
     unlockHint: 'Irene joins your crew automatically at Angler Level 36.',
@@ -30,7 +30,7 @@ export const PET_DEFINITIONS = {
   },
   dolphin: {
     id: 'dolphin',
-    name: 'Echo the Bottlenose Dolphin',
+    name: 'Gracie the Dolphin',
     species: 'Bottlenose Dolphin',
     icon: '🐬',
     reqLevel: 22,

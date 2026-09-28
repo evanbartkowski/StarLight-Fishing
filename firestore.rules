@@ -1,6 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /captainSaves/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['snapshot', 'revision', 'updatedAt'])
+        && request.resource.data.snapshot is string && request.resource.data.snapshot.size() <= 900000
+        && request.resource.data.revision is int && request.resource.data.revision > 0
+        && request.resource.data.updatedAt == request.time;
+    }
     // Public, client-reported scores. Every captain can only update their own row.
     match /leaderboard/{uid} {
       function bounded(value, maximum) {

@@ -16,6 +16,7 @@ import { ZoneManager } from './systems/ZoneManager.js';
 import { worldCycle } from './systems/WorldCycle.js';
 import { ChatManager } from './systems/ChatManager.js';
 import { leaderboardManager } from './systems/LeaderboardManager.js';
+import { accountManager } from './systems/AccountManager.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -57,6 +58,9 @@ save.load();
 // Local saving remains independent of the network.
 const syncLeaderboard = () => leaderboardManager.sync(save).catch(() => {});
 setInterval(syncLeaderboard, 60000);
+setInterval(() => accountManager.syncCloudSave(), 30000);
+window.addEventListener('online', () => accountManager.syncCloudSave());
+document.addEventListener('visibilitychange', () => { if (document.hidden) accountManager.syncCloudSave(); });
 window.addEventListener('online', syncLeaderboard);
 syncLeaderboard();
 
@@ -155,6 +159,8 @@ uiManager.setZoneManager(zoneManager);
 const minimapUI = new MinimapUI(save, soundManager, uiManager, oceanWorld, zoneManager);
 uiManager.setMinimapUI(minimapUI);
 uiManager.onAccountSwitched = () => {
+  save.save();
+  accountManager.syncCloudSave();
   syncLeaderboard();
   hook.applyUpgrades(save);
   oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
@@ -271,7 +277,7 @@ function handlePointerDown(e) {
     const localY = dx * sin + dy * cos;
 
     // Check Cat (only if player has unlocked this companion)
-    if (save.hasPet('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
+    if (save.isPetEquipped('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
       if (oceanWorld.shipsCat.hasMorningGift) {
         const gift = oceanWorld.shipsCat.collectGift();
         if (gift) {
@@ -290,7 +296,7 @@ function handlePointerDown(e) {
     }
 
     // Check Pelican (only if player has unlocked this companion)
-    if (save.hasPet('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
+    if (save.isPetEquipped('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
       oceanWorld.pelican.feedFish();
       if (questSystem) questSystem.dispatch({ type: 'pet_companion', pet: 'pelican' });
       soundManager.playPelicanChirp();
@@ -338,9 +344,9 @@ function handlePointerMove(e) {
     const localX = dx * cos - dy * sin;
     const localY = dx * sin + dy * cos;
 
-    if (save.hasPet('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
+    if (save.isPetEquipped('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
       oceanWorld.hoveredCompanion = 'angela';
-    } else if (save.hasPet('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
+    } else if (save.isPetEquipped('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
       oceanWorld.hoveredCompanion = 'evan';
     } else {
       oceanWorld.hoveredCompanion = null;
@@ -446,7 +452,7 @@ function startDive() {
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
   gameState = 'SURFACE_IDLE';
 
-  // Check for rare atmospheric NPC wandering encounter upon resurfacing (~3.5% chance)
+  // Offer occasional harbor encounters after resurfacing.
   npcSystem.checkRandomEncounter('catch');
 }
 
@@ -473,7 +479,7 @@ const update = (dt) => {
   // Track surface playtime to reward long cozy sessions with pet visits or wandering traders
   if (gameState === 'SURFACE_IDLE') {
     surfaceIdleTimer += deltaSec;
-    if (surfaceIdleTimer >= 120) {
+    if (surfaceIdleTimer >= 90) {
       surfaceIdleTimer = 0;
       if (!npcSystem.checkRandomEncounter('travel')) {
         checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager);
@@ -624,10 +630,10 @@ const update = (dt) => {
 
       if (questSystem) {
         questSystem.dispatch({
-          type: 'complete_dive',
+          type: 'dive_completed',
           maxDepth: hook.maxDepthReachedThisDive,
-          caughtCount: hook.caughtItems.length,
-          isFullCapacity: hook.caughtItems.length >= hook.capacity,
+          catchesCount: hook.caughtItems.length,
+          isFull: hook.caughtItems.length >= hook.capacity,
           tookDamage: hook.tookDamage,
         });
       }

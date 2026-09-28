@@ -179,9 +179,12 @@ export class NPCSystem {
     this.uiManager = uiManager;
     this.activeEncounter = null;
     this.encounterCooldown = 0;
+    this.lastEncounterId = null;
   }
 
   update(dt) {
+    // Closing a popup without choosing an option must not block future visitors.
+    if (this.activeEncounter && this.uiManager?.activeModal !== 'npc_encounter') this.activeEncounter = null;
     if (this.encounterCooldown > 0) {
       this.encounterCooldown -= dt;
     }
@@ -190,20 +193,24 @@ export class NPCSystem {
   // Trigger check called after catch or travel (~3% chance)
   checkRandomEncounter(triggerSource = 'catch') {
     if (this.encounterCooldown > 0) return false;
-    if (this.activeEncounter) return false;
+    if (this.activeEncounter || this.uiManager?.activeModal) return false;
+    const welcome = typeof document !== 'undefined' ? document.getElementById('welcome-popup') : null;
+    if (welcome && !welcome.classList.contains('welcome-overlay-hidden')) return false;
 
-    // 3.5% chance
+    // More visitors, with a cooldown and no consecutive repeat characters.
     const roll = Math.random();
-    if (roll < 0.035) {
-      const npc = NPC_DEFINITIONS[Math.floor(Math.random() * NPC_DEFINITIONS.length)];
+    if (roll < (triggerSource === 'travel' ? 0.18 : 0.07)) {
+      const available = NPC_DEFINITIONS.filter(npc => npc.id !== this.lastEncounterId);
+      const npc = available[Math.floor(Math.random() * available.length)];
       this.triggerEncounter(npc);
-      this.encounterCooldown = 60000; // 1 minute cooldown between encounters
+      this.encounterCooldown = 90000;
       return true;
     }
     return false;
   }
 
   triggerEncounter(npc) {
+    this.lastEncounterId = npc.id;
     this.activeEncounter = npc;
     if (this.soundManager) {
       this.soundManager.playRareChime();
@@ -230,3 +237,37 @@ export class NPCSystem {
     this.activeEncounter = null;
   }
 }
+
+
+NPC_DEFINITIONS.push(
+  {
+    id: 'harbor_cook', name: 'Mara the Harbor Cook', title: 'Keeper of the Dockside Kitchen', avatar: '\uD83C\uDF72', themeColor: '#fb923c',
+    greeting: 'The soup is warm and the harbor is waking up. Every good fishing trip starts with a little company.',
+    options: [
+      { id: 'share_recipe', label: 'Swap fishing stories (Free)', desc: 'Share a quiet moment on deck and earn 60 XP.', cost: 0,
+        action: save => { save.addXp(60); return { success: true, message: 'Mara adds your tale to her recipe book. +60 XP!' }; } },
+      { id: 'warm_lunch', label: 'Buy a packed lunch ($40)', desc: 'A hearty lunch and a lesson from an old angler: +100 XP.', cost: 40,
+        action: save => { if (!save.spendCoins(40)) return { success: false, message: 'You need $40 for lunch.' }; save.addXp(100); return { success: true, message: 'A warm meal and good advice. +100 XP!' }; } },
+    ],
+  },
+  {
+    id: 'lantern_keeper', name: 'Jun the Lantern Keeper', title: 'Guide of the Evening Tide', avatar: '\uD83C\uDFEE', themeColor: '#a5b4fc',
+    greeting: 'Keep a light in the window and an eye on the water. There is more down there than the surface lets on.',
+    options: [
+      { id: 'borrow_lantern', label: 'Borrow a lantern (Free)', desc: 'Receive Starlight Sight for 90 seconds.', cost: 0,
+        action: save => { save.addBuff('starlightClarity', 90000); return { success: true, message: 'Jun lends you a lantern. Starlight Sight for 90 seconds!' }; } },
+      { id: 'lantern_lesson', label: 'Listen to a lighthouse tale (Free)', desc: 'Learn about life along the coast and gain 75 XP.', cost: 0,
+        action: save => { save.addXp(75); return { success: true, message: 'The lighthouse still shines for every returning boat. +75 XP!' }; } },
+    ],
+  },
+  {
+    id: 'tide_researcher', name: 'Nell the Tide Researcher', title: 'Harbor Field Naturalist', avatar: '\uD83D\uDD2C', themeColor: '#2dd4bf',
+    greeting: 'Wonderful timing! I am comparing field notes from these waters. Even the smallest catch can teach us something.',
+    options: [
+      { id: 'share_journal', label: 'Share your field journal (Free)', desc: 'With at least 3 discovered fish species, receive a $100 research grant and 60 XP.', cost: 0,
+        action: save => { if (Object.keys(save.data.journal || {}).length < 3) return { success: false, message: 'Discover 3 fish species, then bring Nell your notes.' }; save.addCoins(100); save.addXp(60); return { success: true, message: 'Nell records your discoveries. +$100 and +60 XP!' }; } },
+      { id: 'research_advice', label: 'Ask for field advice (Free)', desc: 'Receive 45 XP and a tip for your next expedition.', cost: 0,
+        action: save => { save.addXp(45); return { success: true, message: 'Check each realm in your journal for fish depth hints. +45 XP!' }; } },
+    ],
+  },
+);

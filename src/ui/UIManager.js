@@ -421,7 +421,7 @@ export class UIManager {
       } else {
         updatePreviewStats('__not_found__');
         if (loginFeedback) {
-          loginFeedback.textContent = `No account found for "${val}".`;
+          loginFeedback.textContent = `Enter your password to look up this captain online.`;
           loginFeedback.className = 'auth-feedback auth-muted';
         }
       }
@@ -443,7 +443,7 @@ export class UIManager {
         }
       } else {
         if (regFeedback) {
-          regFeedback.textContent = `✨ Username "${val}" is available!`;
+          regFeedback.textContent = `✨ Username will be checked online when you create the account.`;
           regFeedback.className = 'auth-feedback auth-success';
         }
       }
@@ -461,7 +461,14 @@ export class UIManager {
       switchTab('guest');
     }
 
-    document.getElementById('btn-welcome-start')?.addEventListener('click', () => {
+    document.getElementById('btn-welcome-start')?.addEventListener('click', async () => {
+      const username = accountManager.getCurrentUser();
+      const account = accountManager.accounts[accountManager.normalizeUsername(username)];
+      if (account?.cloudUid) {
+        const notice = await accountManager.restoreCloudSave(account, true);
+        this.saveSystem.switchToAccount(username);
+        if (notice) this.showToast(notice);
+      }
       launchGame();
     });
 
@@ -486,6 +493,7 @@ export class UIManager {
       switchTab('login');
     });
 
+    let authBusy = false;
     const handleLogin = async (e) => {
       if (e) e.preventDefault();
       const u = loginUser?.value?.trim();
@@ -497,7 +505,11 @@ export class UIManager {
         }
         return;
       }
-      const res = await accountManager.login(u, p);
+      if (authBusy) return;
+      authBusy = true;
+      if (loginFeedback) loginFeedback.textContent = 'Signing in and checking saved progress...';
+      let res;
+      try { res = await accountManager.login(u, p); } finally { authBusy = false; }
       if (!res.success) {
         if (loginFeedback) {
           loginFeedback.textContent = res.message;
@@ -510,7 +522,7 @@ export class UIManager {
         loginFeedback.className = 'auth-feedback auth-success';
       }
       this.saveSystem.switchToAccount(res.username);
-      this.showToast(`⚓ Welcome aboard, Captain ${res.username}!`);
+      this.showToast(res.notice || `⚓ Welcome aboard, Captain ${res.username}!`);
       setTimeout(() => launchGame(), 300);
     };
 
@@ -528,7 +540,11 @@ export class UIManager {
         }
         return;
       }
-      const res = await accountManager.register(u, p);
+      if (authBusy) return;
+      authBusy = true;
+      if (regFeedback) regFeedback.textContent = 'Creating your online captain...';
+      let res;
+      try { res = await accountManager.register(u, p); } finally { authBusy = false; }
       if (!res.success) {
         if (regFeedback) {
           regFeedback.textContent = res.message;
@@ -541,7 +557,7 @@ export class UIManager {
         regFeedback.className = 'auth-feedback auth-success';
       }
       this.saveSystem.switchToAccount(res.username);
-      this.showToast(`🎉 Account Created! Welcome, Captain ${res.username}!`);
+      this.showToast(res.notice || `🎉 Account Created! Welcome, Captain ${res.username}!`);
       setTimeout(() => launchGame(), 350);
     };
 
@@ -2399,7 +2415,7 @@ export class UIManager {
           crewHtml += `
             <div class="journal-card journal-discovered" style="border-color: #f59e0b; background: rgba(30, 41, 59, 0.9);">
               <div class="journal-card-top">
-                <span class="rarity-tag" style="background: #f59e0b; color: #1e293b; font-weight: 800;">ACTIVE COMPANION</span>
+                <span class="rarity-tag" style="background: #f59e0b; color: #1e293b; font-weight: 800;">${save.isPetEquipped(pet.id) ? 'ABOARD' : 'RESTING'}</span>
                 <span class="zone-tag">${pet.species}</span>
               </div>
               <div class="journal-visual" style="font-size: 3rem; padding: 15px 0; text-align: center;">
@@ -2411,8 +2427,8 @@ export class UIManager {
                 <div style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; font-size: 0.85rem; color: #38bdf8; line-height: 1.4;">
                   ✨ <strong>Perk:</strong> ${pet.perk}
                 </div>
-                <div class="journal-meta" style="margin-top: 8px; justify-content: flex-end;">
-                  <span style="color: #4ade80; font-weight: 700;">🐾 Aboard Vessel</span>
+                <div class="journal-meta" style="margin-top: 8px;">
+                  <button class="btn btn-secondary" data-equip-pet="${pet.id}" aria-pressed="${save.isPetEquipped(pet.id)}">${save.isPetEquipped(pet.id) ? 'Let rest ashore' : 'Bring aboard'}</button>
                 </div>
               </div>
             </div>
@@ -2520,6 +2536,15 @@ export class UIManager {
       viewLogbook.style.display = 'block';
     });
 
+    const bindCrewEvents = () => {
+      document.querySelectorAll('[data-equip-pet]').forEach(button => button.addEventListener('click', () => {
+        const id = button.dataset.equipPet;
+        save.setPetEquipped(id, !save.isPetEquipped(id));
+        document.getElementById('journal-tab-content').innerHTML = renderCrewTab();
+        bindCrewEvents();
+      }));
+    };
+    if (defaultSubTab === 'crew') bindCrewEvents();
     const bindAlmanacEvents = () => {
       document.querySelectorAll('canvas[data-species]').forEach(canvas => {
         const species = allSpecies.find(fish => fish.id === canvas.dataset.species);
@@ -2595,6 +2620,7 @@ export class UIManager {
           soundManager.playButtonClick();
           activateTab('tab-crew');
           document.getElementById('journal-tab-content').innerHTML = renderCrewTab();
+          bindCrewEvents();
         });
       }
 
@@ -3102,6 +3128,19 @@ export class UIManager {
             <strong style="color: #facc15;">🪙 $${pendingTips.toLocaleString()}</strong>
             <button class="btn btn-sm btn-buy" id="btn-collect-tips" ${pendingTips > 0 ? '' : 'disabled'}>💰 Collect</button>
           </div>
+          <div class="aq-actions-col">
+            <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish ($1)</button>
+            <button class="btn btn-outline btn-sm" id="btn-aq-upgrade">🛒 Upgrade</button>
+          </div>
+        </div>
+
+        <div class="aquarium-canvas-box">
+          <canvas id="aquarium-canvas" width="760" height="380"></canvas>
+          <div class="aquarium-canvas-hint">Click tank to tap the glass • Food attracts fish • Relics rest on seabed</div>
+        </div>
+
+        <details class="aquarium-style-shop" ${this.aquariumDecorOpen ? 'open' : ''}>
+          <summary>Decorate your aquarium <span>Owned styles are free to reuse</span></summary>
           <div class="aq-theme-selector">
             <span class="aq-lbl">Theme:</span>
             <button class="theme-btn ${theme === 'reef' ? 'active' : ''}" data-theme="reef">🪸 Reef ${save.getAquariumStyleCost('theme', 'reef') ? '$' + save.getAquariumStyleCost('theme', 'reef') : '(Owned)'}</button>
@@ -3109,19 +3148,9 @@ export class UIManager {
             <button class="theme-btn ${theme === 'atlantis' ? 'active' : ''}" data-theme="atlantis">🏛️ Atlantis ${save.getAquariumStyleCost('theme', 'atlantis') ? '$' + save.getAquariumStyleCost('theme', 'atlantis') : '(Owned)'}</button>
             <button class="theme-btn ${theme === 'nebula' ? 'active' : ''}" data-theme="nebula">✨ Nebula ${save.getAquariumStyleCost('theme', 'nebula') ? '$' + save.getAquariumStyleCost('theme', 'nebula') : '(Owned)'}</button>
           </div>
-          <div class="aq-actions-col">
-            <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish ($1)</button>
-            <button class="btn btn-outline btn-sm" id="btn-aq-upgrade">🛒 Upgrade</button>
-          </div>
-        </div>
-
         <div class="customize-grid aquarium-decor-controls">${Object.entries(AQUARIUM_OPTIONS).map(([key, config]) => `<label class="customize-field">${config.label}<select data-aquarium-decor="${key}">${config.choices.map(([value, label]) => `<option value="${value}" ${value === (save.data.aquarium.decor?.[key] || config.default) ? 'selected' : ''}>${label} - ${save.getAquariumStyleCost(key, value) ? '$' + save.getAquariumStyleCost(key, value) : 'Owned'}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" data-buy-decor="${key}">Buy / Apply</button></label>`).join('')}</div>
         <p class="customize-note">Display fish, treasures, fossils, and relics. Displayed items use tank slots; only fish earn visitor tips. Buy styles once, then switch between owned styles for free.</p>
-        <div class="aquarium-canvas-box">
-          <canvas id="aquarium-canvas" width="760" height="380"></canvas>
-          <div class="aquarium-canvas-hint">Click tank to tap the glass • Food attracts fish • Relics rest on seabed</div>
-        </div>
-
+        </details>
         <div class="aquarium-inhabitants-section">
           <div class="inhabitants-header">
             <h4>Tank Inhabitants (${items.length} / ${capacity})</h4>
@@ -3137,6 +3166,20 @@ export class UIManager {
     `;
 
     this.startAquariumCanvas(items, theme);
+    const styleShop = container.querySelector('.aquarium-style-shop');
+    styleShop?.addEventListener('toggle', () => { this.aquariumDecorOpen = styleShop.open; });
+    const updateStyleButtons = () => {
+      container.querySelectorAll('[data-buy-decor]').forEach(button => {
+        const key = button.dataset.buyDecor;
+        const selected = container.querySelector(`[data-aquarium-decor="${key}"]`).value;
+        const cost = save.getAquariumStyleCost(key, selected);
+        const applied = selected === (save.data.aquarium.decor?.[key] || AQUARIUM_OPTIONS[key].default);
+        button.textContent = applied ? 'Applied' : cost ? `Buy & apply - $${cost}` : 'Apply owned style';
+        button.disabled = applied || cost > save.data.coins;
+      });
+    };
+    container.querySelectorAll('[data-aquarium-decor]').forEach(select => select.addEventListener('change', updateStyleButtons));
+    updateStyleButtons();
     document.querySelectorAll('[data-buy-decor]').forEach(button => button.addEventListener('click', () => {
       const key = button.dataset.buyDecor;
       const value = document.querySelector(`[data-aquarium-decor="${key}"]`).value;
@@ -4122,6 +4165,7 @@ export class UIManager {
 
     const modalBody = `
       <div class="settings-wrapper">
+        <div class="settings-section"><h3>Captain Save</h3><p id="cloud-save-status">${escapeScoreboardText(accountManager.isGuest() ? 'Guest progress is saved on this browser.' : accountManager.cloudStatus)}</p><button class="btn btn-secondary" id="btn-cloud-save" ${accountManager.cloudSession ? '' : 'disabled'}>Save to cloud now</button><p class="customize-note">For an older local account, sign in once on the original laptop to migrate your progress.</p></div>
         <div class="settings-section"><h3>Your Angler</h3><p>Choose your colors and headwear.</p><button class="btn btn-primary" id="btn-customize-angler">Customize Appearance</button></div>
         <div class="settings-section">
           <h3>🎮 Career Statistics</h3>
@@ -4172,6 +4216,12 @@ export class UIManager {
     this.openModal('⚙️ Settings & Career Records', modalBody);
 
     document.getElementById('btn-customize-angler')?.addEventListener('click', () => this.openAppearance());
+    document.getElementById('btn-cloud-save')?.addEventListener('click', async () => {
+      this.saveSystem.save();
+      await accountManager.syncCloudSave();
+      const status = document.getElementById('cloud-save-status');
+      if (status) status.textContent = accountManager.cloudStatus;
+    });
 
     document.getElementById('setting-always-ask')?.addEventListener('change', (e) => {
       this.saveSystem.data.settings.alwaysAskOnCatch = e.target.checked;

@@ -638,6 +638,18 @@ export class SaveSystem {
     return !!this.data.pets?.[petId];
   }
 
+  isPetEquipped(petId) {
+    return this.hasPet(petId) && this.data.petEquipment?.[petId] !== false;
+  }
+
+  setPetEquipped(petId, equipped) {
+    if (!this.hasPet(petId)) return false;
+    this.data.petEquipment ||= {};
+    this.data.petEquipment[petId] = !!equipped;
+    this.save();
+    return true;
+  }
+
   unlockPet(petId) {
     if (!this.data.pets) {
       this.data.pets = { cat: false, pelican: false, dolphin: false, shark: false };

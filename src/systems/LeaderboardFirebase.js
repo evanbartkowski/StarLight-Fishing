@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { initializeAuth, browserLocalPersistence, signInAnonymously } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, getDocs, query, orderBy, limit, serverTimestamp } from 'firebase/firestore/lite';
+import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, query, orderBy, limit, serverTimestamp } from 'firebase/firestore/lite';
 
 // Public web configuration. Access control lives in firestore.rules.
 const config = {
@@ -10,6 +10,7 @@ const config = {
   authDomain: 'starlight-fishing.firebaseapp.com',
 };
 const clients = new Map();
+const migrated = new Set();
 
 function client(name) {
   if (!clients.has(name)) {
@@ -20,7 +21,23 @@ function client(name) {
   return clients.get(name);
 }
 
-export async function publishScore(accountKey, score) {
+export async function publishScore(accountKey, score, cloudUid = null) {
+  if (cloudUid) {
+    const { getCloudClient } = await import('./CloudAccounts.js');
+    const { auth, db } = getCloudClient();
+    await auth.authStateReady();
+    if (auth.currentUser?.uid !== cloudUid) throw new Error('Please sign in to update your rank.');
+    await setDoc(doc(db, 'leaderboard', cloudUid), { ...score, updatedAt: serverTimestamp() });
+    if (!migrated.has(accountKey)) {
+      const legacy = client(`captain:${accountKey}`);
+      await legacy.auth.authStateReady();
+      if (legacy.auth.currentUser) {
+        try { await deleteDoc(doc(legacy.db, 'leaderboard', legacy.auth.currentUser.uid)); } catch {}
+      }
+      migrated.add(accountKey);
+    }
+    return cloudUid;
+  }
   // A separate persisted identity for each local captain prevents account switches
   // from replacing another captain's score. Existing local passwords stay local.
   const { auth, db } = client(`captain:${accountKey}`);

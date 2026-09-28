@@ -44,7 +44,7 @@ export class LeaderboardManager {
     if (!account) return null; // Guests can read the board, but never publish.
     const key = account.username.toLowerCase();
     const score = publicScore(account, saveSystem.data);
-    const signature = JSON.stringify(score);
+    const signature = JSON.stringify({ score, cloudUid: account.cloudUid || null });
     const previous = this.published.get(key);
     if (previous?.signature === signature) return previous.id;
     if (this.inFlight.has(key)) {
@@ -54,7 +54,7 @@ export class LeaderboardManager {
     }
     const task = (async () => {
       const backend = await this.loadBackend();
-      const id = await withTimeout(backend.publishScore(key, score));
+      const id = await withTimeout(backend.publishScore(key, score, account.cloudUid));
       this.published.set(key, { signature, id });
       return id;
     })();

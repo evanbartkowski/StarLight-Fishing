@@ -94,7 +94,7 @@ export const QUEST_POOL = [
     title: 'Vessel Crew Bond',
     category: 'cozy',
     icon: '🐾',
-    description: "Pet the ship's cat or feed Captain Pete the pelican.",
+    description: "Pet the ship's cat or feed Evan the pelican.",
     target: 1,
     rewardCoins: 140,
     rewardXp: 65,
@@ -222,3 +222,20 @@ export const QUEST_POOL = [
     },
   },
 ];
+
+
+// Additional short contracts use the same catch and dive events as the noticeboard.
+QUEST_POOL.push(
+  { id: 'harbor_supper', title: 'Supper for the Harbor', category: 'fishing', icon: '\uD83C\uDF72', description: 'Catch 6 fish of any kind.', target: 6, rewardCoins: 180, rewardXp: 80,
+    check: (event, current) => event.type === 'catch_fish' ? current + 1 : current },
+  { id: 'silver_scales', title: 'A Flash of Silver', category: 'fishing', icon: '\uD83D\uDC1F', description: 'Catch 3 uncommon or rare fish.', target: 3, rewardCoins: 240, rewardXp: 100,
+    check: (event, current) => event.type === 'catch_fish' && ['uncommon', 'rare'].includes(event.fish.rarity) ? current + 1 : current },
+  { id: 'salvage_patrol', title: 'Salvage Patrol', category: 'treasure', icon: '\u2693', description: 'Bring up 2 treasures, fossils, or crates.', target: 2, rewardCoins: 260, rewardXp: 110,
+    check: (event, current) => event.type === 'catch_treasure' ? current + 1 : current },
+  { id: 'sealed_surprise', title: 'A Sealed Surprise', category: 'treasure', icon: '\uD83D\uDCE6', description: 'Open a mystery crate from your inventory.', target: 1, rewardCoins: 160, rewardXp: 80,
+    check: (event, current) => event.type === 'open_crate' ? current + 1 : current },
+  { id: 'steady_hands', title: 'Steady Hands', category: 'skill', icon: '\u26F5', description: 'Finish 2 dives with at least one catch and no hazard hits.', target: 2, rewardCoins: 300, rewardXp: 130,
+    check: (event, current) => event.type === 'dive_completed' && !event.tookDamage && event.catchesCount > 0 ? current + 1 : current },
+  { id: 'three_good_trips', title: 'Three Good Trips', category: 'exploration', icon: '\uD83E\uDDED', description: 'Return from 3 dives carrying at least one catch.', target: 3, rewardCoins: 220, rewardXp: 100,
+    check: (event, current) => event.type === 'dive_completed' && event.catchesCount > 0 ? current + 1 : current },
+);

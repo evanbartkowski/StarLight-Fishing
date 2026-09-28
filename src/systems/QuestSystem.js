@@ -18,8 +18,8 @@ export class QuestSystem {
     }
 
     const currentActive = this.saveSystem.data.quests.active;
-    // Keep 3 active quests at all times
-    while (currentActive.length < 3) {
+    // Give the noticeboard one extra mission without replacing saved progress.
+    while (currentActive.length < 4) {
       const activeIds = currentActive.map((q) => q.id);
       const available = QUEST_POOL.filter((q) => !activeIds.includes(q.id));
       if (available.length === 0) break;

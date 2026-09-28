@@ -256,3 +256,61 @@ test('scoreboard switches between level and money order with deterministic tie b
     assert.ok(container.innerHTML.indexOf('>Wealthy</span>') < container.innerHTML.indexOf('>Leader</span>'));
   } finally { globalThis.document = oldDocument; }
 });
+
+
+test('upgraded lines have native fish throughout the lower depths of every realm', () => {
+  const save = advancedSave();
+  for (const sea of FANTASY_SEAS) {
+    save.data.currentSea = sea.id;
+    const world = new OceanWorld(1000, 700);
+    world.populateWorld(save);
+    for (let depth = 600; depth <= 2900; depth += 200) {
+      assert.ok(world.entities.fish.some(f => f.zone === sea.id && Math.abs((f.y - world.surfaceY) / world.pixelsPerMeter - depth) < 90), `${sea.name}: empty near ${depth}m`);
+    }
+  }
+});
+
+test('Sunlit Shoals has more small hazards and reserves giant obstacles for deep water', () => {
+  const save = advancedSave();
+  save.data.currentSea = 1;
+  const world = new OceanWorld(1000, 700);
+  world.populateWorld(save);
+  assert.ok(world.entities.hazards.filter(h => !h.isColossal).length >= 12);
+  for (const hazard of world.entities.hazards.filter(h => h.isColossal)) assert.ok((hazard.y - world.surfaceY) / world.pixelsPerMeter >= 100);
+});
+
+test('owned pets can be equipped and rested without losing ownership after reload', () => {
+  const save = new SaveSystem();
+  save.unlockPet('dolphin');
+  assert.equal(save.isPetEquipped('dolphin'), true);
+  save.setPetEquipped('dolphin', false);
+  save.load();
+  assert.equal(save.hasPet('dolphin'), true);
+  assert.equal(save.isPetEquipped('dolphin'), false);
+  assert.equal(save.setPetEquipped('dolphin', true), true);
+  assert.equal(save.isPetEquipped('dolphin'), true);
+  save.data.pets.shark = false;
+  assert.equal(save.setPetEquipped('shark', true), false);
+});
+
+test('new quests count only the matching catch, crate, and completed dive events', async () => {
+  const { QUEST_POOL } = await import('../src/data/QuestsData.js');
+  const find = id => QUEST_POOL.find(q => q.id === id);
+  assert.equal(find('harbor_supper').check({ type: 'catch_fish' }, 0), 1);
+  assert.equal(find('steady_hands').check({ type: 'dive_completed', tookDamage: false, catchesCount: 2 }, 0), 1);
+  assert.equal(find('steady_hands').check({ type: 'dive_completed', tookDamage: true, catchesCount: 2 }, 0), 0);
+  assert.equal(find('sealed_surprise').check({ type: 'catch_crate' }, 0), 0);
+  assert.equal(find('sealed_surprise').check({ type: 'open_crate' }, 0), 1);
+});
+
+test('dismissing an NPC allows future visitors and open menus block popup interruptions', async () => {
+  const { NPCSystem, NPC_DEFINITIONS } = await import('../src/systems/NPCSystem.js');
+  const ui = { activeModal: 'shop', showNPCModal() { this.activeModal = 'npc_encounter'; } };
+  const npc = new NPCSystem({ recordNPCInteraction() {} }, null, ui);
+  assert.equal(npc.checkRandomEncounter(), false);
+  npc.triggerEncounter(NPC_DEFINITIONS[0]);
+  ui.activeModal = null;
+  npc.update(100);
+  assert.equal(npc.activeEncounter, null);
+  assert.equal(NPC_DEFINITIONS.length, 7);
+});

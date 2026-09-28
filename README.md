@@ -21,11 +21,11 @@ Every realm has **35 native fish** (245 regular species total), plus special myt
 | --- | ---: | ---: | ---: |
 | Sunlit Shoals | Free | $6 | 1x |
 | Bioluminescent Trench | $3,000 | $30 | 1.3x |
-| Astral Shimmerfall | $17,500 | $130 | 1.7x |
-| Sunken Atlantis | $35,000 | $280 | 2.2x |
-| Whispering Aether Sea | $70,000 | $538 | 2.9x |
-| Magma Caldera Trench | $140,000 | $1,176 | 3.8x |
-| Eldritch Chrono Void | $1,000,000 | $8,800 | 5x |
+| Astral Shimmerfall | $17,500 | $85 | 1.7x |
+| Sunken Atlantis | $35,000 | $170 | 2.2x |
+| Whispering Aether Sea | $70,000 | $320 | 2.9x |
+| Magma Caldera Trench | $140,000 | $700 | 3.8x |
+| Eldritch Chrono Void | $1,000,000 | $4,800 | 5x |
 
 Actual sale values also depend on species, size, rarity, shiny/crown status, and gear. Previously unlocked realms remain unlocked.
 
@@ -45,7 +45,7 @@ Native species occupy shallow nurseries as well as deep habitats, so arriving in
 
 Open **Settings ? Customize Appearance** to choose your angler's skin tone, coat, hair, hat color, and headwear, with a live preview. Choices save with the active local profile.
 
-Four companions can join your voyages: Angela the cat (eligible from level 8), Evan the pelican (14), Echo the dolphin (22), and **Irene the shark**, who joins automatically at level 36. Existing level-36+ saves also receive Irene.
+Four companions can join your voyages: Angela the cat (eligible from level 8), Evan the pelican (14), Gracie the dolphin (22), and **Irene the shark**, who joins automatically at level 36. Existing level-36+ saves also receive Irene.
 
 Maxed-out upgrades move to the bottom of the shop, leaving available purchases first.
 
@@ -68,13 +68,13 @@ Shiny fish earn an extra 10 coins per minute. Relics do not generate tips. The a
 
 ## Saves and accounts
 
-Guest progress and Captain accounts are stored in this browser's `localStorage`. Returning guests resume their saved progress. Captain accounts have separate local saves; their passwords and full saves are not uploaded.
+Guest progress remains in browser storage. Online captains have a local save plus a private cloud save; Firebase Authentication verifies their credentials. Full saves are never included in public rankings.
 
-Progress does not sync across devices or browsers. Localhost, a Firebase domain, and a custom domain each have separate browser storage; clearing site data removes local saves.
+Online captains use Firebase Authentication and private Firestore cloud saves in the configured US `nam5` database. Existing local captains must log in with their password once on the original laptop to migrate. Cloud saves upload every 30 seconds and when hiding the tab; signing in elsewhere loads the last upload. Guests remain local. Simultaneous device writes are rejected when another device has newer progress. A replaced local save is backed up in browser storage. Localhost, a Firebase domain, and a custom domain each have separate browser storage; clearing site data removes local saves.
 
 The World Angler Scoreboard uses Firestore for shared Top 100 rankings by level or coins. Registered captains publish public stats once a minute when changed, and when opening or refreshing the scoreboard. Guests can view rankings but cannot join them. Network failures show explicitly labelled browser-only standings and preserve local progress.
 
-Each local captain gets a separate persisted Firebase anonymous identity for ownership of their score. Captain names are display names, not globally unique logins. Clearing browser storage creates a new identity, and existing captains appear online after they next play. Rankings are client-reported, not protected against edited local saves; rules restrict writes to the owner's row and validate public fields.
+Online captain usernames are case-insensitive and globally unique. Existing local names that collide with an online account cannot claim it without its password. Older local-only leaderboard entries use anonymous identities; online captains use their authenticated account UID. Password credentials go through Firebase Authentication; saves remain private to their owner. The internal email identifier encodes the username and is not a recovery email, so email password recovery is not available. Rankings are client-reported, not protected against edited local saves; rules restrict writes to the owner's row and validate public fields.
 
 ## Run locally
 
@@ -163,3 +163,5 @@ See the official [Firebase Hosting GitHub integration guide](https://firebase.go
 | `public/` | Static assets copied into the production build |
 
 Aquarium food costs $1 per feeding. Seabeds, scenery, lighting, bubble settings, and water themes show their purchase prices; purchased styles remain owned and can be reapplied for free.
+
+The noticeboard now holds four missions, with six additional short contracts. Three new visitors join the NPC rotation; encounters avoid open menus and have a 90-second cooldown. Pets can rest ashore or come aboard from Journal > Crew, including Gracie the Dolphin. Deep resident fish occupy the full upgraded line range; large Sunlit Shoals hazards begin at 100m.

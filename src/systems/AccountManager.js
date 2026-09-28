@@ -7,6 +7,9 @@ export class AccountManager {
   constructor() {
     this.accounts = this.loadAccounts();
     this.activeUser = this.loadActiveSession();
+    this.cloudSession = null;
+    this.cloudStatus = 'Local save';
+    this.loadCloud = () => import('./CloudAccounts.js');
   }
 
   loadAccounts() {
@@ -132,18 +135,25 @@ export class AccountManager {
     }
 
     const hash = await this.hashPassword(password);
+    let cloudUser;
+    try {
+      cloudUser = await (await this.loadCloud()).authenticate(trimmed, password, true);
+    } catch (error) {
+      return { success: false, message: this.cloudError(error) };
+    }
     this.accounts[norm] = {
       username: trimmed,
       passwordHash: hash,
-      createdAt: Date.now(),
+      cloudUid: cloudUser.uid,
+      createdAt: cloudUser.createdAt,
       lastLogin: Date.now(),
     };
     this.saveAccounts();
 
     this.activeUser = trimmed;
     this.saveActiveSession(trimmed);
-
-    return { success: true, username: trimmed };
+    const notice = await this.restoreCloudSave(this.accounts[norm], true);
+    return { success: true, username: trimmed, notice };
   }
 
   async login(username, password) {
@@ -156,32 +166,107 @@ export class AccountManager {
     }
 
     const norm = this.normalizeUsername(trimmed);
-    const account = this.accounts[norm];
-    if (!account) {
-      return { success: false, message: `Account "${trimmed}" not found. Please create an account.` };
-    }
+    let account = this.accounts[norm];
 
     const hash = await this.hashPassword(password);
-    if (account.passwordHash !== hash) {
+    if (account && !account.cloudUid && account.passwordHash !== hash) {
       return { success: false, message: 'Incorrect password. Please try again.' };
     }
 
+    try {
+      const cloud = await this.loadCloud();
+      let user;
+      try { user = await cloud.authenticate(trimmed, password); }
+      catch (error) {
+        if (account && !account.cloudUid && ['auth/invalid-credential', 'auth/user-not-found', 'auth/invalid-login-credentials'].includes(error.code)) {
+          user = await cloud.authenticate(trimmed, password, true);
+        } else { throw error; }
+      }
+      account = { ...account, username: user.username, cloudUid: user.uid, passwordHash: hash, createdAt: user.createdAt, lastLogin: Date.now() };
+      const hasLocalSave = !!localStorage.getItem(this.getSaveKeyForUser(account.username));
+      const notice = await this.restoreCloudSave(account, hasLocalSave);
+      if (notice && !hasLocalSave) return { success: false, message: notice };
+      this.accounts[norm] = account;
+      this.cloudNotice = notice;
+    } catch (error) {
+      return { success: false, message: this.cloudError(error) };
+    }
     account.lastLogin = Date.now();
     this.saveAccounts();
 
     this.activeUser = account.username;
     this.saveActiveSession(account.username);
 
-    return { success: true, username: account.username };
+    return { success: true, username: account.username, notice: this.cloudNotice };
+  }
+
+  cloudError(error) {
+    if (error.code === 'auth/email-already-in-use') return 'This username is already registered online. Log in with its password, or choose another name.';
+    if (['auth/invalid-credential', 'auth/user-not-found', 'auth/wrong-password', 'auth/invalid-login-credentials'].includes(error.code)) return 'Username or password was not recognized online. For an old local account, log in once on the original laptop to migrate it.';
+    if (error.code === 'auth/too-many-requests') return 'Too many sign-in attempts. Please wait a moment and try again.';
+    return 'Unable to reach online accounts. Check your connection and try again; your local saves are safe.';
+  }
+
+  async restoreCloudSave(account, allowLocal = false) {
+    this.cloudSession = null;
+    const key = this.getSaveKeyForUser(account.username);
+    try {
+      const cloud = await this.loadCloud();
+      const remote = await cloud.readCloudSave(account.cloudUid);
+      const local = localStorage.getItem(key);
+      let revision = remote?.revision || 0;
+      if (remote) {
+        const parsed = JSON.parse(remote.snapshot);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid save');
+        const lastSyncedRevision = Number(localStorage.getItem(`${key}_cloud_revision`) || -1);
+        if (local && local !== remote.snapshot && lastSyncedRevision === revision) {
+          revision = await cloud.writeCloudSave(account.cloudUid, local, revision);
+        } else {
+          if (local && local !== remote.snapshot) localStorage.setItem(`${key}_before_cloud`, local);
+          localStorage.setItem(key, remote.snapshot);
+        }
+      } else if (local) {
+        revision = await cloud.writeCloudSave(account.cloudUid, local, 0);
+      } else if (!allowLocal) {
+        return 'This captain has no cloud save yet. Log in on the original laptop first to upload your progress.';
+      }
+      this.cloudSession = { uid: account.cloudUid, username: account.username, revision, snapshot: localStorage.getItem(key) };
+      localStorage.setItem(`${key}_cloud_revision`, String(revision));
+      this.cloudStatus = 'Cloud connected';
+      return null;
+    } catch {
+      this.cloudStatus = 'Cloud unavailable - saved locally';
+      return 'Cloud progress could not be loaded. Your local saves are safe. Check your connection and try signing in again.';
+    }
+  }
+
+  async syncCloudSave() {
+    const session = this.cloudSession;
+    if (!session || session.username !== this.activeUser || session.busy) return;
+    const snapshot = localStorage.getItem(this.getActiveSaveKey());
+    if (!snapshot || snapshot === session.snapshot) return;
+    session.busy = true;
+    try {
+      session.revision = await (await this.loadCloud()).writeCloudSave(session.uid, snapshot, session.revision);
+      session.snapshot = snapshot;
+      localStorage.setItem(`${this.getSaveKeyForUser(session.username)}_cloud_revision`, String(session.revision));
+      this.cloudStatus = 'Saved to cloud';
+    } catch (error) {
+      this.cloudStatus = error.message?.includes('Newer progress') ? error.message : 'Cloud sync failed - saved locally';
+    } finally { session.busy = false; }
   }
 
   continueAsGuest() {
+    if (this.activeUser) this.loadCloud().then(cloud => cloud.logoutCloud()).catch(() => {});
+    this.cloudSession = null;
     this.activeUser = null;
     this.saveActiveSession(null);
     return { success: true, isGuest: true };
   }
 
   logout() {
+    this.cloudSession = null;
+    this.loadCloud().then(cloud => cloud.logoutCloud()).catch(() => {});
     this.activeUser = null;
     this.saveActiveSession(null);
     return { success: true };

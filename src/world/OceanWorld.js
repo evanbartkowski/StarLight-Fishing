@@ -222,6 +222,20 @@ export class OceanWorld {
       }
     });
 
+    // Keep every reachable depth band populated instead of leaving upgraded
+    // lines below the old realm depth limits with no catches at all.
+    const residents = FISH_SPECIES.filter(f => f.zone === this.currentSeaId && !f.conditions && !f.isSpecialDeep && ['common', 'uncommon'].includes(f.rarity));
+    for (let depth = 15; depth < Math.min(activeMaxDepth, 3000); depth += 75) {
+      const eligible = residents.filter(f => f.minDepth <= depth && f.maxDepth >= depth + 10);
+      if (!eligible.length) continue;
+      const nearby = this.entities.fish.filter(f => Math.abs((f.y - this.surfaceY) / this.pixelsPerMeter - depth) < 40).length;
+      for (let i = nearby; i < 3; i++) {
+        const species = eligible[Math.floor(Math.random() * eligible.length)];
+        const y = this.surfaceY + (depth + Math.random() * 10) * this.pixelsPerMeter;
+        this.entities.fish.push(new Fish(species, 60 + Math.random() * (this.worldWidth - 120), y, { shinyChance, surfaceY: this.surfaceY }));
+      }
+    }
+
     // Populate active Mythic & Legendary species based on atmospheric world cycle
     const timeOfDay = worldCycle.getTimeOfDay();
     const weather = worldCycle.getWeather();
@@ -317,7 +331,7 @@ export class OceanWorld {
       const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, haz.maxDepth) * this.pixelsPerMeter;
       if (minSpawnY >= maxSpawnY) return;
 
-      const count = haz.isColossal
+      const count = this.currentSeaId === 1 && !haz.isColossal ? 4 + Math.floor(Math.random() * 3) : haz.isColossal
         ? (1 + (Math.random() < 0.65 ? 1 : 0)) // 1 to 2 imposing colossal obstacles
         : (1 + Math.floor(Math.random() * 2 * realmProfile.hazardDensity));
 
@@ -370,20 +384,20 @@ export class OceanWorld {
     this.entities.treasures.forEach((treasure) => treasure.update(dt, this.worldWidth, hook));
 
     // Update vessel companions (only if unlocked)
-    if (this.shipsCat && this.saveSystem?.hasPet('cat')) {
+    if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
       this.shipsCat.update(dt);
       const tod = worldCycle.getTimeOfDay();
       const dayCount = worldCycle._dayCount || 0;
       this.shipsCat.checkMorningGift(tod, dayCount);
     }
-    if (this.pelican && this.saveSystem?.hasPet('pelican')) {
+    if (this.pelican && this.saveSystem?.isPetEquipped('pelican')) {
       const pelicanResult = this.pelican.update(dt);
       if (pelicanResult && pelicanResult.type === 'retrieve') {
         this.pendingBottleMessage = { type: 'pelican_retrieve', value: pelicanResult.value };
       }
     }
-    if (this.saveSystem?.hasPet('shark')) this.shark.update(dt, this.boat, this.surfaceY);
-    if (this.dolphin && this.saveSystem?.hasPet('dolphin')) {
+    if (this.saveSystem?.isPetEquipped('shark')) this.shark.update(dt, this.boat, this.surfaceY);
+    if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) {
       this.dolphin.update(dt, this.surfaceY, worldCycle.getWeather());
     }
 
@@ -553,10 +567,10 @@ export class OceanWorld {
     const b = this.boat;
     const vessel = b.vesselLevel || 0;
 
-    if (this.saveSystem?.hasPet('shark')) this.shark.render(ctx, cameraY);
+    if (this.saveSystem?.isPetEquipped('shark')) this.shark.render(ctx, cameraY);
 
     // Render dolphin behind boat (background layer - only if unlocked)
-    if (this.dolphin && this.saveSystem?.hasPet('dolphin')) this.dolphin.render(ctx, cameraY);
+    if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) this.dolphin.render(ctx, cameraY);
 
     ctx.save();
     ctx.translate(b.x, drawBoatY);
@@ -800,7 +814,7 @@ export class OceanWorld {
     }
 
     // Companions (rendered relative to boat transform - only if unlocked)
-    if (this.shipsCat && this.saveSystem?.hasPet('cat')) {
+    if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
       this.shipsCat.render(ctx, vessel);
       if (this.hoveredCompanion === 'angela') {
         const catPos = this.shipsCat.getDeckPosition(vessel);
@@ -827,7 +841,7 @@ export class OceanWorld {
         ctx.restore();
       }
     }
-    if (this.pelican && this.saveSystem?.hasPet('pelican')) {
+    if (this.pelican && this.saveSystem?.isPetEquipped('pelican')) {
       this.pelican.render(ctx, vessel);
       if (this.hoveredCompanion === 'evan') {
         const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
