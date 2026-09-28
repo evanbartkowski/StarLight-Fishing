@@ -155,7 +155,7 @@ export class UIManager {
         <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
           📋 <span class="btn-label">Quests</span> <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
         </button>
-        <button class="icon-btn" id="btn-inventory" title="Angler's Persistent Inventory & Tackle Box">🎒 <span class="btn-label">Inventory</span></button>
+        <button class="icon-btn" id="btn-inventory" title="Inventory">🎒 <span class="btn-label">Inventory</span></button>
         <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 <span class="btn-label">Shop</span></button>
         <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
         <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
@@ -734,13 +734,13 @@ export class UIManager {
       if (heatContainer) heatContainer.style.display = 'none';
     }
 
-    // Update Persistent Inventory Button capacity text
+    // Update Inventory Button capacity text
     const invCount = this.saveSystem.getInventory().length;
     const invCap = this.saveSystem.getInventoryCapacity();
     const invBtn = document.getElementById('btn-inventory');
     if (invBtn) {
-      invBtn.title = `Tackle Box Inventory (${invCount} / ${invCap} slots)`;
-      invBtn.innerHTML = `🎒 Inventory <span style="font-size: 0.72rem; color: ${invCount >= invCap ? '#ef4444' : '#38bdf8'}; font-weight:700;">(${invCount}/${invCap})</span>`;
+      invBtn.title = `Inventory (${invCount} / ${invCap} slots)`;
+      invBtn.innerHTML = `🎒 <span class="btn-label">Inventory</span> <span style="font-size: 0.72rem; color: ${invCount >= invCap ? '#ef4444' : '#38bdf8'}; font-weight:700;">(${invCount}/${invCap})</span>`;
     }
 
     // Update Personal Aquarium Button visibility
@@ -1194,7 +1194,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal('⛵ Dive Completed — Catch Resolution', modalBody);
+    this.openModal('⛵ Dive Completed', modalBody);
 
     if (hasUnrestoredRelic) {
       const restoreBtn = document.getElementById('btn-restore-relic');
@@ -3386,7 +3386,7 @@ export class UIManager {
           </div>
           <div class="inv-top-actions">
             <button class="btn ${sellableFish.length > 0 ? 'btn-buy' : 'btn-disabled'} btn-bulk-sell" id="btn-inv-bulk-sell" ${sellableFish.length > 0 ? '' : 'disabled'}>
-              🪙 Sell All Unlocked Fish (${sellableFish.length} • +$${totalSellableValue.toLocaleString()})
+              🪙 Sell All Fish (${sellableFish.length} • +$${totalSellableValue.toLocaleString()})
             </button>
             ${hasAq ? `
               <button class="btn btn-secondary" id="btn-inv-visit-aquarium">🐠 Visit Aquarium</button>
@@ -3398,7 +3398,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal("🎒 Angler's Persistent Inventory & Tackle Box", modalBody);
+    this.openModal("🎒 Inventory", modalBody);
 
     document.querySelectorAll('.inv-tabs .tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -3474,7 +3474,7 @@ export class UIManager {
         <div style="font-size: 3.5rem; margin-bottom: 12px;">🪙</div>
         <h3 style="font-size: 1.5rem; color: #f8fafc; margin-bottom: 10px;">Confirm Bulk Fish Sale</h3>
         <p style="font-size: 1.05rem; color: #cbd5e1; max-width: 480px; margin: 0 auto 16px;">
-          Sell <strong>${sellableFish.length} unlocked fish</strong> from your tackle box for a total of <strong style="color: #facc15; font-size: 1.25rem;">+$${totalPayout.toLocaleString()}</strong>?
+          Sell <strong>${sellableFish.length} fish</strong> from your tackle box for a total of <strong style="color: #facc15; font-size: 1.25rem;">+$${totalPayout.toLocaleString()}</strong>?
         </p>
         <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 12px; max-width: 480px; margin: 0 auto 20px; font-size: 0.85rem; color: #94a3b8; text-align: left;">
           🛡️ <strong>Safety Protection Active:</strong>
