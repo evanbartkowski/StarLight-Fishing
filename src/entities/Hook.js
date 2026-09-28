@@ -148,8 +148,11 @@ export class Hook {
     }
   }
 
-  steer(dir) {
-    this.vx += dir * 28 * this.agility;
+  steer(dir, deltaSec = 0.016) {
+    const steerForce = 420 * this.agility;
+    this.vx += dir * steerForce * 4 * deltaSec;
+    this.x += dir * steerForce * deltaSec;
+    this.targetX = this.x;
   }
 
   setTargetX(targetX) {

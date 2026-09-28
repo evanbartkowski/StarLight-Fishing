@@ -81,6 +81,36 @@ export class Fish {
     this.deflectWave = 0;
     this.deflectColor = this.rarityGlow || '#38bdf8';
     this.teleportFlash = 0;
+
+    // Determine 2D swimming movement pattern for unusual fish
+    const shape = species.shape || '';
+    const id = species.id || '';
+    if (species.movementType) {
+      this.movementType = species.movementType;
+    } else if (shape === 'seahorse') {
+      this.movementType = 'vertical_drift'; // Seahorse bobbing upright
+    } else if (shape === 'jellyfish' || shape === 'squid') {
+      this.movementType = 'vertical_pulse'; // Jellyfish/squid rhythmic upward pulse & drift
+    } else if (shape === 'ray' || id.includes('ray') || shape === 'siren_ray') {
+      this.movementType = 'diagonal_glide'; // Graceful ray swooping & gliding along diagonals
+    } else if (shape === 'eel' || shape === 'ribbon_eel' || id.includes('serpent') || id.includes('ribbon') || shape === 'star_ribbon') {
+      this.movementType = 'sine_wave'; // Undulating sinusoidal oceanic wave curves
+    } else if (shape === 'angler' || shape === 'blobfish' || shape === 'scorpionfish' || id.includes('turtle') || id.includes('coelacanth') || species.isStationary) {
+      this.movementType = 'hover'; // Ambush predator / ancient relic staying virtually still
+    } else if (species.isAberrant || (id.includes('abyss') && Math.random() < 0.35)) {
+      this.movementType = 'erratic'; // Deep anomaly darting unpredictably in 2D with pauses
+    } else {
+      this.movementType = 'horizontal'; // Standard horizontal cruising
+    }
+
+    this.pulseTimer = Math.random() * 2.5;
+    this.glideTimer = Math.random() * Math.PI * 2;
+    this.erraticTimer = 1.0 + Math.random() * 2.0;
+    this.erraticVx = 0;
+    this.erraticVy = 0;
+    this.swimAngle = 0;
+    this.minY = Math.max(70, (species.minDepth || 0) * 15);
+    this.maxY = (species.maxDepth || 9999) * 15;
   }
 
   update(dt, worldWidth, hook, particles = null) {
@@ -119,21 +149,121 @@ export class Fish {
     }
 
     if (this.state === 'SWIMMING') {
-      this.x += this.direction * this.speed * 55 * deltaSec;
+      let vx = 0;
+      let vy = 0;
 
-      // Vertical subtle drifting bob
-      this.y += Math.sin(this.wiggleTimer * 0.7) * 0.35;
+      switch (this.movementType) {
+        case 'hover': {
+          // Stays virtually in place, hovering with gentle subtle bobbing
+          vx = this.direction * (this.speed * 4) * deltaSec;
+          vy = Math.sin(this.wiggleTimer * 0.8) * 10 * deltaSec;
+          this.swimAngle = Math.sin(this.wiggleTimer * 0.6) * 0.04;
+          break;
+        }
+
+        case 'vertical_pulse': {
+          // Rhythmic jellyfish/squid upward pulse and gentle downward float
+          this.pulseTimer += deltaSec;
+          const cycle = 2.4;
+          const phase = (this.pulseTimer % cycle) / cycle;
+          if (phase < 0.35) {
+            const push = (1 - phase / 0.35);
+            vx = this.direction * (this.speed * 26 + push * 22) * deltaSec;
+            vy = -54 * push * deltaSec;
+            this.swimAngle = -0.32 * push;
+          } else {
+            vx = this.direction * (this.speed * 7) * deltaSec;
+            vy = 16 * deltaSec;
+            this.swimAngle = 0.08 * (phase - 0.35);
+          }
+          break;
+        }
+
+        case 'vertical_drift': {
+          // Seahorse upright bobbing and slow vertical navigation
+          this.glideTimer += deltaSec * 0.9;
+          vx = this.direction * (this.speed * 12) * deltaSec;
+          vy = Math.sin(this.glideTimer) * 30 * deltaSec;
+          this.swimAngle = -0.42 + Math.sin(this.glideTimer * 1.4) * 0.08;
+          break;
+        }
+
+        case 'diagonal_glide': {
+          // Graceful rays banking and swooping on sweeping diagonal arcs
+          this.glideTimer += deltaSec * 0.75;
+          const swoop = Math.sin(this.glideTimer);
+          vx = this.direction * (this.speed * 46) * deltaSec;
+          vy = swoop * 34 * deltaSec;
+          this.swimAngle = swoop * 0.28;
+          break;
+        }
+
+        case 'sine_wave': {
+          // Eel / serpent deep undulating oceanic wave
+          vx = this.direction * (this.speed * 50) * deltaSec;
+          vy = Math.cos(this.wiggleTimer * 1.2) * 38 * deltaSec;
+          this.swimAngle = Math.cos(this.wiggleTimer * 1.2) * 0.25;
+          break;
+        }
+
+        case 'erratic': {
+          // Unpredictable abyss anomaly: bursts in 2D directions, pauses, then bolts
+          this.erraticTimer -= deltaSec;
+          if (this.erraticTimer <= 0) {
+            this.erraticTimer = 1.2 + Math.random() * 2.2;
+            const angle = Math.random() * Math.PI * 2;
+            const spd = this.speed * (28 + Math.random() * 42);
+            this.erraticVx = Math.cos(angle) * spd;
+            this.erraticVy = Math.sin(angle) * spd * 0.6;
+            if (this.erraticVx < 0) this.direction = -1;
+            else if (this.erraticVx > 0) this.direction = 1;
+          }
+          vx = this.erraticVx * deltaSec;
+          vy = this.erraticVy * deltaSec;
+          this.erraticVx *= Math.max(0, 1 - 0.85 * deltaSec);
+          this.erraticVy *= Math.max(0, 1 - 0.85 * deltaSec);
+          this.swimAngle = Math.atan2(this.erraticVy, Math.abs(this.erraticVx) || 1) * 0.55;
+          break;
+        }
+
+        case 'horizontal':
+        default: {
+          vx = this.direction * this.speed * 55 * deltaSec;
+          vy = Math.sin(this.wiggleTimer * 0.7) * 0.35;
+          this.swimAngle = Math.sin(this.wiggleTimer * 0.7) * 0.04;
+          break;
+        }
+      }
+
+      this.x += vx;
+      this.y += vy;
+
+      // Depth boundary constraints so fish remain in their natural ocean zone
+      if (this.y < this.minY) {
+        this.y = this.minY;
+        if (vy < 0) {
+          if (this.movementType === 'vertical_pulse') this.pulseTimer += 1.0;
+          this.erraticVy *= -0.5;
+        }
+      } else if (this.y > this.maxY) {
+        this.y = this.maxY;
+        if (vy > 0) {
+          this.erraticVy *= -0.5;
+        }
+      }
 
       // Turn around at world boundaries with smooth padding
       const margin = 50;
       if (this.x < margin && this.direction < 0) {
         this.direction = 1;
+        this.erraticVx = Math.abs(this.erraticVx);
       } else if (this.x > worldWidth - margin && this.direction > 0) {
         this.direction = -1;
+        this.erraticVx = -Math.abs(this.erraticVx);
       }
 
-      // Random spontaneous direction turn
-      if (Math.random() < 0.002) {
+      // Random spontaneous direction turn (except for hover)
+      if (this.movementType !== 'hover' && Math.random() < 0.002) {
         this.direction *= -1;
       }
     } else if (this.state === 'HOOKED' && hook) {
@@ -325,6 +455,9 @@ export class Fish {
       ctx.rotate(hangAngle);
     } else {
       ctx.scale(this.direction, 1);
+      if (this.swimAngle) {
+        ctx.rotate(this.swimAngle);
+      }
     }
 
     ctx.scale(this.scale, this.scale);
@@ -352,21 +485,6 @@ export class Fish {
       ctx.globalAlpha = Math.min(1.0, this.teleportFlash / 0.35);
       ctx.beginPath();
       ctx.arc(0, 0, 16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // Subtle alert reflex spark when elusive ability is primed and ready
-    if (this.evasion && this.evasionCooldown <= 0 && !isHooked) {
-      ctx.save();
-      const sparkAngle = this.wiggleTimer * 3.5;
-      const sx = Math.cos(sparkAngle) * 22;
-      const sy = Math.sin(sparkAngle) * 12;
-      ctx.fillStyle = this.rarityGlow || '#38bdf8';
-      ctx.shadowColor = this.rarityGlow || '#38bdf8';
-      ctx.shadowBlur = 6;
-      ctx.beginPath();
-      ctx.arc(sx, sy, 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }

@@ -684,6 +684,10 @@ export class SaveSystem {
     return (this.data.level >= 4) && (this.getUpgradeLevel('nauticalAstrolabe') >= 1);
   }
 
+  isChatUnlocked() {
+    return this.getUpgradeLevel('maritimeRadio') >= 1;
+  }
+
   recordNPCInteraction() {
     this.data.stats.npcInteractionsCount = (this.data.stats.npcInteractionsCount || 0) + 1;
     this.checkAchievements();

@@ -20,6 +20,8 @@ export class UIManager {
     this.trapSystem = trapSystem;
     this.questSystem = questSystem;
     this.minimapUI = null;
+    this.chatManager = null;
+    this.isChatOpen = false;
 
     this.activeModal = null;
     this.toastTimer = null;
@@ -41,6 +43,96 @@ export class UIManager {
 
   setMinimapUI(minimapUI) {
     this.minimapUI = minimapUI;
+  }
+
+  setChatManager(chatMgr) {
+    this.chatManager = chatMgr;
+    this.chatManager.onMessageReceived = (msg) => {
+      this.appendChatMessage(msg);
+      if (!this.isChatOpen) {
+        this.updateChatBadge();
+        soundManager.playBlip();
+      }
+    };
+  }
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  toggleChat(forceState = null) {
+    const container = document.getElementById('floating-chat-container');
+    if (!container) return;
+
+    this.isChatOpen = forceState !== null ? forceState : !this.isChatOpen;
+    if (this.chatManager) {
+      this.chatManager.isOpen = this.isChatOpen;
+    }
+
+    if (this.isChatOpen) {
+      container.classList.remove('floating-chat-hidden');
+      if (this.chatManager) {
+        this.chatManager.markRead();
+      }
+      this.updateChatBadge();
+      const input = document.getElementById('chat-input-field');
+      if (input) input.focus();
+      this.scrollChatToBottom();
+      soundManager.playButtonClick();
+    } else {
+      container.classList.add('floating-chat-hidden');
+      soundManager.playButtonClick();
+    }
+  }
+
+  appendChatMessage(msg) {
+    const list = document.getElementById('chat-messages-list');
+    if (!list) return;
+
+    const emptyHint = list.querySelector('.chat-empty-hint');
+    if (emptyHint) emptyHint.remove();
+
+    const item = document.createElement('div');
+    item.className = `chat-msg-item ${msg.isSelf ? 'chat-msg-self' : ''} ${msg.isNPC ? 'chat-msg-npc' : ''}`;
+
+    const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const senderName = msg.isSelf ? 'You' : msg.sender;
+    const levelBadge = msg.level !== undefined ? `<span class="chat-msg-level">Lv.${msg.level}</span>` : '';
+
+    item.innerHTML = `
+      <div class="chat-msg-meta">
+        <span class="chat-msg-author">${msg.icon || '⚓'} ${this.escapeHtml(senderName)}</span>
+        ${levelBadge}
+        <span class="chat-msg-time">${timeStr}</span>
+      </div>
+      <div class="chat-msg-body">${this.escapeHtml(msg.text)}</div>
+    `;
+    list.appendChild(item);
+    this.scrollChatToBottom();
+  }
+
+  scrollChatToBottom() {
+    const list = document.getElementById('chat-messages-list');
+    if (list) {
+      list.scrollTop = list.scrollHeight;
+    }
+  }
+
+  updateChatBadge() {
+    const badge = document.getElementById('hud-chat-badge');
+    if (!badge || !this.chatManager) return;
+    if (this.chatManager.unreadCount > 0 && !this.isChatOpen) {
+      badge.textContent = this.chatManager.unreadCount > 9 ? '9+' : this.chatManager.unreadCount;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
   }
 
   setTrapSystem(trapSys) {
@@ -159,6 +251,7 @@ export class UIManager {
         <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 <span class="btn-label">Shop</span></button>
         <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
         <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
+        <button class="icon-btn chat-hud-btn" id="btn-chat-hud" title="Fleet Radio Chat" style="display: none; position: relative;">💬 <span class="btn-label">Chat</span> <span class="chat-badge-num" id="hud-chat-badge" style="display: none;">0</span></button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
@@ -199,6 +292,31 @@ export class UIManager {
       </div>
     `;
     document.body.appendChild(modalOverlay);
+
+    // Floating Top-Right Chat Window
+    const chatContainer = document.createElement('div');
+    chatContainer.id = 'floating-chat-container';
+    chatContainer.className = 'floating-chat-container floating-chat-hidden';
+    chatContainer.innerHTML = `
+      <div class="chat-header">
+        <div class="chat-header-title">
+          <span class="chat-header-icon">📻</span>
+          <span class="chat-header-text">Fleet Radio Channel</span>
+          <span class="chat-live-indicator"><span class="chat-live-dot"></span> Live</span>
+        </div>
+        <div class="chat-header-actions">
+          <button class="chat-btn-header" id="btn-chat-minimize" title="Hide Chat">✕</button>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages-list">
+        <div class="chat-empty-hint">Tuned to VHF Marine Channel. Transmit a dispatch or wait for fellow captains...</div>
+      </div>
+      <form class="chat-input-row" id="chat-input-form" onsubmit="return false;">
+        <input type="text" class="chat-input" id="chat-input-field" placeholder="Transmit to fleet... (Enter)" maxlength="160" autocomplete="off" />
+        <button type="submit" class="chat-btn-send" id="btn-chat-send" title="Transmit">➤</button>
+      </form>
+    `;
+    document.body.appendChild(chatContainer);
   }
 
   initWelcomePopup() {
@@ -506,6 +624,33 @@ export class UIManager {
     document.getElementById('btn-aquarium-hud')?.addEventListener('click', () => this.openAquariumModal());
     document.getElementById('btn-achievements')?.addEventListener('click', () => this.openJournalLogbook('logbook'));
     document.getElementById('btn-radio-hud')?.addEventListener('click', () => this.openRadio());
+    document.getElementById('btn-chat-hud')?.addEventListener('click', () => this.toggleChat());
+    document.getElementById('btn-chat-minimize')?.addEventListener('click', () => this.toggleChat(false));
+
+    const chatForm = document.getElementById('chat-input-form');
+    chatForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-field');
+      if (input && this.chatManager) {
+        const text = input.value.trim();
+        if (text) {
+          const sent = this.chatManager.sendMessage(text);
+          if (sent) {
+            input.value = '';
+            soundManager.playButtonClick();
+          }
+        }
+      }
+    });
+
+    const chatInput = document.getElementById('chat-input-field');
+    chatInput?.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+    });
+    chatInput?.addEventListener('keyup', (e) => {
+      e.stopPropagation();
+    });
+
     document.getElementById('btn-settings')?.addEventListener('click', () => this.openSettings());
     document.getElementById('btn-tutorial')?.addEventListener('click', () => this.openTutorial());
     document.getElementById('btn-traps-hud')?.addEventListener('click', () => this.handleTrapClick());
@@ -758,6 +903,21 @@ export class UIManager {
         aqBtn.title = `Personal Marine Aquarium (${aqItems.length} / ${aqCap} fish in tank)`;
       }
     }
+
+    // Update Fleet Radio Chat Button & Window visibility
+    const chatBtn = document.getElementById('btn-chat-hud');
+    const isChatUnlocked = this.saveSystem.isChatUnlocked();
+    if (chatBtn) {
+      chatBtn.style.display = isChatUnlocked ? 'inline-flex' : 'none';
+    }
+    const chatContainer = document.getElementById('floating-chat-container');
+    if (!isChatUnlocked && chatContainer) {
+      chatContainer.classList.add('floating-chat-hidden');
+      this.isChatOpen = false;
+    }
+    if (isChatUnlocked) {
+      this.updateChatBadge();
+    }
   }
 
   showToast(message) {
@@ -994,11 +1154,14 @@ export class UIManager {
                 : !meetsLevel
                 ? `<button class="btn btn-disabled" disabled>🔒 Unlocks at Lv. ${nextTier.reqLevel}</button>`
                   : `<button class="btn ${canAfford ? 'btn-buy' : 'btn-disabled'} btn-upgrade" data-upgrade="${upg.id}">
-                    ${currentLvl === 0 && upg.id === 'seabedTraps' ? 'Deploy Pots: ' : currentLvl === 0 && upg.id === 'personalAquarium' ? 'Purchase Tank: ' : 'Upgrade: '}$${nextTier.cost.toLocaleString()}
+                    ${currentLvl === 0 && upg.id === 'seabedTraps' ? 'Deploy Pots: ' : currentLvl === 0 && upg.id === 'personalAquarium' ? 'Purchase Tank: ' : currentLvl === 0 && upg.id === 'maritimeRadio' ? 'Install Radio: ' : currentLvl === 0 && upg.id === 'nauticalAstrolabe' ? 'Purchase Astrolabe: ' : 'Upgrade: '}$${nextTier.cost.toLocaleString()}
                    </button>`
             }
             ${currentLvl > 0 && upg.id === 'personalAquarium' ? `
               <button class="btn btn-secondary btn-sm" id="btn-shop-view-aquarium" style="margin-top: 6px; width: 100%;">🐠 View Aquarium</button>
+            ` : ''}
+            ${currentLvl > 0 && upg.id === 'maritimeRadio' ? `
+              <button class="btn btn-secondary btn-sm" id="btn-shop-open-chat" style="margin-top: 6px; width: 100%;">💬 Open Fleet Chat</button>
             ` : ''}
           </div>
         </div>
@@ -1015,6 +1178,11 @@ export class UIManager {
 
     document.getElementById('btn-shop-view-aquarium')?.addEventListener('click', () => {
       this.openAquariumModal();
+    });
+
+    document.getElementById('btn-shop-open-chat')?.addEventListener('click', () => {
+      this.closeModal();
+      this.toggleChat(true);
     });
 
     document.querySelectorAll('.btn-upgrade').forEach((btn) => {
@@ -1039,6 +1207,9 @@ export class UIManager {
             this.showToast(`🪤 Purchased Seabed Drift Pots! Deployed ${nextTier.trapCount} pot in coastal waters.`);
           } else if (upgId === 'personalAquarium' && currentLvl === 0) {
             this.showToast(`🐠 Unlocked Personal Marine Aquarium! Visit your Journal or Inventory to view your tank.`);
+          } else if (upgId === 'maritimeRadio' && currentLvl === 0) {
+            this.showToast(`📻 Installed Fleet Radio Transceiver! Tuned in to live ocean frequencies.`);
+            this.toggleChat(true);
           } else {
             this.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
           }
@@ -1071,14 +1242,46 @@ export class UIManager {
         </div>
       `;
     } else {
+      // Group identical catches so counts like x2, x3 are displayed cleanly without name repetition
+      const groupedCatches = [];
+      const groupMap = new Map();
+
       hook.caughtItems.forEach((item) => {
         const isCrate = !!item.isCrate || item.category === 'crate';
-        const itemVal = isCrate ? 0 : Math.max(1, Math.round(item.value * sellMultiplier));
-        subtotal += itemVal;
-
         const isRelic = !!item.isRelic;
         const isFossil = item.category === 'fossil';
         const isTreasure = item.isTreasure && !isCrate;
+
+        const groupKey = isCrate
+          ? `crate_${item.crateRank || 1}_${item.unboxed ? item.loot?.id || 'unboxed' : 'boxed'}`
+          : isRelic
+          ? `relic_${item.id}_${item.restored ? 'restored' : 'dirty'}`
+          : `${item.species?.id || item.id || item.name}_${item.rarity || 'common'}_${item.isShiny ? 's' : ''}_${item.crown || ''}_${item.gradeTier?.id || ''}_${item.isAberration ? 'a' : ''}`;
+
+        if (!groupMap.has(groupKey)) {
+          const group = {
+            key: groupKey,
+            representative: item,
+            items: [item],
+          };
+          groupMap.set(groupKey, group);
+          groupedCatches.push(group);
+        } else {
+          groupMap.get(groupKey).items.push(item);
+        }
+      });
+
+      groupedCatches.forEach((group) => {
+        const item = group.representative;
+        const count = group.items.length;
+        const isCrate = !!item.isCrate || item.category === 'crate';
+        const isRelic = !!item.isRelic;
+        const isFossil = item.category === 'fossil';
+        const isTreasure = item.isTreasure && !isCrate;
+
+        const groupVal = group.items.reduce((sum, it) => sum + (isCrate ? 0 : Math.max(1, Math.round(it.value * sellMultiplier))), 0);
+        subtotal += groupVal;
+
         const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
         const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
         const fossilTag = isFossil ? `<span class="fossil-tag">🦴 FOSSIL</span>` : '';
@@ -1105,22 +1308,26 @@ export class UIManager {
           ? `<span class="aberration-tag" style="background:#581c87;color:#f3e8ff;border:1px solid #c084fc;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">☣️ ABERRATION (${item.aberrationMult || 4.0}x)</span>`
           : '';
 
-        const instId = item.inventoryRef?.instanceId;
+        const countBadge = count > 1 ? `<span class="catch-count-badge" style="background:#0284c7; color:#ffffff; padding:2px 8px; border-radius:12px; font-size:0.82rem; font-weight:800; margin-left:6px; box-shadow: 0 1px 4px rgba(2, 132, 199, 0.4);">x${count}</span>` : '';
+
+        const instIds = group.items.map(it => it.inventoryRef?.instanceId).filter(Boolean);
+        const groupDomId = 'group_' + group.key.replace(/[^a-zA-Z0-9]/g, '_');
 
         listHtml += `
-          <div class="catch-item-card rarity-border-${item.rarity}" id="catch-card-${instId}">
+          <div class="catch-item-card rarity-border-${item.rarity}" id="catch-card-${groupDomId}">
             <div class="catch-item-icon">
               ${isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '📦' : item.isMythic ? '🌟' : '🐟'}
             </div>
             <div class="catch-item-details">
-              <div class="catch-item-name">${item.name} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
-              <div class="catch-item-name">${item.name} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
+              <div class="catch-item-name">${item.name} ${countBadge} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-specs">
                 ${
                   isCrate
                     ? `<span>🎁 Rank ${item.crateRank || 1} Mystery Loot Crate • ${item.unboxed ? `Loot: <strong>${item.loot?.name || 'Claimed'}</strong>` : 'Crack open to claim loot!'}</span>`
                     : !isTreasure && !isRelic
-                    ? `<span>📏 <strong>${item.size} cm</strong></span> <span>⚖️ ${item.weight} kg</span> ${item.crown ? `<span>⭐ Size Record</span>` : ''}`
+                    ? (count > 1
+                        ? `<span>📏 Avg: <strong>${Math.round(group.items.reduce((acc, c) => acc + (c.size || 0), 0) / count)} cm</strong></span> <span>⚖️ Total: ${group.items.reduce((acc, c) => acc + (c.weight || 0), 0).toFixed(1)} kg</span>`
+                        : `<span>📏 <strong>${item.size} cm</strong></span> <span>⚖️ ${item.weight} kg</span> ${item.crown ? `<span>⭐ Size Record</span>` : ''}`)
                     : isRelic
                     ? `<span>🏺 Archaeological Artifact (${item.relicType?.era || 'Ancient'}) • ${item.restored ? '✨ Restored' : '🪥 Needs Cleaning'}</span>`
                     : isFossil
@@ -1138,13 +1345,13 @@ export class UIManager {
                         ? (item.loot.coins >= 0 ? `+$${item.loot.coins.toLocaleString()}` : `-$${Math.abs(item.loot.coins)}`)
                         : 'Claimed')
                       : 'Unopened')
-                    : `+$${itemVal.toLocaleString()}`
+                    : `+$${groupVal.toLocaleString()}`
                 }
               </div>
-              ${!isCrate && instId ? `
-                <div class="catch-item-actions-row" id="catch-actions-${instId}">
-                  <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" title="Keep safe in tackle box">🎒 Keep</button>
-                  <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-val="${itemVal}" title="Sell immediately for gold">🪙 Sell Now</button>
+              ${!isCrate && instIds.length > 0 ? `
+                <div class="catch-item-actions-row" id="catch-actions-${groupDomId}">
+                  <button class="btn btn-sm btn-outline btn-catch-keep" data-group="${groupDomId}" data-ids="${instIds.join(',')}" title="Keep safe in tackle box">🎒 Keep${count > 1 ? ` (${count})` : ''}</button>
+                  <button class="btn btn-sm btn-buy btn-catch-sell" data-group="${groupDomId}" data-ids="${instIds.join(',')}" data-val="${groupVal}" title="Sell immediately for gold">🪙 Sell Now${count > 1 ? ` (x${count})` : ''}</button>
                 </div>
               ` : ''}
             </div>
@@ -1220,11 +1427,11 @@ export class UIManager {
       });
     }
 
-    // Individual Keep
+    // Individual / Group Keep
     document.querySelectorAll('.btn-catch-keep').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const instId = e.currentTarget.dataset.id;
-        const actionsDiv = document.getElementById(`catch-actions-${instId}`);
+        const groupId = e.currentTarget.dataset.group;
+        const actionsDiv = document.getElementById(`catch-actions-${groupId}`);
         if (actionsDiv) {
           actionsDiv.innerHTML = '<span class="status-badge kept-badge">🎒 In Tackle Box</span>';
         }
@@ -1232,23 +1439,35 @@ export class UIManager {
       });
     });
 
-    // Individual Sell
+    // Individual / Group Sell
     document.querySelectorAll('.btn-catch-sell').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const instId = e.currentTarget.dataset.id;
-        if (soldIds.has(instId)) return;
-        const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
-        if (res) {
-          soldIds.add(instId);
-          soundManager.playCoin();
-          const actionsDiv = document.getElementById(`catch-actions-${instId}`);
-          if (actionsDiv) {
-            actionsDiv.innerHTML = `<span class="status-badge sold-badge">🪙 Sold (+$${res.gold.toLocaleString()})</span>`;
+        const ids = (e.currentTarget.dataset.ids || '').split(',').filter(Boolean);
+        const groupId = e.currentTarget.dataset.group;
+        let soldTotal = 0;
+        let firstName = '';
+
+        ids.forEach(instId => {
+          if (!soldIds.has(instId)) {
+            const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
+            if (res) {
+              soldIds.add(instId);
+              soldTotal += res.gold;
+              firstName = res.item.name;
+            }
           }
-          remainingGold = Math.max(0, remainingGold - res.gold);
+        });
+
+        if (soldTotal > 0) {
+          soundManager.playCoin();
+          const actionsDiv = document.getElementById(`catch-actions-${groupId}`);
+          if (actionsDiv) {
+            actionsDiv.innerHTML = `<span class="status-badge sold-badge">🪙 Sold (+$${soldTotal.toLocaleString()})</span>`;
+          }
+          remainingGold = Math.max(0, remainingGold - soldTotal);
           const totalEl = document.getElementById('summary-total-cash');
           if (totalEl) totalEl.textContent = `+$${remainingGold.toLocaleString()}`;
-          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
+          this.showToast(`🪙 Sold ${firstName}${ids.length > 1 ? ` (x${ids.length})` : ''} for +$${soldTotal.toLocaleString()}!`);
         }
       });
     });

@@ -14,6 +14,7 @@ import { NPCSystem } from './systems/NPCSystem.js';
 import { MinimapUI } from './ui/MinimapUI.js';
 import { ZoneManager } from './systems/ZoneManager.js';
 import { worldCycle } from './systems/WorldCycle.js';
+import { ChatManager } from './systems/ChatManager.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -85,9 +86,17 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-function notifyRareCatch(name) {
+let chatManager = null;
+
+function notifyRareCatch(fish) {
+  const name = typeof fish === 'string' ? fish : fish?.name || 'Rare Fish';
   soundManager.playRareChime();
   notifyTitle(`🌟 Rare Catch: ${name}!`);
+  if (typeof fish === 'object' && fish && chatManager) {
+    if (fish.rarity === 'legendary' || fish.isMythic || fish.crown === 'gold' || fish.isShiny) {
+      chatManager.broadcastCatch(fish.name, fish.rarity, fish.crown, fish.weight);
+    }
+  }
 }
 
 trapSystem.onTrapFull = () => {
@@ -111,6 +120,8 @@ let targetCameraY = 0;
 const mousePos = { x: screenWidth * 0.5, y: screenHeight * 0.5 };
 let isMouseDown = false;
 const keysDown = {};
+let lastSteerMode = 'none'; // 'keyboard' | 'mouse'
+const lastPointerPos = { x: 0, y: 0 };
 
 // Core quest system
 const questSystem = new QuestSystem(save);
@@ -122,6 +133,9 @@ oceanWorld.setSaveSystem(save);
 handleResize();
 
 uiManager = new UIManager(save, triggerCast, startDive, trapSystem, questSystem);
+chatManager = new ChatManager(save);
+uiManager.setChatManager(chatManager);
+
 questSystem.onQuestCompleted = (q) => {
   uiManager.showToast(`📋 Noticeboard Mission Complete: ${q.title}! Claim your reward!`);
 };
@@ -290,6 +304,12 @@ function handlePointerDown(e) {
 
 function handlePointerMove(e) {
   const coords = getCanvasCoords(e);
+  const deltaMove = Math.hypot(coords.x - lastPointerPos.x, coords.y - lastPointerPos.y);
+  if (deltaMove > 3) {
+    lastPointerPos.x = coords.x;
+    lastPointerPos.y = coords.y;
+    lastSteerMode = 'mouse';
+  }
   mousePos.x = coords.x;
   mousePos.y = coords.y;
 
@@ -324,7 +344,10 @@ function handlePointerMove(e) {
     oceanWorld.setAimDirection(dx < 0 ? -1 : 1);
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     oceanWorld.hoveredCompanion = null;
-    hook.setTargetX(mousePos.x);
+    // Only steer hook to mouse if the mouse is actively being moved
+    if (lastSteerMode === 'mouse') {
+      hook.setTargetX(mousePos.x);
+    }
   }
 }
 
@@ -369,7 +392,11 @@ window.addEventListener('touchend', (e) => {
 
 // Keyboard controls
 window.addEventListener('keydown', (e) => {
-  keysDown[e.key.toLowerCase()] = true;
+  const k = e.key.toLowerCase();
+  keysDown[k] = true;
+  if (['arrowleft', 'arrowright', 'a', 'd'].includes(k)) {
+    lastSteerMode = 'keyboard';
+  }
   if (e.key === ' ' && gameState === 'DESCENDING') {
     hook.startReel();
   }
@@ -450,13 +477,23 @@ const update = (dt) => {
     surfaceIdleTimer = 0;
   }
 
-  // Keyboard steering
+  // Keyboard steering (arrow keys take precedence over stationary mouse)
+  const isArrowLeft = keysDown['a'] || keysDown['arrowleft'];
+  const isArrowRight = keysDown['d'] || keysDown['arrowright'];
+
+  if (isArrowLeft || isArrowRight) {
+    lastSteerMode = 'keyboard';
+  }
+
   if (gameState === 'DESCENDING' || gameState === 'REELING') {
-    if (keysDown['a'] || keysDown['arrowleft']) {
-      hook.steer(-1);
+    if (isArrowLeft) {
+      hook.steer(-1, deltaSec);
     }
-    if (keysDown['d'] || keysDown['arrowright']) {
-      hook.steer(1);
+    if (isArrowRight) {
+      hook.steer(1, deltaSec);
+    }
+    if (lastSteerMode === 'keyboard') {
+      hook.targetX = hook.x;
     }
   }
 
@@ -649,7 +686,7 @@ const update = (dt) => {
               questSystem.dispatch({ type: 'catch_fish', fish });
             }
             if (fish.rarity === 'rare' || fish.rarity === 'epic' || fish.rarity === 'legendary' || fish.isMythic) {
-              notifyRareCatch(fish.name);
+              notifyRareCatch(fish);
             }
           }
           if (hook.caughtItems.length >= hook.capacity) break;

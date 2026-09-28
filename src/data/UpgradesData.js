@@ -280,4 +280,15 @@ export const UPGRADE_DEFINITIONS = {
       { level: 1, cost: 850, reqLevel: 3, label: 'Calibrated Brass Astrolabe (Minimap Unlocked)' },
     ],
   },
+
+  maritimeRadio: {
+    id: 'maritimeRadio',
+    name: 'Shortwave Fleet Transceiver',
+    icon: '📻',
+    description: 'Installs an onboard shortwave radio transceiver on your vessel, unlocking live Fleet Chat with fellow captains across the open seas.',
+    tiers: [
+      { level: 0, cost: 0, reqLevel: 0, label: 'Uninstalled (Chat Locked)' },
+      { level: 1, cost: 350, reqLevel: 2, label: 'Crystal Fleet Transceiver (Live Chat Unlocked)' },
+    ],
+  },
 };
