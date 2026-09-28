@@ -4136,24 +4136,40 @@ export class UIManager {
 
   openAppearance() {
     this.activeModal = 'appearance';
-    this.openModal('Your Angler', `<div class="angler-customization"><canvas id="angler-preview" width="260" height="220" aria-label="Preview of your angler"></canvas>
-      <div class="customize-grid">${this.customizationControls(ANGLER_OPTIONS, this.saveSystem.data.appearance, 'appearance')}</div>
-      <p class="customize-note">Make yourself at home on the water. Your look saves automatically.</p>
-      <button class="btn btn-secondary" id="appearance-back">Back to Settings</button></div>`);
+    const look = normalizeCustomization(ANGLER_OPTIONS, this.saveSystem.data.appearance);
+    const controls = Object.entries(ANGLER_OPTIONS).map(([key, config]) => `<fieldset class="appearance-group"><legend>${config.label} <span data-look-label="${key}"></span></legend><div class="appearance-choices">${config.choices.map(([value, label]) => `<button type="button" class="appearance-choice ${value.startsWith('#') ? 'appearance-swatch' : 'appearance-hat'}" data-look-key="${key}" data-look-value="${value}" title="${label}" aria-label="${label}" aria-pressed="${look[key] === value}" ${value.startsWith('#') ? `style="--swatch:${value}"` : ''}>${value.startsWith('#') ? '<span class="swatch-check" aria-hidden="true">&#10003;</span>' : label}</button>`).join('')}</div></fieldset>`).join('');
+    this.openModal('Your Angler', `<div class="appearance-studio">
+      <div class="appearance-preview-panel"><canvas id="angler-preview" width="340" height="300" aria-label="Live preview of your angler"></canvas><h3>Ready for the next cast</h3><p id="appearance-status" role="status">Choose a color or a hat to try it on.</p><div class="appearance-presets"><button class="btn btn-secondary btn-sm" data-outfit="classic">Classic</button><button class="btn btn-secondary btn-sm" data-outfit="coastal">Coastal</button><button class="btn btn-secondary btn-sm" data-outfit="sunset">Sunset</button></div></div>
+      <div class="appearance-controls">${controls}<div class="appearance-actions"><button class="btn btn-secondary" id="appearance-random">Shuffle outfit</button><button class="btn btn-outline" id="appearance-reset">Reset look</button></div></div>
+      <div class="appearance-footer"><span>Changes save automatically.</span><button class="btn btn-primary" id="appearance-back">Done</button></div></div>`);
     const preview = document.getElementById('angler-preview');
     const ctx = preview.getContext('2d');
     const redraw = () => {
-      ctx.clearRect(0, 0, preview.width, preview.height);
-      const water = ctx.createLinearGradient(0, 0, 0, 220);
-      water.addColorStop(0, '#0f172a'); water.addColorStop(1, '#0e7490');
-      ctx.fillStyle = water; ctx.fillRect(0, 0, 260, 220);
-      ctx.save(); ctx.translate(125, 190); ctx.scale(3.2, 3.2);
-      drawAngler(ctx, this.saveSystem.data.appearance); ctx.restore();
+      const current = normalizeCustomization(ANGLER_OPTIONS, this.saveSystem.data.appearance);
+      ctx.clearRect(0, 0, 340, 300);
+      const sky = ctx.createLinearGradient(0, 0, 0, 300);
+      sky.addColorStop(0, '#172b47'); sky.addColorStop(.55, '#467983'); sky.addColorStop(1, '#0e3d55');
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, 340, 300);
+      ctx.fillStyle = '#f9dfa7'; ctx.beginPath(); ctx.arc(265, 64, 23, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 6; i++) { ctx.strokeStyle = 'rgba(186,230,253,.14)'; ctx.beginPath(); ctx.moveTo(20 + i % 2 * 30, 165 + i * 20); ctx.lineTo(300 - i % 3 * 30, 165 + i * 20); ctx.stroke(); }
+      ctx.fillStyle = '#563e2c'; ctx.beginPath(); ctx.ellipse(170, 248, 115, 20, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ad8859'; ctx.fillRect(65, 233, 210, 10);
+      ctx.save(); ctx.translate(163, 237); ctx.scale(4.2, 4.2); drawAngler(ctx, current); ctx.restore();
+      document.querySelectorAll('[data-look-key]').forEach(button => button.setAttribute('aria-pressed', String(current[button.dataset.lookKey] === button.dataset.lookValue)));
+      Object.entries(ANGLER_OPTIONS).forEach(([key, config]) => {
+        document.querySelector(`[data-look-label="${key}"]`).textContent = config.choices.find(([value]) => value === current[key])[1];
+      });
     };
-    document.querySelectorAll('[data-appearance]').forEach(select => select.addEventListener('change', () => {
-      this.saveSystem.setAppearance(select.dataset.appearance, select.value);
-      redraw();
-    }));
+    const apply = changes => {
+      this.saveSystem.data.appearance = normalizeCustomization(ANGLER_OPTIONS, { ...this.saveSystem.data.appearance, ...changes });
+      this.saveSystem.save(); redraw();
+      document.getElementById('appearance-status').textContent = 'Look saved. See you on the water!';
+    };
+    document.querySelectorAll('[data-look-key]').forEach(button => button.addEventListener('click', () => apply({ [button.dataset.lookKey]: button.dataset.lookValue })));
+    const outfits = { classic: { coat: '#eab308', hat: 'rainhat', hatColor: '#ca8a04' }, coastal: { coat: '#0d9488', hat: 'cap', hatColor: '#f8fafc' }, sunset: { coat: '#ef4444', hat: 'beanie', hatColor: '#0f172a' } };
+    document.querySelectorAll('[data-outfit]').forEach(button => button.addEventListener('click', () => apply(outfits[button.dataset.outfit])));
+    document.getElementById('appearance-random').addEventListener('click', () => apply(Object.fromEntries(['coat', 'hat', 'hatColor'].map(key => { const choices = ANGLER_OPTIONS[key].choices; return [key, choices[Math.floor(Math.random() * choices.length)][0]]; }))));
+    document.getElementById('appearance-reset').addEventListener('click', () => apply(normalizeCustomization(ANGLER_OPTIONS)));
     document.getElementById('appearance-back').addEventListener('click', () => this.openSettings());
     redraw();
   }

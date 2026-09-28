@@ -72,7 +72,7 @@ export function belongsToRealm(item, seaId) {
 }
 
 const HAZARDS = {
-  1: ['Fire Coral Thicket', 'Tidal Urchin Garden', 'Snagging Kelp Wall', 'Broken Coastal Wreck'],
+  1: ['Swaying Kelp Bed', 'Mossy Coastal Boulder', 'Waterlogged Tree Trunk', 'Broken Coastal Wreck'],
   2: ['Stinging Spore Cloud', 'Electric Anemone Colony', 'Lantern Jelly Swarm', 'Fungal Reef Tower'],
   3: ['Razor Meteor Shards', 'Pulsar Shock Field', 'Orbiting Crystal Cage', 'Fallen Comet Spire'],
   4: ['Collapsing Marble Arch', 'Clockwork Saw Array', 'Imperial Chain Curtain', 'Sunken Palace Gate'],

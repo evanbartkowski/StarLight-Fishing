@@ -2906,3 +2906,24 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .aquarium-style-shop .customize-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .inhabitants-header { flex-wrap: wrap; gap: 10px; }
 @media (max-width: 560px) { .aq-actions-col { width: 100%; } .aq-actions-col button { flex: 1; } .aq-tips-pill { width: 100%; box-sizing: border-box; } }
+
+.appearance-studio { display: grid; grid-template-columns: minmax(220px, .9fr) minmax(260px, 1.1fr); gap: 24px; }
+.appearance-preview-panel { align-self: start; position: sticky; top: 0; text-align: center; border: 1px solid #426477; border-radius: 20px; padding: 14px; background: linear-gradient(145deg, #183849, #101d32); }
+.appearance-preview-panel #angler-preview { width: 100%; height: auto; border: 0; border-radius: 14px; }
+.appearance-preview-panel h3 { color: #e0f2fe; font-size: 1.05rem; margin: 14px 0 6px; }
+#appearance-status { min-height: 2.8em; color: #a4becb; font-size: .8rem; line-height: 1.4; }
+.appearance-presets, .appearance-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+.appearance-group { margin: 0 0 18px; padding: 12px; border: 1px solid #334155; border-radius: 14px; min-width: 0; background: #172437; }
+.appearance-group legend { font-weight: 700; color: #e2e8f0; padding: 0 6px; font-size: .9rem; }
+.appearance-group legend span { margin-left: 8px; color: #94a3b8; font-weight: 400; font-size: .75rem; }
+.appearance-choices { display: flex; flex-wrap: wrap; gap: 10px; }
+.appearance-choice { cursor: pointer; border: 2px solid #64748b; transition: transform .15s, box-shadow .15s; }
+.appearance-swatch { width: 40px; height: 40px; border-radius: 50%; background: var(--swatch); display: grid; place-items: center; }
+.swatch-check { opacity: 0; color: white; text-shadow: 0 1px 3px #000, 0 0 3px #000; font-weight: 900; }
+.appearance-choice[aria-pressed="true"] { border-color: #e0f2fe; box-shadow: 0 0 0 3px #0ea5e9; }
+.appearance-choice[aria-pressed="true"] .swatch-check { opacity: 1; }
+.appearance-choice:hover { transform: translateY(-2px); }
+.appearance-choice:focus-visible { outline: 3px solid #facc15; outline-offset: 4px; }
+.appearance-hat { border-radius: 10px; background: #25374d; color: #e2e8f0; padding: 10px 12px; font: inherit; font-size: .82rem; }
+.appearance-footer { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid #334155; padding-top: 16px; color: #94a3b8; font-size: .8rem; }
+@media (max-width: 650px) { .appearance-studio { grid-template-columns: 1fr; gap: 16px; } .appearance-preview-panel { position: static; } .appearance-preview-panel #angler-preview { width: min(100%, 270px); } .appearance-swatch { width: 44px; height: 44px; } }

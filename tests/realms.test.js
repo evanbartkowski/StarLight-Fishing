@@ -276,6 +276,7 @@ test('Sunlit Shoals has more small hazards and reserves giant obstacles for deep
   const world = new OceanWorld(1000, 700);
   world.populateWorld(save);
   assert.ok(world.entities.hazards.filter(h => !h.isColossal).length >= 12);
+  assert.ok(world.entities.hazards.every(h => ['plant', 'boulder', 'log', 'wreck'].includes(h.naturalKind)), 'starter hazards should use recognizable coastal objects');
   for (const hazard of world.entities.hazards.filter(h => h.isColossal)) assert.ok((hazard.y - world.surfaceY) / world.pixelsPerMeter >= 100);
 });
 

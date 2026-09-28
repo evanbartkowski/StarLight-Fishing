@@ -1,7 +1,10 @@
+import { drawNaturalHazard } from './NaturalHazardArt.js';
+
 export class Hazard {
   constructor(typeConfig, x, y) {
     this.type = typeConfig.id;
     this.realmStyle = typeConfig.realmStyle;
+    this.naturalKind = typeConfig.naturalKind || (typeConfig.realmStyle === 'reef' ? ['plant', 'boulder', 'log', 'wreck'][typeConfig.variant || 0] : typeConfig.id === 'driftwood' ? 'log' : null);
     this.variant = typeConfig.variant || 0;
     this.zone = typeConfig.zone;
     this.name = typeConfig.name;
@@ -39,11 +42,13 @@ export class Hazard {
   renderRealmHazard(ctx) {
     const r = this.radius / this.sizeScale;
     ctx.save();
-    ctx.fillStyle = this.color;
+    const material = ctx.createLinearGradient(-r, -r, r, r);
+    material.addColorStop(0, this.color); material.addColorStop(1, '#172737');
+    ctx.fillStyle = material;
     ctx.strokeStyle = this.glow;
     ctx.lineWidth = 2;
     ctx.shadowColor = this.glow;
-    ctx.shadowBlur = 9;
+    ctx.shadowBlur = 4;
     if (this.realmStyle === 'reef' || this.realmStyle === 'lava') {
       // Branching coral versus jagged basalt chimneys.
       const branches = this.realmStyle === 'reef' ? 7 : 4;
@@ -100,40 +105,21 @@ export class Hazard {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // High-visibility danger warning: bold red border and glowing hazard ring
-    ctx.save();
-    const pulseScale = 1.0 + Math.sin(this.timer * 3.5) * 0.08;
-    
-    // Glowing red outline around object bounds
-    ctx.shadowColor = '#ef4444';
-    ctx.shadowBlur = 12;
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 2.8;
-    ctx.beginPath();
-    ctx.arc(0, 0, (this.radius + 3) * pulseScale, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Secondary dashed outer warning orbit
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(248, 113, 113, 0.7)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 4]);
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius + 9 + Math.sin(this.timer * 2) * 2, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Warning icon indicator
-    ctx.setLineDash([]);
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⚠️', 0, -this.radius - 8);
-
-    ctx.restore();
+    // A soft red halo signals danger without outlining the collision circle.
+    const pulse = .5 + .5 * Math.sin(this.timer * 1.6);
+    const haloRadius = this.radius * (1.48 + pulse * .07) + 12;
+    const halo = ctx.createRadialGradient(0, 0, this.radius * .15, 0, 0, haloRadius);
+    halo.addColorStop(0, `rgba(239,68,68,${.18 + pulse * .045})`);
+    halo.addColorStop(.5, `rgba(239,68,68,${.13 + pulse * .035})`);
+    halo.addColorStop(1, 'rgba(239,68,68,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(-haloRadius, -haloRadius, haloRadius * 2, haloRadius * 2);
 
     ctx.scale(this.sizeScale, this.sizeScale);
     try {
-      if (this.realmStyle) {
+      if (this.naturalKind) {
+        drawNaturalHazard(ctx, this.naturalKind, this.radius / this.sizeScale, this.timer);
+      } else if (this.realmStyle) {
         this.renderRealmHazard(ctx);
       } else if (this.type === 'boot') {
         // Encrusted Old Sea Boot

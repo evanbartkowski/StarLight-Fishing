@@ -18,7 +18,7 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(56, 189, 248, 0.4)',
     particleType: 'light_rays',
     ambientLight: 1.0,
-    description: 'Warm blue shallows with coral outcrops, seagrass fish, shell treasures, and scattered reef hazards.',
+    description: 'Warm blue shallows with seagrass fish and shell treasures. Kelp beds, mossy boulders, and waterlogged logs give way to broken wrecks deeper down.',
     lore: 'Where every novice mariner casts their first line. The tide is gentle and the gulls sing welcoming melodies.',
     gates: {
       reqLevel: 0,
