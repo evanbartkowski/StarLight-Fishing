@@ -495,14 +495,15 @@ export class Fish {
     const isEpic = s.rarity === 'epic' && !this.isShiny;
     const isRare = s.rarity === 'rare' && !this.isShiny;
 
-    if (this.isShiny || isRainbow || isEpic || isRare || this.isMythic || this.isSpecialDeep || s.glowColor) {
+    if (s.rarity === 'uncommon' || this.isShiny || isRainbow || isEpic || isRare || this.isMythic || this.isSpecialDeep || s.glowColor) {
       ctx.save();
       const color = RARITY_CONFIG[s.rarity]?.color || '#c084fc';
-      const radius = s.isLeviathan ? 44 : 34;
+      const radius = s.isLeviathan ? 52 : 42;
       const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
       glow.addColorStop(0, color);
+      glow.addColorStop(0.45, color);
       glow.addColorStop(1, 'transparent');
-      ctx.globalAlpha *= 0.45 + Math.sin(this.wiggleTimer * 2) * 0.05;
+      ctx.globalAlpha *= 0.55 + Math.sin(this.wiggleTimer * 2) * 0.05;
       ctx.scale(1, 0.65);
       ctx.fillStyle = glow;
       ctx.fillRect(-radius, -radius, radius * 2, radius * 2);

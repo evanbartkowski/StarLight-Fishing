@@ -349,7 +349,7 @@ test('depth populations taper fish gently and increase hazards and treasure deep
       save.data.upgrades.lineLength = tier;
       world.populateWorld(save);
       const surfaceFish = world.entities.fish.filter(f => (f.y - world.surfaceY) / world.pixelsPerMeter < 50);
-      assert.ok(surfaceFish.length >= 4 && surfaceFish.length <= 5, 'surface population stays modest after upgrades');
+      assert.ok(surfaceFish.length >= 5 && surfaceFish.length <= 6, 'surface population stays modest after upgrades');
     }
   } finally { Math.random = originalRandom; }
 });

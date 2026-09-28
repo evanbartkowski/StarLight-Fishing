@@ -186,9 +186,9 @@ export class OceanWorld {
     const depthProgress = depth => depth / (depth + 350);
     const fishPool = FISH_SPECIES.filter(species => belongsToRealm(species, this.currentSeaId)
       && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
-    populateBands(fishPool, depth => 5 - depthProgress(depth),
+    populateBands(fishPool, depth => (5 - depthProgress(depth)) * 1.15,
       species => (rarityWeight[species.rarity] || 0.01)
-        * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost : 1)
+        * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, { shinyChance, surfaceY: this.surfaceY })));
 
@@ -254,8 +254,8 @@ export class OceanWorld {
     });
 
     populateBands(HAZARD_TYPES.filter(hazard => belongsToRealm(hazard, this.currentSeaId)),
-      depth => (0.25 + 1.55 * depthProgress(depth)) * realmProfile.hazardDensity,
-      hazard => hazard.isColossal ? 0.3 : 1,
+      depth => (0.25 + 1.55 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25,
+      hazard => hazard.isColossal ? 0.6 : 1,
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
   }
 
