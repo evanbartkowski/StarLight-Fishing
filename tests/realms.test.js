@@ -315,3 +315,59 @@ test('dismissing an NPC allows future visitors and open menus block popup interr
   assert.equal(npc.activeEncounter, null);
   assert.equal(NPC_DEFINITIONS.length, 7);
 });
+
+test('depth populations taper fish gently and increase hazards and treasure deeper down', () => {
+  const originalRandom = Math.random;
+  let seed = 98765;
+  Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  try {
+    const save = advancedSave();
+    const world = new OceanWorld({ width: 1280, height: 720 });
+    for (const sea of FANTASY_SEAS) {
+      save.data.currentSea = sea.id;
+      const totals = { fish: [0, 0], hazards: [0, 0], treasures: [0, 0] };
+      for (let dive = 0; dive < 40; dive++) {
+        world.populateWorld(save);
+        for (const kind of Object.keys(totals)) {
+          for (const entity of world.entities[kind]) {
+            const depth = (entity.y - world.surfaceY) / world.pixelsPerMeter;
+            assert.ok(Number.isFinite(entity.x) && depth >= 0 && depth <= 3000);
+            if (kind === 'fish' && (entity.species.isSpecialDeep || !FISH_SPECIES.includes(entity.species))) continue;
+            if (depth >= 100 && depth < 600) totals[kind][0]++;
+            if (depth >= 2400 && depth < 2900) totals[kind][1]++;
+          }
+        }
+      }
+      const ratio = totals.fish[1] / totals.fish[0];
+      assert.ok(ratio > 0.8 && ratio < 1, `${sea.name}: fish ratio ${ratio}`);
+      for (const kind of ['hazards', 'treasures']) {
+        assert.ok(totals[kind][1] > totals[kind][0] * 1.3, `${sea.name}: ${kind} should increase with depth`);
+      }
+    }
+    save.data.currentSea = 1;
+    for (const tier of [0, 3, 11]) {
+      save.data.upgrades.lineLength = tier;
+      world.populateWorld(save);
+      const surfaceFish = world.entities.fish.filter(f => (f.y - world.surfaceY) / world.pixelsPerMeter < 50);
+      assert.ok(surfaceFish.length >= 4 && surfaceFish.length <= 5, 'surface population stays modest after upgrades');
+    }
+  } finally { Math.random = originalRandom; }
+});
+
+test('Atlantis columns scroll past the camera and disappear below their world depth', () => {
+  const world = new OceanWorld({ width: 1280, height: 720 });
+  const rectangles = [];
+  const ctx = new Proxy({}, { get: (_, key) => key === 'fillRect' ? (...args) => rectangles.push(args) : () => {}, set: () => true });
+  world.renderSunkenAtlantisPillars(ctx, 600, 720);
+  const firstFrame = rectangles.splice(0);
+  assert.equal(firstFrame.length, 6);
+  world.renderSunkenAtlantisPillars(ctx, 800, 720);
+  const secondFrame = rectangles.splice(0);
+  assert.equal(secondFrame.length, firstFrame.length);
+  firstFrame.forEach((rect, i) => {
+    assert.equal(secondFrame[i][0], rect[0]);
+    assert.equal(secondFrame[i][1], rect[1] - 200);
+  });
+  world.renderSunkenAtlantisPillars(ctx, 2000, 720);
+  assert.equal(rectangles.length, 0, 'columns must leave the viewport on deeper dives');
+});

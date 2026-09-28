@@ -92,7 +92,7 @@ const TREASURES = {
 export const REALM_HAZARDS = FANTASY_SEAS.flatMap(sea => HAZARDS[sea.id].map((name, i) => ({
   id: `realm_${sea.id}_hazard_${i}`, name, zone: sea.id, realmStyle: REALM_PROFILES[sea.id].style, variant: i,
   minDepth: sea.id === 1 && i === 3 ? 100 : 5 + Math.round(sea.maxDepth * i * 0.06),
-  maxDepth: sea.id === 1 ? (i === 3 ? 3000 : 150) : sea.maxDepth,
+  maxDepth: 3000,
   damage: 1 + Math.floor((sea.id + i) / 3), knockback: 22 + sea.id * 5 + i * 4,
   radius: i === 3 ? 48 : 18 + i * 6, isColossal: i === 3,
   color: REALM_PROFILES[sea.id].colors[i], glow: REALM_PROFILES[sea.id].colors[(i + 1) % 5],
@@ -102,13 +102,13 @@ export const REALM_TREASURES = FANTASY_SEAS.flatMap(sea => {
   const items = TREASURES[sea.id].map((name, i) => ({
     id: `realm_${sea.id}_treasure_${i}`, name, zone: sea.id, category: i === 4 ? 'fossil' : 'treasure',
     realmStyle: profile.style, treasureShape: i % 3, color: profile.colors[i % 5], glow: profile.colors[(i + 1) % 5],
-    minDepth: 4 + Math.round(sea.maxDepth * i * 0.1), maxDepth: sea.maxDepth,
+    minDepth: 4 + Math.round(sea.maxDepth * i * 0.1), maxDepth: 3000,
     rarity: ['common', 'uncommon', 'rare', 'rare', 'epic', 'legendary'][i],
     value: profile.commonValue * [5, 10, 20, 28, 50, 110][i],
     lore: `Recovered from ${profile.habitat}. Collectors prize this artifact of ${sea.name}.`,
   }));
   items.push({ id: `realm_${sea.id}_cache`, name: `${sea.name} Sealed Cache`, zone: sea.id, category: 'crate', isCrate: true,
-    crateRank: Math.min(5, sea.id), minDepth: 8, maxDepth: sea.maxDepth, rarity: 'rare',
+    crateRank: Math.min(5, sea.id), minDepth: 8, maxDepth: 3000, rarity: 'rare',
     value: profile.commonValue * 12, rewardMultiplier: Math.max(1, profile.commonValue / [0, 6, 20, 60, 180, 600][Math.min(5, sea.id)]),
     lore: `A sealed cache from ${sea.name}. Its mystery rewards scale with this realm's charter cost.` });
   return items;

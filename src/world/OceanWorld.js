@@ -158,83 +158,47 @@ export class OceanWorld {
 
     const realmProfile = REALM_PROFILES[this.currentSeaId];
 
-    // Populate Fish across the Seven Seas
-    // Deep waters now spawn diverse abyssal, volcanic, starlight, and void species!
-    FISH_SPECIES.forEach((species) => {
-      if (!belongsToRealm(species, this.currentSeaId)) return;
-      if (species.zone !== this.currentSeaId && Math.random() > 0.12) return;
-      // Must be reachable within line limit
-      if (species.minDepth > activeMaxDepth) return;
-
-      // Check conditional spawn criteria (time of day, weather)
-      if (species.conditions) {
-        const env = {
-          time: worldCycle.getTimeOfDay(),
-          weather: worldCycle.getWeather(),
-          minZoneTier: this.currentSeaId || 1,
-        };
-        if (!isConditionMet(species.conditions, env)) {
-          return;
+    // Depth-band budgets prevent overlapping species habitats crowding the surface.
+    const environment = { time: worldCycle.getTimeOfDay(), weather: worldCycle.getWeather(), minZoneTier: this.currentSeaId };
+    const rarityWeight = { common: 1, uncommon: 0.5, rare: 0.16, epic: 0.045, legendary: 0.012 };
+    const populateBands = (pool, density, weight, spawn) => {
+      const limit = Math.min(activeMaxDepth, 3000);
+      for (let start = 0; start < limit; start += 50) {
+        const end = Math.min(start + 50, limit);
+        const candidates = pool.map(item => ({ item, low: Math.max(start, item.minDepth), high: Math.min(end, item.maxDepth) }))
+          .filter(candidate => candidate.high > candidate.low);
+        const weights = candidates.map(({ item, low, high }) => weight(item) * (high - low) / (end - start));
+        const total = weights.reduce((sum, value) => sum + value, 0);
+        if (!total) continue;
+        const expected = density((start + end) / 2) * (end - start) / 50;
+        const count = Math.floor(expected) + (Math.random() < expected % 1 ? 1 : 0);
+        for (let i = 0; i < count; i++) {
+          let roll = Math.random() * total;
+          let index = 0;
+          while (index < weights.length - 1 && (roll -= weights[index]) >= 0) index++;
+          const { item, low, high } = candidates[index];
+          const depth = low + Math.random() * (high - low);
+          spawn(item, 70 + Math.random() * (this.worldWidth - 140), this.surfaceY + depth * this.pixelsPerMeter);
         }
       }
+    };
+    // Absolute depth keeps existing waters consistent when the line is upgraded.
+    const depthProgress = depth => depth / (depth + 350);
+    const fishPool = FISH_SPECIES.filter(species => belongsToRealm(species, this.currentSeaId)
+      && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
+    populateBands(fishPool, depth => 5 - depthProgress(depth),
+      species => (rarityWeight[species.rarity] || 0.01)
+        * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost : 1)
+        * (species.zone === this.currentSeaId ? 1 : 0.03),
+      (species, x, y) => this.entities.fish.push(new Fish(species, x, y, { shinyChance, surfaceY: this.surfaceY })));
 
-      const minSpawnY = this.surfaceY + species.minDepth * this.pixelsPerMeter;
-      const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, species.maxDepth) * this.pixelsPerMeter;
-      if (minSpawnY >= maxSpawnY) return;
-
-      // Current sea gives affinity boost to its native species
-      const isCurrentSeaSpecies = species.zone === this.currentSeaId;
-      const affinityMult = isCurrentSeaSpecies ? 1.4 : 1.0;
-
-      let count = 0;
-      if (species.isSpecialDeep) {
-        // Solitary deep titan
-        count = Math.random() < 0.85 ? 1 : 0;
-      } else {
-        if (species.rarity === 'common') {
-          // If in top shallows (minDepth < 25m), spawn slightly fewer fish to prevent overcrowding at the surface
-          if (species.minDepth < 25) {
-            count = Math.random() < 0.65 ? 1 : 2;
-          } else {
-            count = Math.random() < 0.5 ? 2 : 3;
-          }
-        } else if (species.rarity === 'uncommon') {
-          if (species.minDepth < 25) {
-            count = 1;
-          } else {
-            count = Math.random() < 0.75 * affinityMult ? 2 : 1;
-          }
-        } else if (species.rarity === 'rare') {
-          // Reliable encounters for rare deep fish
-          count = Math.random() < Math.min(0.95, 0.65 * rareBoost * affinityMult) ? 1 : 0;
-        } else if (species.rarity === 'epic') {
-          count = Math.random() < Math.min(0.85, 0.45 * rareBoost * affinityMult) ? 1 : 0;
-        } else if (species.rarity === 'legendary') {
-          count = Math.random() < Math.min(0.70, 0.30 * rareBoost * affinityMult) ? 1 : 0;
-        }
-      }
-
-      for (let i = 0; i < count; i++) {
-        const x = 60 + Math.random() * (this.worldWidth - 120);
-        const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-        const fish = new Fish(species, x, y, { shinyChance, surfaceY: this.surfaceY });
-        this.entities.fish.push(fish);
-      }
+    // Special deep fish remain solitary and retain their environmental conditions.
+    FISH_SPECIES.filter(species => species.isSpecialDeep && belongsToRealm(species, this.currentSeaId)).forEach(species => {
+      const end = Math.min(activeMaxDepth, species.maxDepth);
+      if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= 0.85) return;
+      const y = this.surfaceY + (species.minDepth + Math.random() * (end - species.minDepth)) * this.pixelsPerMeter;
+      this.entities.fish.push(new Fish(species, 70 + Math.random() * (this.worldWidth - 140), y, { shinyChance, surfaceY: this.surfaceY }));
     });
-
-    // Keep every reachable depth band populated instead of leaving upgraded
-    // lines below the old realm depth limits with no catches at all.
-    const residents = FISH_SPECIES.filter(f => f.zone === this.currentSeaId && !f.conditions && !f.isSpecialDeep && ['common', 'uncommon'].includes(f.rarity));
-    for (let depth = 15; depth < Math.min(activeMaxDepth, 3000); depth += 75) {
-      const eligible = residents.filter(f => f.minDepth <= depth && f.maxDepth >= depth + 10);
-      if (!eligible.length) continue;
-      const nearby = this.entities.fish.filter(f => Math.abs((f.y - this.surfaceY) / this.pixelsPerMeter - depth) < 40).length;
-      for (let i = nearby; i < 3; i++) {
-        const species = eligible[Math.floor(Math.random() * eligible.length)];
-        const y = this.surfaceY + (depth + Math.random() * 10) * this.pixelsPerMeter;
-        this.entities.fish.push(new Fish(species, 60 + Math.random() * (this.worldWidth - 120), y, { shinyChance, surfaceY: this.surfaceY }));
-      }
-    }
 
     // Populate active Mythic & Legendary species based on atmospheric world cycle
     const timeOfDay = worldCycle.getTimeOfDay();
@@ -276,43 +240,10 @@ export class OceanWorld {
       }
     }
 
-    // Populate Treasures, Ranked Loot Crates, and Prehistoric Fossils (made slightly less common)
-    TREASURE_ITEMS.forEach((item) => {
-      if (!belongsToRealm(item, this.currentSeaId)) return;
-      if (item.minDepth > activeMaxDepth) return;
-
-      const minSpawnY = this.surfaceY + item.minDepth * this.pixelsPerMeter;
-      const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, item.maxDepth) * this.pixelsPerMeter;
-      if (minSpawnY >= maxSpawnY) return;
-
-      let count = 0;
-      if (item.zone === this.currentSeaId && item.id.startsWith('realm_')) {
-        const rarityChance = { common: 1, uncommon: 0.8, rare: 0.6, epic: 0.35, legendary: 0.15 };
-        count = Math.random() < realmProfile.treasureChance * (rarityChance[item.rarity] || 1) ? 1 : 0;
-      } else if (item.category === 'fossil') {
-        count = Math.random() < 0.12 * fossilBonus ? 1 : 0;
-      } else if (item.category === 'crate') {
-        // Mystery Loot Crate spawning chance based on rank (rarer encounter)
-        if (item.crateRank === 1) count = Math.random() < 0.14 ? 1 : 0;
-        else if (item.crateRank === 2) count = Math.random() < 0.10 ? 1 : 0;
-        else if (item.crateRank === 3) count = Math.random() < 0.07 ? 1 : 0;
-        else if (item.crateRank === 4) count = Math.random() < 0.04 ? 1 : 0;
-        else count = Math.random() < 0.025 ? 1 : 0;
-      } else {
-        // Sunken relics and treasures made slightly less common
-        if (item.rarity === 'common') count = Math.random() < 0.22 ? 1 : 0;
-        else if (item.rarity === 'uncommon') count = Math.random() < 0.15 ? 1 : 0;
-        else if (item.rarity === 'rare') count = Math.random() < 0.09 ? 1 : 0;
-        else if (item.rarity === 'epic') count = Math.random() < 0.05 ? 1 : 0;
-        else if (item.rarity === 'legendary') count = Math.random() < 0.025 ? 1 : 0;
-      }
-
-      for (let i = 0; i < count; i++) {
-        const x = 70 + Math.random() * (this.worldWidth - 140);
-        const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-        this.entities.treasures.push(new Treasure(item, x, y));
-      }
-    });
+    populateBands(TREASURE_ITEMS.filter(item => belongsToRealm(item, this.currentSeaId)),
+      depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2,
+      item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : 1),
+      (item, x, y) => this.entities.treasures.push(new Treasure(item, x, y)));
 
     REALM_RELICS.filter(relic => relic.zone === this.currentSeaId).forEach(relic => {
       const reachableDepth = Math.min(activeMaxDepth, relic.maxDepth);
@@ -322,25 +253,10 @@ export class OceanWorld {
       this.entities.relics.push(new Relic(relic, x, y));
     });
 
-    // Populate Hazards (Standard + Colossal Bad Obstacles - spawn more big obstacles)
-    HAZARD_TYPES.forEach((haz) => {
-      if (!belongsToRealm(haz, this.currentSeaId)) return;
-      if (haz.minDepth > activeMaxDepth) return;
-
-      const minSpawnY = this.surfaceY + haz.minDepth * this.pixelsPerMeter;
-      const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, haz.maxDepth) * this.pixelsPerMeter;
-      if (minSpawnY >= maxSpawnY) return;
-
-      const count = this.currentSeaId === 1 && !haz.isColossal ? 4 + Math.floor(Math.random() * 3) : haz.isColossal
-        ? (1 + (Math.random() < 0.65 ? 1 : 0)) // 1 to 2 imposing colossal obstacles
-        : (1 + Math.floor(Math.random() * 2 * realmProfile.hazardDensity));
-
-      for (let i = 0; i < count; i++) {
-        const x = 70 + Math.random() * (this.worldWidth - 140);
-        const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-        this.entities.hazards.push(new Hazard(haz, x, y));
-      }
-    });
+    populateBands(HAZARD_TYPES.filter(hazard => belongsToRealm(hazard, this.currentSeaId)),
+      depth => (0.25 + 1.55 * depthProgress(depth)) * realmProfile.hazardDensity,
+      hazard => hazard.isColossal ? 0.3 : 1,
+      (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
   }
 
   update(dt, hook, particles = null) {
@@ -1061,8 +977,8 @@ export class OceanWorld {
 
   // Sea 4: Sunken Atlantis Marble Pillars & Ancient Gilded Gears
   renderSunkenAtlantisPillars(ctx, cameraY, screenHeight) {
-    const seaStartY = Math.max(this.surfaceY, cameraY - 120);
-    const basePillarY = (seaStartY + 60 * this.pixelsPerMeter) - cameraY;
+    // Ruins belong to a fixed world depth, independent of the moving camera.
+    const basePillarY = this.surfaceY + 60 * this.pixelsPerMeter - cameraY;
 
     if (basePillarY < -300 || basePillarY > screenHeight + 300) return;
 

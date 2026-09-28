@@ -107,10 +107,11 @@ export class Hazard {
 
     // A soft red halo signals danger without outlining the collision circle.
     const pulse = .5 + .5 * Math.sin(this.timer * 1.6);
-    const haloRadius = this.radius * (1.48 + pulse * .07) + 12;
+    const haloRadius = this.radius * (1.8 + pulse * .1) + 18;
     const halo = ctx.createRadialGradient(0, 0, this.radius * .15, 0, 0, haloRadius);
-    halo.addColorStop(0, `rgba(239,68,68,${.18 + pulse * .045})`);
-    halo.addColorStop(.5, `rgba(239,68,68,${.13 + pulse * .035})`);
+    halo.addColorStop(0, `rgba(255,55,55,${.38 + pulse * .07})`);
+    halo.addColorStop(.5, `rgba(255,55,55,${.30 + pulse * .06})`);
+    halo.addColorStop(.75, `rgba(239,68,68,${.12 + pulse * .03})`);
     halo.addColorStop(1, 'rgba(239,68,68,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(-haloRadius, -haloRadius, haloRadius * 2, haloRadius * 2);
