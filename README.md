@@ -15,7 +15,7 @@ Fresh games begin at **level 0**. Fishing line upgrades reach from **60m to 3,00
 
 ## Seven distinct ecosystems
 
-Every realm has **38 native fish** (266 native species total), plus special mythic encounters where available. Fish differ in silhouette, markings, movement, size, depth niche, and rarity. Only one migrating species from a neighboring realm can occasionally appear; most catches are exclusive to their home waters.
+Every realm has **39 native fish** (273 native species total), plus special mythic encounters where available. Fish differ in silhouette, markings, movement, size, depth niche, and rarity. Only one migrating species from a neighboring realm can occasionally appear; most catches are exclusive to their home waters.
 
 | Realm | Charter fee | Typical common fish base value | Fish XP multiplier |
 | --- | ---: | ---: | ---: |
@@ -45,7 +45,7 @@ Native species occupy shallow nurseries as well as deep habitats, so arriving in
 
 ## Make it your own
 
-Open **Settings ? Customize Appearance** to choose your angler's skin tone, coat, hair, hat color, and headwear, with a live preview. Choices save with the active local profile.
+Open **Settings > Customize Appearance** to choose your angler's skin tone, coat, hair, hat color, and headwear, with a live preview. Choices save with the active local profile.
 
 Four companions can join your voyages: Angela the cat (eligible from level 8), Evan the pelican (14), Gracie the dolphin (22), and **Irene the shark**, who joins automatically at level 36. Existing level-36+ saves also receive Irene.
 
@@ -167,3 +167,33 @@ See the official [Firebase Hosting GitHub integration guide](https://firebase.go
 Aquarium food costs $1 per feeding. Seabeds, scenery, lighting, bubble settings, and water themes show their purchase prices; purchased styles remain owned and can be reapplied for free.
 
 The noticeboard now holds four missions, with six additional short contracts. Three new visitors join the NPC rotation; encounters avoid open menus and have a 90-second cooldown. Pets can rest ashore or come aboard from Journal > Crew, including Gracie the Dolphin. Deep resident fish occupy the full upgraded line range; large Sunlit Shoals hazards begin at 100m.
+
+### Realm specialties and gems
+
+Sunlit Shoals offers relaxed fishing, Bioluminescent Trench has dense schools and jellyfish, Astral Shimmerfall favors rare catches, Atlantis has abundant treasure, Aether has sparse oversized fish, Magma is packed with obstacles, and the Void has the most predators. The chart describes each realm.
+
+The diamond beside gold opens daily login rewards for captain accounts: a 30-day streak with 1 gem on days 1-10, 2 on days 11-20, 3 on days 21-29, and 5 on day 30. The cycle restarts after day 30; missing a day restarts at day 1. Claims reset at midnight UTC. Achievements award 1-3 gems once; crates have a 2% chance of one gem. Gems do not come from selling fish or normal gold rewards. Aquarium styles and angler options are permanent gem purchases; previews are free and owned options can be reused at no cost. Existing styles are preserved, and completed achievements receive their gems once when older saves migrate.
+
+
+## Latest gameplay changes
+
+- Fish inhabit the entire upgraded line range, with shallow residents in every realm. Vertical swimmers remain near their spawn shelf. Deeper waters favor rare catches, predators, and slightly more obstacles.
+- Each realm has a god-tier guardian below 1,600m: a 0.4% encounter chance per eligible dive, large artwork, evasive movement, celestial effects and sounds, and a one-time achievement. Guardians can live in the aquarium.
+- Later realms have specialist lionfish, siphonophores, mantis shrimp, spider crabs, storm mantas, scorpionfish, or nautiluses, alongside their sharks, jellyfish, and sea monsters. Pursuit speed and detection increase with realm difficulty.
+- Ordinary unshielded return-trip collisions have a 50% chance to drop a random fish. Heavy giants and the strongest specialists consume two shields or guarantee a fish loss. Treasure is not selected as a dropped fish.
+- Mid/late fish values, stacked size/shiny bonuses, and XP growth are reduced. Level-up cash is capped at $750. Quests pay according to their assigned realm, count landed catches, and cannot repeat for 30 minutes after claiming. Changing realms cannot inflate a completed contract.
+- Boat/line upgrades refresh the surface scene and population immediately. New account isolation is covered by registration and autosave regression tests.
+- Settings, traps, Fossils, and the museum have updated layouts. Six discovered fossils or reconstructed sets can be placed in the gallery. Each complete fossil set awards a one-time 3-gem achievement.
+- The treasure chart has selectable islands, a compass, and a dotted sailing route. Phone loading/welcome and catch-summary panels stay within the dynamic viewport and scroll internally.
+
+## Music
+
+The original `seamusic.mp3` and `oceanmusic2.mp3` play in Sunlit Shoals. Other realms use the six supplied recordings in `public/music/`: Aquarain (Trench), Meditation (Astral), Peaceful (Atlantis), Ocean Waves (Aether), Tropical House (Magma), and Ocean Vibes (Void). Radio stations use Tropical House, Aquarain, and Ocean Vibes. Radio overrides realm music until switched off. Sound effects are 20% quieter at the same slider setting.
+
+## Fleet Radio and Gem Store backend
+
+Fleet Radio uses shared Firestore messages, server-acknowledged REST writes, and realtime listeners with metadata updates. Clients show the newest 30 messages from the last 24 hours and remove messages deleted remotely. The two cleanup functions permanently delete excess messages after arrivals and expired messages on a one-minute schedule. **Permanent cleanup requires deploying those functions**; client filtering alone does not erase database records. Backend deletion is asynchronous, so expired records may remain until the next successful cleanup.
+
+The Gem Store presents 10-, 35-, and 100-gem bundles. Stripe prices are configuration, not hardcoded dollar amounts. The signed-in user's `/players/{uid}` wallet streams into the HUD; gameplay-earned gems remain in the captain save. Verified webhook transactions grant purchased gems once per checkout session, including duplicate or concurrent Stripe deliveries. Clients cannot create or increase purchased gem balances. Local gameplay progression and earned gems remain client-reported, so this is not a server-authoritative anti-cheat system.
+
+See [functions/README.md](functions/README.md) for Stripe secrets, prices, webhook setup, retention deployment, and backend tests. Checkout is unavailable until configured. No live purchase is needed for the automated tests.

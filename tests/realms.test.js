@@ -27,13 +27,13 @@ function advancedSave() {
   return save;
 }
 
-test('every realm has 38 real native fish, distinct content, and complete journal coverage', () => {
+test('every realm has 39 real native fish, distinct content, and complete journal coverage', () => {
   const all = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
   assert.equal(new Set(all.map(f => f.id)).size, all.length);
-  assert.equal(FISH_SPECIES.length, 266);
+  assert.equal(FISH_SPECIES.length, 273);
   for (const sea of FANTASY_SEAS) {
     const natives = FISH_SPECIES.filter(f => f.zone === sea.id);
-    assert.equal(natives.length, 38);
+    assert.equal(natives.length, 39);
     assert.ok(new Set(natives.map(f => f.shape)).size >= 6);
     assert.ok(new Set(natives.map(f => f.movementType).filter(Boolean)).size >= 4);
     assert.equal(REALM_HAZARDS.filter(h => h.zone === sea.id).length, 4);
@@ -55,7 +55,7 @@ test('charter prices and common rewards rise together; gates charge the authorit
   for (let i = 1; i < FANTASY_SEAS.length; i++) {
     const sea = FANTASY_SEAS[i], previous = FANTASY_SEAS[i-1];
     assert.equal(sea.gates.unlockFee, REALM_PROFILES[sea.id].fee);
-    const meanValue = zone => FISH_SPECIES.filter(f => f.zone === zone).reduce((sum, f) => sum + f.baseValue, 0) / 38;
+    const meanValue = zone => FISH_SPECIES.filter(f => f.zone === zone && !f.isGodTier).reduce((sum, f) => sum + f.baseValue, 0) / 38;
     assert.ok(meanValue(sea.id) > meanValue(previous.id) * 1.5);
     assert.ok(REALM_RELICS.find(r => r.zone === sea.id).restoredValue > REALM_RELICS.find(r => r.zone === previous.id).restoredValue * 1.5);
     assert.ok(REALM_PROFILES[sea.id].commonValue > REALM_PROFILES[previous.id].commonValue * 1.5);
@@ -153,6 +153,7 @@ test('Irene joins at level 36 and is granted to existing high-level saves', asyn
 
 test('appearance, aquarium decor, and displayed treasure survive reload without earning fish tips', () => {
   const save = new SaveSystem();
+  save.data.gems = 40;
   save.setAppearance('coat', '#0d9488');
   save.setAppearance('hat', 'beanie');
   save.setUpgradeLevel('personalAquarium', 1);
@@ -207,7 +208,8 @@ test('aquarium purchases persist, owned styles are free, and feeding costs exact
   assert.equal(save.setAquariumDecoration('substrate', 'pebbles'), false);
   assert.equal(save.data.aquarium.decor.substrate, 'sand');
   assert.equal(save.data.coins, 99);
-  save.data.coins = 101;
+  save.data.coins = 1;
+  save.data.gems = 2;
   assert.equal(save.setAquariumDecoration('substrate', 'pebbles'), true);
   assert.equal(save.data.coins, 1);
   assert.equal(save.feedAquarium(), true);
@@ -452,4 +454,137 @@ test('Aether island scenery scrolls with world depth instead of sticking to the 
   points.length = 0;
   world.renderAetherSkyIslands(ctx, 2500, 720);
   assert.equal(points.length, 0);
+});
+
+test('realm ecology produces distinct fish, treasure, obstacle and enemy populations', () => {
+  const save = advancedSave();
+  const world = new OceanWorld({ width: 1280, height: 720 });
+  const random = Math.random;
+  let seed = 32456;
+  Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  try {
+    const totals = {};
+    for (const realm of [1, 2, 4, 5, 6, 7]) {
+      save.data.currentSea = realm;
+      const result = totals[realm] = { fish: 0, treasure: 0, obstacles: 0, enemies: 0 };
+      for (let dive = 0; dive < 30; dive++) {
+        world.populateWorld(save);
+        result.fish += world.entities.fish.length;
+        result.treasure += world.entities.treasures.length;
+        result.obstacles += world.entities.hazards.filter(h => !h.marineKind).length;
+        result.enemies += world.entities.hazards.filter(h => h.marineKind).length;
+        if (realm === 5) {
+          for (const f of world.entities.fish) assert.ok(f.size >= f.species.sizeRange[0] * 2, 'Aether fish are oversized');
+        }
+      }
+    }
+    assert.ok(totals[2].fish > totals[5].fish * 3);
+    assert.ok(totals[4].treasure > totals[1].treasure * 3);
+    assert.ok(totals[6].obstacles > totals[1].obstacles * 3);
+    assert.ok(totals[7].enemies > totals[1].enemies * 2);
+  } finally { Math.random = random; }
+});
+
+test('all realms keep shallow and deep residents after a long dive', () => {
+  const save = advancedSave();
+  for (let realm = 1; realm <= 7; realm++) {
+    save.data.currentSea = realm;
+    save.getCurrentSea = () => realm;
+    const ocean = new OceanWorld({ width: 390, height: 720 });
+    ocean.populateWorld(save);
+    assert.ok(ocean.entities.fish.some(f => f.y < ocean.surfaceY + 30 * 15), `realm ${realm} needs shallow residents`);
+    const residents = ocean.entities.fish.filter(f => f.y > ocean.surfaceY + 430 * 15);
+    assert.ok(residents.length > 30);
+    const originalDepths = residents.map(f => f.y);
+    for (let step = 0; step < 1200; step++) residents.forEach(f => f.update(250, 390, null));
+    residents.forEach((fish, index) => assert.ok(Math.abs(fish.y - originalDepths[index]) <= 121, 'fish must remain near its populated shelf'));
+  }
+});
+
+test('heavy impacts consume two shields or drop a fish; normal impacts have a fifty percent threshold', async () => {
+  const { Hook } = await import('../src/entities/Hook.js');
+  const { soundManager } = await import('../src/audio/SoundManager.js');
+  soundManager.playHazardShock = () => {}; soundManager.playFishEscape = () => {};
+  const originalRandom = Math.random;
+  const makeHook = shields => {
+    const hook = new Hook(); hook.state = 'REELING'; hook.shields = shields;
+    hook.caughtItems = [{ speciesId: 'fish', name: 'Fish', hookTo() {} }, { isTreasure: true, name: 'Treasure', hookTo() {} }];
+    return hook;
+  };
+  try {
+    for (const [roll, lost] of [[.49, true], [.5, false]]) {
+      Math.random = () => roll;
+      const hook = makeHook(0); hook.takeHazardHit({ knockback: 25 }, null);
+      assert.equal(hook.caughtItems.length, lost ? 1 : 2);
+      assert.ok(hook.caughtItems.some(item => item.isTreasure));
+    }
+    Math.random = () => .99;
+    const protectedHook = makeHook(2); protectedHook.takeHazardHit({ shieldCost: 2, knockback: 30 }, null);
+    assert.equal(protectedHook.shields, 0); assert.equal(protectedHook.caughtItems.length, 2);
+    const unprotectedHook = makeHook(1); unprotectedHook.takeHazardHit({ shieldCost: 2, knockback: 30 }, null);
+    assert.equal(unprotectedHook.shields, 0); assert.equal(unprotectedHook.caughtItems.length, 1);
+  } finally { Math.random = originalRandom; }
+});
+
+test('god-tier fish are scarce, collectible, aquarium eligible and grant one achievement', () => {
+  const save = new SaveSystem(); save.data = save.getDefaultData();
+  save.setUpgradeLevel('personalAquarium', 1);
+  const gods = FISH_SPECIES.filter(fish => fish.isGodTier);
+  assert.equal(gods.length, 7);
+  assert.ok(gods.every(fish => fish.spawnChance <= .005 && fish.minDepth >= 1600 && fish.scaleFactor >= 6 && fish.evasion));
+  const fish = new Fish(gods[0], 200, 26000);
+  const item = save.addItemToInventory(fish);
+  save.recordCatchItem(fish);
+  assert.equal(save.data.stats.godTierCaught, 1);
+  assert.ok(save.isAchievementUnlocked('divine_angler'));
+  assert.ok(item.isGodTier && item.isLocked && item.value >= 10000);
+  assert.equal(save.moveItemToAquarium(item.instanceId).success, true);
+});
+
+test('quest rewards rise with the contracted realm and cannot be inflated by sailing before claiming', async () => {
+  const { QuestSystem, questReward } = await import('../src/systems/QuestSystem.js');
+  const { QUEST_POOL } = await import('../src/data/QuestsData.js');
+  const { soundManager } = await import('../src/audio/SoundManager.js');
+  soundManager.playUpgrade = () => {};
+  const save = advancedSave();
+  const def = QUEST_POOL.find(q => q.id === 'reef_angler');
+  assert.ok(questReward(def, 7).rewardCoins > questReward(def, 3).rewardCoins);
+  assert.ok(questReward(def, 7).rewardCoins < def.rewardCoins * 10);
+  const quests = new QuestSystem(save);
+  save.data.quests.active = [{ id: def.id, realmId: 1, current: 2, target: 3, claimed: false }];
+  save.getCurrentSea = () => 7;
+  quests.dispatch({ type: 'catch_fish', fish: { zone: 1 } });
+  assert.equal(save.data.quests.active[0].current, 2);
+  save.data.quests.active[0].current = 3;
+  assert.equal(quests.claimQuest(def.id).rewardCoins, def.rewardCoins);
+});
+
+test('every upgraded vessel renders finite geometry and stays centered after repopulation', () => {
+  const save = advancedSave();
+  const ocean = new OceanWorld({ width: 390, height: 720 });
+  ocean.setSaveSystem(save);
+  let drawCalls = 0;
+  const ctx = new Proxy({ globalAlpha: 1 }, { get(target, key) {
+    if (key in target) return target[key];
+    if (String(key).startsWith('create')) return () => ({ addColorStop() {} });
+    return (...args) => { drawCalls++; for (const value of args) if (typeof value === 'number') assert.ok(Number.isFinite(value), `${String(key)} received invalid vessel geometry`); };
+  } });
+  for (let level = 0; level < UPGRADE_DEFINITIONS.boatVessel.tiers.length; level++) {
+    save.data.upgrades.boatVessel = level;
+    ocean.boat.x = 5000;
+    ocean.populateWorld(save);
+    assert.equal(ocean.boat.x, 195);
+    assert.equal(ocean.boat.vesselLevel, level);
+    const before = drawCalls;
+    ocean.renderBoatAndFisherman(ctx, 0);
+    assert.ok(drawCalls > before + 20);
+  }
+});
+
+test('teleporting fish cannot escape their underwater habitat', async () => {
+  const { soundManager } = await import('../src/audio/SoundManager.js');
+  soundManager.playTeleportWarp = () => {};
+  const fish = new Fish({ ...FISH_SPECIES[0], minDepth: 2, maxDepth: 3000, evasion: { type: 'teleport', blinkDist: 500 } }, 180, 270);
+  fish.executeEvasion({ x: 180, y: 700 }, null, 390);
+  assert.ok(fish.y >= fish.minY && fish.y > 220);
 });

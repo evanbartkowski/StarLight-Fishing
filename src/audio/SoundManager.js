@@ -31,6 +31,8 @@ export class SoundManager {
 
     // Seven Fantasy Seas procedural soundscapes
     this.currentSeaId = 1;
+    this.realmTracks = new Map();
+    this.radioTrack = null;
     this.seaGain = null;
     this.seaNodes = [];
     this.seaTimers = [];
@@ -82,10 +84,12 @@ export class SoundManager {
 
   applyVolumes() {
     const vol = this.isMuted ? 0 : this.musicVolume;
+    for (const track of this.realmTracks?.values() || []) track.volume = vol * .45;
+    if (this.radioTrack) this.radioTrack.volume = vol * .45;
     this.surfaceMusic.volume = vol * 0.4;
     this.underwaterMusic.volume = vol * 0.6;
-    this.bubbleSfx.volume = this.isMuted ? 0 : this.sfxVolume * 0.5;
-    this.bubbleSfx2.volume = this.isMuted ? 0 : this.sfxVolume * 0.5;
+    this.bubbleSfx.volume = this.isMuted ? 0 : this.sfxVolume * .8 * 0.5;
+    this.bubbleSfx2.volume = this.isMuted ? 0 : this.sfxVolume * .8 * 0.5;
 
     if (this.ambientSurfGain && this.audioCtx) {
       this.ambientSurfGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.12, this.audioCtx.currentTime);
@@ -100,10 +104,29 @@ export class SoundManager {
 
   setMusicMode(mode) {
     this.currentMusicMode = mode;
+    this.setSeaTrack(this.currentSeaId);
+  }
+
+  syncRecordedMusic() {
     this.surfaceMusic.pause();
     this.underwaterMusic.pause();
-    this.setSeaTrack(this.currentSeaId);
+    for (const track of this.realmTracks.values()) track.pause();
+    if (this.activeStation || this.currentMusicMode === 'none' || !this.currentMusicMode) return;
+    let track;
+    if (this.currentSeaId === 1) {
+      track = this.currentMusicMode === 'underwater' ? this.underwaterMusic : this.surfaceMusic;
+    } else {
+      const names = { 2: 'aquarain', 3: 'meditation', 4: 'peaceful', 5: 'ocean-waves', 6: 'tropical', 7: 'ocean-vibes' };
+      if (!this.realmTracks.has(this.currentSeaId)) {
+        const audio = new Audio(`/music/${names[this.currentSeaId] || 'aquarain'}.mp3`);
+        audio.loop = true;
+        audio.preload = 'none';
+        this.realmTracks.set(this.currentSeaId, audio);
+      }
+      track = this.realmTracks.get(this.currentSeaId);
+    }
     this.applyVolumes();
+    track.play()?.catch(() => {});
   }
 
   // Pure Web Audio API: Procedural Soft Ambient Water & Rain Loops
@@ -179,7 +202,7 @@ export class SoundManager {
   setWeatherAudio(weather) {
     if (!this.audioCtx || !this.ambientRainGain) return;
     const now = this.audioCtx.currentTime;
-    const targetRainVol = (weather === 'RAIN' && !this.isMuted) ? this.sfxVolume * 0.14 : 0;
+    const targetRainVol = (weather === 'RAIN' && !this.isMuted) ? this.sfxVolume * .8 * 0.14 : 0;
     this.ambientRainGain.gain.setTargetAtTime(targetRainVol, now, 1.5);
   }
 
@@ -199,7 +222,7 @@ export class SoundManager {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now + idx * 0.16);
 
-      gain.gain.setValueAtTime(this.sfxVolume * 0.35, now + idx * 0.16);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.35, now + idx * 0.16);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 1.2);
 
       osc.connect(gain);
@@ -207,6 +230,24 @@ export class SoundManager {
 
       osc.start(now + idx * 0.16);
       osc.stop(now + idx * 0.16 + 1.25);
+    });
+  }
+
+  playDivineChime() {
+    this.ensureAudio();
+    if (!this.audioCtx || this.isMuted) return;
+    const ctx = this.audioCtx, now = ctx.currentTime;
+    [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+      const oscillator = ctx.createOscillator(), gain = ctx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, now);
+      const start = now + index * .13;
+      gain.gain.setValueAtTime(.0001, now);
+      gain.gain.linearRampToValueAtTime(this.sfxVolume * .16, start + .03);
+      gain.gain.exponentialRampToValueAtTime(.0001, start + 2.2);
+      oscillator.connect(gain); gain.connect(ctx.destination);
+      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+      oscillator.start(start); oscillator.stop(start + 2.25);
     });
   }
 
@@ -224,7 +265,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(523.25, now); // C5 harmonic
     osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.22, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.22, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
 
     osc.connect(gain);
@@ -248,7 +289,7 @@ export class SoundManager {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(320, now);
     osc.frequency.exponentialRampToValueAtTime(140, now + 0.08);
-    gain.gain.setValueAtTime(this.sfxVolume * 0.3, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.3, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
     osc.connect(gain);
     gain.connect(ctx.destination);
@@ -273,7 +314,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(450, now);
     osc.frequency.exponentialRampToValueAtTime(140, now + 0.28);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.5, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.5, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
     osc.connect(gain);
@@ -306,7 +347,7 @@ export class SoundManager {
     filter.frequency.exponentialRampToValueAtTime(150, now + 0.2);
 
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(this.sfxVolume * 0.6, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.6, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
 
     noise.connect(filter);
@@ -335,7 +376,7 @@ export class SoundManager {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now + idx * 0.05);
 
-      gain.gain.setValueAtTime(this.sfxVolume * 0.35, now + idx * 0.05);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.35, now + idx * 0.05);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.25);
 
       osc.connect(gain);
@@ -360,7 +401,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(140, now);
     osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.5, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.5, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
     osc.connect(gain);
@@ -385,7 +426,7 @@ export class SoundManager {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now + idx * 0.06);
 
-      gain.gain.setValueAtTime(this.sfxVolume * 0.35, now + idx * 0.06);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.35, now + idx * 0.06);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.4);
 
       osc.connect(gain);
@@ -409,7 +450,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(987.77, now);
     osc.frequency.setValueAtTime(1318.51, now + 0.08);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.3, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.3, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     osc.connect(gain);
@@ -432,7 +473,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(400, now);
     osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.2, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.2, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
     osc.connect(gain);
@@ -456,7 +497,7 @@ export class SoundManager {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now + idx * 0.06);
 
-      gain.gain.setValueAtTime(this.sfxVolume * 0.35, now + idx * 0.06);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.35, now + idx * 0.06);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.3);
 
       osc.connect(gain);
@@ -480,7 +521,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(600 + Math.random() * 200, now);
     osc.frequency.exponentialRampToValueAtTime(180, now + 0.03);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.15, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.15, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
 
     osc.connect(gain);
@@ -503,7 +544,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(1100, now);
     osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.25, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.25, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
 
     osc.connect(gain);
@@ -528,7 +569,7 @@ export class SoundManager {
         const gain = ctx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(freq, now + i * 0.08);
-        gain.gain.setValueAtTime(this.sfxVolume * 0.35, now + i * 0.08);
+        gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.35, now + i * 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.5);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -542,7 +583,7 @@ export class SoundManager {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(160, now);
       osc.frequency.exponentialRampToValueAtTime(80, now + 0.18);
-      gain.gain.setValueAtTime(this.sfxVolume * 0.25, now);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.25, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -564,7 +605,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(520, now);
     osc.frequency.exponentialRampToValueAtTime(130, now + 0.28);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.3, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.3, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
     osc.connect(gain);
@@ -587,7 +628,7 @@ export class SoundManager {
     osc.frequency.exponentialRampToValueAtTime(1480, now + 0.16);
     osc.frequency.exponentialRampToValueAtTime(440, now + 0.32);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.28, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.28, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
 
     osc.connect(gain);
@@ -608,7 +649,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(420, now);
     osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.25, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.25, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
 
     osc.connect(gain);
@@ -629,7 +670,7 @@ export class SoundManager {
     osc.frequency.setValueAtTime(740, now);
     osc.frequency.exponentialRampToValueAtTime(220, now + 0.28);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.2, now);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.2, now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
     osc.connect(gain);
@@ -653,7 +694,7 @@ export class SoundManager {
       osc.frequency.exponentialRampToValueAtTime(f * 1.5, now + 0.08);
       osc.frequency.exponentialRampToValueAtTime(f * 0.8, now + 0.24);
 
-      gain.gain.setValueAtTime(this.sfxVolume * 0.22, now);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.22, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
 
       osc.connect(gain);
@@ -675,7 +716,7 @@ export class SoundManager {
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now + idx * 0.09);
-      gain.gain.setValueAtTime(this.sfxVolume * 0.32, now + idx * 0.09);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.32, now + idx * 0.09);
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.4);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -696,7 +737,7 @@ export class SoundManager {
     popOsc.type = 'triangle';
     popOsc.frequency.setValueAtTime(160, now);
     popOsc.frequency.exponentialRampToValueAtTime(540, now + 0.05);
-    popGain.gain.setValueAtTime(this.sfxVolume * 0.35, now);
+    popGain.gain.setValueAtTime(this.sfxVolume * .8 * 0.35, now);
     popGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
     popOsc.connect(popGain);
     popGain.connect(ctx.destination);
@@ -709,7 +750,7 @@ export class SoundManager {
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, now + 0.04 + idx * 0.06);
-      gain.gain.setValueAtTime(this.sfxVolume * 0.22, now + 0.04 + idx * 0.06);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.22, now + 0.04 + idx * 0.06);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04 + idx * 0.06 + 0.35);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -738,11 +779,11 @@ export class SoundManager {
     lfo.type = 'sine';
     lfo.frequency.setValueAtTime(26, now);
 
-    lfoGain.gain.setValueAtTime(this.sfxVolume * 0.18, now);
+    lfoGain.gain.setValueAtTime(this.sfxVolume * .8 * 0.18, now);
     lfo.connect(gain.gain);
 
-    gain.gain.setValueAtTime(this.sfxVolume * 0.22, now);
-    gain.gain.linearRampToValueAtTime(this.sfxVolume * 0.3, now + 0.4);
+    gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.22, now);
+    gain.gain.linearRampToValueAtTime(this.sfxVolume * .8 * 0.3, now + 0.4);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 1.25);
 
     osc.connect(gain);
@@ -760,6 +801,8 @@ export class SoundManager {
   }
 
   stopRadioStation() {
+    this.radioTrack?.pause();
+    this.radioTrack = null;
     this.activeStation = null;
     if (this.radioTimers) {
       this.radioTimers.forEach(id => clearInterval(id));
@@ -782,30 +825,20 @@ export class SoundManager {
     }
 
     this.applyVolumes();
+    this.syncRecordedMusic();
   }
 
   startRadioStation(stationId) {
     this.ensureAudio();
     this.stopRadioStation();
-    if (!this.audioCtx) return;
-
+    const stations = { harbor_breeze: 'tropical', rainy_lighthouse: 'aquarain', deep_blue: 'ocean-vibes' };
+    if (!stations[stationId]) return;
     this.activeStation = stationId;
+    this.syncRecordedMusic();
+    this.radioTrack = new Audio(`/music/${stations[stationId]}.mp3`);
+    this.radioTrack.loop = true;
     this.applyVolumes();
-    this.surfaceMusic.pause();
-    this.underwaterMusic.pause();
-
-    const ctx = this.audioCtx;
-    this.radioGain = ctx.createGain();
-    this.radioGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.45, ctx.currentTime);
-    this.radioGain.connect(ctx.destination);
-
-    if (stationId === 'harbor_breeze') {
-      this._startHarborBreezeStation();
-    } else if (stationId === 'rainy_lighthouse') {
-      this._startRainyLighthouseStation();
-    } else if (stationId === 'deep_blue') {
-      this._startDeepBlueStation();
-    }
+    this.radioTrack.play()?.catch(() => {});
   }
 
   _startHarborBreezeStation() {
@@ -840,7 +873,7 @@ export class SoundManager {
       filter.frequency.setValueAtTime(1400, now);
       filter.frequency.exponentialRampToValueAtTime(380, now + 0.6);
 
-      gain.gain.setValueAtTime(this.sfxVolume * 0.35, now);
+      gain.gain.setValueAtTime(this.sfxVolume * .8 * 0.35, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
 
       osc.connect(filter);
@@ -905,7 +938,7 @@ export class SoundManager {
       tFilter.frequency.setValueAtTime(120, now);
 
       tGain.gain.setValueAtTime(0.001, now);
-      tGain.gain.linearRampToValueAtTime(this.sfxVolume * 0.28, now + 0.6);
+      tGain.gain.linearRampToValueAtTime(this.sfxVolume * .8 * 0.28, now + 0.6);
       tGain.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
 
       tOsc.connect(tFilter);
@@ -928,8 +961,8 @@ export class SoundManager {
         fOsc.frequency.setValueAtTime(freq, now);
 
         fGain.gain.setValueAtTime(0.001, now);
-        fGain.gain.linearRampToValueAtTime(this.sfxVolume * 0.22, now + 0.8);
-        fGain.gain.setValueAtTime(this.sfxVolume * 0.22, now + 2.4);
+        fGain.gain.linearRampToValueAtTime(this.sfxVolume * .8 * 0.22, now + 0.8);
+        fGain.gain.setValueAtTime(this.sfxVolume * .8 * 0.22, now + 2.4);
         fGain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
 
         fOsc.connect(fGain);
@@ -986,7 +1019,7 @@ export class SoundManager {
       bOsc.frequency.setValueAtTime(startF, now);
       bOsc.frequency.exponentialRampToValueAtTime(startF * 1.8, now + 0.14);
 
-      bGain.gain.setValueAtTime(this.sfxVolume * 0.18, now);
+      bGain.gain.setValueAtTime(this.sfxVolume * .8 * 0.18, now);
       bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
       bOsc.connect(bGain);
@@ -1020,43 +1053,11 @@ export class SoundManager {
   }
 
   setSeaTrack(seaId) {
-    const id = parseInt(seaId, 10) || 1;
+    const id = Number(seaId) || 1;
     this.ensureAudio();
-    if (this.currentSeaId === id && this.seaGain) return;
-    if (!this.audioCtx) return;
-
+    const changed = this.currentSeaId !== id;
     this.currentSeaId = id;
-    const ctx = this.audioCtx;
-
-    // Smooth crossfade out old sea track
-    if (this.seaGain) {
-      const oldGain = this.seaGain;
-      const oldNodes = [...this.seaNodes];
-      const oldTimers = [...this.seaTimers];
-      oldTimers.forEach(timer => clearInterval(timer));
-      this.seaNodes = [];
-      this.seaTimers = [];
-      try {
-        oldGain.gain.setValueAtTime(oldGain.gain.value, ctx.currentTime);
-        oldGain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 1.2);
-        setTimeout(() => {
-          oldTimers.forEach(t => clearInterval(t));
-          oldNodes.forEach(n => {
-            try { if (n.stop) n.stop(); if (n.disconnect) n.disconnect(); } catch (_) {}
-          });
-          try { oldGain.disconnect(); } catch (_) {}
-        }, 1300);
-      } catch (_) {}
-    }
-
-    // Create new Sea Gain Node and crossfade in
-    this.seaGain = ctx.createGain();
-    const targetVol = (this.isMuted || this.activeStation || this.currentMusicMode === 'none') ? 0 : this.musicVolume * 0.38;
-    this.seaGain.gain.setValueAtTime(0.001, ctx.currentTime);
-    this.seaGain.gain.linearRampToValueAtTime(targetVol, ctx.currentTime + 1.5);
-    this.seaGain.connect(ctx.destination);
-
-    this._startRealmTheme(id);
+    if (changed || this.currentMusicMode) this.syncRecordedMusic();
   }
 
   _startRealmTheme(id) {

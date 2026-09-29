@@ -1,3 +1,4 @@
+import { DAILY_GEMS, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
 import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization } from '../data/CustomizationData.js';
 import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
@@ -27,6 +28,10 @@ export class SaveSystem {
 
     return {
       level: 0,
+      gems: 0,
+      dailyLogin: { lastDay: null, streak: 0 },
+      ownedAppearance: [],
+      gemEconomyVersion: 1,
       appearance: normalizeCustomization(ANGLER_OPTIONS),
       xp: 0,
       coins: 0,
@@ -42,6 +47,7 @@ export class SaveSystem {
         dolphin: false,
         shark: false,
       },
+      museumDisplays: [],
       skeletons: {
         megalodonJaw: 0, // 0 / 4 pieces
         dunkleosteus: 0, // 0 / 4 pieces
@@ -113,11 +119,11 @@ export class SaveSystem {
   getXpRequired(level) {
     const lvl = Math.max(1, level || 1);
     // Rebalanced XP curve: floor(60 * level^1.45)
-    return Math.floor(60 * Math.pow(lvl, 1.45));
+    return Math.floor(60 * Math.pow(lvl, 1.45) * (1 + Math.max(0, lvl - 12) * .025));
   }
 
   addXp(amount) {
-    if (!amount || amount <= 0) return;
+    if (!Number.isFinite(amount) || amount <= 0) return;
     this.data.xp += Math.round(amount);
 
     let xpReq = this.getXpRequired(this.data.level);
@@ -131,7 +137,7 @@ export class SaveSystem {
       if (this.data.level >= 36) this.data.pets.shark = true;
 
       // Level up cash reward
-      const bonusGold = this.data.level * 100;
+      const bonusGold = Math.min(750, this.data.level * 100);
       this.data.coins += bonusGold;
       this.data.stats.totalGoldEarned += bonusGold;
 
@@ -271,6 +277,9 @@ export class SaveSystem {
         ...def,
         ...parsed,
         level: (parsed.level === 1 && (!parsed.xp || parsed.xp === 0) && (!parsed.stats?.totalFishCaught || parsed.stats.totalFishCaught === 0)) ? 0 : Math.max(0, parsed.level ?? 0),
+        gems: Number.isFinite(parsed.gems) ? Math.max(0, Math.floor(parsed.gems)) : 0,
+        dailyLogin: { ...def.dailyLogin, ...(parsed.dailyLogin || {}) },
+        ownedAppearance: Array.isArray(parsed.ownedAppearance) ? parsed.ownedAppearance : [],
         xp: Math.max(0, parsed.xp || 0),
         coins: Math.max(0, parsed.coins || 0),
         upgrades: { ...def.upgrades, ...(parsed.upgrades || {}) },
@@ -298,6 +307,13 @@ export class SaveSystem {
         aberrations: parsed.aberrations || {},
         settings: { ...def.settings, ...(parsed.settings || {}) },
       };
+
+      if (!parsed.gemEconomyVersion) {
+        this.data.ownedAppearance = Object.entries(normalizeCustomization(ANGLER_OPTIONS, this.data.appearance)).map(([key, value]) => `${key}:${value}`);
+        this.data.gems += ACHIEVEMENTS.filter(ach => this.isAchievementUnlocked(ach.id)).reduce((sum, ach) => sum + achievementGems(ach), 0);
+        this.data.gemEconomyVersion = 1;
+        this.save();
+      }
 
       if (this.data.level >= 36) this.data.pets.shark = true;
 
@@ -348,6 +364,7 @@ export class SaveSystem {
   }
 
   addCoins(amount) {
+    if (!Number.isFinite(amount) || amount < 0) return;
     const val = Math.max(0, Math.round(amount));
     this.data.coins += val;
     this.data.stats.totalGoldEarned += val;
@@ -365,6 +382,18 @@ export class SaveSystem {
     }
   }
 
+  toggleMuseumDisplay(id) {
+    const fossil = TREASURE_ITEMS.find(item => item.id === id && item.category === 'fossil');
+    if (!(fossil && this.data.fossils[id]?.count > 0) && !(this.data.skeletons[id] >= 4)) return false;
+    const displays = new Set(this.data.museumDisplays || []);
+    if (displays.has(id)) displays.delete(id);
+    else if (displays.size < 6) displays.add(id);
+    else return false;
+    this.data.museumDisplays = [...displays];
+    this.save();
+    return true;
+  }
+
   awardSkeletonPiece(targetKey = null) {
     if (!this.data.skeletons) {
       this.data.skeletons = { megalodonJaw: 0, dunkleosteus: 0, plesiosaur: 0 };
@@ -377,6 +406,7 @@ export class SaveSystem {
     }
     if ((this.data.skeletons[chosen] || 0) < 4) {
       this.data.skeletons[chosen] = (this.data.skeletons[chosen] || 0) + 1;
+      this.checkAchievements();
       this.save();
       return { target: chosen, count: this.data.skeletons[chosen], completed: this.data.skeletons[chosen] >= 4 };
     }
@@ -384,6 +414,7 @@ export class SaveSystem {
   }
 
   spendCoins(amount) {
+    if (!Number.isSafeInteger(amount) || amount < 0) return false;
     if (this.data.coins >= amount) {
       this.data.coins -= amount;
       this.save();
@@ -467,12 +498,7 @@ export class SaveSystem {
 
       // 30% chance a deep fossil find also grants a skeleton bone piece
       if (Math.random() < 0.35) {
-        if (!this.data.skeletons) this.data.skeletons = { megalodonJaw: 0, dunkleosteus: 0, plesiosaur: 0 };
-        const keys = ['megalodonJaw', 'dunkleosteus', 'plesiosaur'];
-        const randomTarget = keys[Math.floor(Math.random() * keys.length)];
-        if (this.data.skeletons[randomTarget] < 4) {
-          this.data.skeletons[randomTarget] += 1;
-        }
+        this.awardSkeletonPiece();
       }
 
       this.addXp(140);
@@ -480,6 +506,7 @@ export class SaveSystem {
       this.data.stats.totalTreasureCollected += 1;
       this.addXp(40);
     } else {
+      if (item.isGodTier || item.species?.isGodTier) this.data.stats.godTierCaught = (this.data.stats.godTierCaught || 0) + 1;
       // Fish catch
       this.data.stats.totalFishCaught += 1;
 
@@ -515,7 +542,7 @@ export class SaveSystem {
         xpGain += 75;
       }
 
-      this.addXp(Math.round(xpGain * (item.species?.xpMultiplier || 1)));
+      this.addXp(Math.round(xpGain * Math.sqrt(item.species?.xpMultiplier || 1)));
 
       // Grade evaluation
       if (!item.gradeTier && item.species) {
@@ -616,6 +643,7 @@ export class SaveSystem {
             unlockedAt: Date.now(),
           };
           this.data.coins += ach.reward;
+          this.data.gems += achievementGems(ach);
           if (this.onAchievementUnlocked) {
             this.onAchievementUnlocked(ach);
           }
@@ -796,6 +824,7 @@ export class SaveSystem {
       isShiny: !!item.isShiny,
       crown: item.crown || null,
       isMythic: !!item.isMythic,
+      isGodTier: !!item.isGodTier,
       lore: item.lore || item.species?.lore || '',
       isLocked: item.isLocked !== undefined ? !!item.isLocked : (item.rarity === 'legendary' || item.rarity === 'mythic' || !!item.isMythic),
       caughtAt: Date.now(),
@@ -822,6 +851,8 @@ export class SaveSystem {
     if (this.data.inventory.length >= cap) {
       return null;
     }
+    const existing = item.instanceId && this.data.inventory.find(entry => entry.instanceId === item.instanceId);
+    if (existing) return existing;
     const invItem = item.instanceId ? item : this.createInventoryItem(item);
     if (invItem.rarity === 'legendary' || invItem.rarity === 'mythic' || invItem.isMythic) {
       invItem.isLocked = true;
@@ -949,9 +980,45 @@ export class SaveSystem {
     return false;
   }
 
-  setAppearance(key, value) {
-    this.data.appearance = normalizeCustomization(ANGLER_OPTIONS, { ...this.data.appearance, [key]: value });
+  getDailyLoginStatus(now = Date.now()) {
+    const today = utcDay(now);
+    const { lastDay, streak } = this.data.dailyLogin;
+    const nextStreak = lastDay === today - 1 ? streak % DAILY_GEMS.length + 1 : 1;
+    return { available: !accountManager.isGuest() && (lastDay === null || today > lastDay), nextStreak, gems: DAILY_GEMS[nextStreak - 1], claimed: lastDay === today };
+  }
+
+  getGemBalance() {
+    return this.data.gems + (this.gemShop?.getBalance() || 0);
+  }
+
+  claimDailyLogin(now = Date.now()) {
+    const status = this.getDailyLoginStatus(now);
+    if (!status.available) return 0;
+    this.data.dailyLogin = { lastDay: utcDay(now), streak: status.nextStreak };
+    this.data.gems += status.gems;
     this.save();
+    return status.gems;
+  }
+
+  getAppearanceCost(values) {
+    const look = normalizeCustomization(ANGLER_OPTIONS, values);
+    return Object.entries(look).reduce((total, [key, value]) => total +
+      (value === ANGLER_OPTIONS[key].default || this.data.appearance[key] === value || this.data.ownedAppearance.includes(`${key}:${value}`) ? 0 : APPEARANCE_PRICES[key]), 0);
+  }
+
+  purchaseAppearance(values) {
+    const look = normalizeCustomization(ANGLER_OPTIONS, values);
+    const cost = this.getAppearanceCost(look);
+    if (this.data.gems < cost) return false;
+    this.data.gems -= cost;
+    this.data.ownedAppearance = [...new Set([...this.data.ownedAppearance, ...Object.entries(this.data.appearance).map(([key, value]) => `${key}:${value}`), ...Object.entries(look).map(([key, value]) => `${key}:${value}`)])];
+    this.data.appearance = look;
+    this.save();
+    return true;
+  }
+
+  setAppearance(key, value) {
+    return this.purchaseAppearance({ ...this.data.appearance, [key]: value });
   }
 
   setAquariumDecoration(key, value) {
@@ -970,14 +1037,14 @@ export class SaveSystem {
 
   purchaseAquariumStyle(key, value) {
     const cost = this.getAquariumStyleCost(key, value);
-    if (cost === null || !this.hasAquarium() || this.data.coins < cost) return false;
+    if (cost === null || !this.hasAquarium() || this.data.gems < cost) return false;
     const aquarium = this.data.aquarium;
     aquarium.ownedStyles ||= [];
     const previous = key === 'theme' ? aquarium.theme || 'reef' : aquarium.decor?.[key] || AQUARIUM_OPTIONS[key]?.default;
     for (const item of [`${key}:${previous}`, `${key}:${value}`]) {
       if (!aquarium.ownedStyles.includes(item)) aquarium.ownedStyles.push(item);
     }
-    this.data.coins -= cost;
+    this.data.gems -= cost;
     return true;
   }
 

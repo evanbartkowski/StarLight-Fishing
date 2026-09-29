@@ -27,3 +27,17 @@ test('fleet messages reach independent clients, deduplicate, and preserve failed
   locked.loadBackend = async () => { throw new Error('Should not connect'); };
   assert.equal(await locked.sendMessage('Locked'), false);
 });
+
+test('radio applies remote deletions, expires idle messages and caps the newest thirty', () => {
+  const client = new ChatManager({ isChatUnlocked: () => true });
+  const now = Date.now();
+  for (let index = 0; index < 40; index++) client.receiveExternalMessage({ id: `m${index}`, kind: 'player', text: 'hello', createdAt: now - 2000 + index });
+  assert.equal(client.messages.length, 30);
+  assert.equal(client.messages[0].id, 'm10');
+  client.receiveExternalMessage({ id: 'expired', kind: 'player', text: 'old', createdAt: now - 86400000 });
+  assert.equal(client.messages.length, 30);
+  client.replaceMessages([{ id: 'last', kind: 'player', text: 'kept', createdAt: now }]);
+  assert.deepEqual(client.messages.map(message => message.id), ['last']);
+  client.pruneMessages(now + 86400000);
+  assert.equal(client.messages.length, 0);
+});

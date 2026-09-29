@@ -1,3 +1,4 @@
+import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { REALM_PROFILES } from '../data/RealmContent.js';
 // MinimapUI.js — Chart Navigation & Fantasy World Minimap
@@ -47,6 +48,21 @@ export class MinimapUI {
         </div>
 
         <!-- Interactive Fantasy Nautical Chart Canvas / Grid -->
+        <div class="treasure-chart" aria-label="Treasure map of the seven realms">
+          <svg viewBox="0 0 760 380" role="img" aria-label="A winding sea route from Sunlit Shoals to the final realm">
+            <defs><pattern id="chart-lines" width="38" height="38" patternUnits="userSpaceOnUse"><path d="M38 0H0V38" fill="none" stroke="#79552d" stroke-opacity=".13"/></pattern></defs>
+            <rect width="760" height="380" fill="url(#chart-lines)"/>
+            <path d="M90 260 C60 150 120 100 205 120 S235 285 330 265 S345 125 435 140 S480 265 555 220 S545 60 635 90 S645 140 705 175" fill="none" stroke="#9a5636" stroke-width="2" stroke-dasharray="5 8"/>
+            <g fill="none" stroke="#84613b" opacity=".5"><path d="M20 330q20-12 40 0t40 0m390 0q20-12 40 0t40 0m-290-290q20-12 40 0t40 0"/><circle cx="85" cy="72" r="31"/><path d="M85 28v88M41 72h88M64 51l42 42m0-42L64 93"/></g>
+            <path d="M85 35l7 37-7 31-7-31Z" fill="#735334"/><text x="85" y="22" text-anchor="middle" fill="#614025" font-size="12">N</text>
+            ${FANTASY_SEAS.map((sea, index) => {
+              const [x, y] = [[90,260],[205,120],[330,265],[435,140],[555,220],[635,90],[705,175]][index];
+              return `<g class="chart-island ${sea.id === currentSeaId ? 'charted-current' : ''}" data-chart-realm="${sea.id}" tabindex="0" role="button" aria-label="View ${sea.name}"><path d="M${x-29} ${y-8}l12-22 27 4 19 20-9 25-25 8-29-13Z" fill="${unlockedSeas.includes(sea.id) ? '#8c9d65' : '#b5a17a'}" stroke="#745331" stroke-width="2"/><circle cx="${x}" cy="${y}" r="13" fill="#eee0bb" stroke="#735334"/><text x="${x}" y="${y+4}" text-anchor="middle" fill="#513821" font-size="13" font-weight="bold">${sea.id}</text><text x="${x}" y="${y+53}" text-anchor="middle" fill="#513821" font-size="10">${sea.name.split(',')[0]}</text></g>`;
+            }).join('')}
+            <text x="365" y="355" text-anchor="middle" fill="#7e5733" font-family="Georgia,serif" font-size="16" font-style="italic">The Seven Seas of Starlight</text>
+          </svg>
+          <p>Follow the dotted route. Select an island to inspect its waters.</p>
+        </div>
         <div class="fantasy-chart-map-view">
           <div class="seas-grid-layout">
     `;
@@ -70,7 +86,7 @@ export class MinimapUI {
             </div>
           </div>
 
-          <p class="sea-card-desc">${sea.description}</p>
+          <p class="sea-card-desc">${sea.description}</p><p class="sea-card-desc">${REALM_ECOLOGY[sea.id].description}</p>
 
           <!-- Hotspots list -->
           <div class="sea-card-hotspots">
@@ -120,8 +136,13 @@ export class MinimapUI {
       </div>
     `;
 
-    this.uiManager.openModal('🧭 Seven Seas Chart Navigation & Minimap', html);
+    this.uiManager.openModal('🧭 Treasure Chart', html);
 
+    document.querySelectorAll('[data-chart-realm]').forEach(marker => {
+      const reveal = () => document.querySelector(`.sea-chart-card[data-sea-id="${marker.dataset.chartRealm}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      marker.addEventListener('click', reveal);
+      marker.addEventListener('keydown', event => { if (['Enter', ' '].includes(event.key)) { event.preventDefault(); reveal(); } });
+    });
     // Wire sail buttons
     document.querySelectorAll('.btn-sail-sea').forEach(btn => {
       btn.addEventListener('click', (e) => {

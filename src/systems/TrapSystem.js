@@ -126,7 +126,7 @@ export class TrapSystem {
           this.saveSystem.data.skeletons = { megalodonJaw: 0, dunkleosteus: 0, plesiosaur: 0 };
         }
         if (this.saveSystem.data.skeletons[item.target] < 4) {
-          this.saveSystem.data.skeletons[item.target] += 1;
+          this.saveSystem.awardSkeletonPiece(item.target);
           skeletonPieces++;
         }
       }

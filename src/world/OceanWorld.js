@@ -1,3 +1,4 @@
+import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { drawAngler } from '../data/CustomizationData.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
@@ -142,6 +143,9 @@ export class OceanWorld {
     this.entities.treasures = [];
     this.entities.relics = [];
 
+    this.boat.x = this.worldWidth * .5;
+    this.boat.y = this.surfaceY - 14;
+    this.updateRodTip();
     this.boat.vesselLevel = saveSystem.getUpgradeLevel('boatVessel') || 0;
 
     const luckLevel = saveSystem.getUpgradeLevel('lureLuck');
@@ -157,6 +161,8 @@ export class OceanWorld {
     const activeMaxDepth = Math.min(this.maxDepthMeters, maxLineTier.depth + 30);
 
     const realmProfile = REALM_PROFILES[this.currentSeaId];
+    const ecology = REALM_ECOLOGY[this.currentSeaId];
+    const fishOptions = { shinyChance, surfaceY: this.surfaceY, sizeMultiplier: ecology.size, valueMultiplier: ecology.value };
 
     // Depth-band budgets prevent overlapping species habitats crowding the surface.
     const environment = { time: worldCycle.getTimeOfDay(), weather: worldCycle.getWeather(), minZoneTier: this.currentSeaId };
@@ -177,7 +183,7 @@ export class OceanWorld {
           let index = 0;
           while (index < weights.length - 1 && (roll -= weights[index]) >= 0) index++;
           const { item, low, high } = candidates[index];
-          const depth = low + Math.random() * (high - low);
+          const depth = low + ((i + Math.random()) / count) * (high - low);
           spawn(item, 70 + Math.random() * (this.worldWidth - 140), this.surfaceY + depth * this.pixelsPerMeter);
         }
       }
@@ -186,19 +192,19 @@ export class OceanWorld {
     const depthProgress = depth => depth / (depth + 350);
     const fishPool = FISH_SPECIES.filter(species => belongsToRealm(species, this.currentSeaId)
       && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
-    populateBands(fishPool, depth => (5 - depthProgress(depth)) * 1.15,
+    populateBands(fishPool, depth => (5 - depthProgress(depth)) * 1.15 * ecology.fish,
       (species, depth) => (rarityWeight[species.rarity] || 0.01)
-        * ({ common: 1 / (1 + depth / 350), uncommon: 1, rare: 1 + depth / 450, epic: 1 + depth / 250, legendary: 1 + depth / 180 }[species.rarity] || 1)
-        * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 : 1)
+        * ({ common: 1 / (1 + depth / 350), uncommon: 1 / (1 + depth / 700), rare: 1 + depth / 300, epic: 1 + depth / 180, legendary: 1 + depth / 120 }[species.rarity] || 1)
+        * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 * ecology.rarity : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
-      (species, x, y) => this.entities.fish.push(new Fish(species, x, y, { shinyChance, surfaceY: this.surfaceY })));
+      (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
 
     // Special deep fish remain solitary and retain their environmental conditions.
     FISH_SPECIES.filter(species => species.isSpecialDeep && belongsToRealm(species, this.currentSeaId)).forEach(species => {
       const end = Math.min(activeMaxDepth, species.maxDepth);
       if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= (species.spawnChance ?? 0.85)) return;
       const y = this.surfaceY + (species.minDepth + Math.random() * (end - species.minDepth)) * this.pixelsPerMeter;
-      this.entities.fish.push(new Fish(species, 70 + Math.random() * (this.worldWidth - 140), y, { shinyChance, surfaceY: this.surfaceY }));
+      this.entities.fish.push(new Fish(species, 70 + Math.random() * (this.worldWidth - 140), y, fishOptions));
     });
 
     // Populate active Mythic & Legendary species based on atmospheric world cycle
@@ -214,27 +220,27 @@ export class OceanWorld {
         if (minSpawnY < maxSpawnY) {
           const x = 70 + Math.random() * (this.worldWidth - 140);
           const y = minSpawnY + Math.random() * (maxSpawnY - minSpawnY);
-          const mythicFish = new Fish(mythic, x, y, { shinyChance, surfaceY: this.surfaceY });
+          const mythicFish = new Fish(mythic, x, y, fishOptions);
           this.entities.fish.push(mythicFish);
         }
       }
     });
 
     populateBands(TREASURE_ITEMS.filter(item => belongsToRealm(item, this.currentSeaId)),
-      depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2,
+      depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2 * ecology.treasure,
       item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : 1),
       (item, x, y) => this.entities.treasures.push(new Treasure(item, x, y)));
 
     REALM_RELICS.filter(relic => relic.zone === this.currentSeaId).forEach(relic => {
       const reachableDepth = Math.min(activeMaxDepth, relic.maxDepth);
-      if (relic.minDepth >= reachableDepth || Math.random() > 0.08 * fossilBonus) return;
+      if (relic.minDepth >= reachableDepth || Math.random() > 0.08 * fossilBonus * ecology.treasure) return;
       const x = 70 + Math.random() * (this.worldWidth - 140);
       const y = this.surfaceY + (relic.minDepth + Math.random() * (reachableDepth - relic.minDepth)) * this.pixelsPerMeter;
       this.entities.relics.push(new Relic(relic, x, y));
     });
 
     populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && belongsToRealm(hazard, this.currentSeaId)),
-      depth => (0.25 + 1.55 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25,
+      depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards,
       hazard => hazard.isColossal ? 0.6 : 1,
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     // Creature encounters are sparse groups, separate from static obstacles.
@@ -243,7 +249,7 @@ export class OceanWorld {
       const spacing = creature.isColossal ? 750 : 250;
       for (let depth = creature.minDepth; depth + 20 < end; depth += spacing) {
         const chance = creature.isColossal ? .22 : creature.marineKind === 'jelly' ? .3 : .22;
-        if (Math.random() >= chance) continue;
+        if (Math.random() >= Math.min(.85, chance * ecology.enemies * (1 + depthProgress(depth) * .8))) continue;
         const centerDepth = depth + 10 + Math.random() * Math.min(spacing - 20, end - depth - 20);
         const centerX = 120 + Math.random() * Math.max(1, this.worldWidth - 240);
         const count = creature.marineKind === 'jelly' ? 3 + Math.floor(Math.random() * 3) : 1;

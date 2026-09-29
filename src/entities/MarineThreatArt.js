@@ -22,6 +22,32 @@ export function drawMarineThreat(ctx, threat) {
     ctx.quadraticCurveTo(0, r * .15, -r * .75, -r * .2); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#e0f2fe';
     ctx.beginPath(); ctx.ellipse(-r * .2, -r * .45, r * .18, r * .09, -.4, 0, Math.PI * 2); ctx.fill();
+  } else if (threat.marineKind === 'crab') {
+    for (const side of [-1, 1]) for (let i = 0; i < 4; i++) {
+      ctx.beginPath(); ctx.moveTo((i - 1.5) * r * .28, side * r * .2);
+      ctx.lineTo((i - 1.5) * r * .5, side * r * (.6 + Math.sin(t + i) * .1));
+      ctx.lineTo((i - 1.5) * r * .7, side * r * .8); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.ellipse(0, 0, r * .65, r * .42, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    for (const side of [-1, 1]) {
+      ctx.beginPath(); ctx.moveTo(r * .3, side * r * .2); ctx.lineTo(r * .9, side * r * .5); ctx.stroke();
+      ctx.beginPath(); ctx.arc(r * .9, side * r * .5, r * .22, .4, Math.PI * 1.8); ctx.lineTo(r * .9, side * r * .5); ctx.fill(); ctx.stroke();
+    }
+  } else if (threat.marineKind === 'nautilus') {
+    ctx.beginPath(); ctx.arc(0, 0, r * .65, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    for (let i = 0; i < 100; i++) { const angle = i * .16, radius = i / 100 * r * .55; ctx.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius); }
+    ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath(); ctx.moveTo(r * .4, r * .3); ctx.quadraticCurveTo(r, (i - 2) * r * .2, r * 1.1 + Math.sin(t + i) * 6, (i - 2) * r * .2); ctx.stroke();
+    }
+  } else if (threat.marineKind === 'lionfish') {
+    for (let i = 0; i < 12; i++) {
+      const angle = i * Math.PI * 2 / 12;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r * .8); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.ellipse(0, 0, r * .65, r * .3, 0, 0, Math.PI * 2); ctx.fill();
+    for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * r * .2, -r * .25); ctx.lineTo((i - .4) * r * .2, r * .25); ctx.stroke(); }
   } else if (threat.marineKind === 'ray') {
     ctx.beginPath(); ctx.moveTo(r * .75, 0);
     ctx.quadraticCurveTo(0, -r * .3, -r * .5, -r * (.8 + Math.sin(t) * .1));

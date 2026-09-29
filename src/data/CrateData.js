@@ -874,6 +874,7 @@ export function rollCrateLoot(crateRank, saveSystem = null) {
     grade,
     item,
     coins: finalCoins,
+    gems: Math.random() < 0.02 ? 1 : 0,
     xp: item.xp,
     headline: item.headline,
     flavor: item.flavor,

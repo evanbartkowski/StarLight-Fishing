@@ -23,6 +23,7 @@ export class Hazard {
     this.isColossal = !!typeConfig.isColossal;
     // Choose a permanent size per giant so its artwork and collision bounds agree.
     this.sizeScale = this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : 1;
+    this.shieldCost = typeConfig.shieldCost || (this.isColossal && this.sizeScale >= 1.85 ? 2 : 1);
     this.radius = (typeConfig.radius || (this.isColossal ? 35 : 20)) * this.sizeScale;
 
     this.x = x;
@@ -43,7 +44,7 @@ export class Hazard {
       const chasing = active && this.restTime === 0 && distance < config.detectionRadius
         && Math.abs(hook.y - this.homeY) < config.leash;
       this.chaseTime = chasing ? this.chaseTime + deltaSec : 0;
-      if (this.chaseTime > 3) { this.restTime = 3; this.chaseTime = 0; }
+      if (this.chaseTime > (config.chaseDuration || 3)) { this.restTime = config.restDuration || 3; this.chaseTime = 0; }
       const pursuing = chasing && this.restTime === 0;
       const targetX = pursuing ? hook.x : this.homeX + Math.sin(this.timer * .3) * 55;
       const targetY = pursuing ? hook.y : this.homeY + Math.sin(this.timer * .4) * 22;

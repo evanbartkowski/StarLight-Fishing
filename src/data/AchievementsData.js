@@ -1,4 +1,12 @@
 export const ACHIEVEMENTS = [
+  { id: 'divine_angler', name: 'Touched by Starlight', icon: '✨', description: 'Land a god-tier ocean guardian.', reward: 1500,
+    check: stats => (stats.godTierCaught || 0) >= 1, progress: stats => ({ current: Math.min(1, stats.godTierCaught || 0), target: 1 }) },
+  ...['megalodonJaw', 'dunkleosteus', 'plesiosaur'].map((id, index) => ({
+    id: `fossil_set_${id}`, name: ['Ancient Jaws', 'Armored Ancestor', 'Jurassic Voyager'][index], icon: '🦴',
+    description: 'Reconstruct all four pieces of this fossil set. Awards 3 gems.', reward: 1000,
+    check: (stats, data) => (data.skeletons?.[id] || 0) >= 4,
+    progress: (stats, data) => ({ current: Math.min(4, data.skeletons?.[id] || 0), target: 4 }),
+  })),
   {
     id: 'first_catch',
     name: 'First Nibble',

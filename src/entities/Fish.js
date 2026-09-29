@@ -11,6 +11,7 @@ export class Fish {
     this.rarity = species.rarity;
     this.rarityColor = RARITY_CONFIG[species.rarity]?.color || '#ffffff';
     this.rarityGlow = RARITY_CONFIG[species.rarity]?.glow || '#ffffff';
+    this.isGodTier = !!species.isGodTier;
     this.isMythic = !!species.isMythic;
     this.isSpecialDeep = !!species.isSpecialDeep;
 
@@ -36,13 +37,16 @@ export class Fish {
 
     // Bigger fish sell for exponentially more + crown bonus (boosted +35% for rewarding fishing)
     const sizeMultiplier = Math.pow(sizeRatio, 1.85);
-    let val = Math.round(species.baseValue * 1.35 * sizeMultiplier * crownMult * (this.isShiny ? 3.5 : 1.0));
-    this.value = Math.max(2, val);
+    let val = Math.round(species.baseValue * Math.min(1.8, sizeMultiplier) * Math.min(1.5, crownMult) * (this.isShiny ? 2 : 1));
+    this.value = Math.max(2, Math.round(val * (options.valueMultiplier || 1)));
+    const realmSize = options.sizeMultiplier || 1;
+    this.size = Math.round(this.size * realmSize * 10) / 10;
+    this.weight = Math.round(this.weight * realmSize ** 2.2 * 100) / 100;
 
     // Visual scale based on species base scale + individual fish size (super large for leviathans)
     const baseScale = species.scaleFactor || 1.0;
-    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8) ? 6.5 : 3.8;
-    this.scale = Math.min(maxScaleCap, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55)));
+    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 3.8;
+    this.scale = Math.min(maxScaleCap, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55) * realmSize));
 
     // Movement & direction
     this.direction = Math.random() < 0.5 ? 1 : -1; // 1 = right, -1 = left
@@ -111,11 +115,21 @@ export class Fish {
     this.swimAngle = 0;
     this.minY = (options.surfaceY ?? 220) + Math.max(this.radius + 16, (species.minDepth || 0) * 15);
     this.maxY = Math.max(this.minY, (options.surfaceY ?? 220) + (species.maxDepth || 9999) * 15);
+    // Keep resident fish near their spawn shelf, including vertically moving species.
+    this.minY = Math.max(this.minY, y - 120);
+    this.maxY = Math.max(this.minY, Math.min(this.maxY, y + 120));
     this.y = Math.max(this.minY, Math.min(this.maxY, this.y));
   }
 
   update(dt, worldWidth, hook, particles = null) {
     const deltaSec = dt / 1000;
+    if (this.isGodTier && !this.announced && hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.abs(hook.y - this.y) < 420) {
+      this.announced = true;
+      soundManager.playDivineChime();
+      particles?.emitSparkles(this.x, this.y, 55, '#fff4bd');
+      particles?.addFloatingText('A DIVINE PRESENCE', hook.x, hook.y - 110, '#fff4bd', 24);
+      particles?.addTrauma(.25);
+    }
     this.wiggleTimer += this.wiggleFreq * deltaSec;
 
     // Tick evasion cooldowns & active timers
@@ -297,8 +311,8 @@ export class Fish {
       let newY = this.y + Math.sin(awayAngle) * (blinkDist * 0.65);
 
       newX = Math.max(70, Math.min(worldWidth - 70, newX));
-      const minDepthY = (this.species.minDepth || 5) * 15;
-      const maxDepthY = (this.species.maxDepth || 600) * 15;
+      const minDepthY = this.minY;
+      const maxDepthY = this.maxY;
       newY = Math.max(minDepthY, Math.min(maxDepthY, newY));
 
       this.x = newX;
@@ -502,9 +516,9 @@ export class Fish {
       const rgb = [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16)).join(',');
       const radius = s.isLeviathan ? 58 : 46;
       const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-      glow.addColorStop(0, `rgba(${rgb},0.30)`);
-      glow.addColorStop(0.25, `rgba(${rgb},0.24)`);
-      glow.addColorStop(0.55, `rgba(${rgb},0.11)`);
+      glow.addColorStop(0, `rgba(${rgb},0.40)`);
+      glow.addColorStop(0.25, `rgba(${rgb},0.31)`);
+      glow.addColorStop(0.55, `rgba(${rgb},0.15)`);
       glow.addColorStop(1, `rgba(${rgb},0)`);
       ctx.globalAlpha *= 0.92 + Math.sin(this.wiggleTimer * 1.2) * 0.04;
       ctx.scale(1.15, 0.72);
@@ -513,6 +527,18 @@ export class Fish {
       ctx.restore();
     }
 
+    if (this.isGodTier) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.shadowColor = '#fff4bd'; ctx.shadowBlur = 12;
+      for (let i = 0; i < 7; i++) {
+        const angle = i * Math.PI * 2 / 7 + this.wiggleTimer * .22;
+        const x = Math.cos(angle) * 48, y = Math.sin(angle) * 26;
+        ctx.fillStyle = i % 2 ? '#fff7dc' : this.species.primaryColor;
+        ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x + 2, y); ctx.lineTo(x, y + 4); ctx.lineTo(x - 2, y); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
     // Trailing rainbow/stardust particle motes for rare/epic/legendary fish
     if (isRainbow || s.rarity === 'legendary') {
       ctx.save();

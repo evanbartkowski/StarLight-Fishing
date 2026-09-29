@@ -166,6 +166,12 @@ export class Hook {
     this.caughtItems.push(entity);
     entity.hookTo(this, this.caughtItems.length - 1);
 
+    if (entity.isGodTier) {
+      soundManager.playDivineChime();
+      particles?.emitSparkles(this.x, this.y, 90, '#fff1a8');
+      particles?.addFloatingText('GOD-TIER CATCH!', this.x, this.y - 85, '#fff1a8', 28);
+      particles?.addTrauma(.6);
+    }
     const rarity = entity.rarity || 'common';
     soundManager.playCatch(rarity);
 
@@ -217,19 +223,24 @@ export class Hook {
       particles.emitBubbles(this.x, this.y, 14, 22);
     }
 
-    if (this.shields > 0) {
-      this.shields -= 1;
+    const shieldCost = hazard.shieldCost || 1;
+    if (this.shields >= shieldCost) {
+      this.shields -= shieldCost;
       if (particles) {
         particles.addFloatingText(`SHIELD DEFLECTED! (${this.shields} left)`, this.x, this.y - 20, '#38bdf8', 15);
       }
     } else {
-      // Hitting obstacles on the way up causes you to lose fish sometimes!
+      this.shields = Math.max(0, this.shields - shieldCost);
+      // Heavy impacts break two shields or always dislodge a fish.
       if (this.state === 'REELING' && this.caughtItems.length > 0) {
-        if (Math.random() < 0.65) {
-          const lostIdx = Math.floor(Math.random() * this.caughtItems.length);
+        const fishIndexes = this.caughtItems.map((item, index) => item.speciesId && !item.isTreasure && !item.isRelic ? index : -1).filter(index => index >= 0);
+        if (fishIndexes.length && Math.random() < (shieldCost >= 2 ? 1 : .5)) {
+          const lostIdx = fishIndexes[Math.floor(Math.random() * fishIndexes.length)];
           const lostFish = this.caughtItems.splice(lostIdx, 1)[0];
           if (lostFish) {
             lostFish.state = 'SWIMMING';
+            lostFish.hook = null;
+            lostFish.evasionCooldown = 2;
             soundManager.playFishEscape();
             if (particles) {
               particles.addFloatingText(`💥 ${lostFish.name} slipped off the line!`, this.x, this.y - 35, '#ef4444', 17);

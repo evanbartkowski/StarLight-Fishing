@@ -1,6 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Purchased gems: only verified Stripe fulfillment can create/increase credit.
+    match /players/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gems', 'cosmetics', 'updatedAt'])
+        && request.resource.data.gems is int && request.resource.data.gems >= 0
+        && request.resource.data.gems <= resource.data.gems
+        && request.resource.data.cosmetics is list && request.resource.data.cosmetics.size() <= 200
+        && request.resource.data.updatedAt == request.time;
+    }
     match /fleetSenders/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create, update: if request.auth != null && request.auth.uid == uid

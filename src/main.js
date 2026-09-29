@@ -17,6 +17,7 @@ import { worldCycle } from './systems/WorldCycle.js';
 import { ChatManager } from './systems/ChatManager.js';
 import { leaderboardManager } from './systems/LeaderboardManager.js';
 import { accountManager } from './systems/AccountManager.js';
+import { GemShop } from './ui/GemShop.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -141,6 +142,7 @@ oceanWorld.setSaveSystem(save);
 handleResize();
 
 uiManager = new UIManager(save, triggerCast, startDive, trapSystem, questSystem);
+save.gemShop = new GemShop(save, uiManager);
 chatManager = new ChatManager(save);
 uiManager.setChatManager(chatManager);
 
@@ -167,6 +169,16 @@ uiManager.onAccountSwitched = () => {
   oceanWorld.populateWorld(save);
   zoneManager.setZone(save.data.currentZone || 'sunken_shallows');
   soundManager.setSeaTrack(save.getCurrentSea());
+};
+
+uiManager.onUpgradePurchased = () => {
+  hook.applyUpgrades(save);
+  if (['SURFACE_IDLE', 'AIMING'].includes(gameState)) {
+    oceanWorld.populateWorld(save);
+    hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
+    cameraY = 0;
+    gameState = 'SURFACE_IDLE';
+  }
 };
 
 uiManager.onModalClosed = () => {
@@ -447,6 +459,7 @@ function triggerCast() {
 }
 
 function startDive() {
+  cameraY = 0;
   oceanWorld.populateWorld(save);
   hook.applyUpgrades(save);
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
@@ -608,6 +621,9 @@ const update = (dt) => {
       hook.caughtItems.forEach((item) => {
         if (!item._recordedInInventory) {
           save.recordCatchItem(item);
+          if (item.species) questSystem?.dispatch({ type: 'catch_fish', fish: item });
+          else if (item.isCrate || item.category === 'crate') questSystem?.dispatch({ type: 'catch_crate', item });
+          else if (item.isTreasure || item.category === 'fossil') questSystem?.dispatch({ type: 'catch_treasure', item });
           item.inventoryRef = save.addItemToInventory(item);
           if (!item.inventoryRef) {
             ranOutOfStorage = true;
@@ -675,9 +691,7 @@ const update = (dt) => {
           const hooked = hook.addCatch(fish, particles);
           if (hooked) {
             oceanWorld.entities.fish.splice(i, 1);
-            if (questSystem) {
-              questSystem.dispatch({ type: 'catch_fish', fish });
-            }
+
             if (fish.rarity === 'rare' || fish.rarity === 'epic' || fish.rarity === 'legendary' || fish.isMythic) {
               notifyRareCatch(fish);
             }
@@ -704,12 +718,7 @@ const update = (dt) => {
           if (hooked) {
             soundManager.playTreasure();
             oceanWorld.entities.treasures.splice(i, 1);
-            if (questSystem) {
-              questSystem.dispatch({ type: 'catch_treasure', item: tr });
-              if (tr.isCrate || tr.category === 'crate') {
-                questSystem.dispatch({ type: 'catch_crate', item: tr });
-              }
-            }
+
           }
           if (hook.caughtItems.length >= hook.capacity) break;
         }

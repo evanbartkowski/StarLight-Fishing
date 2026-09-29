@@ -11,14 +11,16 @@ export class ChatManager {
   }
 
   async connect() {
+    this.pruneMessages();
     if (!this.saveSystem.isChatUnlocked() || this.unsubscribe || this.connecting || Date.now() < this.retryAt) return;
     this.connecting = true;
     try {
-      this.unsubscribe = await (await this.loadBackend()).subscribe(message => this.receiveExternalMessage(message), () => {
+      this.unsubscribe = await (await this.loadBackend()).subscribe(message => this.receiveExternalMessage(message), (error) => {
+        this.lastError = error.code || error.message;
         this.unsubscribe?.();
         this.unsubscribe = null;
         this.retryAt = Date.now() + 10000;
-      });
+      }, messages => this.replaceMessages(messages));
     } catch { this.retryAt = Date.now() + 10000; }
     finally { this.connecting = false; }
   }
@@ -30,18 +32,36 @@ export class ChatManager {
       await this.connect();
       await (await this.loadBackend()).send(text.trim().slice(0, 180), accountManager.getCurrentUser() || 'Guest Mariner');
       return true;
-    } catch { return false; }
+    } catch (error) { this.lastError = error.code || error.message; return false; }
     finally { this.sending = false; }
+  }
+
+  replaceMessages(messages) {
+    this.messages = [];
+    this.seen.clear();
+    messages.forEach(message => this.receiveExternalMessage(message));
+    this.onMessagesChanged?.(this.messages);
+  }
+
+  pruneMessages(now = Date.now()) {
+    const kept = this.messages.filter(message => message.createdAt > now - 86400000).slice(-30);
+    if (kept.length !== this.messages.length) {
+      this.messages = kept;
+      this.onMessagesChanged?.(kept);
+    }
   }
 
   receiveExternalMessage(payload) {
     if (!this.saveSystem.isChatUnlocked() || payload?.kind !== 'player' || !payload.id ||
         typeof payload.text !== 'string' || !payload.text.trim() || this.seen.has(payload.id)) return;
+    const createdAt = payload.createdAt?.toMillis?.() ?? payload.createdAt ?? Date.now();
+    if (createdAt <= Date.now() - 86400000) return;
     this.seen.add(payload.id);
     if (this.seen.size > 500) this.seen.delete(this.seen.values().next().value);
-    const message = { id: payload.id, sender: String(payload.sender || 'Guest Mariner').slice(0, 40), text: payload.text.slice(0, 180), isSelf: !!payload.isSelf };
+    const message = { createdAt, id: payload.id, sender: String(payload.sender || 'Guest Mariner').slice(0, 40), text: payload.text.slice(0, 180), isSelf: !!payload.isSelf };
     this.messages.push(message);
-    if (this.messages.length > 100) this.messages.shift();
+    if (this.messages.length > 30) this.messages.shift();
     this.onMessageReceived?.(message);
+    this.onMessagesChanged?.(this.messages);
   }
 }

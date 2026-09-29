@@ -1,3 +1,4 @@
+import { DAILY_GEMS, achievementGems } from '../data/GemEconomy.js';
 import { Fish } from '../entities/Fish.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
 import { Treasure } from '../entities/Treasure.js';
@@ -36,12 +37,12 @@ export class UIManager {
     this.initWelcomePopup();
 
     this.saveSystem.onAchievementUnlocked = (achievement) => {
-      this.showToast(`🏆 Trophy Unlocked: ${achievement.name}! (+$${achievement.reward})`);
+      this.showToast(`🏆 Trophy Unlocked: ${achievement.name}! (+$${achievement.reward}, +${achievementGems(achievement)} gems)`);
       soundManager.playUpgrade();
     };
 
     this.saveSystem.onLevelUp = (newLevel) => {
-      this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${newLevel * 100})`);
+      this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${Math.min(750, newLevel * 100)})`);
       soundManager.playUpgrade();
     };
   }
@@ -78,11 +79,12 @@ export class UIManager {
     this.fleetHudObserver.observe(hud);
     positionFleet();
     const list = panel.querySelector('#fleet-messages');
-    manager.onMessageReceived = (msg) => {
-      const row = document.createElement('p');
-      row.textContent = `${msg.isSelf ? 'You' : msg.sender}: ${msg.text}`;
-      list.appendChild(row);
-      while (list.children.length > 100) list.firstChild.remove();
+    manager.onMessagesChanged = messages => {
+      list.replaceChildren(...messages.map(msg => {
+        const row = document.createElement('p');
+        row.textContent = `${msg.isSelf ? 'You' : msg.sender}: ${msg.text}`;
+        return row;
+      }));
       list.scrollTop = list.scrollHeight;
     };
     panel.addEventListener('keydown', event => event.stopPropagation());
@@ -96,7 +98,7 @@ export class UIManager {
       const sent = await manager.sendMessage(text);
       button.disabled = false;
       if (sent && input.value === text) input.value = '';
-      if (!sent) this.showToast('Message not sent. Check your connection, wait a moment, and try again.');
+      if (!sent) this.showToast('Message not sent. Reconnect or wait two seconds before trying again.');
     });
   }
 
@@ -157,6 +159,7 @@ export class UIManager {
           <span id="coin-amount">$0</span>
         </div>
 
+        <button class="gem-display" id="hud-gems" type="button" title="Gems and daily login reward" aria-label="Gems and daily login reward">💎 <span id="gem-amount">0</span><span id="daily-ready" hidden>•</span></button>
         <div class="capacity-display" id="hud-capacity">
           <span class="basket-icon">🪣</span>
           <span id="capacity-amount">0 / 3</span>
@@ -215,13 +218,13 @@ export class UIManager {
         <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
           🪤 <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
-        <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
+        <button class="icon-btn" id="btn-quests" title="Quests">
           📋 <span class="btn-label">Quests</span> <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
         </button>
         <button class="icon-btn" id="btn-inventory" title="Inventory">🎒 <span class="btn-label">Inventory</span></button>
-        <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 <span class="btn-label">Shop</span></button>
+        <button class="icon-btn" id="btn-shop" title="Shop">🛒 <span class="btn-label">Shop</span></button>
         <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
-        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
+        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">📻</button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
@@ -573,6 +576,7 @@ export class UIManager {
   }
 
   bindEvents() {
+    document.getElementById('hud-gems')?.addEventListener('click', () => this.openDailyLogin());
     document.getElementById('btn-minimap')?.addEventListener('click', () => {
       if (this.minimapUI) {
         this.minimapUI.openChartNavigation();
@@ -659,6 +663,8 @@ export class UIManager {
     document.getElementById('hud-xp-fill').style.width = `${xpPct}%`;
 
     document.getElementById('coin-amount').textContent = `$${this.saveSystem.data.coins.toLocaleString()}`;
+    document.getElementById('gem-amount').textContent = this.saveSystem.getGemBalance().toLocaleString();
+    document.getElementById('daily-ready').hidden = !this.saveSystem.getDailyLoginStatus().available;
 
     // Update atmospheric time & weather in HUD
     const timeTextEl = document.getElementById('hud-time-text');
@@ -816,7 +822,7 @@ export class UIManager {
       if (hasAq) {
         const aqItems = this.saveSystem.getAquariumItems?.() || [];
         const aqCap = this.saveSystem.getAquariumCapacity?.() || 5;
-        aqBtn.title = `Personal Marine Aquarium (${aqItems.length} / ${aqCap} fish in tank)`;
+        aqBtn.title = 'Aquarium';
       }
     }
   }
@@ -1076,8 +1082,9 @@ export class UIManager {
 
     itemsHtml += '</div>';
 
-    this.openModal('🎣 Seven Seas Tackle & Vessel Outfitters', shopHeaderHtml + itemsHtml);
+    this.openModal('🎣 Starlight Shop', shopHeaderHtml + '<button class="btn btn-secondary" id="shop-gems">Gem Store &middot; Angler and Aquarium Styles</button>' + itemsHtml);
 
+    document.getElementById('shop-gems')?.addEventListener('click', () => save.gemShop?.open());
     document.getElementById('btn-shop-inventory')?.addEventListener('click', () => {
       this.openInventory('fish');
     });
@@ -1111,6 +1118,7 @@ export class UIManager {
           } else {
             this.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
           }
+          this.onUpgradePurchased?.();
           this.openShop();
         }
       });
@@ -1148,7 +1156,7 @@ export class UIManager {
         const isRelic = !!item.isRelic;
         const isFossil = item.category === 'fossil';
         const isTreasure = item.isTreasure && !isCrate;
-        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
+        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.isGodTier ? 'GOD TIER' : item.rarity.toUpperCase()}</span>`;
         const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
         const fossilTag = isFossil ? `<span class="fossil-tag">🦴 FOSSIL</span>` : '';
         const relicTag = isRelic ? `<span class="relic-tag" style="background:#854d0e;color:#fef08a;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">🏺 ${item.restored ? 'RESTORED' : 'RELIC'}</span>` : '';
@@ -1182,7 +1190,6 @@ export class UIManager {
               ${isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '📦' : item.isMythic ? '🌟' : '🐟'}
             </div>
             <div class="catch-item-details">
-              <div class="catch-item-name">${item.name} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-name">${item.name} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-specs">
                 ${
@@ -1445,6 +1452,8 @@ export class UIManager {
             const isBad = loot.grade === 'super_bad';
             soundManager.playChestOpen(isJackpot);
 
+            this.saveSystem.data.gems += loot.gems;
+            if (loot.gems) this.showToast(`Rare crate find: +${loot.gems} gem!`);
             // Apply coins and XP
             this.saveSystem.adjustCoins(loot.coins);
             this.saveSystem.addXp(loot.xp);
@@ -1506,7 +1515,7 @@ export class UIManager {
                 <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #94a3b8; font-style: italic; line-height: 1.4;">"${loot.flavor}"</p>
                 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; font-size: 0.95rem; font-weight: 700;">
                   <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid ${loot.coins >= 0 ? '#4ade80' : '#ef4444'}; color: ${loot.coins >= 0 ? '#4ade80' : '#ef4444'}; padding: 4px 12px; border-radius: 999px;">
-                    ${loot.coins >= 0 ? `+${loot.coins.toLocaleString()}` : `-${Math.abs(loot.coins)}`} Coins
+                    ${loot.coins >= 0 ? `+${loot.coins.toLocaleString()}` : `-${Math.abs(loot.coins)}`} Coins ${loot.gems ? ` · 💎 +${loot.gems}` : ''}
                   </span>
                   <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 12px; border-radius: 999px;">
                     +${loot.xp} XP
@@ -1773,7 +1782,7 @@ export class UIManager {
         <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div>
             <h3 style="margin: 0; color: #f8fafc; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
-              <span>📋</span> Harbor Noticeboard Missions
+              <span>📋</span> Quests
             </h3>
             <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem;">Complete daily coastal tasks to earn gold, research XP, and bonus rewards!</p>
           </div>
@@ -1835,7 +1844,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal("📋 Harbor Noticeboard — Angler Quests", questsHtml);
+    this.openModal("📋 Quests", questsHtml);
 
     document.querySelectorAll('.btn-claim-quest').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -2211,7 +2220,7 @@ export class UIManager {
           html += `
             <div class="journal-card journal-discovered rarity-border-${species.rarity}">
               <div class="journal-card-top">
-                <span class="rarity-tag rarity-${species.rarity}">${species.isMythic ? '🌟 MYTHIC' : species.rarity.toUpperCase()}</span>
+                <span class="rarity-tag rarity-${species.rarity}">${species.isGodTier ? 'GOD TIER' : species.isMythic ? '🌟 MYTHIC' : species.rarity.toUpperCase()}</span>
                 <span class="zone-tag">Sea ${species.zone}: ${zoneName}</span>
                 <span class="zone-tag">${gradeBadge}</span>
               </div>
@@ -2270,7 +2279,7 @@ export class UIManager {
           name: 'Colossal Megalodon Jaw Exhibit',
           desc: 'Reconstructed jaw of the supreme apex predator of the Cenozoic oceans.',
           pieces: skeletons.megalodonJaw || 0,
-          reward: '$3,000 + 400 XP',
+          reward: '3 gems + $1,000 achievement',
           icon: '🦈',
         },
         {
@@ -2278,7 +2287,7 @@ export class UIManager {
           name: 'Dunkleosteus Placoderm Armor',
           desc: 'Armored dermal plates of a 360-million-year-old Devonian super-carnivore.',
           pieces: skeletons.dunkleosteus || 0,
-          reward: '$3,500 + 500 XP',
+          reward: '3 gems + $1,000 achievement',
           icon: '🛡️',
         },
         {
@@ -2286,13 +2295,14 @@ export class UIManager {
           name: 'Plesiosaur Marine Skeleton',
           desc: 'Full articulated serpentine neck and paddle skeleton of a Jurassic sea voyager.',
           pieces: skeletons.plesiosaur || 0,
-          reward: '$4,500 + 700 XP',
+          reward: '3 gems + $1,000 achievement',
           icon: '🦕',
         },
       ];
 
       let html = `
         <div class="skeletons-container">
+<div class="museum-intro"><p class="eyebrow">FRAGMENTS OF A LOST OCEAN</p><h3>Fossil Workshop</h3><p>Complete each set to earn 3 gems and unlock a museum centerpiece.</p></div>
           <p class="skeleton-header-tip">🦴 Collect ancient bone fragments from deep fossil silt and idle seabed drift pots to assemble museum skeleton exhibits!</p>
           <div class="skeletons-grid">
       `;
@@ -2381,7 +2391,7 @@ export class UIManager {
       itemsHtml += '</div>';
 
       return `
-        <div class="traps-panel">
+<div class="traps-panel"><div class="museum-intro"><p class="eyebrow">QUIET WATERS, HIDDEN FINDS</p><h3>Seabed Drift Pots</h3><p>Let your pots soak while you explore. Collect shellfish, lost coins, and ancient fragments.</p></div>
           <div class="traps-header-info">
             <div class="stat-box">
               <span class="stat-label">Active Drift Pots</span>
@@ -2502,9 +2512,9 @@ export class UIManager {
               <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;">🐠 Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
               <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / ${Object.keys(PET_DEFINITIONS).length})</button>
               <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
-              <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Skeletons</button>
+              <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Fossils</button>
               <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
-              <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
+              <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Museum</button>
             </div>
             <div id="journal-tab-content">
               ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml(currentAlmanacZone)}
@@ -3009,47 +3019,22 @@ export class UIManager {
   }
 
   renderFossilMuseumTab() {
-    const fossils = TREASURE_ITEMS.filter((t) => t.category === 'fossil');
     const save = this.saveSystem;
-
-    let html = '<div class="fossil-grid">';
-    fossils.forEach((f) => {
-      const entry = save.data.fossils[f.id];
-      const isFound = !!entry;
-
-      if (isFound) {
-        html += `
-          <div class="fossil-card fossil-discovered rarity-border-${f.rarity}">
-            <div class="fossil-pedestal">
-              <span class="fossil-icon">🦴</span>
-            </div>
-            <div class="fossil-info">
-              <h4>${f.name}</h4>
-              <p class="fossil-lore">${f.lore}</p>
-              <div class="fossil-meta">
-                <span>Estimated Value: <strong>$${f.value.toLocaleString()}</strong></span>
-                <span>Specimens Excavated: <strong>${entry.count}</strong></span>
-              </div>
-            </div>
-          </div>
-        `;
-      } else {
-        html += `
-          <div class="fossil-card fossil-locked">
-            <div class="fossil-pedestal empty-pedestal">
-              <span class="fossil-icon" style="filter: grayscale(1) opacity(0.3);">🦴</span>
-            </div>
-            <div class="fossil-info">
-              <h4>Unknown Fossilized Specimen</h4>
-              <p class="fossil-lore">Buried in deep oceanic silt between ${f.minDepth}m and ${f.maxDepth}m. Equip a Paleo-Scanner to detect it!</p>
-            </div>
-          </div>
-        `;
-      }
-    });
-    html += '</div>';
-
-    document.getElementById('journal-tab-content').innerHTML = html;
+    const fossils = TREASURE_ITEMS.filter(item => item.category === 'fossil');
+    const sets = Object.entries({ megalodonJaw: 'Megalodon Jaw', dunkleosteus: 'Dunkleosteus Armor', plesiosaur: 'Plesiosaur Skeleton' })
+      .map(([id, name]) => ({ id, name, lore: 'A reconstructed prehistoric centerpiece.', found: save.data.skeletons[id] >= 4 }));
+    const collection = [...sets, ...fossils.map(f => ({ ...f, found: save.data.fossils[f.id]?.count > 0 }))];
+    const displays = save.data.museumDisplays || [];
+    const exhibited = collection.filter(item => displays.includes(item.id) && item.found);
+    const gallery = Array.from({ length: 6 }, (_, index) => {
+      const item = exhibited[index];
+      return `<div class="museum-plinth"><span>${item ? '&#129460;' : '&#10022;'}</span><strong>${item ? item.name : 'Empty exhibit'}</strong></div>`;
+    }).join('');
+    document.getElementById('journal-tab-content').innerHTML = `<div class="museum-intro"><p class="eyebrow">THE CAPTAIN'S COLLECTION</p><h3>Your Fossil Gallery</h3><p>Choose six discoveries to exhibit. Reconstructed sets earn a one-time gem achievement.</p></div><div class="museum-gallery">${gallery}</div><h3 class="collection-heading">Arrange your collection</h3><div class="fossil-grid">${collection.map(item => `<article class="fossil-card ${item.found ? 'fossil-discovered' : 'fossil-locked'}"><div class="fossil-info"><h4>${item.found ? item.name : 'Undiscovered specimen'}</h4><p class="fossil-lore">${item.found ? item.lore || 'A remarkable relic of the ancient ocean.' : item.minDepth ? `Search below ${item.minDepth}m.` : 'Find all four fragments to reconstruct this set.'}</p><button class="btn btn-secondary btn-sm" data-exhibit="${item.id}" ${item.found ? '' : 'disabled'}>${displays.includes(item.id) ? 'Remove from gallery' : 'Place in museum'}</button></div></article>`).join('')}</div>`;
+    document.querySelectorAll('[data-exhibit]').forEach(button => button.addEventListener('click', () => {
+      if (!save.toggleMuseumDisplay(button.dataset.exhibit)) this.showToast('The gallery holds six exhibits. Remove one first.');
+      this.renderFossilMuseumTab();
+    }));
   }
 
   openAquariumModal() {
@@ -3151,13 +3136,13 @@ export class UIManager {
           <summary>Decorate your aquarium <span>Owned styles are free to reuse</span></summary>
           <div class="aq-theme-selector">
             <span class="aq-lbl">Theme:</span>
-            <button class="theme-btn ${theme === 'reef' ? 'active' : ''}" data-theme="reef">🪸 Reef ${save.getAquariumStyleCost('theme', 'reef') ? '$' + save.getAquariumStyleCost('theme', 'reef') : '(Owned)'}</button>
-            <button class="theme-btn ${theme === 'abyss' ? 'active' : ''}" data-theme="abyss">🌌 Abyss ${save.getAquariumStyleCost('theme', 'abyss') ? '$' + save.getAquariumStyleCost('theme', 'abyss') : '(Owned)'}</button>
-            <button class="theme-btn ${theme === 'atlantis' ? 'active' : ''}" data-theme="atlantis">🏛️ Atlantis ${save.getAquariumStyleCost('theme', 'atlantis') ? '$' + save.getAquariumStyleCost('theme', 'atlantis') : '(Owned)'}</button>
-            <button class="theme-btn ${theme === 'nebula' ? 'active' : ''}" data-theme="nebula">✨ Nebula ${save.getAquariumStyleCost('theme', 'nebula') ? '$' + save.getAquariumStyleCost('theme', 'nebula') : '(Owned)'}</button>
+            <button class="theme-btn ${theme === 'reef' ? 'active' : ''}" data-theme="reef">🪸 Reef ${save.getAquariumStyleCost('theme', 'reef') ? '💎 ' + save.getAquariumStyleCost('theme', 'reef') : '(Owned)'}</button>
+            <button class="theme-btn ${theme === 'abyss' ? 'active' : ''}" data-theme="abyss">🌌 Abyss ${save.getAquariumStyleCost('theme', 'abyss') ? '💎 ' + save.getAquariumStyleCost('theme', 'abyss') : '(Owned)'}</button>
+            <button class="theme-btn ${theme === 'atlantis' ? 'active' : ''}" data-theme="atlantis">🏛️ Atlantis ${save.getAquariumStyleCost('theme', 'atlantis') ? '💎 ' + save.getAquariumStyleCost('theme', 'atlantis') : '(Owned)'}</button>
+            <button class="theme-btn ${theme === 'nebula' ? 'active' : ''}" data-theme="nebula">✨ Nebula ${save.getAquariumStyleCost('theme', 'nebula') ? '💎 ' + save.getAquariumStyleCost('theme', 'nebula') : '(Owned)'}</button>
           </div>
-        <div class="customize-grid aquarium-decor-controls">${Object.entries(AQUARIUM_OPTIONS).map(([key, config]) => `<label class="customize-field">${config.label}<select data-aquarium-decor="${key}">${config.choices.map(([value, label]) => `<option value="${value}" ${value === (save.data.aquarium.decor?.[key] || config.default) ? 'selected' : ''}>${label} - ${save.getAquariumStyleCost(key, value) ? '$' + save.getAquariumStyleCost(key, value) : 'Owned'}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" data-buy-decor="${key}">Buy / Apply</button></label>`).join('')}</div>
-        <p class="customize-note">Display fish, treasures, fossils, and relics. Displayed items use tank slots; only fish earn visitor tips. Buy styles once, then switch between owned styles for free.</p>
+        <div class="customize-grid aquarium-decor-controls">${Object.entries(AQUARIUM_OPTIONS).map(([key, config]) => `<label class="customize-field">${config.label}<select data-aquarium-decor="${key}">${config.choices.map(([value, label]) => `<option value="${value}" ${value === (save.data.aquarium.decor?.[key] || config.default) ? 'selected' : ''}>${label} - ${save.getAquariumStyleCost(key, value) ? '💎 ' + save.getAquariumStyleCost(key, value) : 'Owned'}</option>`).join('')}</select><button class="btn btn-secondary btn-sm" data-buy-decor="${key}">Buy / Apply</button></label>`).join('')}</div>
+        <p class="customize-note">Display fish, treasures, fossils, and relics. Displayed items use tank slots; only fish earn visitor tips. You have 💎 ${save.getGemBalance()} gems. Buy styles once with gems, then switch between owned styles for free.</p>
         </details>
         <div class="aquarium-inhabitants-section">
           <div class="inhabitants-header">
@@ -3182,16 +3167,16 @@ export class UIManager {
         const selected = container.querySelector(`[data-aquarium-decor="${key}"]`).value;
         const cost = save.getAquariumStyleCost(key, selected);
         const applied = selected === (save.data.aquarium.decor?.[key] || AQUARIUM_OPTIONS[key].default);
-        button.textContent = applied ? 'Applied' : cost ? `Buy & apply - $${cost}` : 'Apply owned style';
-        button.disabled = applied || cost > save.data.coins;
+        button.textContent = applied ? 'Applied' : cost ? `Buy & apply - 💎 ${cost}` : 'Apply owned style';
+        button.disabled = applied || cost > save.getGemBalance();
       });
     };
     container.querySelectorAll('[data-aquarium-decor]').forEach(select => select.addEventListener('change', updateStyleButtons));
     updateStyleButtons();
-    document.querySelectorAll('[data-buy-decor]').forEach(button => button.addEventListener('click', () => {
+    document.querySelectorAll('[data-buy-decor]').forEach(button => button.addEventListener('click', async () => {
       const key = button.dataset.buyDecor;
       const value = document.querySelector(`[data-aquarium-decor="${key}"]`).value;
-      if (!save.setAquariumDecoration(key, value)) this.showToast('Not enough coins for this aquarium style.');
+      if (!(await (save.gemShop ? save.gemShop.purchase('aquarium', { [key]: value }, () => save.setAquariumDecoration(key, value)) : save.setAquariumDecoration(key, value)))) this.showToast('Not enough gems for this aquarium style.');
       this.renderAquariumTab();
     }));
 
@@ -3206,9 +3191,9 @@ export class UIManager {
     });
 
     document.querySelectorAll('.theme-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const newTheme = e.currentTarget.dataset.theme;
-        if (!this.saveSystem.setAquariumTheme(newTheme)) { this.showToast('Not enough coins for this aquarium theme.'); return; }
+        if (!(await (save.gemShop ? save.gemShop.purchase('aquarium', { theme: newTheme }, () => save.setAquariumTheme(newTheme)) : save.setAquariumTheme(newTheme)))) { this.showToast('Not enough gems for this aquarium theme.'); return; }
         soundManager.playButtonClick();
         this.renderAquariumTab();
       });
@@ -3551,7 +3536,7 @@ export class UIManager {
         const isRelic = item.type === 'relic' || item.isRelic;
         const shinyTag = item.isShiny ? '✨' : '';
         const crownTag = item.crown === 'gold' ? '👑' : item.crown === 'silver' ? '🥈' : '';
-        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
+        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.isGodTier ? 'GOD TIER' : item.rarity.toUpperCase()}</span>`;
 
         listHtml += `
           <div class="inventory-card rarity-border-${item.rarity}" style="padding: 10px;">
@@ -3667,7 +3652,7 @@ export class UIManager {
           : item.crown === 'silver'
           ? `<span class="crown-tag crown-silver">🥈 SILVER</span>`
           : '';
-        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
+        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.isGodTier ? 'GOD TIER' : item.rarity.toUpperCase()}</span>`;
 
         itemsGridHtml += `
           <div class="inventory-card rarity-border-${item.rarity} ${isLocked ? 'item-locked-border' : ''}">
@@ -3915,7 +3900,7 @@ export class UIManager {
       : item.crown === 'silver'
       ? `<span class="crown-tag crown-silver">🥈 SILVER CROWN</span>`
       : '';
-    const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.rarity.toUpperCase()}</span>`;
+    const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.isGodTier ? 'GOD TIER' : item.rarity.toUpperCase()}</span>`;
 
     const modalBody = `
       <div class="inspect-item-container">
@@ -4070,7 +4055,7 @@ export class UIManager {
           <div class="milestone-info">
             <div class="milestone-title-row">
               <h4>${ach.name}</h4>
-              <span class="milestone-bounty">+$${ach.reward.toLocaleString()}</span>
+              <span class="milestone-bounty">+$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
             </div>
             <p class="milestone-desc">${ach.description}</p>
             <div class="milestone-bar-container">
@@ -4109,7 +4094,7 @@ export class UIManager {
           <div class="ach-details">
             <div class="ach-title-row">
               <h4>${ach.name}</h4>
-              <span class="ach-reward">+$${ach.reward.toLocaleString()}</span>
+              <span class="ach-reward">+$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
             </div>
             <p class="ach-desc">${ach.description}</p>
             <div class="ach-prog-bar">
@@ -4142,18 +4127,39 @@ export class UIManager {
       <select data-${prefix}="${key}" aria-label="${config.label}">${config.choices.map(([value, label]) => `<option value="${value}" ${selected[key] === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>`).join('');
   }
 
+  openDailyLogin() {
+    this.activeModal = 'daily';
+    const save = this.saveSystem;
+    const status = save.getDailyLoginStatus();
+    const guest = accountManager.isGuest();
+    const streak = save.data.dailyLogin.streak;
+    this.openModal('Daily Captain Reward', `<div class="daily-rewards"><h3>💎 ${save.getGemBalance()} gems</h3><p>Earn gems from achievements, daily rewards, and rare crates, or buy an optional bundle in the Gem Store. Spend them on your angler and aquarium.</p><button class="btn btn-secondary" id="open-gem-store">Gem Store</button><div class="daily-reward-grid">${DAILY_GEMS.map((gems, index) => `<div class="daily-reward-day ${status.available && index + 1 === status.nextStreak ? 'ready' : ''}"><span>Day ${index + 1}</span><strong>💎 ${gems}</strong></div>`).join('')}</div><p>${guest ? 'Sign in to a captain account to claim daily gems.' : status.claimed ? `Reward claimed. Current streak: ${streak} day${streak === 1 ? '' : 's'}.` : 'Visit daily for increasing rewards and a day-30 bonus.'}</p><button class="btn btn-primary" id="claim-daily-gems" ${status.available ? '' : 'disabled'}>${status.claimed ? 'Claimed today' : `Claim 💎 ${status.gems}`}</button><p class="customize-note">Resets at 00:00 UTC. Missing a day restarts the 30-day streak.</p></div>`);
+    document.getElementById('open-gem-store').addEventListener('click', () => this.saveSystem.gemShop?.open());
+    document.getElementById('claim-daily-gems').addEventListener('click', () => {
+      const gems = save.claimDailyLogin();
+      if (gems) { this.showToast(`Daily reward: +${gems} gem${gems === 1 ? '' : 's'}!`); accountManager.syncCloudSave(); }
+      this.openDailyLogin();
+    });
+  }
+
   openAppearance() {
     this.activeModal = 'appearance';
+    let draft = normalizeCustomization(ANGLER_OPTIONS, this.saveSystem.data.appearance);
     const look = normalizeCustomization(ANGLER_OPTIONS, this.saveSystem.data.appearance);
     const controls = Object.entries(ANGLER_OPTIONS).map(([key, config]) => `<fieldset class="appearance-group"><legend>${config.label} <span data-look-label="${key}"></span></legend><div class="appearance-choices">${config.choices.map(([value, label]) => `<button type="button" class="appearance-choice ${value.startsWith('#') ? 'appearance-swatch' : 'appearance-hat'}" data-look-key="${key}" data-look-value="${value}" title="${label}" aria-label="${label}" aria-pressed="${look[key] === value}" ${value.startsWith('#') ? `style="--swatch:${value}"` : ''}>${value.startsWith('#') ? '<span class="swatch-check" aria-hidden="true">&#10003;</span>' : label}</button>`).join('')}</div></fieldset>`).join('');
     this.openModal('Your Angler', `<div class="appearance-studio">
       <div class="appearance-preview-panel"><canvas id="angler-preview" width="340" height="300" aria-label="Live preview of your angler"></canvas><h3>Ready for the next cast</h3><p id="appearance-status" role="status">Choose a color or a hat to try it on.</p><div class="appearance-presets"><button class="btn btn-secondary btn-sm" data-outfit="classic">Classic</button><button class="btn btn-secondary btn-sm" data-outfit="coastal">Coastal</button><button class="btn btn-secondary btn-sm" data-outfit="sunset">Sunset</button></div></div>
       <div class="appearance-controls">${controls}<div class="appearance-actions"><button class="btn btn-secondary" id="appearance-random">Shuffle outfit</button><button class="btn btn-outline" id="appearance-reset">Reset look</button></div></div>
-      <div class="appearance-footer"><span>Changes save automatically.</span><button class="btn btn-primary" id="appearance-back">Done</button></div></div>`);
+      <div class="appearance-footer"><span id="appearance-price"></span><button class="btn btn-primary" id="appearance-buy">Wear this look</button><button class="btn btn-primary" id="appearance-back">Done</button></div></div>`);
     const preview = document.getElementById('angler-preview');
     const ctx = preview.getContext('2d');
     const redraw = () => {
-      const current = normalizeCustomization(ANGLER_OPTIONS, this.saveSystem.data.appearance);
+      const current = draft;
+      const cost = this.saveSystem.getAppearanceCost(draft);
+      document.getElementById('appearance-price').textContent = `💎 ${this.saveSystem.getGemBalance()} gems available · Owned looks are free to reuse`;
+      const buy = document.getElementById('appearance-buy');
+      buy.textContent = cost ? `Buy & wear · 💎 ${cost}` : 'Wear owned look';
+      buy.disabled = cost > this.saveSystem.getGemBalance();
       ctx.clearRect(0, 0, 340, 300);
       const sky = ctx.createLinearGradient(0, 0, 0, 300);
       sky.addColorStop(0, '#172b47'); sky.addColorStop(.55, '#467983'); sky.addColorStop(1, '#0e3d55');
@@ -4165,19 +4171,28 @@ export class UIManager {
       ctx.save(); ctx.translate(163, 237); ctx.scale(4.2, 4.2); drawAngler(ctx, current); ctx.restore();
       document.querySelectorAll('[data-look-key]').forEach(button => button.setAttribute('aria-pressed', String(current[button.dataset.lookKey] === button.dataset.lookValue)));
       Object.entries(ANGLER_OPTIONS).forEach(([key, config]) => {
-        document.querySelector(`[data-look-label="${key}"]`).textContent = config.choices.find(([value]) => value === current[key])[1];
+        const price = this.saveSystem.getAppearanceCost({ ...this.saveSystem.data.appearance, [key]: current[key] });
+        document.querySelector(`[data-look-label="${key}"]`).textContent = `${config.choices.find(([value]) => value === current[key])[1]} · ${price ? `💎 ${price}` : 'Owned'}`;
       });
     };
     const apply = changes => {
-      this.saveSystem.data.appearance = normalizeCustomization(ANGLER_OPTIONS, { ...this.saveSystem.data.appearance, ...changes });
-      this.saveSystem.save(); redraw();
-      document.getElementById('appearance-status').textContent = 'Look saved. See you on the water!';
+      draft = normalizeCustomization(ANGLER_OPTIONS, { ...draft, ...changes });
+      redraw();
+      document.getElementById('appearance-status').textContent = 'Preview only. Buy and wear when you are ready.';
     };
     document.querySelectorAll('[data-look-key]').forEach(button => button.addEventListener('click', () => apply({ [button.dataset.lookKey]: button.dataset.lookValue })));
     const outfits = { classic: { coat: '#eab308', hat: 'rainhat', hatColor: '#ca8a04' }, coastal: { coat: '#0d9488', hat: 'cap', hatColor: '#f8fafc' }, sunset: { coat: '#ef4444', hat: 'beanie', hatColor: '#0f172a' } };
     document.querySelectorAll('[data-outfit]').forEach(button => button.addEventListener('click', () => apply(outfits[button.dataset.outfit])));
     document.getElementById('appearance-random').addEventListener('click', () => apply(Object.fromEntries(['coat', 'hat', 'hatColor'].map(key => { const choices = ANGLER_OPTIONS[key].choices; return [key, choices[Math.floor(Math.random() * choices.length)][0]]; }))));
     document.getElementById('appearance-reset').addEventListener('click', () => apply(normalizeCustomization(ANGLER_OPTIONS)));
+    document.getElementById('appearance-buy').addEventListener('click', async () => {
+      const lookToBuy = { ...draft };
+      const save = this.saveSystem;
+      if (!(await (save.gemShop ? save.gemShop.purchase('angler', lookToBuy, () => save.purchaseAppearance(lookToBuy)) : save.purchaseAppearance(lookToBuy)))) return;
+      if (this.activeModal !== 'appearance') return;
+      redraw();
+      document.getElementById('appearance-status').textContent = 'Look saved! These styles are now yours to reuse.';
+    });
     document.getElementById('appearance-back').addEventListener('click', () => this.openSettings());
     redraw();
   }
