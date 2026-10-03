@@ -2,10 +2,18 @@ import { aquariumAction } from '../systems/SocialFirebase.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { specimen } from './CatchCard.js';
 import { acceptServerSave } from '../systems/PremiumPurchases.js';
+import { drawAquariumDecor, normalizeCustomization, AQUARIUM_OPTIONS } from '../data/CustomizationData.js';
+import { TREASURE_ITEMS } from '../data/TreasureData.js';
+import { Treasure } from '../entities/Treasure.js';
 
 export async function visitAquarium(ui, host) {
+  const request = ui._aquariumVisitRequest = (ui._aquariumVisitRequest || 0) + 1;
+  ui.activeModal = 'aquarium-visit';
+  ui.openModal('Visiting Aquarium', '<p id="aquarium-loading" role="status">Loading this captain\'s aquarium...</p>');
+  const loading = document.getElementById('aquarium-loading');
   try {
     const exhibit = await aquariumAction({ action: 'visit', host });
+    if (request !== ui._aquariumVisitRequest || !loading.isConnected) return;
     ui.activeModal = 'aquarium-visit';
     ui.openModal('Visiting Aquarium', '<h3 id="aquarium-host"></h3><canvas id="visitor-tank" width="700" height="340" style="width:100%;background:#082f49;border-radius:12px"></canvas><button class="btn btn-primary" id="tip-host">Toss 1 coin · Give host 1 Gem</button><p>Maximum 3 tips per captain per UTC day.</p>');
     document.getElementById('aquarium-host').textContent = exhibit.username;
@@ -14,7 +22,12 @@ export async function visitAquarium(ui, host) {
     const background = ctx.createLinearGradient(0, 0, 0, 340);
     background.addColorStop(0, colors[0]); background.addColorStop(1, colors[1]);
     const coins = [];
-    const fish = exhibit.items.map((item, index) => specimen(item, 80 + index * 71 % 540, 70 + index * 47 % 220)).filter(Boolean);
+    const decor = normalizeCustomization(AQUARIUM_OPTIONS, exhibit.decor);
+    const fish = exhibit.items.filter(item => item.type === 'fish').map((item, index) => specimen(item, 80 + index * 71 % 540, 70 + index * 47 % 220)).filter(Boolean);
+    const treasures = exhibit.items.filter(item => item.type !== 'fish').map((item, index) => {
+      const config = TREASURE_ITEMS.find(entry => entry.id === (item.id || item.speciesId));
+      return config ? new Treasure(config, 60 + index * 65 % 510, 290) : null;
+    }).filter(Boolean);
     fish.forEach(entity => { entity.minY = 40; entity.maxY = 300; entity.scale = Math.min(1.4, entity.scale); });
     let previous = performance.now();
     const frame = now => {
@@ -22,6 +35,8 @@ export async function visitAquarium(ui, host) {
       const dt = Math.min(50, now - previous); previous = now;
       ctx.fillStyle = background; ctx.fillRect(0, 0, 700, 340);
       ctx.fillStyle = '#c8b997'; ctx.fillRect(0, 315, 700, 25);
+      drawAquariumDecor(ctx, 700, 340, decor, now / 1000);
+      treasures.forEach(entity => entity.render(ctx, 0));
       fish.forEach(entity => { entity.update(dt, 700, null); entity.render(ctx, 0); });
       ctx.fillStyle = '#e0f2fe55'; ctx.strokeStyle = '#bae6fd'; ctx.lineWidth = 2;
       ctx.fillRect(615, 265, 48, 55); ctx.strokeRect(615, 265, 48, 55);
@@ -31,7 +46,7 @@ export async function visitAquarium(ui, host) {
         ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(639, coin.y, 7, 0, Math.PI * 2); ctx.fill();
         if (coin.y > 310) coins.splice(i, 1);
       }
-      if (!fish.length) { ctx.fillStyle = '#dbeafe'; ctx.fillText('No fish on display yet.', 240, 165); }
+      if (!exhibit.items.length) { ctx.fillStyle = '#dbeafe'; ctx.fillText('No specimens on display yet.', 220, 165); }
       requestAnimationFrame(frame);
     };
     requestAnimationFrame(frame);
@@ -44,7 +59,7 @@ export async function visitAquarium(ui, host) {
       if (x >= 600 && y >= 235) tipButton.click();
     });
     tipButton.disabled = exhibit.canTip === false || exhibit.remaining === 0;
-    if (exhibit.canTip === false) tipButton.textContent = 'This is your aquarium';
+    if (exhibit.canTip === false) tipButton.textContent = exhibit.signedIn === false ? 'Sign in to leave a tip' : 'This is your aquarium';
     else if (exhibit.remaining === 0) tipButton.textContent = 'All 3 daily tips used (resets at 00:00 UTC)';
     let requestId = crypto.randomUUID();
     document.getElementById('tip-host').onclick = async event => {
@@ -79,6 +94,8 @@ export async function visitAquarium(ui, host) {
       finally { ui.socialBusy = false; }
     };
   } catch (error) {
+    if (request !== ui._aquariumVisitRequest || !loading.isConnected) return;
+    loading.textContent = error.code === 'functions/not-found' ? 'This captain has not synced an aquarium yet.' : error.code === 'functions/failed-precondition' ? 'This captain has not unlocked an aquarium yet.' : 'The aquarium could not load. Please try again.';
     ui.showToast(error.code === 'functions/unauthenticated' ? 'Sign in to a captain account to visit aquariums.' : error.code === 'functions/failed-precondition' ? 'This captain has not unlocked an aquarium yet.' : error.message);
   }
 }

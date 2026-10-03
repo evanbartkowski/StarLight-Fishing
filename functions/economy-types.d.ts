@@ -12,7 +12,7 @@ export interface AquariumItem {
   [key: string]: unknown;
 }
 export interface AquariumSnapshot {
-  aquarium?: { isUnlocked?: boolean; theme?: string; slottedItemIds?: string[] };
+  aquarium?: { isUnlocked?: boolean; theme?: string; slottedItemIds?: string[]; decor?: Record<string, string> };
   upgrades?: { personalAquarium?: number };
   inventory?: AquariumItem[];
 }

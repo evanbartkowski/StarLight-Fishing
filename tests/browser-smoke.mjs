@@ -17,6 +17,7 @@ try {
     assert.equal(await page.locator('#btn-radio-hud').count(), 1);
     assert.equal(await page.locator('#hud-buffs').count(), 1);
     assert.equal(await page.locator('#hud-tension-container').count(), 0);
+    assert.equal(await page.locator('#hud-quest-badge').count(), 0);
     await page.evaluate(async () => {
       const { saveSystem: save } = await import('/src/systems/SaveSystem.js');
       save.data.settings.hasSeenTutorial = true;
@@ -87,15 +88,20 @@ try {
       window.smokeUI.openCratesModal([item], null, null);
     });
     assert.ok(await page.locator('.crate-reward').count() > 10);
+    const openBounds = await page.locator('#btn-crack-crate').boundingBox();
+    assert.ok(openBounds.y >= 0 && openBounds.y + openBounds.height < viewport.height, 'Crate open button must be visible without scrolling');
+    assert.equal(await page.locator('.crate-preview').getAttribute('open'), null);
     await page.screenshot({ path: `tests/crate-preview-${viewport.width}.png` });
     await page.locator('#btn-store-crate').click();
+    assert.equal(await page.locator('.btn-inv-open-crate').count(), 1);
+    assert.equal(await page.locator('.inventory-grid').evaluate(node => node.scrollWidth <= node.clientWidth + 1), true);
     assert.equal(await page.evaluate(() => window.smokeUI.saveSystem.data.stats.totalCratesOpened || 0), 0);
     await page.evaluate(() => {
       const ui = window.smokeUI;
       const stored = ui.saveSystem.getInventory().find(item => item.isCrate && !item.unboxed);
       if (!stored) throw Error('Sealed crate was lost');
-      ui.openCratesModal([stored], null, null);
     });
+    await page.locator('.btn-inv-open-crate').click();
     await page.click('#btn-crack-crate');
     assert.equal(await page.evaluate(() => window.smokeUI.saveSystem.data.stats.totalCratesOpened), 1);
     // Closing mid-spin must neither lose nor repeat delivery.
@@ -141,6 +147,7 @@ try {
     });
     assert.equal(await page.locator('.captain-username').count(), 1);
     assert.equal(await page.locator('[data-visit-aquarium="aquarium-host-fixture"]').count(), 1);
+    assert.equal(await page.locator('[data-visit-aquarium]').textContent(), 'Visit');
     await page.route('**/aquariumAction', route => route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ result: { username: 'Fixture Aquarium', theme: 'reef', items: [], canTip: false, remaining: 3 } }) }));
     await page.locator('[data-visit-aquarium]').click();
     await page.waitForSelector('#visitor-tank');
@@ -158,6 +165,9 @@ try {
       chart.openChartNavigation();
     });
     await page.waitForSelector('.depth-active');
+    const markers = await page.locator('.realm-landmass').evaluateAll(nodes => nodes.map(node => [node.getAttribute('d'), node.getAttribute('fill')]));
+    assert.equal(new Set(markers.map(([shape]) => shape)).size, 7);
+    assert.equal(new Set(markers.map(([, color]) => color)).size, 7);
     await page.evaluate(async () => {
       const { openCatchCard } = await import('/src/ui/CatchCard.js');
       const { FISH_SPECIES } = await import('/src/data/FishData.js');

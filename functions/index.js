@@ -26,9 +26,10 @@ export const buyPremium = onCall(options, async request => {
 
 export const aquariumAction = onCall(options, async request => {
   const uid = request.auth?.uid;
-  if (!uid || request.auth.token.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('unauthenticated', 'Sign in to visit aquariums.');
+  const signedIn = !!uid && request.auth.token.firebase?.sign_in_provider !== 'anonymous';
   const db = getFirestore();
   const { action, host, requestId } = request.data || {};
+  if (action !== 'visit' && !signedIn) throw new HttpsError('unauthenticated', 'Sign in to share or tip an aquarium.');
   try {
     if (action === 'publish') {
       const [save, profile] = await Promise.all([db.doc(`captainSaves/${uid}`).get(), db.doc(`leaderboard/${uid}`).get()]);
@@ -41,12 +42,12 @@ export const aquariumAction = onCall(options, async request => {
     if (action === 'visit') {
       const [saved, profile, daily] = await Promise.all([
         db.doc(`captainSaves/${host}`).get(), db.doc(`leaderboard/${host}`).get(),
-        db.doc(`daily_tips/${uid}_${Math.floor(Date.now() / 86400000)}`).get(),
+        signedIn ? db.doc(`daily_tips/${uid}_${Math.floor(Date.now() / 86400000)}`).get() : Promise.resolve(null),
       ]);
       if (!saved.exists) throw new Error('not-found');
       const exhibit = publicAquarium(JSON.parse(saved.data().snapshot), profile.data()?.username);
-      await db.doc(`aquariums/${host}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() });
-      return { ...exhibit, remaining: Math.max(0, 3 - (daily.data()?.count || 0)), canTip: host !== uid };
+      if (signedIn) await db.doc(`aquariums/${host}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() });
+      return { ...exhibit, remaining: Math.max(0, 3 - (daily?.data()?.count || 0)), canTip: signedIn && host !== uid, isOwn: host === uid, signedIn };
     }
     if (action === 'tip') return await tipAquarium(db, uid, host, requestId, FieldValue);
     throw new Error('invalid-argument');

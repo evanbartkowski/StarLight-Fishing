@@ -7,6 +7,16 @@ import { REALM_PROFILES } from '../data/RealmContent.js';
 
 import { FANTASY_SEAS, getSeaById, canUnlockSea } from '../entities/SeasData.js';
 
+const REALM_MARKERS = [
+  { color: '#52b788', path: 'M-30 -6 Q-30 -27 -10 -22 L4 -30 20 -15 Q37 -9 22 12 L6 25 -14 20Z' },
+  { color: '#b980ee', path: 'M-27 0 Q-27 -27 0 -29 Q30 -26 29 0 L15 5 12 23 -10 26 -14 5Z' },
+  { color: '#74b9ef', path: 'M0 -32 9 -12 30 -8 15 6 20 29 0 17 -22 28 -16 5 -31 -10 -10 -12Z' },
+  { color: '#3caea3', path: 'M-28 22 -28 -10 -18 -10 -18 -24 -7 -24 -7 -10 7 -10 7 -24 19 -24 19 -10 28 -10 28 22Z' },
+  { color: '#c8b9f1', path: 'M-31 3 Q-39 -14 -19 -17 Q-15 -34 1 -24 Q20 -33 26 -15 Q42 -6 27 10 Q8 27 -10 15 Q-25 23 -31 3Z' },
+  { color: '#d96c78', path: 'M-31 23 -15 -10 -7 -26 9 -26 17 -9 31 23Z M-7 -23 0 -11 8 -23' },
+  { color: '#8970c7', path: 'M0 -32 12 -13 29 -6 15 10 9 30 -7 15 -29 8 -15 -8Z M-27 -22 -16 -27 -18 -15Z M23 18 32 24 22 30Z' },
+];
+
 export class MinimapUI {
   constructor(saveSystem, soundManager, uiManager, oceanWorld) {
     this.saveSystem = saveSystem;
@@ -96,10 +106,11 @@ export class MinimapUI {
             ${FANTASY_SEAS.map((sea, index) => {
               const [x, y] = [[90,260],[205,120],[330,265],[435,140],[555,220],[635,90],[705,175]][index];
               const isSelected = sea.id === currentSeaId;
-              const fillCol = unlockedSeas.includes(sea.id) ? (isSelected ? '#65a30d' : '#8c9d65') : '#b5a17a';
+              const marker = REALM_MARKERS[index];
+              const fillCol = marker.color;
               return `<g class="chart-island ${isSelected ? 'charted-current' : ''}" data-chart-realm="${sea.id}" tabindex="0" role="button" aria-label="View ${sea.name}">
                 ${isSelected ? `<circle cx="${x}" cy="${y}" r="38" fill="url(#realm-glow-${currentSeaId})"/>` : ''}
-                <path d="M${x-29} ${y-8}l12-22 27 4 19 20-9 25-25 8-29-13Z" fill="${fillCol}" stroke="#745331" stroke-width="2"/>
+                <path class="realm-landmass" transform="translate(${x} ${y})" d="${marker.path}" fill="${fillCol}" fill-opacity="${unlockedSeas.includes(sea.id) ? 1 : .55}" stroke="${isSelected ? '#e0f2fe' : '#344359'}" stroke-width="2"/>
                 <circle cx="${x}" cy="${y}" r="13" fill="#eee0bb" stroke="#735334"/>
                 <text x="${x}" y="${y+4}" text-anchor="middle" fill="#513821" font-size="13" font-weight="bold">${sea.id}</text>
                 <text x="${x}" y="${y+53}" text-anchor="middle" fill="#513821" font-size="10">${sea.name.split(',')[0]}</text>

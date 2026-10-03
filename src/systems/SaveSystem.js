@@ -505,6 +505,7 @@ export class SaveSystem {
       }
       this.addXp(180);
     } else if (isFossil) {
+      if (this.data.fossils[item.id]?.count > 0) return;
       if (!this.data.fossils[item.id]) {
         this.data.fossils[item.id] = {
           count: 0,

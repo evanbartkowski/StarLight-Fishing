@@ -3804,7 +3804,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .minimap-modal-container path[stroke-dasharray="4 6"] { stroke:var(--depth-color); }
 @media (prefers-reduced-motion:reduce) { .depth-active { animation:none; } }
 .relic-case { --case-color: #b98b60; position: relative; width: 104px; height: 72px; margin: 20px auto; border: 3px solid var(--case-color); border-radius: 12px 12px 8px 8px; background: linear-gradient(145deg,#334155,#0b1324); box-shadow: 0 0 28px color-mix(in srgb,var(--case-color) 30%,transparent), inset 0 0 16px #020617; transform: perspective(250px) rotateY(-12deg); }
-.relic-case-2 { --case-color: #6ee7b7; } .relic-case-3 { --case-color: #fbbf24; } .relic-case-4 { --case-color: #c084fc; } .relic-case-5 { --case-color: #67e8f9; }
+.relic-case-2 { --case-color: #6ee7b7; } .relic-case-3 { --case-color: #38bdf8; } .relic-case-4 { --case-color: #c084fc; } .relic-case-5 { --case-color: #eab308; }
 .relic-case i { position: absolute; left: -3px; right: -3px; top: 20px; height: 3px; background: var(--case-color); box-shadow: 0 0 9px var(--case-color); }
 .relic-case b { position: absolute; left: 36px; top: 17px; width: 30px; height: 32px; font: bold 17px/32px serif; text-align: center; color: #071321; background: var(--case-color); clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); }
 .relic-case span { position: absolute; inset: 7px; border-left: 5px solid var(--case-color); border-right: 5px solid var(--case-color); opacity: .55; }
@@ -3818,7 +3818,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .gem-crate-store button { margin-top: 8px; width: 100%; }
 .chat-profile { color: #7dd3fc; border: 0; padding: 2px; background: transparent; font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
 .chat-profile:disabled { color: #cbd5e1; text-decoration: none; cursor: default; }
-.charted-current { filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 16px #67e8f9); }
+.charted-current { filter: drop-shadow(0 0 8px #e0f2fe) drop-shadow(0 0 16px #67e8f9); }
 .depth-active { box-shadow: 0 0 14px #67e8f977, inset 0 0 10px #67e8f922; }
 @media (pointer: coarse) {
   .modal-panel button, .chat-profile { min-height: 40px; }
@@ -3826,3 +3826,35 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 #world-event-banner { padding: 7px 12px; border: 1px solid #c084fc; border-radius: 12px; color: #f5e7ff; background: #211437ed; font-size: 12px; box-shadow: 0 0 16px #a855f755; text-align: center; }
 #world-event-banner[hidden] { display: none; }
+
+/* Compact, consistent inventory cards and a crate action visible before previews. */
+.inventory-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); max-height: none; overflow: visible; padding: 0; align-items: stretch; }
+.inventory-card { min-width: 0; box-sizing: border-box; }
+.inv-card-name { white-space: normal; overflow-wrap: anywhere; line-height: 1.3; }
+.inv-card-title-col { min-width: 0; }
+.inv-card-specs, .inv-card-status-row { flex-wrap: wrap; gap: 6px; }
+.inv-card-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.inv-card-actions .btn { min-width: 0; padding: 8px 5px; white-space: normal; }
+.btn-inv-open-crate { grid-column: 1 / -1; }
+.shiny-tag { color: #e9d5ff; background: #7c3aed33; border-color: #a78bfa; }
+.quest-ready { border-color: #5eead4 !important; box-shadow: 0 0 14px #2dd4bf80, inset 0 0 9px #2dd4bf25; }
+.crate-unboxing-panel { padding: 4px 0 !important; }
+.crate-unboxing-panel #crate-display-stage { width: 94px !important; height: 74px !important; margin: 5px auto !important; background: radial-gradient(circle, #38bdf822, transparent 70%) !important; }
+.crate-unboxing-panel #crate-status-desc { font-size: .8rem !important; margin: 6px auto !important; }
+.crate-unboxing-panel .gacha-reel-container { height: 112px; margin: 8px 0; }
+.crate-actions { position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 10px 0; background: #101e30; border-radius: 12px; }
+.crate-actions #btn-crack-crate { background: #67e8f9 !important; border-color: #22d3ee !important; color: #082f49 !important; }
+.crate-preview { margin-top: 8px; text-align: left; border-top: 1px solid #334155; }
+.crate-preview summary { padding: 12px; cursor: pointer; color: #c4e9f4; font-weight: 600; }
+.crate-rewards { margin: 0; padding: 10px; }
+.crate-reward.superGood { border-color: #c084fc; }
+#visitor-tank { display: block; margin: 12px 0 16px; border: 1px solid #69b8c8; box-shadow: inset 0 0 30px #082f49; }
+#aquarium-host { text-align: center; color: #b5f2ec; }
+[data-visit-aquarium] { margin-left: 8px; padding: 5px 12px !important; border-radius: 18px; color: #a5f3fc; }
+@media (max-width: 600px) {
+  .inventory-grid { grid-template-columns: 1fr !important; }
+  .crate-actions .btn { flex: 1 1 120px; font-size: .85rem !important; padding: 10px 8px !important; }
+  .crate-unboxing-panel h3 { font-size: 1.05rem !important; margin-bottom: 6px !important; }
+}
+
+.crate-unboxing-panel .gacha-reel-pointer { background: #67e8f9; box-shadow: 0 0 10px #22d3ee; }

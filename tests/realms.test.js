@@ -27,6 +27,59 @@ function advancedSave() {
   return save;
 }
 
+test('fossils are realm-specific, solitary, and never respawn after discovery and reload', () => {
+  const save = advancedSave();
+  const random = Math.random;
+  Math.random = () => .01;
+  try {
+    for (let realm = 1; realm <= 7; realm++) {
+      save.data.currentSea = realm;
+      const world = new OceanWorld({ width: 390, height: 720 });
+      const local = TREASURE_ITEMS.filter(item => item.category === 'fossil' && belongsToRealm(item, realm));
+      assert.ok(local.length >= 3);
+      world.populateWorld(save);
+      const fossils = world.entities.treasures.filter(item => item.category === 'fossil');
+      assert.equal(fossils.length, 1);
+      assert.ok(local.some(item => item.id === fossils[0].id));
+      for (const fossil of local) { save.recordCatchItem(fossil); save.recordCatchItem(fossil); }
+      save.save(); save.load();
+      assert.ok(local.every(item => save.data.fossils[item.id].count === 1));
+      world.populateWorld(save);
+      assert.equal(world.entities.treasures.filter(item => item.category === 'fossil').length, 0);
+    }
+  } finally { Math.random = random; }
+});
+
+test('shiny variants retain species and rarity with rare, bounded lure odds', async () => {
+  const { shinyPalette, reserveGold } = await import('../src/rendering/FishAppearance.js');
+  const species = FISH_SPECIES.find(item => item.rarity === 'rare');
+  const normal = new Fish(species, 100, 500, { shinyChance: 0 });
+  const shiny = new Fish(species, 100, 500, { shinyChance: 1 });
+  assert.equal(shiny.species, normal.species);
+  assert.equal(shiny.rarityColor, normal.rarityColor);
+  assert.deepEqual(shiny.shinyColors, shinyPalette(species.id));
+  assert.notDeepEqual(shiny.shinyColors, normal.bodyColors);
+  assert.notEqual(reserveGold('#fbbf24', false), '#fbbf24');
+  assert.equal(reserveGold('#fbbf24', true), '#fbbf24');
+  assert.equal(UPGRADE_DEFINITIONS.lureLuck.tiers[0].shinyChance, .002);
+  assert.ok(UPGRADE_DEFINITIONS.lureLuck.tiers.every(tier => tier.shinyChance <= .02));
+});
+
+test('equipped dolphin stays visible in every weather and shark hover follows its body', async () => {
+  const { BackgroundDolphin, BoatShark } = await import('../src/entities/BoatCompanions.js');
+  const dolphin = new BackgroundDolphin(390);
+  for (const weather of ['CLEAR', 'FOG', 'RAIN']) {
+    for (let i = 0; i < 120; i++) {
+      dolphin.update(1000, 220, weather);
+      assert.ok(dolphin.active && Number.isFinite(dolphin.y + dolphin.arcY));
+      assert.ok(dolphin.x >= 35 && dolphin.x <= 355);
+    }
+  }
+  const shark = new BoatShark(); shark.update(1000, { x: 195 }, 220);
+  assert.equal(shark.checkHover(shark.x, shark.y - 30, 30), true);
+  assert.equal(shark.checkHover(0, 0), false);
+});
+
 test('themed plant patches span every realm and apex creatures remain late-realm inhabitants', () => {
   const save = advancedSave();
   for (let realm = 1; realm <= 7; realm++) {
@@ -51,7 +104,7 @@ test('submarines are rare and full-sized while endgame enemies increase with dep
   const original = Math.random; let seed = 91321, submarines = 0, shallow = 0, deep = 0;
   Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
   try {
-    for (let dive = 0; dive < 80; dive++) {
+    for (let dive = 0; dive < 240; dive++) {
       world.populateWorld(save);
       for (const hazard of world.entities.hazards) {
         if (hazard.type === 'deep_submarine') {
@@ -64,7 +117,7 @@ test('submarines are rare and full-sized while endgame enemies increase with dep
         if (depth >= 2000 && depth < 2500) deep++;
       }
     }
-    assert.ok(submarines > 0 && submarines < 16, `${submarines}/80 submarine encounters`);
+    assert.ok(submarines > 0 && submarines < 48, `${submarines}/240 submarine encounters`);
     assert.ok(deep > shallow * 1.5, `deep enemies ${deep}, shallow ${shallow}`);
   } finally { Math.random = original; }
 });

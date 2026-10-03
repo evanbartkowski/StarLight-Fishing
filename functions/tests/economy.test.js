@@ -93,6 +93,13 @@ test('public exhibits exclude private fields and only include displayed fish', (
   assert.equal(result.items.length, 1); assert.equal(result.items[0].value, undefined); assert.equal(result.gems, undefined);
 });
 
+test('public aquariums preserve displayed fossils and selected decor without private fields', () => {
+  const exhibit = publicAquarium({ aquarium: { isUnlocked: true, slottedItemIds: ['fossil'], decor: { decoration: 'crystals', private: 'hidden' } }, inventory: [{ instanceId: 'fossil', id: 'fossil_ammonite', category: 'fossil', type: 'trinket', value: 100 }] }, 'Host');
+  assert.equal(exhibit.items[0].id, 'fossil_ammonite');
+  assert.equal(exhibit.items[0].value, undefined);
+  assert.deepEqual(exhibit.decor, { decoration: 'crystals' });
+});
+
 test('gem bundle prices cover all four required USD amounts', () => {
   assert.deepEqual(Object.values(GEM_PACKAGES).map(bundle => bundle.amount), [199, 499, 999, 1999]);
 });

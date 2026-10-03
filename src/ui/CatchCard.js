@@ -1,5 +1,5 @@
 import { Fish } from '../entities/Fish.js';
-import { FISH_SPECIES } from '../data/FishData.js';
+import { FISH_SPECIES, RARITY_CONFIG } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { getSeaById } from '../entities/SeasData.js';
 
@@ -23,7 +23,7 @@ export function openCatchCard(ui, item, player, onBack) {
   const gradient = ctx.createLinearGradient(0, 0, 0, 480);
   gradient.addColorStop(0, realm.topColor); gradient.addColorStop(1, realm.bottomColor);
   ctx.fillStyle = gradient; ctx.fillRect(0, 0, 800, 480);
-  ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 4; ctx.strokeRect(14, 14, 772, 452);
+  ctx.strokeStyle = RARITY_CONFIG[item.rarity || item.species?.rarity]?.color || '#94a3b8'; ctx.lineWidth = 4; ctx.strokeRect(14, 14, 772, 452);
   const fish = specimen(item, 400, 205);
   if (fish) fish.scale = 4.5;
   fish?.render(ctx, 0);

@@ -78,15 +78,15 @@ export class ShipsCat {
 
   getDeckPosition(vessel) {
     if (vessel >= 4) {
-      return { x: -38, y: -28 }; // on rear observation deck of Mythic Celestial Ketch
+      return { x: -53, y: -28 }; // on rear observation deck of Mythic Celestial Ketch
     } else if (vessel === 3) {
-      return { x: -32, y: -24 }; // on quarterdeck of Grand Schooner
+      return { x: -49, y: -24 }; // on quarterdeck of Grand Schooner
     } else if (vessel === 2) {
-      return { x: -34, y: -18 }; // on aft bench of Expedition Trawler
+      return { x: -44, y: -18 }; // on aft bench of Expedition Trawler
     } else if (vessel === 1) {
-      return { x: -28, y: -14 }; // on seat cushion of Coastal Dory
+      return { x: -38, y: -14 }; // on seat cushion of Coastal Dory
     }
-    return { x: -22, y: -12 }; // on pine bench of Weathered Dinghy
+    return { x: -32, y: -12 }; // on pine bench of Weathered Dinghy
   }
 
   render(ctx, vessel) {
@@ -95,9 +95,12 @@ export class ShipsCat {
     ctx.save();
     ctx.translate(pos.x, pos.y);
 
+    // Soft teal berth makes the crew readable against dark hulls.
+    ctx.fillStyle = '#367f82'; ctx.beginPath(); ctx.ellipse(0, 6, 15, 4, 0, 0, Math.PI * 2); ctx.fill();
+
     // Warm cat body (calico ginger-orange curled ball)
     const purrScale = this.isPurring ? 1.0 + Math.sin(this.tailTimer * 6) * 0.05 : 1.0;
-    ctx.scale(purrScale, purrScale);
+    ctx.scale(purrScale * 1.15, purrScale * 1.15);
 
     // Shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
@@ -258,6 +261,7 @@ export class PerchingPelican {
     ctx.fill();
 
     // Grey wing
+    ctx.scale(1.2, 1.2);
     const wingFlap = this.isFlapping ? Math.sin(this.flapTimer * 15) * 8 : 0;
     ctx.fillStyle = '#94a3b8';
     ctx.beginPath();
@@ -313,62 +317,48 @@ export class PerchingPelican {
 export class BackgroundDolphin {
   constructor(worldWidth) {
     this.worldWidth = worldWidth;
-    this.active = false;
-    this.x = -100;
+    this.active = true;
+    this.x = worldWidth * .72;
     this.y = 0;
+    this.arcY = 0;
     this.arcTimer = 0;
     this.arcDuration = 2.4;
-    this.startDist = 0;
-    this.swimSpeed = 160;
-    this.spawnTimer = 40; // initial delay
+    this.timer = 0;
+    this.direction = 1;
+    this.rotation = 0;
   }
 
   update(dt, surfaceY, weather) {
-    const sec = dt / 1000;
-
-    if (!this.active) {
-      // Dolphins only breach on clear weather
-      if (weather === 'CLEAR') {
-        this.spawnTimer -= sec;
-        if (this.spawnTimer <= 0) {
-          this.active = true;
-          this.arcTimer = 0;
-          this.x = 80 + Math.random() * (this.worldWidth - 200);
-          this.y = surfaceY - 2;
-          this.spawnTimer = 65 + Math.random() * 45; // next breach in ~1-2 min
-        }
-      }
-    } else {
-      this.arcTimer += sec;
-      const progress = this.arcTimer / this.arcDuration;
-
-      // Parabolic jump arc: starts underwater, leaps into air, dives back in
-      // y = -sin(progress * PI) * height
-      const leapHeight = 36;
-      this.arcY = -Math.sin(progress * Math.PI) * leapHeight;
-      this.x += this.swimSpeed * sec * 0.7;
-
-      if (this.arcTimer >= this.arcDuration) {
-        this.active = false;
-      }
-    }
+    this.timer += dt / 1000;
+    this.active = true;
+    const phase = this.timer * .42;
+    const radius = Math.min(100, Math.max(20, this.worldWidth * .15));
+    this.x = Math.max(35, Math.min(this.worldWidth - 35, this.worldWidth * .65 + Math.sin(phase) * radius));
+    this.y = surfaceY + 56;
+    this.direction = Math.cos(phase) >= 0 ? 1 : -1;
+    const cycle = this.timer % 18;
+    this.arcTimer = cycle;
+    const jumping = cycle < this.arcDuration;
+    this.arcY = jumping ? -Math.sin(cycle / this.arcDuration * Math.PI) * 90 : Math.sin(phase * 2) * 6;
+    this.rotation = jumping ? -.5 + cycle / this.arcDuration : Math.cos(phase * 2) * .06;
   }
 
   render(ctx, cameraY = 0) {
     if (!this.active) return;
 
     const drawY = (this.y + this.arcY) - cameraY;
-    if (drawY > 300) return; // off screen
+    if (drawY < -80 || drawY > 1200) return;
 
     const progress = this.arcTimer / this.arcDuration;
-    const rot = -0.5 + progress * 1.0; // rotates from nose-up to nose-down
+    const rot = this.rotation; // rotates from nose-up to nose-down
 
     ctx.save();
     ctx.translate(this.x, drawY);
     ctx.rotate(rot);
+    ctx.scale(this.direction * 1.35, 1.35);
 
     // Dolphin body (sleek grey-blue)
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = '#7dd3e1';
     ctx.beginPath();
     ctx.ellipse(0, 0, 18, 6, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -448,7 +438,7 @@ export class BackgroundDolphin {
     const dx = mouseX - this.x;
     const dy = mouseY - currentY;
     // Test in sprite space so the snout, tail and fins remain targets during rotation.
-    const rotation = -.5 + this.arcTimer / this.arcDuration;
+    const rotation = this.rotation;
     const localX = dx * Math.cos(rotation) + dy * Math.sin(rotation);
     const localY = -dx * Math.sin(rotation) + dy * Math.cos(rotation);
     const inside = (localX / 36) ** 2 + (localY / 26) ** 2 <= 1;
@@ -459,12 +449,16 @@ export class BackgroundDolphin {
 
 // Irene cruises under the surface alongside the player's vessel.
 export class BoatShark {
-  constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; }
+  constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; this.isHovered = false; }
   update(dt, boat, surfaceY) {
     this.timer += dt / 1000;
     this.x = boat.x + Math.sin(this.timer * 0.35) * 125;
-    this.y = surfaceY + 28 + Math.sin(this.timer * 0.7) * 6;
+    this.y = surfaceY + 90 + Math.sin(this.timer * 0.7) * 6;
     this.direction = Math.cos(this.timer * 0.35) >= 0 ? 1 : -1;
+  }
+  checkHover(x, y, cameraY = 0) {
+    this.isHovered = ((x - this.x) / 52) ** 2 + ((y - this.y + cameraY) / 30) ** 2 <= 1;
+    return this.isHovered;
   }
   render(ctx, cameraY = 0) {
     ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.scale(this.direction, 1);
@@ -476,5 +470,10 @@ export class BoatShark {
     ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(23, -3, 3, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(24, -3, 1.5, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
+    if (this.isHovered) {
+      ctx.save(); ctx.font = '600 12px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = '#0b2033'; ctx.fillRect(this.x - 66, this.y - cameraY + 25, 132, 23);
+      ctx.fillStyle = '#c8f4f7'; ctx.fillText('Irene the Shark', this.x, this.y - cameraY + 41); ctx.restore();
+    }
   }
 }

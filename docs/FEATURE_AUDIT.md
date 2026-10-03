@@ -101,3 +101,26 @@ installation. Keep these overrides under review when upgrading Firebase/gaxios.
   player accounts. Transactional tests and mocked browser visits cover those paths.
 - Stripe needs the owner's Price IDs and Secret Manager configuration before
   checkout and webhook deployment; see STRIPE_SETUP.md.
+
+## Rarity and presentation release
+
+- Shinies are stable species-specific alternate palettes, with unchanged rarity
+  auras: .2% base chance, rising to 2% at the strongest lure. Gold rarity glows
+  belong to legendary catches. Particle trails use fewer blur passes.
+- Crate controls precede a collapsible reward table; desktop and phone browser
+  checks confirm Open is visible without scrolling. Inventory cards use a
+  consistent responsive layout with a direct Open Crate action.
+- Seven distinct map silhouettes/colors; quest rewards light the button without
+  an exclamation badge; event announcements use readable separators and each
+  event adds bounded, realm-tinted vector effects with reduced-motion support.
+- Dolphin companions swim continuously in all weather. Cat/bird positioning and
+  proportions are clearer; hovering Irene displays the shark's name.
+- Fourteen new realm-specific fossils join the permanent discovery ledger.
+  At most one fossil can spawn per dive, at a 3.5% base chance (radar capped at
+  12%). Discovered fossils do not respawn, including after selling and reloading.
+- Aquarium Visit is publicly viewable through the sanitized server endpoint;
+  signing in is still required to tip/publish. Visits include the host's fish,
+  known treasure/fossil displays, theme and selected decorations.
+- Regression suite: 73 frontend/domain and 13 backend tests. Browser checks
+  include rendered shiny pixel differences with identical aura pixels, unique
+  map markers, direct inventory crate opening, crew and event previews.

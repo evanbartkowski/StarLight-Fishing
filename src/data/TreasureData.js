@@ -373,6 +373,9 @@ export const HAZARD_TYPES = [
   },
 ];
 
+import { REALM_FOSSILS } from './Fossils.js';
+TREASURE_ITEMS.push(...REALM_FOSSILS);
+
 // Legacy salvage remains available only in its native sea; crates are limited to
 // neighboring realms rather than appearing everywhere at sufficient depth.
 const legacySeas = { shell: [1], bottle: [1, 2], coin_bag: [2], pirate_chest: [4], giant_pearl: [5], royal_relic: [4], ocean_heart: [7], fossil_trilobite: [1], fossil_ammonite: [2], fossil_megalodon: [3], fossil_pliosaur: [6], fossil_atlantis: [4], crate_wood: [1], crate_iron: [2], crate_gold: [3, 4], crate_abyssal: [5, 6], crate_celestial: [7] };

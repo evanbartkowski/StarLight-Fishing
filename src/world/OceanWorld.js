@@ -12,6 +12,7 @@ import { soundManager } from '../audio/SoundManager.js';
 import { TREASURE_ITEMS, HAZARD_TYPES } from '../data/TreasureData.js';
 import { LEGENDARY_SPECIES, checkMythicSpawn } from '../data/legendaries.js';
 import { Fish } from '../entities/Fish.js';
+import { drawEventAtmosphere } from '../rendering/EventAtmosphere.js';
 import { Hazard } from '../entities/Hazard.js';
 import { Treasure } from '../entities/Treasure.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
@@ -246,10 +247,22 @@ export class OceanWorld {
       }
     });
 
-    populateBands(TREASURE_ITEMS.filter(item => belongsToRealm(item, this.currentSeaId)),
+    populateBands(TREASURE_ITEMS.filter(item => item.category !== 'fossil' && belongsToRealm(item, this.currentSeaId)),
       depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2 * ecology.treasure,
       item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : item.isCrate ? .3 * worldCycle.getCrateDropMultiplier() : 1),
       (item, x, y) => this.entities.treasures.push(new Treasure(item, x, y)));
+
+    // Fossils have an independent rare roll and cannot crowd ordinary salvage.
+    // The permanent discovery ledger survives selling or exhibiting a specimen.
+    const fossilPool = TREASURE_ITEMS.filter(item => item.category === 'fossil'
+      && belongsToRealm(item, this.currentSeaId) && item.minDepth < activeMaxDepth
+      && !saveSystem.data.fossils?.[item.id]
+      && !saveSystem.data.inventory?.some(owned => owned.id === item.id));
+    if (fossilPool.length && Math.random() < Math.min(.12, .035 * fossilBonus)) {
+      const item = fossilPool[Math.floor(Math.random() * fossilPool.length)];
+      const depth = item.minDepth + Math.random() * (Math.min(activeMaxDepth, item.maxDepth) - item.minDepth);
+      this.entities.treasures.push(new Treasure(item, 50 + Math.random() * Math.max(1, this.worldWidth - 100), this.surfaceY + depth * this.pixelsPerMeter));
+    }
 
     REALM_RELICS.filter(relic => relic.zone === this.currentSeaId).forEach(relic => {
       const reachableDepth = Math.min(activeMaxDepth, relic.maxDepth);
@@ -994,6 +1007,7 @@ export class OceanWorld {
 
     // Render Weather Effects: Rain ripples, fog drift, night stars & biolum plankton
     worldCycle.renderWeatherEffects(ctx, cameraY, this.worldWidth, screenHeight, this.surfaceY);
+    drawEventAtmosphere(ctx, worldCycle.getGlobalEvent(), worldCycle.timer, this.worldWidth, screenHeight, this.surfaceY, cameraY, this.currentSeaId);
   }
 
   // Sea 1: Sunlit Caustics

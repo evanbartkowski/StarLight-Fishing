@@ -224,7 +224,7 @@ export class UIManager {
           🪤 <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
         <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
-          📋 <span class="btn-label">Quests</span> <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
+          📋 <span class="btn-label">Quests</span>
         </button>
         <button class="icon-btn" id="btn-inventory" title="Inventory">🎒 <span class="btn-label">Inventory</span></button>
         <button class="icon-btn" id="btn-shop" title="Shop">🛒 <span class="btn-label">Shop</span></button>
@@ -662,7 +662,7 @@ export class UIManager {
     if (content) content.hidden = false;
     const toggle = panel.querySelector('#fleet-toggle');
     if (toggle) {
-      toggle.textContent = '?';
+      toggle.textContent = '\u2212';
       toggle.setAttribute('aria-expanded', 'true');
       toggle.setAttribute('aria-label', 'Minimize Fleet Radio');
       toggle.title = 'Minimize Fleet Radio';
@@ -697,7 +697,7 @@ export class UIManager {
     const eventBanner = document.getElementById('world-event-banner');
     if (eventBanner) {
       eventBanner.hidden = !event.active;
-      if (event.active) eventBanner.textContent = `${event.icon} ${event.name} ? ${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} ? Legends ?${event.legendaryMultiplier} ? Crates ?${event.crateMultiplier}`;
+      if (event.active) eventBanner.textContent = `${event.icon} ${event.name} | ${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} | Legends x${event.legendaryMultiplier} | Crates x${event.crateMultiplier}`;
     }
     const lvl = this.saveSystem.data.level;
     const currentXp = this.saveSystem.data.xp;
@@ -745,17 +745,10 @@ export class UIManager {
       }
     }
 
-    // Update quests badge in HUD
-    if (this.questSystem) {
-      const questBadge = document.getElementById('hud-quest-badge');
-      if (questBadge) {
-        if (this.questSystem.hasUnclaimedRewards()) {
-          questBadge.style.display = 'inline-block';
-        } else {
-          questBadge.style.display = 'none';
-        }
-      }
-    }
+    const questButton = document.getElementById('btn-quests');
+    const ready = !!this.questSystem?.hasUnclaimedRewards();
+    questButton?.classList.toggle('quest-ready', ready);
+    questButton?.setAttribute('aria-label', ready ? 'Quests: reward ready to claim' : 'Quests');
 
     // Update active buffs in HUD
     const buffsContainer = document.getElementById('hud-buffs');
@@ -1290,7 +1283,7 @@ export class UIManager {
           : '';
         const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
         const crownTag = item.crown === 'gold'
-          ? `<span class="crown-tag crown-gold">👑 GOLD CROWN</span>`
+          ? `<span class="crown-tag">${item.rarity === 'legendary' ? '👑' : '◇'} GIANT</span>`
           : item.crown === 'silver'
           ? `<span class="crown-tag crown-silver">🥈 SILVER CROWN</span>`
           : '';
@@ -1520,7 +1513,7 @@ export class UIManager {
 
     const modalBody = `
       <p>Epic pity: ${preview.pityCount}/10 · Guaranteed within ${10 - preview.pityCount} opens</p><progress max="10" value="${preview.pityCount}" aria-label="Epic pity"></progress><div class="crate-unboxing-panel" style="text-align: center; padding: 20px 10px;">
-        <div style="font-size: 0.85rem; text-transform: uppercase; color: #facc15; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px;">
+        <div style="font-size: 0.85rem; text-transform: uppercase; color: ${RARITY_CONFIG[rankInfo.rarity]?.color || '#cbd5e1'}; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px;">
           Rank ${rankInfo.rank} Mystery Crate (${crates.length} Remaining)
         </div>
         <h3 style="margin: 0 0 12px 0; color: #f8fafc; font-size: 1.35rem;">${currentCrate.name || rankInfo.name}</h3>
@@ -1555,12 +1548,12 @@ export class UIManager {
 
         <div id="crate-loot-result" style="display: none; margin-bottom: 16px;"></div>
 
-        ${crateRewardGallery(rank, this.saveSystem)}
         <div class="crate-actions">
           <button class="btn btn-primary" id="btn-crack-crate" style="padding: 12px 28px; font-size: 1.05rem; font-weight: 800; background: #eab308; color: #1e293b; border-color: #ca8a04; cursor: pointer; transition: all 0.2s ease;">
             🔓 Unlock & Open Crate!
           </button>
         </div>
+        <details class="crate-preview"><summary>Potential rewards & exact odds</summary>${crateRewardGallery(rank, this.saveSystem)}</details>
       </div>
     `;
 
@@ -1622,7 +1615,7 @@ export class UIManager {
             }
 
             // Record fossil if rolled
-            if (loot.bonusFossil) {
+            if (loot.bonusFossil && !this.saveSystem.data.fossils?.[loot.bonusFossil.id]) {
               if (!this.saveSystem.data.fossils) this.saveSystem.data.fossils = {};
               if (!this.saveSystem.data.fossils[loot.bonusFossil.id]) {
                 this.saveSystem.data.fossils[loot.bonusFossil.id] = { count: 0, firstFoundAt: Date.now() };
@@ -1664,7 +1657,7 @@ export class UIManager {
         if (track) {
           track.innerHTML = stripItems.map((item, idx) => {
             const grade = item.grade || (item.coins > 300 ? 'super_good' : item.coins < 0 ? 'super_bad' : 'fair');
-            const borderColor = grade === 'super_good' ? '#f59e0b' : grade === 'super_bad' ? '#ef4444' : '#38bdf8';
+            const borderColor = grade === 'super_good' ? '#c084fc' : grade === 'super_bad' ? '#ef4444' : '#38bdf8';
             return `
               <div class="gacha-reel-card" ${idx === winningIndex ? 'data-winning="true"' : ''} style="border-bottom: 4px solid ${borderColor};">
                 <span class="gacha-card-icon">${item.icon || '🎁'}</span>
@@ -2103,7 +2096,7 @@ export class UIManager {
                 <span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${q.category}</span>
               </div>
               <p style="margin: 5px 0 8px 0; color: #cbd5e1; font-size: 0.88rem; line-height: 1.4;">${q.description}</p>
-              
+
               <div style="display: flex; align-items: center; gap: 10px;">
                 <div style="flex: 1; height: 8px; background: rgba(0, 0, 0, 0.5); border-radius: 999px; overflow: hidden; max-width: 220px;">
                   <div style="height: 100%; width: ${pct}%; background: ${isComplete ? '#22c55e' : '#38bdf8'}; transition: width 0.3s;"></div>
@@ -3195,7 +3188,7 @@ export class UIManager {
             <td style="text-align: left;">
               <div class="captain-cell">
                 <span class="captain-avatar">${item.level >= 20 ? '👑' : item.level >= 10 ? '⚓' : '⛵'}</span>
-                <span class="captain-username">${escapeScoreboardText(item.username)}</span>${item.id ? `<button class="btn btn-secondary btn-sm" data-visit-aquarium="${escapeScoreboardText(item.id)}">Visit aquarium</button>` : ''}
+                <span class="captain-username">${escapeScoreboardText(item.username)}</span>${item.id ? `<button class="btn btn-secondary btn-sm" data-visit-aquarium="${escapeScoreboardText(item.id)}">Visit</button>` : ''}
                 ${item.isCurrent ? '<span class="badge-you">YOU</span>' : ''}
               </div>
             </td>
@@ -3343,7 +3336,7 @@ export class UIManager {
       const item = exhibited[index];
       return `<div class="museum-plinth"><span>${item ? '🦴' : '✦'}</span><strong>${item ? item.name : 'Empty exhibit'}</strong></div>`;
     }).join('');
-    document.getElementById('journal-tab-content').innerHTML = `<div class="museum-intro"><p class="eyebrow">THE CAPTAIN'S COLLECTION</p><h3>Your Fossil Gallery</h3><p>Choose six discoveries to exhibit. Reconstructed sets earn a one-time gem achievement.</p></div><div class="museum-gallery">${gallery}</div><h3 class="collection-heading">Arrange your collection</h3><div class="fossil-grid">${collection.map(item => `<article class="fossil-card ${item.found ? 'fossil-discovered' : 'fossil-locked'}"><div class="fossil-info"><h4>${item.found ? item.name : 'Undiscovered specimen'}</h4><p class="fossil-lore">${item.found ? item.lore || 'A remarkable relic of the ancient ocean.' : item.minDepth ? `Search below ${item.minDepth}m.` : 'Find all four fragments to reconstruct this set.'}</p><button class="btn btn-secondary btn-sm" data-exhibit="${item.id}" ${item.found ? '' : 'disabled'}>${displays.includes(item.id) ? 'Remove from gallery' : 'Place in museum'}</button></div></article>`).join('')}</div>`;
+    document.getElementById('journal-tab-content').innerHTML = `<div class="museum-intro"><p class="eyebrow">THE CAPTAIN'S COLLECTION</p><h3>Your Fossil Gallery</h3><p>Choose six discoveries to exhibit. Reconstructed sets earn a one-time gem achievement.</p></div><div class="museum-gallery">${gallery}</div><h3 class="collection-heading">Arrange your collection</h3><div class="fossil-grid">${collection.map(item => `<article class="fossil-card ${item.found ? 'fossil-discovered' : 'fossil-locked'}"><div class="fossil-info"><h4>${item.found ? item.name : 'Undiscovered specimen'}</h4>${item.collection ? `<p>${item.collection} &middot; Realm ${item.zone}</p>` : ''}<p class="fossil-lore">${item.found ? item.lore || 'A remarkable relic of the ancient ocean.' : item.minDepth ? `Search below ${item.minDepth}m.` : 'Find all four fragments to reconstruct this set.'}</p><button class="btn btn-secondary btn-sm" data-exhibit="${item.id}" ${item.found ? '' : 'disabled'}>${displays.includes(item.id) ? 'Remove from gallery' : 'Place in museum'}</button></div></article>`).join('')}</div>`;
     document.querySelectorAll('[data-exhibit]').forEach(button => button.addEventListener('click', () => {
       if (!save.toggleMuseumDisplay(button.dataset.exhibit)) this.showToast('The gallery holds six exhibits. Remove one first.');
       this.renderFossilMuseumTab();
@@ -3915,7 +3908,7 @@ export class UIManager {
         const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
         const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
         const crownTag = item.crown === 'gold'
-          ? `<span class="crown-tag crown-gold">👑 GOLD</span>`
+          ? `<span class="crown-tag">${item.rarity === 'legendary' ? '👑' : '◇'} GIANT</span>`
           : item.crown === 'silver'
           ? `<span class="crown-tag crown-silver">🥈 SILVER</span>`
           : '';
@@ -3951,7 +3944,7 @@ export class UIManager {
             <div class="inv-card-actions">
               ${item.isCrate && !item.unboxed ? `<button class="btn btn-sm btn-primary btn-inv-open-crate" data-id="${item.instanceId}">Open Crate</button>` : ''}
               <button class="btn btn-sm btn-outline btn-inspect-item" data-id="${item.instanceId}" title="Inspect details, lore, and records">🔍 Inspect</button>
-              
+
               ${inTank ? `
                 <button class="btn btn-sm btn-secondary btn-tank-remove" data-id="${item.instanceId}" title="Remove from personal aquarium back to tackle box">↩️ Remove</button>
               ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
@@ -4178,7 +4171,7 @@ export class UIManager {
     const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
     const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
     const crownTag = item.crown === 'gold'
-      ? `<span class="crown-tag crown-gold">👑 GOLD CROWN</span>`
+      ? `<span class="crown-tag">${item.rarity === 'legendary' ? '👑' : '◇'} GIANT</span>`
       : item.crown === 'silver'
       ? `<span class="crown-tag crown-silver">🥈 SILVER CROWN</span>`
       : '';
@@ -4198,7 +4191,7 @@ export class UIManager {
 
         <div class="inspect-item-body">
           ${item.lore ? `<p class="inspect-item-lore">${item.lore}</p>` : ''}
-          
+
           <div class="inspect-specs-grid">
             ${isFish ? `
               <div class="inspect-spec"><span class="lbl">Length</span><strong>${item.size || 0} cm</strong></div>
@@ -4218,7 +4211,7 @@ export class UIManager {
           <div class="inspect-actions-row">
             ${(item.isCrate || item.category === 'crate') && !item.unboxed ? '<button class="btn btn-primary" id="btn-inspect-open-crate">Open Mystery Crate</button>' : ''}
             <button class="btn btn-secondary" id="btn-inspect-toggle-lock">${isLocked ? '🔓 Unlock Item' : '🔒 Lock Item'}</button>
-            
+
             ${inTank ? `
               <button class="btn btn-warning" id="btn-inspect-tank">↩️ Remove from Aquarium</button>
             ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
@@ -4502,7 +4495,7 @@ export class UIManager {
             <div class="stat-row"><span>Total Gold Earned:</span><strong>$${stats.totalGoldEarned.toLocaleString()}</strong></div>
             <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}</strong></div>
             <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / 66</strong></div>
-            <div class="stat-row"><span>Prehistoric Fossils Found:</span><strong>${stats.totalFossilsCollected} / 5</strong></div>
+            <div class="stat-row"><span>Prehistoric Fossils Found:</span><strong>${stats.totalFossilsCollected} / ${TREASURE_ITEMS.filter(item => item.category === 'fossil').length}</strong></div>
             <div class="stat-row"><span>Biggest Catch:</span><strong>${stats.biggestCatchName} (${stats.biggestCatchCm} cm, ${stats.heaviestCatchKg} kg)</strong></div>
           </div>
         </div>

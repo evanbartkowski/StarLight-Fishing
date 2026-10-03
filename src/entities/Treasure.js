@@ -1,4 +1,5 @@
 import { drawAura } from '../rendering/AuraRenderer.js';
+import { drawFossil } from '../rendering/FossilArt.js';
 import { RARITY_CONFIG } from '../data/FishData.js';
 
 export class Treasure {
@@ -72,13 +73,14 @@ export class Treasure {
     ctx.translate(this.x, drawY);
 
     if (this.isCrate) drawAura(ctx, this.timer / 2.5, this.rarityColor, this.radius * 2.7, 0.85);
+    if (this.category === 'fossil') drawAura(ctx, this.timer / 2.5, '#5eead4', 52, .7);
 
     // Glowing aura
     ctx.save();
     ctx.shadowColor = this.rarityGlow;
-    ctx.shadowBlur = this.isCrate ? 0 : 16;
+    ctx.shadowBlur = this.isCrate || this.category === 'fossil' ? 0 : 10;
 
-    if (this.itemConfig.realmStyle && !this.isCrate) {
+    if (this.itemConfig.realmStyle && !this.isCrate && this.category !== 'fossil') {
       const shape = this.itemConfig.treasureShape;
       ctx.fillStyle = this.itemConfig.color;
       ctx.strokeStyle = this.itemConfig.glow;
@@ -95,7 +97,7 @@ export class Treasure {
       ctx.fill(); ctx.stroke();
       ctx.font = '17px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
-      ctx.fillText({ reef: '?', spore: '?', crystal: '?', ruins: '?', cloud: '?', lava: '?', void: '?' }[this.itemConfig.realmStyle], 0, 0);
+      ctx.fillText({ reef: 'o', spore: '*', crystal: '+', ruins: '=', cloud: '~', lava: '^', void: 'x' }[this.itemConfig.realmStyle], 0, 0);
     } else if (this.isCrate || this.category === 'crate') {
       // RANKED MYSTERY CRATES (Ranks 1 to 5)
       const rank = this.crateRank || 1;
@@ -109,7 +111,7 @@ export class Treasure {
       ctx.fillStyle = '#ffffff25';
       ctx.beginPath(); ctx.moveTo(-hw, -hh); ctx.lineTo(-hw + 5, -hh - 6);
       ctx.lineTo(hw - 5, -hh - 6); ctx.lineTo(hw, -hh); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = this.itemConfig.glow || this.rarityGlow;
+      ctx.strokeStyle = this.rarityGlow;
       ctx.lineWidth = 1.8;
       ctx.beginPath(); ctx.moveTo(-hw, -hh * .32); ctx.lineTo(hw, -hh * .32); ctx.stroke();
       ctx.fillStyle = '#e2e8f0';
@@ -118,17 +120,17 @@ export class Treasure {
       }
 
       // Darker Wood/Metal Grain Borders
-      ctx.strokeStyle = rank >= 4 ? '#c084fc' : rank === 3 ? '#fbbf24' : '#27272a';
+      ctx.strokeStyle = this.rarityColor;
       ctx.lineWidth = 2.5;
       ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
 
       // Vertical Straps
-      ctx.fillStyle = rank === 5 ? '#38bdf8' : rank >= 3 ? '#f59e0b' : '#475569';
+      ctx.fillStyle = this.rarityColor;
       ctx.fillRect(-hw + 5, -hh, 4, hh * 2);
       ctx.fillRect(hw - 9, -hh, 4, hh * 2);
 
       // Center Keyhole / Lock Latch
-      ctx.fillStyle = rank === 5 ? '#f43f5e' : rank >= 3 ? '#facc15' : '#cbd5e1';
+      ctx.fillStyle = this.rarityGlow;
       ctx.fillRect(-4, -5, 8, 10);
       ctx.fillStyle = '#000000';
       ctx.fillRect(-1.5, -2, 3, 4);
@@ -145,7 +147,9 @@ export class Treasure {
       }
     } else if (this.category === 'fossil') {
       // PREHISTORIC FOSSILS
-      if (this.id === 'fossil_trilobite') {
+      if (this.itemConfig.fossilShape || this.itemConfig.realmStyle) {
+        drawFossil(ctx, this.itemConfig.fossilShape || 'skeleton');
+      } else if (this.id === 'fossil_trilobite') {
         // Trilobite Carapace
         ctx.fillStyle = '#71717a';
         ctx.beginPath();
@@ -168,7 +172,7 @@ export class Treasure {
         ctx.arc(0, 0, 15, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = '#fef08a';
+        ctx.strokeStyle = '#dce9df';
         ctx.lineWidth = 2.2;
         ctx.beginPath();
         for (let a = 0; a < Math.PI * 5; a += 0.2) {

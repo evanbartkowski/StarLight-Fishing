@@ -384,6 +384,7 @@ function handlePointerMove(e) {
 
   if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
     // Companion hover detection for floating name badges
+    if (save.isPetEquipped('shark')) oceanWorld.shark?.checkHover(mousePos.x, mousePos.y, cameraY);
     const vessel = save.getUpgradeLevel('boatVessel') || 0;
     const dy = (mousePos.y + cameraY) - oceanWorld.boat.y;
     const dx = mousePos.x - oceanWorld.boat.x;
@@ -438,6 +439,7 @@ window.addEventListener('mouseup', handlePointerUp);
 // Clean up hover states on pointer leave
 const clearPetHover = () => {
   if (oceanWorld) {
+    if (oceanWorld.shark) oceanWorld.shark.isHovered = false;
     oceanWorld.hoveredCompanion = null;
     if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
   }

@@ -1,4 +1,5 @@
 import { drawAura } from '../rendering/AuraRenderer.js';
+import { shinyPalette, reserveGold } from '../rendering/FishAppearance.js';
 import { RARITY_CONFIG } from '../data/FishData.js';
 import { calculateCrown, getCrownMultiplier } from '../data/legendaries.js';
 import { soundManager } from '../audio/SoundManager.js';
@@ -32,9 +33,11 @@ export class Fish {
     this.crown = calculateCrown(species, this.size);
     const crownMult = getCrownMultiplier(this.crown);
 
-    // Roll shiny golden chance (defaults to 4% unless enhanced by lure)
+    this.shinyColors = shinyPalette(species.id);
+    this.bodyColors = [species.primaryColor || '#38bdf8', species.secondaryColor || '#93c5fd', species.finColor || '#0284c7'].map(color => reserveGold(color, species.rarity === 'legendary'));
+    // Rare alternate coloring; shiny status never changes rarity or aura.
     const shinyRoll = Math.random();
-    const shinyThreshold = options.shinyChance ?? 0.04;
+    const shinyThreshold = options.shinyChance ?? 0.002;
     this.isShiny = shinyRoll < shinyThreshold;
 
     // Bigger fish sell for exponentially more + crown bonus (boosted +35% for rewarding fishing)
@@ -530,19 +533,19 @@ export class Fish {
     }
 
     // Flashy visual auras & particles for rarer fish (rare, epic, legendary, leviathan, shiny)
-    const isRainbow = s.isRainbow || (s.rarity === 'legendary' && !this.isShiny);
-    const isEpic = s.rarity === 'epic' && !this.isShiny;
-    const isRare = s.rarity === 'rare' && !this.isShiny;
+    const isRainbow = s.isRainbow;
+    const isEpic = s.rarity === 'epic';
+    const isRare = s.rarity === 'rare';
 
-    if (s.rarity === 'uncommon' || this.isShiny || isRainbow || isEpic || isRare || this.isMythic || this.isSpecialDeep || s.glowColor) {
-      const color = this.isShiny ? '#fde68a' : s.glowColor || RARITY_CONFIG[s.rarity]?.color;
+    if (s.rarity !== 'common' || isRainbow || this.isMythic || this.isSpecialDeep || s.glowColor) {
+      const color = RARITY_CONFIG[s.rarity]?.color || '#a78bfa';
       drawAura(ctx, this.auraTime, color, s.isLeviathan ? 77 : 60, 0.64);
     }
 
     if (this.isGodTier) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.shadowColor = '#fff4bd'; ctx.shadowBlur = 12;
+      ctx.shadowColor = '#fff4bd'; ctx.shadowBlur = 0;
       for (let i = 0; i < 7; i++) {
         const angle = i * Math.PI * 2 / 7 + this.wiggleTimer * .22;
         const x = Math.cos(angle) * 48, y = Math.sin(angle) * 26;
@@ -561,7 +564,7 @@ export class Fish {
         const sparkHue = (this.wiggleTimer * 80 + p * 60) % 360;
         ctx.fillStyle = `hsl(${sparkHue}, 100%, 70%)`;
         ctx.shadowColor = `hsl(${sparkHue}, 100%, 60%)`;
-        ctx.shadowBlur = 6;
+        ctx.shadowBlur = 0;
         ctx.beginPath();
         ctx.arc(px, py, 2.2, 0, Math.PI * 2);
         ctx.fill();
@@ -572,7 +575,7 @@ export class Fish {
       const t = this.wiggleTimer;
       ctx.fillStyle = '#f472b6';
       ctx.shadowColor = '#d946ef';
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 0;
       for (let p = 0; p < 3; p++) {
         const px = -26 - p * 8 + Math.sin(t * 2.5 + p) * 3;
         const py = Math.cos(t * 3 + p) * 6;
@@ -586,7 +589,7 @@ export class Fish {
       const t = this.wiggleTimer;
       ctx.fillStyle = '#67e8f9';
       ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 5;
+      ctx.shadowBlur = 0;
       for (let p = 0; p < 2; p++) {
         const px = -24 - p * 7 + Math.sin(t * 3 + p) * 2;
         const py = Math.sin(t * 2 + p) * 5;
@@ -603,9 +606,9 @@ export class Fish {
       const trail = s.fantasyTrail;
       const t = this.wiggleTimer;
       if (trail === 'starlight' || trail === 'sparkle' || trail === 'rainbow') {
-        ctx.fillStyle = trail === 'rainbow' ? '#f43f5e' : '#fef08a';
-        ctx.shadowColor = '#facc15';
-        ctx.shadowBlur = 6;
+        ctx.fillStyle = trail === 'rainbow' ? '#f43f5e' : (s.rarity === 'legendary' ? '#fef08a' : '#c4b5fd');
+        ctx.shadowColor = s.rarity === 'legendary' ? '#facc15' : '#c4b5fd';
+        ctx.shadowBlur = 0;
         for (let p = 0; p < 3; p++) {
           const px = -25 - p * 8 + Math.sin(t * 2 + p) * 3;
           const py = Math.sin(t * 3 + p) * 5;
@@ -616,7 +619,7 @@ export class Fish {
       } else if (trail === 'biolum' || trail === 'neon') {
         ctx.fillStyle = '#38bdf8';
         ctx.shadowColor = '#22d3ee';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 0;
         for (let p = 0; p < 3; p++) {
           const px = -24 - p * 7;
           const py = Math.cos(t * 2.5 + p) * 4;
@@ -627,7 +630,7 @@ export class Fish {
       } else if (trail === 'embers') {
         ctx.fillStyle = '#f97316';
         ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 0;
         for (let p = 0; p < 3; p++) {
           const px = -22 - p * 6;
           const py = Math.sin(t * 3 + p) * 6;
@@ -638,7 +641,7 @@ export class Fish {
       } else if (trail === 'aether' || trail === 'aurora' || trail === 'emerald') {
         ctx.fillStyle = trail === 'aether' ? '#e879f9' : (trail === 'emerald' ? '#34d399' : '#38bdf8');
         ctx.shadowColor = trail === 'aether' ? '#c026d3' : (trail === 'emerald' ? '#059669' : '#a855f7');
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 0;
         for (let p = 0; p < 4; p++) {
           const px = -24 - p * 6;
           const py = Math.sin(t * 2 + p * 1.5) * 5;
@@ -655,20 +658,19 @@ export class Fish {
       ctx.save();
       ctx.font = '11px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(this.crown === 'gold' ? '👑' : '🥈', 0, -18);
+      ctx.fillStyle = s.rarity === 'legendary' ? '#eab308' : '#c4b5fd';
+      ctx.fillText(this.crown === 'gold' && s.rarity === 'legendary' ? '👑' : '◇', 0, -18);
       ctx.restore();
     }
 
     // Dynamic vibrant color gradients (rainbow for legendary, neon for epic, iridescent for rare)
-    let primary = this.isShiny ? '#fbbf24' : (s.primaryColor || '#38bdf8');
-    let secondary = this.isShiny ? '#fef08a' : (s.secondaryColor || '#93c5fd');
-    let finColor = this.isShiny ? '#f59e0b' : (s.finColor || '#0284c7');
+    let [primary, secondary, finColor] = this.isShiny ? this.shinyColors : this.bodyColors;
     if (this.mutation) {
-      primary = { Albino: '#fff1f2', Bioluminescent: '#22d3ee', Gold: '#fbbf24' }[this.mutation] || primary;
-      finColor = { Albino: '#fda4af', Bioluminescent: '#a5f3fc', Gold: '#f59e0b' }[this.mutation] || finColor;
+      primary = { Albino: '#fff1f2', Bioluminescent: '#22d3ee', Gold: s.rarity === 'legendary' ? '#fbbf24' : '#c084fc' }[this.mutation] || primary;
+      finColor = { Albino: '#fda4af', Bioluminescent: '#a5f3fc', Gold: s.rarity === 'legendary' ? '#f59e0b' : '#7c3aed' }[this.mutation] || finColor;
     }
 
-    if (isRainbow && !this.mutation) {
+    if (isRainbow && !this.mutation && !this.isShiny) {
       const hue = (this.wiggleTimer * 65 + this.x * 0.15) % 360;
       const rainbowGrad = ctx.createLinearGradient(-30, -15, 30, 15);
       rainbowGrad.addColorStop(0, `hsl(${hue}, 95%, 60%)`);
@@ -680,18 +682,18 @@ export class Fish {
       primary = rainbowGrad;
       secondary = `hsl(${(hue + 180) % 360}, 90%, 75%)`;
       finColor = `hsl(${(hue + 75) % 360}, 95%, 65%)`;
-    } else if (isEpic && !s.isLeviathan && !this.mutation) {
-      const epicGrad = ctx.createLinearGradient(-25, -12, 25, 12);
-      epicGrad.addColorStop(0, s.primaryColor || '#9333ea');
-      epicGrad.addColorStop(0.5, '#ec4899');
-      epicGrad.addColorStop(1, s.secondaryColor || '#38bdf8');
-      primary = epicGrad;
-    } else if (isRare && !s.isLeviathan && !this.mutation) {
-      const rareGrad = ctx.createLinearGradient(-22, -10, 22, 10);
-      rareGrad.addColorStop(0, s.primaryColor || '#0284c7');
-      rareGrad.addColorStop(0.5, '#38bdf8');
-      rareGrad.addColorStop(1, s.secondaryColor || '#67e8f9');
-      primary = rareGrad;
+    } else if (isEpic && !s.isLeviathan && !this.mutation && !this.isShiny) {
+      const gradient = ctx.createLinearGradient(-25, -12, 25, 12);
+      gradient.addColorStop(0, this.bodyColors[0]);
+      gradient.addColorStop(.5, '#ec4899');
+      gradient.addColorStop(1, this.bodyColors[1]);
+      primary = gradient;
+    } else if (isRare && !s.isLeviathan && !this.mutation && !this.isShiny) {
+      const gradient = ctx.createLinearGradient(-22, -10, 22, 10);
+      gradient.addColorStop(0, this.bodyColors[0]);
+      gradient.addColorStop(.5, '#38bdf8');
+      gradient.addColorStop(1, this.bodyColors[1]);
+      primary = gradient;
     }
 
     const isCustomTailLeviathan = [
@@ -1063,7 +1065,7 @@ export class Fish {
       ctx.strokeStyle = s.glowColor || '#e879f9';
       ctx.lineWidth = 1.8;
       ctx.shadowColor = s.glowColor || '#e879f9';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(-22, -8, 5, 0, Math.PI * 2);
       ctx.arc(-36, 0, 7, 0, Math.PI * 2);
@@ -1187,7 +1189,7 @@ export class Fish {
       // Radiant void eye
       ctx.fillStyle = s.eyeColor || '#a5f3fc';
       ctx.shadowColor = s.glowColor || '#818cf8';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(26, headWave - 3, 3.5, 0, Math.PI * 2);
       ctx.fill();
@@ -1356,7 +1358,7 @@ export class Fish {
       // Lateral line photophores
       ctx.fillStyle = s.secondaryColor || '#22d3ee';
       ctx.shadowColor = s.secondaryColor || '#22d3ee';
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 0;
       for (let p = -18; p <= 12; p += 6) {
         ctx.beginPath();
         ctx.arc(p, 4, 1.8, 0, Math.PI * 2);
@@ -1366,7 +1368,7 @@ export class Fish {
       // Piercing pale cyan eye
       ctx.fillStyle = s.eyeColor || '#67e8f9';
       ctx.shadowColor = '#22d3ee';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(20, -6, 3.5, 0, Math.PI * 2);
       ctx.fill();
@@ -1397,7 +1399,7 @@ export class Fish {
       ctx.save();
       ctx.fillStyle = 'rgba(236, 72, 153, 0.75)';
       ctx.shadowColor = '#f472b6';
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.moveTo(-6, -10);
       ctx.quadraticCurveTo(8, -36 + wingFlap, 24, -42 + wingFlap);
@@ -1426,7 +1428,7 @@ export class Fish {
       ctx.save();
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = '#fef08a';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = 0;
       const stars = [
         [-22, -2], [-14, 4], [-4, -3], [6, 2], [16, -4], [26, 1]
       ];
@@ -1465,7 +1467,7 @@ export class Fish {
       // Radiant celestial eye
       ctx.fillStyle = '#ffffff';
       ctx.shadowColor = '#ec4899';
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 0;
       ctx.beginPath();
       ctx.arc(30, -4, 3.5, 0, Math.PI * 2);
       ctx.fill();
@@ -1479,6 +1481,7 @@ export class Fish {
       ctx.lineTo(0, 18);
       ctx.lineTo(-18, 0);
       ctx.closePath();
+      ctx.fill();
       ctx.strokeStyle = finColor;
       ctx.lineWidth = 2;
       ctx.beginPath();
