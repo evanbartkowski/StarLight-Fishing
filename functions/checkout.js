@@ -1,7 +1,8 @@
 export const GEM_PACKAGES = {
-  pocket: { gems: 10, priceEnv: 'STRIPE_PRICE_POCKET' },
-  chest: { gems: 35, priceEnv: 'STRIPE_PRICE_CHEST' },
-  vault: { gems: 100, priceEnv: 'STRIPE_PRICE_VAULT' },
+  pocket: { gems: 10, amount: 199, priceEnv: 'STRIPE_PRICE_POCKET' },
+  chest: { gems: 35, amount: 499, priceEnv: 'STRIPE_PRICE_CHEST' },
+  vault: { gems: 100, amount: 999, priceEnv: 'STRIPE_PRICE_VAULT' },
+  ocean: { gems: 225, amount: 1999, priceEnv: 'STRIPE_PRICE_OCEAN' },
 };
 
 export function checkoutInput(auth, data, env) {
@@ -14,7 +15,7 @@ export function checkoutInput(auth, data, env) {
   let origin;
   try { origin = new URL(env.APP_URL); } catch { throw new Error('failed-precondition'); }
   if (origin.protocol !== 'https:' || origin.username || origin.password) throw new Error('failed-precondition');
-  return { uid: auth.uid, packageId: data.packageId, gems: bundle.gems, price, origin: origin.origin };
+  return { uid: auth.uid, packageId: data.packageId, gems: bundle.gems, amount: bundle.amount, price, origin: origin.origin };
 }
 
 // One transaction covers both the balance increment and the durable session receipt.

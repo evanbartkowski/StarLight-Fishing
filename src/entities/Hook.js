@@ -38,11 +38,6 @@ export class Hook {
     this.bubbleTimer = 0;
 
     // Tension & Durability mechanics
-    this.tension = 0;
-    this.maxTension = 100;
-    this.sweetSpotMin = 45;
-    this.sweetSpotMax = 70;
-    this.isInSweetSpot = false;
 
     // Instant bite readiness - can hook fish immediately going downwards or reeling
     this.initialBiteWait = 0;
@@ -69,12 +64,7 @@ export class Hook {
     const reelTier = UPGRADE_DEFINITIONS.reelPower?.tiers?.[getLvl('reelPower')] || { multiplier: 1.0 };
     this.reelSpeed = reelTier.multiplier || 1.0;
 
-    const tensionLvl = getLvl('highTensionLine') || 0;
-    const tensionTier = UPGRADE_DEFINITIONS.highTensionLine?.tiers?.[tensionLvl] || { threshold: 100, sweetSpotMult: 1.0 };
-    this.maxTension = tensionTier.threshold || 100;
-    const sweetMult = tensionTier.sweetSpotMult || 1.0;
-    this.sweetSpotMin = Math.max(25, 45 - (sweetMult - 1) * 10);
-    this.sweetSpotMax = Math.min(85, 70 + (sweetMult - 1) * 12);
+    this.knockbackResistance = Math.min(0.4, (getLvl('highTensionLine') || 0) * 0.05);
 
     const luckLvl = getLvl('lureLuck') || 0;
     const reelLvl = getLvl('reelPower') || 0;
@@ -113,10 +103,14 @@ export class Hook {
     this.sonarPulseRadius = 0;
     this.rhythmTimer = 0;
     this.isLegendaryOnLine = false;
-    this.tension = 0;
-    this.isInSweetSpot = false;
     this.biteTimer = 0;
     this.hasBitten = true;
+    this.overdriveTimer = 0;
+    this.magnetTimer = 0;
+    this.capacityBoost = 0;
+    this.weightTrapTimer = 0;
+    this.kelpSlowTimer = 0;
+    this.kelpSlowMultiplier = 1.0;
   }
 
   cast(startX, startY, velocityX, velocityY) {
@@ -134,10 +128,14 @@ export class Hook {
     this.maxDepthReachedThisDive = 0;
     this.rhythmTimer = 0;
     this.isLegendaryOnLine = false;
-    this.tension = 0;
-    this.isInSweetSpot = false;
     this.biteTimer = 0;
     this.hasBitten = true;
+    this.overdriveTimer = 0;
+    this.magnetTimer = 0;
+    this.capacityBoost = 0;
+    this.weightTrapTimer = 0;
+    this.kelpSlowTimer = 0;
+    this.kelpSlowMultiplier = 1.0;
 
     soundManager.playCast();
   }
@@ -202,7 +200,8 @@ export class Hook {
       }
     }
 
-    if (this.caughtItems.length >= this.capacity && this.state === 'DESCENDING') {
+    const effectiveCapacity = this.capacity + (this.capacityBoost || 0);
+    if (this.caughtItems.length >= effectiveCapacity && this.state === 'DESCENDING') {
       this.startReel();
       if (particles) {
         particles.addFloatingText('BASKET FULL! REELING UP!', this.x, this.y - 35, '#f59e0b', 18);
@@ -269,7 +268,7 @@ export class Hook {
       }
     }
 
-    this.vx = (Math.random() < 0.5 ? -1 : 1) * hazard.knockback * 1.3;
+    this.vx = (Math.random() < 0.5 ? -1 : 1) * hazard.knockback * 1.3 * (1 - (this.knockbackResistance || 0));
   }
 
   update(dt, surfaceY, worldWidth, particles, isReelingInput = true, zoneManager = null) {
@@ -326,12 +325,31 @@ export class Hook {
       }
     } else if (this.state === 'REELING') {
       // Automatic retrieve upward!
-      this.tension = 0; // No line snap
-      this.isInSweetSpot = true;
 
       // Base auto reel speed is responsive and scales with reelSpeed upgrades
       const baseAutoReelSpeed = -420;
-      const targetReelSpeed = baseAutoReelSpeed * Math.max(1.0, this.reelSpeed);
+      let speedMult = Math.max(1.0, this.reelSpeed);
+
+      // Power-up Overdrive (+100% speed)
+      if (this.overdriveTimer > 0) {
+        this.overdriveTimer = Math.max(0, this.overdriveTimer - deltaSec);
+        speedMult *= 2.0;
+      }
+      // Reactive Flora Kelp Slow
+      if (this.kelpSlowTimer > 0) {
+        this.kelpSlowTimer = Math.max(0, this.kelpSlowTimer - deltaSec);
+        speedMult *= (this.kelpSlowMultiplier || 0.5);
+      }
+      // Weight Trap Curse (drastic slowdown)
+      if (this.weightTrapTimer > 0) {
+        this.weightTrapTimer = Math.max(0, this.weightTrapTimer - deltaSec);
+        speedMult *= 0.35;
+      }
+      if (this.magnetTimer > 0) {
+        this.magnetTimer = Math.max(0, this.magnetTimer - deltaSec);
+      }
+
+      const targetReelSpeed = baseAutoReelSpeed * speedMult;
 
       this.vy += (targetReelSpeed - this.vy) * 8 * deltaSec;
 

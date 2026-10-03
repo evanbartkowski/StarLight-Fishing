@@ -3,7 +3,37 @@ export function drawNaturalHazard(ctx, kind, r, time) {
   ctx.save();
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.shadowBlur = 0;
-  if (kind === 'plant') {
+  if (kind === 'stalactite') {
+    ctx.fillStyle = '#475569'; ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-r * .5, -r); ctx.lineTo(r * .5, -r); ctx.lineTo(0, r); ctx.closePath(); ctx.fill(); ctx.stroke();
+  } else if (kind === 'probe') {
+    ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(0, 0, r * .7, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
+    ctx.fillStyle = '#f43f5e'; ctx.beginPath(); ctx.arc(0, 0, r * .2, 0, Math.PI * 2); ctx.fill();
+  } else if (kind === 'diver' || kind === 'submarine') {
+    const light = ctx.createLinearGradient(r * .5, 0, r * 4, 0);
+    light.addColorStop(0, '#fef08a88'); light.addColorStop(1, '#fef08a00');
+    ctx.fillStyle = light; ctx.beginPath(); ctx.moveTo(r * .5, 0); ctx.lineTo(r * 4, -r); ctx.lineTo(r * 4, r); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = kind === 'diver' ? '#172554' : '#64748b';
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * .45, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(r * .6, 0, r * .22, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#facc15'; ctx.lineWidth = r * .18;
+    ctx.beginPath(); ctx.moveTo(-r * .6, 0); ctx.lineTo(-r * 1.1, Math.sin(time * 3) * r * .3); ctx.stroke();
+    ctx.fillStyle = '#334155'; ctx.fillRect(-r * .3, -r * .65, r * .45, r * .35);
+    if (kind === 'submarine') {
+      ctx.fillRect(-r * .1, -r * .95, r * .055, r * .4);
+      ctx.fillRect(-r * .1, -r * .95, r * .22, r * .055);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0, 0, r, r * .45, 0, 0, Math.PI * 2); ctx.stroke();
+      for (let i = -2; i <= 2; i++) {
+        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .075, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#67e8f9'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .047, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(-r * .8, 0); ctx.lineTo(-r * 1.1, -r * .5); ctx.lineTo(-r * 1.1, r * .5); ctx.closePath(); ctx.fill();
+    }
+  } else if (kind === 'plant') {
     ctx.fillStyle = '#526257';
     ctx.beginPath(); ctx.ellipse(0, r * .65, r * .7, r * .22, 0, 0, Math.PI * 2); ctx.fill();
     for (let i = -2; i <= 2; i++) {

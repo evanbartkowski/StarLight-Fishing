@@ -1,3 +1,4 @@
+import { depthRewardMultiplier, displaySpeciesName } from './CatchTraits.js';
 import { DAILY_GEMS, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
 import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization } from '../data/CustomizationData.js';
 import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
@@ -8,6 +9,8 @@ import { FISH_SPECIES } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { calculateGradeTier, claimZonePerk } from '../data/almanac.config.js';
 import { accountManager } from './AccountManager.js';
+
+const CRATE_DEFINITIONS = new Map(TREASURE_ITEMS.filter(item => item.isCrate).map(item => [item.id, item]));
 
 const STORAGE_KEY = 'seven_seas_fishing_save_v2';
 const LEGACY_STORAGE_KEY = 'fishing_game_save_v1';
@@ -29,6 +32,7 @@ export class SaveSystem {
     return {
       level: 0,
       gems: 0,
+      cratePityCount: 0,
       dailyLogin: { lastDay: null, streak: 0 },
       ownedAppearance: [],
       gemEconomyVersion: 1,
@@ -60,6 +64,7 @@ export class SaveSystem {
       buffs: {},
       stats: {
         totalFishCaught: 0,
+        totalCatchScore: 0,
         maxDepthReached: 0,
         totalGoldEarned: 0,
         totalTreasureCollected: 0,
@@ -97,7 +102,6 @@ export class SaveSystem {
         lastTipCollectedAt: Date.now(),
       },
       unlockedBobbers: ['pelican_bobber'],
-      journal: {}, // speciesId -> { count, maxSize, minSize, maxWeight, shinyCount, goldCrown, silverCrown, firstCaughtAt }
       worldTime: 600,
       currentWeather: 'CLEAR',
       zonePerks: {}, // perkId -> true
@@ -278,6 +282,7 @@ export class SaveSystem {
         ...parsed,
         level: (parsed.level === 1 && (!parsed.xp || parsed.xp === 0) && (!parsed.stats?.totalFishCaught || parsed.stats.totalFishCaught === 0)) ? 0 : Math.max(0, parsed.level ?? 0),
         gems: Number.isFinite(parsed.gems) ? Math.max(0, Math.floor(parsed.gems)) : 0,
+        cratePityCount: Number.isSafeInteger(parsed.cratePityCount) ? Math.max(0, Math.min(9, parsed.cratePityCount)) : 0,
         dailyLogin: { ...def.dailyLogin, ...(parsed.dailyLogin || {}) },
         ownedAppearance: Array.isArray(parsed.ownedAppearance) ? parsed.ownedAppearance : [],
         xp: Math.max(0, parsed.xp || 0),
@@ -340,7 +345,20 @@ export class SaveSystem {
     return this.data;
   }
 
+  // Nested award helpers defer persistence until the complete reward is ready.
+  mutateAtomically(callback) {
+    const previous = JSON.stringify(this.data);
+    this._batchSave = true;
+    try {
+      const result = callback();
+      localStorage.setItem(this.getActiveStorageKey(), JSON.stringify(this.data));
+      return result;
+    } catch (error) { this.data = JSON.parse(previous); throw error; }
+    finally { this._batchSave = false; }
+  }
+
   save() {
+    if (this._batchSave) return;
     try {
       const storageKey = this.getActiveStorageKey();
       localStorage.setItem(storageKey, JSON.stringify(this.data));
@@ -542,7 +560,9 @@ export class SaveSystem {
         xpGain += 75;
       }
 
-      this.addXp(Math.round(xpGain * Math.sqrt(item.species?.xpMultiplier || 1)));
+      const depthReward = depthRewardMultiplier(item.depthMeters || 0);
+      this.data.stats.totalCatchScore = (this.data.stats.totalCatchScore || 0) + Math.round(xpGain * depthReward);
+      this.addXp(Math.round(xpGain * Math.sqrt(item.species?.xpMultiplier || 1) * depthReward));
 
       // Grade evaluation
       if (!item.gradeTier && item.species) {
@@ -779,7 +799,9 @@ export class SaveSystem {
     }
     // Recover crate metadata for catches saved before inventory supported opening.
     for (const item of this.data.inventory) {
-      const definition = TREASURE_ITEMS.find(entry => entry.id === item.id && entry.isCrate);
+      if (/^(?:sea|realm)[_ ]*\d+[_ :?-]+/i.test(item.name || '')) item.name = displaySpeciesName(item.name);
+      if (item.isCrate !== undefined) continue;
+      const definition = CRATE_DEFINITIONS.get(item.id);
       if (definition && item.isCrate === undefined) {
         item.isCrate = true;
         item.crateRank = definition.crateRank;
@@ -815,6 +837,8 @@ export class SaveSystem {
       rarity: item.rarity || 'common',
       size: item.size || 0,
       weight: item.weight || 0,
+      weightClass: item.weightClass || 'Regular',
+      mutation: item.mutation || null,
       value: item.value || 0,
       sellValue: item.sellValue || item.value || 0,
       icon: isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '💎' : (item.isMythic ? '🌟' : '🐟'),
@@ -825,6 +849,7 @@ export class SaveSystem {
       crown: item.crown || null,
       isMythic: !!item.isMythic,
       isGodTier: !!item.isGodTier,
+      isBoss: !!item.isBoss || !!item.species?.isLeviathan,
       lore: item.lore || item.species?.lore || '',
       isLocked: item.isLocked !== undefined ? !!item.isLocked : (item.rarity === 'legendary' || item.rarity === 'mythic' || !!item.isMythic),
       caughtAt: Date.now(),
@@ -903,7 +928,7 @@ export class SaveSystem {
   sellAllItems(multiplier = 1) {
     const inv = this.getInventory();
     const itemsToSell = inv.filter((item) =>
-      !item.isLocked && !this.isItemInAquarium(item.instanceId)
+      !item.isLocked && !(item.isCrate && !item.unboxed) && !this.isItemInAquarium(item.instanceId)
     );
 
     if (itemsToSell.length === 0) {
@@ -992,19 +1017,10 @@ export class SaveSystem {
   }
 
   spendGems(amount) {
-    if (amount <= 0) return true;
+    if (!Number.isSafeInteger(amount) || amount < 0) return false;
+    if (amount === 0) return true;
     if (this.data.gems >= amount) {
       this.data.gems -= amount;
-      this.save();
-      return true;
-    }
-    const total = this.getGemBalance();
-    if (total >= amount) {
-      const remaining = amount - this.data.gems;
-      this.data.gems = 0;
-      if (this.gemShop) {
-        this.gemShop.balance = Math.max(0, this.gemShop.balance - remaining);
-      }
       this.save();
       return true;
     }

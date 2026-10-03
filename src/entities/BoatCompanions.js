@@ -412,6 +412,48 @@ export class BackgroundDolphin {
     ctx.fill();
 
     ctx.restore();
+
+    // Render floating nameplate when hovered
+    if (this.isHovered) {
+      ctx.save();
+      ctx.translate(this.x, drawY - 34);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      const text = '🐬 Gracie the Dolphin';
+      ctx.font = 'bold 11px Outfit, sans-serif';
+      const tw = ctx.measureText(text).width;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+      } else {
+        ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+      }
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#e0f2fe';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  checkHover(mouseX, mouseY, cameraY = 0) {
+    if (!this.active) {
+      this.isHovered = false;
+      return false;
+    }
+    const currentY = (this.y + this.arcY) - cameraY;
+    const dx = mouseX - this.x;
+    const dy = mouseY - currentY;
+    // Test in sprite space so the snout, tail and fins remain targets during rotation.
+    const rotation = -.5 + this.arcTimer / this.arcDuration;
+    const localX = dx * Math.cos(rotation) + dy * Math.sin(rotation);
+    const localY = -dx * Math.sin(rotation) + dy * Math.cos(rotation);
+    const inside = (localX / 36) ** 2 + (localY / 26) ** 2 <= 1;
+    this.isHovered = inside;
+    return inside;
   }
 }
 

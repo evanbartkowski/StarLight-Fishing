@@ -27,13 +27,80 @@ function advancedSave() {
   return save;
 }
 
-test('every realm has 39 real native fish, distinct content, and complete journal coverage', () => {
+test('themed plant patches span every realm and apex creatures remain late-realm inhabitants', () => {
+  const save = advancedSave();
+  for (let realm = 1; realm <= 7; realm++) {
+    save.data.currentSea = realm;
+    const world = new OceanWorld({ width: 390, height: 720 });
+    world.populateWorld(save);
+    const depths = world.entities.flora.map(plant => (plant.y - world.surfaceY) / world.pixelsPerMeter);
+    assert.ok(depths.some(depth => depth < 130), `shallow plants in realm ${realm}`);
+    assert.ok(depths.some(depth => depth > world.maxDepthMeters * .8), `deep plants in realm ${realm}`);
+    assert.equal(new Set(world.entities.flora.map(plant => plant.id)).size, 1);
+  }
+  const apex = HAZARD_TYPES.filter(h => h.id.startsWith('apex_'));
+  assert.equal(apex.length, 16);
+  assert.ok(apex.every(h => h.zone >= 4 && h.radius * h.sizeScale >= 150));
+  assert.ok(apex.some(h => h.marineKind === 'plesiosaur'));
+  assert.ok(apex.some(h => h.marineKind === 'mosasaur'));
+});
+
+test('submarines are rare and full-sized while endgame enemies increase with depth', () => {
+  const save = advancedSave(); save.data.currentSea = 7;
+  const world = new OceanWorld({ width: 390, height: 720 });
+  const original = Math.random; let seed = 91321, submarines = 0, shallow = 0, deep = 0;
+  Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  try {
+    for (let dive = 0; dive < 80; dive++) {
+      world.populateWorld(save);
+      for (const hazard of world.entities.hazards) {
+        if (hazard.type === 'deep_submarine') {
+          submarines++; assert.ok(hazard.radius >= 200);
+          hazard.update(1000, 390); assert.ok(Number.isFinite(hazard.x));
+        }
+        if (!hazard.marineKind) continue;
+        const depth = (hazard.y - world.surfaceY) / world.pixelsPerMeter;
+        if (depth >= 300 && depth < 800) shallow++;
+        if (depth >= 2000 && depth < 2500) deep++;
+      }
+    }
+    assert.ok(submarines > 0 && submarines < 16, `${submarines}/80 submarine encounters`);
+    assert.ok(deep > shallow * 1.5, `deep enemies ${deep}, shallow ${shallow}`);
+  } finally { Math.random = original; }
+});
+
+test('each endgame realm more than doubles its previous enemy population', async () => {
+  const { REALM_ECOLOGY } = await import('../src/data/RealmEcology.js');
+  const save = advancedSave(), world = new OceanWorld({ width: 1280, height: 720 });
+  const original = Math.random; let seed = 67892;
+  Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  try {
+    for (const realm of [5, 6, 7]) {
+      save.data.currentSea = realm;
+      let oldExpected = 0, actual = 0;
+      for (const creature of HAZARD_TYPES.filter(h => h.marineKind && h.zone === realm && !h.id.startsWith('apex_'))) {
+        const spacing = creature.isColossal ? 750 : 250;
+        const chance = creature.isColossal ? .22 : creature.marineKind === 'jelly' ? .3 : .22;
+        for (let depth = creature.minDepth; depth + 20 < 3000; depth += spacing) {
+          oldExpected += Math.min(.85, chance * REALM_ECOLOGY[realm].enemies * (1 + depth / (depth + 350) * .8)) * (creature.marineKind === 'jelly' ? 4 : 1);
+        }
+      }
+      for (let dive = 0; dive < 40; dive++) {
+        world.populateWorld(save);
+        actual += world.entities.hazards.filter(h => h.marineKind && !h.type.startsWith('apex_')).length;
+      }
+      assert.ok(actual / 40 > oldExpected * 2, `realm ${realm}: ${actual / 40} vs previous ${oldExpected}`);
+    }
+  } finally { Math.random = original; }
+});
+
+test('every realm has 42 real native fish, distinct content, and complete journal coverage', () => {
   const all = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
   assert.equal(new Set(all.map(f => f.id)).size, all.length);
-  assert.equal(FISH_SPECIES.length, 273);
+  assert.equal(FISH_SPECIES.length, 294);
   for (const sea of FANTASY_SEAS) {
     const natives = FISH_SPECIES.filter(f => f.zone === sea.id);
-    assert.equal(natives.length, 39);
+    assert.equal(natives.length, 42);
     assert.ok(new Set(natives.map(f => f.shape)).size >= 6);
     assert.ok(new Set(natives.map(f => f.movementType).filter(Boolean)).size >= 4);
     assert.equal(REALM_HAZARDS.filter(h => h.zone === sea.id).length, 4);
@@ -51,7 +118,7 @@ test('every realm has 39 real native fish, distinct content, and complete journa
 });
 
 test('charter prices and common rewards rise together; gates charge the authoritative price', () => {
-  assert.deepEqual(FANTASY_SEAS.map(s => s.gates.unlockFee), [0,3000,17500,35000,70000,140000,1000000]);
+  assert.deepEqual(FANTASY_SEAS.map(s => s.gates.unlockFee), [0,6000,35000,35000,210000,420000,3000000]);
   for (let i = 1; i < FANTASY_SEAS.length; i++) {
     const sea = FANTASY_SEAS[i], previous = FANTASY_SEAS[i-1];
     assert.equal(sea.gates.unlockFee, REALM_PROFILES[sea.id].fee);
@@ -284,7 +351,7 @@ test('Sunlit Shoals has more small hazards and reserves giant obstacles for deep
   const world = new OceanWorld(1000, 700);
   world.populateWorld(save);
   assert.ok(world.entities.hazards.filter(h => !h.isColossal).length >= 12);
-  assert.ok(world.entities.hazards.filter(h => !h.marineKind).every(h => ['plant', 'boulder', 'log', 'wreck'].includes(h.naturalKind)), 'starter hazards should use recognizable coastal objects');
+  assert.ok(world.entities.hazards.filter(h => !h.marineKind).every(h => ['plant', 'boulder', 'log', 'wreck', 'diver'].includes(h.naturalKind)), 'starter hazards should use recognizable coastal objects');
   for (const hazard of world.entities.hazards.filter(h => h.isColossal)) assert.ok((hazard.y - world.surfaceY) / world.pixelsPerMeter >= 100);
 });
 
@@ -347,7 +414,7 @@ test('depth populations taper fish gently and increase hazards and treasure deep
         }
       }
       const ratio = totals.fish[1] / totals.fish[0];
-      assert.ok(ratio > 0.8 && ratio < 1, `${sea.name}: fish ratio ${ratio}`);
+      assert.ok(ratio > 0.4 && ratio < 0.85, `${sea.name}: fish ratio ${ratio}`);
       for (const kind of ['hazards', 'treasures']) {
         assert.ok(totals[kind][1] > totals[kind][0] * 1.3, `${sea.name}: ${kind} should increase with depth`);
       }
@@ -501,6 +568,20 @@ test('all realms keep shallow and deep residents after a long dive', () => {
   }
 });
 
+test('sparse realm retains a reachable shallow fish under extreme random selection', () => {
+  const save = advancedSave(); save.data.currentSea = 5;
+  const ocean = new OceanWorld({ width: 390, height: 720 });
+  const random = Math.random;
+  try {
+    Math.random = () => .99999;
+    ocean.populateWorld(save);
+    const shallow = ocean.entities.fish.find(fish => fish.y < ocean.surfaceY + 30 * 15);
+    assert.ok(shallow);
+    assert.ok((shallow.y - ocean.surfaceY) / 15 >= shallow.species.minDepth);
+    assert.ok((shallow.y - ocean.surfaceY) / 15 <= shallow.species.maxDepth);
+  } finally { Math.random = random; }
+});
+
 test('heavy impacts consume two shields or drop a fish; normal impacts have a fifty percent threshold', async () => {
   const { Hook } = await import('../src/entities/Hook.js');
   const { soundManager } = await import('../src/audio/SoundManager.js');
@@ -575,8 +656,12 @@ test('every upgraded vessel renders finite geometry and stays centered after rep
     ocean.populateWorld(save);
     assert.equal(ocean.boat.x, 195);
     assert.equal(ocean.boat.vesselLevel, level);
+    ocean.boat.x = Number.NaN;
+    ocean.boat.y = Number.NaN;
+    ocean.boat.angle = Number.NaN;
     const before = drawCalls;
     ocean.renderBoatAndFisherman(ctx, 0);
+    assert.equal(ocean.boat.x, 195);
     assert.ok(drawCalls > before + 20);
   }
 });

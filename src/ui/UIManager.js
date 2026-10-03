@@ -1,3 +1,9 @@
+import { getRealmDepthZone as getDepthSubZone } from '../data/RealmDepths.js';
+import { crateArtwork, crateRewardGallery } from './CratePresentation.js';
+import { displaySpeciesName } from '../systems/CatchTraits.js';
+import { openCatchCard, specimen } from './CatchCard.js';
+import { shareAquarium, visitAquarium } from './AquariumSocial.js';
+import { premiumPurchase } from '../systems/PremiumPurchases.js';
 import { DAILY_GEMS, achievementGems } from '../data/GemEconomy.js';
 import { Fish } from '../entities/Fish.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
@@ -10,7 +16,7 @@ import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { RELIC_TYPES } from '../data/RelicsData.js';
 import { PET_DEFINITIONS } from '../data/PetsData.js';
-import { CRATE_RANKS, rollCrateLoot, getCrateDropPreview } from '../data/CrateData.js';
+import { CRATE_RANKS, CRATE_GEM_PRICES, rollCrateLoot, getCrateDropPreview } from '../data/CrateData.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { worldCycle } from '../systems/WorldCycle.js';
 import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/almanac.config.js';
@@ -38,13 +44,11 @@ export class UIManager {
 
     this.saveSystem.onAchievementUnlocked = (achievement) => {
       this.showAchievementPopup(achievement);
-      this.showToast(`🏆 Trophy Unlocked: ${achievement.name}! (+$${achievement.reward})`);
       soundManager.playUpgrade();
     };
 
     this.saveSystem.onLevelUp = (newLevel) => {
       this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${Math.min(750, newLevel * 100)})`);
-      this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${newLevel * 100})`);
       soundManager.playUpgrade();
     };
   }
@@ -84,7 +88,17 @@ export class UIManager {
     manager.onMessagesChanged = messages => {
       list.replaceChildren(...messages.map(msg => {
         const row = document.createElement('p');
-        row.textContent = `${msg.isSelf ? 'You' : msg.sender}: ${msg.text}`;
+        const profile = document.createElement('button');
+        profile.className = 'chat-profile'; profile.textContent = msg.isSelf ? 'You' : msg.sender;
+        profile.disabled = !msg.senderId || msg.senderId === 'server';
+        profile.title = "Visit this captain's aquarium";
+        profile.onclick = () => visitAquarium(this, msg.senderId);
+        row.append(profile, document.createTextNode(`: ${msg.text}`));
+        const aquarium = msg.text.match(/[?&]aquarium=([\w-]{1,128})/);
+        if (aquarium) {
+          const visit = document.createElement('button'); visit.className = 'btn btn-secondary btn-sm'; visit.textContent = 'Visit Aquarium';
+          visit.onclick = () => visitAquarium(this, aquarium[1]); row.appendChild(visit);
+        }
         return row;
       }));
       list.scrollTop = list.scrollHeight;
@@ -178,10 +192,10 @@ export class UIManager {
           <span id="shield-amount">0</span>
         </div>
 
-        <div class="hud-buffs-container" id="hud-buffs"></div>
       </div>
 
       <div class="hud-center">
+        <div id="world-event-banner" hidden role="status"></div>
         <div class="hud-buffs-container" id="hud-buffs"></div>
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
           <div class="depth-number" id="hud-depth">0.0m</div>
@@ -193,18 +207,6 @@ export class UIManager {
         </div>
 
         <!-- Line Tension Meter during Reeling -->
-        <div class="tension-meter-container" id="hud-tension-container" style="display: none;">
-          <div class="tension-header-row">
-            <span class="tension-title-txt">🪢 LINE TENSION</span>
-            <span class="tension-val-txt" id="hud-tension-percent">0%</span>
-          </div>
-          <div class="tension-bar-track">
-            <div class="tension-sweet-spot" id="hud-tension-sweet-spot" title="Optimal Reel Sweet Spot"></div>
-            <div class="tension-bar-fill" id="hud-tension-fill"></div>
-          </div>
-        </div>
-
-        <!-- Volcanic Caldera Line Heat Meter -->
         <div class="heat-meter-container" id="hud-heat-container" style="display: none;">
           <div class="heat-header-row">
             <span class="heat-title-txt">🌋 LINE HEAT</span>
@@ -221,18 +223,14 @@ export class UIManager {
         <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
           🪤 <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
-        <button class="icon-btn" id="btn-quests" title="Quests">
         <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
           📋 <span class="btn-label">Quests</span> <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
         </button>
         <button class="icon-btn" id="btn-inventory" title="Inventory">🎒 <span class="btn-label">Inventory</span></button>
         <button class="icon-btn" id="btn-shop" title="Shop">🛒 <span class="btn-label">Shop</span></button>
-        <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 <span class="btn-label">Shop</span></button>
         <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
-        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
-        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">📻</button>
         <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
-        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
+        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
         <button class="icon-btn" id="btn-mute" title="Toggle Sound">🔊</button>
@@ -353,6 +351,9 @@ export class UIManager {
         console.warn('Account switched callback error:', e);
       }
 
+      this._focusedCaptain = null;
+      this.showAccountChat();
+
       welcomePopup.classList.add('welcome-overlay-hidden');
       setTimeout(() => {
         welcomePopup.style.display = 'none';
@@ -363,18 +364,8 @@ export class UIManager {
           this.openTutorial();
           this.saveSystem.data.settings.hasSeenTutorial = true;
           this.saveSystem.save();
-        } else if (!accountManager.isGuest() && accountManager.getCurrentUser()) {
-          setTimeout(() => {
-            const fleetInput = document.getElementById('fleet-input');
-            const fleetPanel = document.getElementById('fleet-radio');
-            if (fleetPanel && !fleetPanel.hidden && fleetInput) {
-              fleetPanel.classList.remove('fleet-minimized');
-              const content = fleetPanel.querySelector('#fleet-content');
-              if (content) content.hidden = false;
-              fleetInput.focus();
-            }
-          }, 500);
         }
+
       } catch (e) {
         console.warn('Tutorial/Chat open error:', e);
         console.warn('Tutorial open error:', e);
@@ -477,7 +468,6 @@ export class UIManager {
       } else {
         if (regFeedback) {
           regFeedback.textContent = `✨ Username will be checked online when you create the account.`;
-          regFeedback.textContent = `✨ Username "${val}" is available!`;
           regFeedback.className = 'auth-feedback auth-success';
         }
       }
@@ -662,10 +652,35 @@ export class UIManager {
     }
   }
 
+  showAccountChat() {
+    if (accountManager.isGuest() || !accountManager.getCurrentUser()) return false;
+    const panel = document.getElementById('fleet-radio');
+    if (!panel) return false;
+    panel.hidden = false;
+    panel.classList.remove('fleet-minimized');
+    const content = panel.querySelector('#fleet-content');
+    if (content) content.hidden = false;
+    const toggle = panel.querySelector('#fleet-toggle');
+    if (toggle) {
+      toggle.textContent = '?';
+      toggle.setAttribute('aria-expanded', 'true');
+      toggle.setAttribute('aria-label', 'Minimize Fleet Radio');
+      toggle.title = 'Minimize Fleet Radio';
+    }
+    this.chatManager?.connect();
+    return true;
+  }
+
   updateHUD(hook, gameState) {
     this.chatManager?.connect();
     const fleet = document.getElementById('fleet-radio');
     if (fleet) fleet.hidden = !this.saveSystem.isChatUnlocked() || gameState !== 'SURFACE_IDLE';
+    const captain = accountManager.getCurrentUser();
+    if (!accountManager.isGuest() && captain && fleet && !fleet.hidden && !this.activeModal && this._focusedCaptain !== captain) {
+      this._focusedCaptain = captain;
+      this.showAccountChat();
+    }
+    if (!captain) this._focusedCaptain = null;
     const isDiving = (gameState === 'CASTING' || gameState === 'DESCENDING' || gameState === 'REELING');
     if ((isDiving || gameState === 'AIMING') && this.toastDismissOnFishing) {
       clearTimeout(this.toastTimer);
@@ -678,6 +693,12 @@ export class UIManager {
       hudEl.classList.toggle('hud-diving-mode', isDiving);
     }
 
+    const event = worldCycle.getGlobalEvent();
+    const eventBanner = document.getElementById('world-event-banner');
+    if (eventBanner) {
+      eventBanner.hidden = !event.active;
+      if (event.active) eventBanner.textContent = `${event.icon} ${event.name} ? ${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} ? Legends ?${event.legendaryMultiplier} ? Crates ?${event.crateMultiplier}`;
+    }
     const lvl = this.saveSystem.data.level;
     const currentXp = this.saveSystem.data.xp;
     const xpReq = this.saveSystem.getXpRequired(lvl);
@@ -777,8 +798,9 @@ export class UIManager {
 
       const depthEl = document.getElementById('hud-depth');
       if (depthEl) {
-        depthEl.textContent = `${depthM.toFixed(1)}m`;
-        depthEl.title = 'Sonar Depth Sounder';
+        const subZ = getDepthSubZone(depthM, this.saveSystem.getCurrentSea());
+        depthEl.textContent = `${depthM.toFixed(1)}m (${subZ.icon} ${subZ.name})`;
+        depthEl.title = `Sonar Depth Sounder • ${subZ.name}`;
       }
 
       const fillPct = Math.min(100, (depthM / hook.maxDepthMeters) * 100);
@@ -793,7 +815,12 @@ export class UIManager {
       let activeZoneName = '🏖️ Sunken Shallows';
       if (this.zoneManager) {
         const az = this.zoneManager.getCurrentZone();
-        if (az) activeZoneName = `${az.icon} ${az.name}`;
+        if (az) {
+          const currentSea = FANTASY_SEAS.find(s => s.id === this.saveSystem.getCurrentSea());
+          const realmName = currentSea ? currentSea.name : az.name;
+          const subZ = getDepthSubZone(depthM, this.saveSystem.getCurrentSea());
+          activeZoneName = `${currentSea?.icon || az.icon} ${realmName} • ${subZ.name}`;
+        }
       }
       document.getElementById('hud-zone').textContent = activeZoneName;
 
@@ -807,39 +834,9 @@ export class UIManager {
     }
 
     // Line Tension & Volcanic Heat Gauges
-    const tensionContainer = document.getElementById('hud-tension-container');
     const heatContainer = document.getElementById('hud-heat-container');
 
-    if (tensionContainer) tensionContainer.style.display = 'none';
     if (hook && gameState === 'REELING') {
-      if (tensionContainer) {
-        tensionContainer.style.display = 'flex';
-        const tensionPct = Math.min(100, Math.max(0, (hook.tension / hook.maxTension) * 100));
-        const fillEl = document.getElementById('hud-tension-fill');
-        const pctEl = document.getElementById('hud-tension-percent');
-        const sweetEl = document.getElementById('hud-tension-sweet-spot');
-
-        if (fillEl) fillEl.style.width = `${tensionPct}%`;
-        if (pctEl) pctEl.textContent = `${Math.round(tensionPct)}%`;
-
-        if (sweetEl) {
-          const sMinPct = (hook.sweetSpotMin / hook.maxTension) * 100;
-          const sMaxPct = (hook.sweetSpotMax / hook.maxTension) * 100;
-          sweetEl.style.left = `${sMinPct}%`;
-          sweetEl.style.width = `${sMaxPct - sMinPct}%`;
-        }
-
-        if (fillEl) {
-          if (hook.isInSweetSpot) {
-            fillEl.style.background = '#22c55e'; // Green sweet spot!
-          } else if (tensionPct > 80) {
-            fillEl.style.background = '#ef4444'; // Red snap danger
-          } else {
-            fillEl.style.background = '#38bdf8'; // Normal tension
-          }
-        }
-      }
-
       if (heatContainer) {
         if (this.zoneManager?.activeZone?.mechanic?.heatBuildup) {
           heatContainer.style.display = 'flex';
@@ -853,8 +850,7 @@ export class UIManager {
         }
       }
     } else {
-      if (tensionContainer) tensionContainer.style.display = 'none';
-      if (heatContainer) heatContainer.style.display = 'none';
+        if (heatContainer) heatContainer.style.display = 'none';
     }
 
     // Update Inventory Button capacity text
@@ -901,10 +897,11 @@ export class UIManager {
     popup.classList.add('ach-toast-enter');
 
     if (this._achPopupTimer) clearTimeout(this._achPopupTimer);
+    clearTimeout(this._achExitTimer);
     this._achPopupTimer = setTimeout(() => {
       popup.classList.remove('ach-toast-enter');
       popup.classList.add('ach-toast-exit');
-      setTimeout(() => {
+      this._achExitTimer = setTimeout(() => {
         popup.classList.remove('ach-toast-exit');
       }, 500);
       this._achPopupTimer = null;
@@ -996,7 +993,7 @@ export class UIManager {
     this.openModal(`✨ Atmospheric Encounter: ${npc.name}`, contentHtml);
 
     document.querySelectorAll('.npc-option-card').forEach((card) => {
-      card.addEventListener('click', (e) => {
+      card.addEventListener('click', async (e) => {
         const idx = parseInt(e.currentTarget.dataset.idx, 10);
         const chosenOpt = npc.options[idx];
         if (chosenOpt && onOptionChosen) {
@@ -1041,7 +1038,6 @@ export class UIManager {
       const isUnlocked = st.cost === 0 || save.data.unlockedSoundtracks.includes(st.id);
       html += `
         <div class="radio-station-card ${isActive ? 'radio-station-active' : ''}" data-station="${st.id}" data-cost="${st.cost}" data-unlocked="${isUnlocked}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; background:${isActive ? 'rgba(56,189,248,0.18)' : 'rgba(15,23,42,0.6)'}; border:1px solid ${isActive ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; cursor:pointer; transition:all 0.2s ease;">
-        <div class="radio-station-card ${isActive ? 'radio-station-active' : ''}" data-station="${st.id}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; background:${isActive ? 'rgba(56,189,248,0.18)' : 'rgba(15,23,42,0.6)'}; border:1px solid ${isActive ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; cursor:pointer; transition:all 0.2s ease;">
           <span style="font-size:1.8rem;">${st.icon}</span>
           <div style="flex:1;">
             <h4 style="margin:0 0 3px 0; color:#f8fafc; font-size:0.95rem;">${st.name} ${isActive ? '<span style="color:#38bdf8; font-size:0.75rem;">● ON AIR</span>' : ''}</h4>
@@ -1064,10 +1060,9 @@ export class UIManager {
     `;
 
     this.openModal('📻 Coastal Radio & Soundtracks', html);
-    this.openModal('📻 Coastal Radio Receiver', html);
 
     document.querySelectorAll('.radio-station-card').forEach(card => {
-      card.addEventListener('click', (e) => {
+      card.addEventListener('click', async (e) => {
         const stId = e.currentTarget.dataset.station;
         const cost = parseInt(e.currentTarget.dataset.cost, 10) || 0;
         const isUnlocked = e.currentTarget.dataset.unlocked === 'true';
@@ -1077,11 +1072,8 @@ export class UIManager {
             this.showToast(`💎 Need ${cost} Gems to unlock this track. You have ${save.getGemBalance()} Gems.`);
             return;
           }
-          if (save.spendGems(cost)) {
-            save.data.unlockedSoundtracks.push(stId);
-            save.save();
+          if (await premiumPurchase(this, { kind: 'soundtrack', track: stId })) {
             soundManager.startRadioStation(stId);
-            this.showToast(`🎵 Unlocked and playing soundtrack!`);
             this.openRadio();
           }
           return;
@@ -1206,7 +1198,6 @@ export class UIManager {
     itemsHtml += '</div>';
 
     this.openModal('🎣 Starlight Shop', shopHeaderHtml + '<button class="btn btn-secondary" id="shop-gems">Gem Store &middot; Angler and Aquarium Styles</button>' + itemsHtml);
-    this.openModal('🎣 Seven Seas Tackle & Vessel Outfitters', shopHeaderHtml + itemsHtml);
 
     document.getElementById('shop-gems')?.addEventListener('click', () => save.gemShop?.open());
     document.getElementById('btn-shop-inventory')?.addEventListener('click', () => {
@@ -1248,35 +1239,12 @@ export class UIManager {
       });
     });
 
-    document.querySelectorAll('.btn-upgrade-gem').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const upgId = e.currentTarget.dataset.upgrade;
-        const currentLvl = save.getUpgradeLevel(upgId);
-        const upg = UPGRADE_DEFINITIONS[upgId];
-        const nextTier = upg.tiers[currentLvl + 1];
-        if (!nextTier) return;
-        const gemCost = Math.max(1, Math.ceil(nextTier.cost / 600));
-
-        if (save.getGemBalance() < gemCost) {
-          this.showToast(`💎 Need ${gemCost} Gems to fast-track. You currently have ${save.getGemBalance()} Gems.`);
-          return;
-        }
-
-        if (save.spendGems(gemCost)) {
-          save.setUpgradeLevel(upgId, currentLvl + 1);
-
-          if (upgId === 'seabedTraps' && save.data.traps) {
-            save.data.traps.count = nextTier.trapCount || 1;
-            save.data.traps.maxStorage = nextTier.maxStorage || 12;
-            save.save();
-          }
-
-          soundManager.playUpgrade();
-          this.showToast(`💎 Fast-tracked ${upg.name} to Level ${currentLvl + 1} with ${gemCost} Gems!`);
-          this.onUpgradePurchased?.();
-          this.openShop();
-        }
-      });
+    document.querySelectorAll('.btn-upgrade-gem').forEach(button => {
+      button.onclick = async () => {
+        button.disabled = true;
+        if (await premiumPurchase(this, { kind: 'upgrade', key: button.dataset.upgrade })) this.openShop();
+        else button.disabled = false;
+      };
     });
   }
 
@@ -1345,7 +1313,6 @@ export class UIManager {
               ${isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '📦' : item.isMythic ? '🌟' : '🐟'}
             </div>
             <div class="catch-item-details">
-              <div class="catch-item-name">${item.name} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-name">${item.name} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-specs">
                 ${
@@ -1414,6 +1381,7 @@ export class UIManager {
 
         ${listHtml}
 
+        ${hook.caughtItems.some(item => item.species && (['rare', 'epic', 'legendary', 'mythic'].includes(item.rarity) || item.isGodTier)) ? '<button class="btn btn-secondary" id="share-best-catch">Create Catch Card</button>' : ''}
         <div class="summary-footer">
           <div class="total-earnings">
             <span>Remaining Haul Value:</span>
@@ -1445,6 +1413,10 @@ export class UIManager {
       }
     }
 
+    document.getElementById('share-best-catch')?.addEventListener('click', () => {
+      const ranked = hook.caughtItems.filter(item => item.species).sort((a, b) => b.value - a.value);
+      openCatchCard(this, ranked[0], accountManager.getCurrentUser() || 'Guest', () => this.openCatchSummary(hook, onContinue));
+    });
     const cratesBtn = document.getElementById('btn-open-crates');
     if (cratesBtn) {
       cratesBtn.addEventListener('click', () => {
@@ -1499,6 +1471,7 @@ export class UIManager {
       let soldCount = 0;
       let totalSoldGold = 0;
       hook.caughtItems.forEach((item) => {
+        if (item.isCrate && !item.unboxed) return;
         const instId = item.inventoryRef?.instanceId;
         if (instId && !soldIds.has(instId)) {
           const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
@@ -1512,7 +1485,6 @@ export class UIManager {
       if (soldCount > 0) {
         soundManager.playCoin();
         this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`, { dismissOnFishing: true });
-        this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`);
       }
       this._onCatchSummaryContinue = null;
       this.closeModal();
@@ -1538,17 +1510,16 @@ export class UIManager {
       this._currentCrateContext = null;
       if (hook) this.openCatchSummary(hook, onContinue);
       else this.openInventory();
-      this.openCatchSummary(hook, onContinue);
       return;
     }
 
     const currentCrate = crates[0];
     const rank = currentCrate.crateRank || 1;
     const rankInfo = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
-    const preview = getCrateDropPreview(rank);
+    const preview = getCrateDropPreview(rank, this.saveSystem);
 
     const modalBody = `
-      <div class="crate-unboxing-panel" style="text-align: center; padding: 20px 10px;">
+      <p>Epic pity: ${preview.pityCount}/10 · Guaranteed within ${10 - preview.pityCount} opens</p><progress max="10" value="${preview.pityCount}" aria-label="Epic pity"></progress><div class="crate-unboxing-panel" style="text-align: center; padding: 20px 10px;">
         <div style="font-size: 0.85rem; text-transform: uppercase; color: #facc15; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px;">
           Rank ${rankInfo.rank} Mystery Crate (${crates.length} Remaining)
         </div>
@@ -1557,13 +1528,13 @@ export class UIManager {
         <!-- Interactive Drop Preview Pill -->
         <div style="margin-bottom: 14px;">
           <button class="btn btn-secondary btn-sm" id="btn-inspect-crate-drops" style="font-size: 0.82rem; padding: 5px 14px; border-radius: 999px;">
-            🔍 Inspect Drop Table (${preview.rates.superGood}% Jackpot · ${preview.rates.fair}% Fair · ${preview.rates.superBad}% Hazard)
+            🔍 Inspect Drop Table (${preview.rates.superGood.toFixed(2)}% Jackpot · ${preview.rates.fair.toFixed(2)}% Fair · ${preview.rates.superBad.toFixed(2)}% Hazard)
           </button>
         </div>
 
         <div id="crate-display-stage" style="margin: 20px auto; width: 140px; height: 140px; background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(15, 23, 42, 0) 70%); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
           <span id="crate-icon-anim" style="font-size: 4.8rem; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6)); transition: transform 0.2s;">
-            ${rankInfo.icon}
+            ${crateArtwork(rank)}
           </span>
         </div>
 
@@ -1584,6 +1555,7 @@ export class UIManager {
 
         <div id="crate-loot-result" style="display: none; margin-bottom: 16px;"></div>
 
+        ${crateRewardGallery(rank, this.saveSystem)}
         <div class="crate-actions">
           <button class="btn btn-primary" id="btn-crack-crate" style="padding: 12px 28px; font-size: 1.05rem; font-weight: 800; background: #eab308; color: #1e293b; border-color: #ca8a04; cursor: pointer; transition: all 0.2s ease;">
             🔓 Unlock & Open Crate!
@@ -1600,10 +1572,21 @@ export class UIManager {
       });
     });
 
+    const later = document.createElement('button');
+    later.className = 'btn btn-secondary'; later.id = 'btn-store-crate'; later.textContent = 'Keep sealed for later';
+    document.querySelector('.crate-actions')?.appendChild(later);
+    later.onclick = () => {
+      this.saveSystem.save();
+      this._currentCrateContext = null;
+      if (hook) this.openCatchSummary(hook, onContinue);
+      else this.openInventory('crates');
+    };
+
     const crackBtn = document.getElementById('btn-crack-crate');
     if (crackBtn) {
-      crackBtn.addEventListener('click', () => {
+      crackBtn.onclick = () => {
         crackBtn.disabled = true;
+        later.hidden = true;
         const track = document.getElementById('gacha-reel-track');
         const iconEl = document.getElementById('crate-icon-anim');
         const descEl = document.getElementById('crate-status-desc');
@@ -1611,7 +1594,8 @@ export class UIManager {
 
         if (currentCrate.unboxed || (!hook && !this.saveSystem.getInventory().includes(currentCrate))) return;
 
-        // Roll the authoritative loot item
+        // Local catch economy is committed before its presentation animation.
+        const loot = this.saveSystem.mutateAtomically(() => {
         const loot = rollCrateLoot(currentCrate.crateRank, this.saveSystem);
         const realmReward = currentCrate.rewardMultiplier || 1;
         loot.coins = Math.round(loot.coins * realmReward);
@@ -1621,73 +1605,6 @@ export class UIManager {
         const storedCrateId = currentCrate.instanceId || currentCrate.inventoryRef?.instanceId;
         if (storedCrateId) this.saveSystem.removeItemFromInventory(storedCrateId);
         currentCrate.value = 0;
-
-        // Generate 35 items for the CS:GO carousel reel strip with winning item at index 28
-        const winningIndex = 28;
-        const stripItems = [];
-        const allPossible = [...preview.tables.superGood, ...preview.tables.fair, ...preview.tables.superBad];
-
-        for (let i = 0; i < 35; i++) {
-          if (i === winningIndex) {
-            stripItems.push(loot);
-          } else {
-            const randItem = allPossible[Math.floor(Math.random() * allPossible.length)];
-            stripItems.push(randItem);
-          }
-        }
-
-        // Render carousel cards in track
-        if (track) {
-          track.innerHTML = stripItems.map((item, idx) => {
-            const grade = item.grade || (item.coins > 300 ? 'super_good' : item.coins < 0 ? 'super_bad' : 'fair');
-            const borderColor = grade === 'super_good' ? '#f59e0b' : grade === 'super_bad' ? '#ef4444' : '#38bdf8';
-            return `
-              <div class="gacha-reel-card ${idx === winningIndex ? 'gacha-winning-card' : ''}" style="border-bottom: 4px solid ${borderColor};">
-                <span class="gacha-card-icon">${item.icon || '🎁'}</span>
-                <span class="gacha-card-name">${(item.name || 'Loot').substring(0, 16)}</span>
-              </div>
-            `;
-          }).join('');
-        }
-
-        // Animate the horizontal reel
-        const cardWidth = 110; // 100px width + 10px margin
-        const viewportWidth = 460;
-        // Position winning card under center pointer with slight natural jitter
-        const jitter = (Math.random() - 0.5) * 35;
-        const targetScroll = winningIndex * cardWidth - (viewportWidth / 2) + (cardWidth / 2) + jitter;
-
-        soundManager.playCast();
-        let scrollPos = 0;
-        let lastTickCard = -1;
-        const startTime = Date.now();
-        const spinDuration = 3800; // ~3.8 seconds suspenseful deceleration
-
-        const spinInterval = setInterval(() => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min(1, elapsed / spinDuration);
-          // Ease-out cubic curve
-          const easeProgress = 1 - Math.pow(1 - progress, 3.2);
-          scrollPos = targetScroll * easeProgress;
-
-          if (track) {
-            track.style.transform = `translateX(-${scrollPos}px)`;
-          }
-
-          // Suspenseful ticking audio
-          const currentCardIdx = Math.floor((scrollPos + viewportWidth / 2) / cardWidth);
-          if (currentCardIdx !== lastTickCard && currentCardIdx < stripItems.length) {
-            lastTickCard = currentCardIdx;
-            try { soundManager.playReelClick(0.8); } catch (e) {}
-          }
-
-          if (progress >= 1) {
-            clearInterval(spinInterval);
-
-            // Reel stopped on winner!
-            const isJackpot = loot.grade === 'super_good';
-            const isBad = loot.grade === 'super_bad';
-            soundManager.playChestOpen(isJackpot);
 
             this.saveSystem.data.gems = (this.saveSystem.data.gems || 0) + (loot.gems || 0);
             if (loot.gems) this.showToast(`Rare crate find: +${loot.gems} gem!`);
@@ -1723,6 +1640,81 @@ export class UIManager {
               this.questSystem.dispatch({ type: 'catch_crate', item: currentCrate, loot });
               this.questSystem.dispatch({ type: 'open_crate', item: currentCrate, loot });
             }
+
+
+        if (loot.isDivine) this.saveSystem.data.lastRarePull = { id: crypto.randomUUID(), name: loot.name };
+        return loot;
+        });
+        // Generate 35 items for the CS:GO carousel reel strip with winning item at index 28
+        const winningIndex = 28;
+        const stripItems = [];
+        const allPossible = [...preview.tables.superGood, ...preview.tables.fair, ...preview.tables.superBad];
+
+        for (let i = 0; i < 35; i++) {
+          if (i === winningIndex) {
+            stripItems.push(loot);
+          } else {
+            let sample = Math.random() * 100;
+            const randItem = allPossible.find(item => (sample -= item.chance) < 0) || allPossible[allPossible.length - 1];
+            stripItems.push(randItem);
+          }
+        }
+
+        // Render carousel cards in track
+        if (track) {
+          track.innerHTML = stripItems.map((item, idx) => {
+            const grade = item.grade || (item.coins > 300 ? 'super_good' : item.coins < 0 ? 'super_bad' : 'fair');
+            const borderColor = grade === 'super_good' ? '#f59e0b' : grade === 'super_bad' ? '#ef4444' : '#38bdf8';
+            return `
+              <div class="gacha-reel-card" ${idx === winningIndex ? 'data-winning="true"' : ''} style="border-bottom: 4px solid ${borderColor};">
+                <span class="gacha-card-icon">${item.icon || '🎁'}</span>
+                <span class="gacha-card-name">${(item.name || 'Loot').substring(0, 16)}</span>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Animate the horizontal reel
+        const winner = track?.querySelector('[data-winning]');
+        const cards = track?.querySelectorAll('.gacha-reel-card');
+        const cardWidth = cards?.length > 1 ? cards[1].getBoundingClientRect().left - cards[0].getBoundingClientRect().left : 110;
+        const viewportWidth = track?.parentElement?.clientWidth || 460;
+        const winnerCenter = winner && track ? winner.getBoundingClientRect().left - track.getBoundingClientRect().left + winner.getBoundingClientRect().width / 2 : winningIndex * cardWidth;
+        const targetScroll = winnerCenter - viewportWidth / 2;
+
+        soundManager.playCast();
+        let scrollPos = 0;
+        let lastTickCard = -1;
+        const startTime = Date.now();
+        const spinDuration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 3200; // ~3.8 seconds suspenseful deceleration
+
+        const spinInterval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          if (!track?.isConnected) { clearInterval(spinInterval); return; }
+          const progress = Math.min(1, elapsed / spinDuration);
+          // Ease-out cubic curve
+          const easeProgress = 1 - Math.pow(1 - progress, 3.2);
+          scrollPos = targetScroll * easeProgress;
+
+          if (track) {
+            track.style.transform = `translateX(-${scrollPos}px)`;
+          }
+
+          // Suspenseful ticking audio
+          const currentCardIdx = Math.floor((scrollPos + viewportWidth / 2) / cardWidth);
+          if (currentCardIdx !== lastTickCard && currentCardIdx < stripItems.length) {
+            lastTickCard = currentCardIdx;
+            try { soundManager.playReelClick(0.8); } catch (e) {}
+          }
+
+          if (progress >= 1) {
+            clearInterval(spinInterval);
+
+            winner?.classList.add('gacha-winning-card');
+            // Reel stopped on winner!
+            const isJackpot = loot.grade === 'super_good';
+            const isBad = loot.grade === 'super_bad';
+            soundManager.playChestOpen(isJackpot);
 
             if (descEl) descEl.style.display = 'none';
 
@@ -1784,13 +1776,13 @@ export class UIManager {
             }
           }
         }, 16);
-      });
+      };
     }
   }
 
   // Interactive drop preview modal showing tables and tier pull percentages
   openCrateDropPreviewModal(crateRank, onBack) {
-    const preview = getCrateDropPreview(crateRank);
+    const preview = getCrateDropPreview(crateRank, this.saveSystem);
     const modalBody = `
       <div class="drop-preview-modal-panel" style="padding: 10px 4px; max-width: 580px; margin: 0 auto;">
         <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 16px;">
@@ -1800,41 +1792,41 @@ export class UIManager {
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; text-align: center;">
           <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 10px;">
             <div style="font-size: 0.75rem; font-weight: 800; color: #f59e0b;">JACKPOT</div>
-            <div style="font-size: 1.4rem; font-weight: 800; color: #fef08a;">${preview.rates.superGood}%</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fef08a;">${preview.rates.superGood.toFixed(2)}%</div>
           </div>
           <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 8px; padding: 10px;">
             <div style="font-size: 0.75rem; font-weight: 800; color: #38bdf8;">FAIR SALVAGE</div>
-            <div style="font-size: 1.4rem; font-weight: 800; color: #bae6fd;">${preview.rates.fair}%</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #bae6fd;">${preview.rates.fair.toFixed(2)}%</div>
           </div>
           <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 8px; padding: 10px;">
             <div style="font-size: 0.75rem; font-weight: 800; color: #ef4444;">HAZARD / TRASH</div>
-            <div style="font-size: 1.4rem; font-weight: 800; color: #fca5a5;">${preview.rates.superBad}%</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fca5a5;">${preview.rates.superBad.toFixed(2)}%</div>
           </div>
         </div>
 
         <div style="margin-bottom: 14px;">
-          <h4 style="color: #facc15; font-size: 0.95rem; margin-bottom: 8px;">⭐ Super Good Drops (${preview.rates.superGood}%):</h4>
+          <h4 style="color: #facc15; font-size: 0.95rem; margin-bottom: 8px;">⭐ Super Good Drops (${preview.rates.superGood.toFixed(2)}%):</h4>
           <div style="display: flex; flex-wrap: wrap; gap: 6px;">
             ${preview.tables.superGood.map(item => `
-              <span class="preview-item-chip chip-gold" title="${item.flavor || ''}">${item.icon} ${item.name} (+$${item.coins})</span>
+              <span class="preview-item-chip chip-gold" title="${item.flavor || ''}">${item.icon} ${item.name} (+$${item.coins}) · ${item.chance.toFixed(4)}%</span>
             `).join('')}
           </div>
         </div>
 
         <div style="margin-bottom: 14px;">
-          <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px;">✨ Fair Salvage (${preview.rates.fair}%):</h4>
+          <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px;">✨ Fair Salvage (${preview.rates.fair.toFixed(2)}%):</h4>
           <div style="display: flex; flex-wrap: wrap; gap: 6px;">
             ${preview.tables.fair.map(item => `
-              <span class="preview-item-chip chip-blue" title="${item.flavor || ''}">${item.icon} ${item.name} (+$${item.coins})</span>
+              <span class="preview-item-chip chip-blue" title="${item.flavor || ''}">${item.icon} ${item.name} (+$${item.coins}) · ${item.chance.toFixed(4)}%</span>
             `).join('')}
           </div>
         </div>
 
         <div style="margin-bottom: 18px;">
-          <h4 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 8px;">⚠️ Hazards & Scrap (${preview.rates.superBad}%):</h4>
+          <h4 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 8px;">⚠️ Hazards & Scrap (${preview.rates.superBad.toFixed(2)}%):</h4>
           <div style="display: flex; flex-wrap: wrap; gap: 6px;">
             ${preview.tables.superBad.map(item => `
-              <span class="preview-item-chip chip-red" title="${item.flavor || ''}">${item.icon} ${item.name} (${item.coins >= 0 ? `+$${item.coins}` : `-$${Math.abs(item.coins)}`})</span>
+              <span class="preview-item-chip chip-red" title="${item.flavor || ''}">${item.icon} ${item.name} (${item.coins >= 0 ? `+$${item.coins}` : `-$${Math.abs(item.coins)}`}) · ${item.chance.toFixed(4)}%</span>
             `).join('')}
           </div>
         </div>
@@ -2441,7 +2433,7 @@ export class UIManager {
                 </div>
                 <div class="journal-card-info">
                   <h4 style="color: #94a3b8;">Undiscovered Aberration</h4>
-                  <p class="journal-lore">Eerie genetic mutation of a ${ab.baseSpeciesId}. Emerges in dark waters, stormy seas, and nocturnal tides.</p>
+                  <p class="journal-lore">Eerie genetic mutation of a ${displaySpeciesName(ab.baseSpeciesId)}. Emerges in dark waters, stormy seas, and nocturnal tides.</p>
                   <div style="margin-top: 8px; font-size: 0.78rem; color: #fbbf24; background: rgba(15, 23, 42, 0.5); padding: 4px 8px; border-radius: 4px;">
                     ⚡ <em>Tip: Fish during Thunderstorms or Night tides to trigger mutations!</em>
                   </div>
@@ -2519,7 +2511,7 @@ export class UIManager {
             ? `<span class="grade-badge grade-trophy" style="background:#6b21a8;color:#f5d0fe;border:1px solid #d8b4fe;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">🏆 TROPHY</span>`
             : `<span class="grade-badge grade-average" style="background:#0369a1;color:#bae6fd;padding:2px 6px;border-radius:4px;font-size:10px;">Average</span>`;
 
-          const cleanFishName = (species.name || '').replace(/^(sea\d+_|realm_\d+_)/i, '');
+          const cleanFishName = displaySpeciesName(species.name || species.id);
           html += `
             <div class="journal-card journal-discovered rarity-border-${species.rarity}">
               <div class="journal-card-top">
@@ -2876,6 +2868,7 @@ export class UIManager {
         const species = allSpecies.find(fish => fish.id === canvas.dataset.species);
         if (!species) return;
         const fish = new Fish(species, 0, 0);
+        fish.x = 0; fish.y = 0;
         fish.isShiny = false; fish.crown = null; fish.scale = 0.65;
         const ctx = canvas.getContext('2d');
         const isSilhouette = canvas.classList.contains('silhouette');
@@ -3108,12 +3101,10 @@ export class UIManager {
           <div class="user-banner-col">
             <span class="user-banner-label">Your Captain Account</span>
             <span class="user-banner-val">👤 <strong>${escapeScoreboardText(currentUser)}</strong></span>
-            <span class="user-banner-val">👤 <strong>${currentUser}</strong></span>
           </div>
           <div class="user-banner-col">
             <span class="user-banner-label">Current Standing</span>
             <span class="user-banner-val" style="color: #facc15;">${userRank > 0 ? `#${userRank}` : board.syncFailed ? 'Sync pending' : 'Outside Top 100'}</span>
-            <span class="user-banner-val" style="color: #facc15;">#${userRank > 0 ? userRank : 'Unranked'}</span>
           </div>
           <div class="user-banner-col">
             <span class="user-banner-label">Level</span>
@@ -3136,11 +3127,9 @@ export class UIManager {
         <div class="scoreboard-empty-state">
           <div style="font-size: 3.2rem; margin-bottom: 8px;">📜</div>
           <h4>No Ranked Captains Yet</h4>
-          <h4>No Registered Accounts Found</h4>
           <p>
             ${board.online ? 'Captains appear here after playing online with a registered account.' : 'No registered captain saves were found in this browser.'}
             Guest accounts are not ranked.
-            No player accounts have been created yet on this vessel. Guest accounts are not ranked.
             Create an account to be ranked #1 on the scoreboard!
           </p>
           <button class="btn btn-primary" id="btn-scoreboard-register-empty">
@@ -3206,8 +3195,7 @@ export class UIManager {
             <td style="text-align: left;">
               <div class="captain-cell">
                 <span class="captain-avatar">${item.level >= 20 ? '👑' : item.level >= 10 ? '⚓' : '⛵'}</span>
-                <span class="captain-username">${escapeScoreboardText(item.username)}</span>
-                <span class="captain-username">${item.username}</span>
+                <span class="captain-username">${escapeScoreboardText(item.username)}</span>${item.id ? `<button class="btn btn-secondary btn-sm" data-visit-aquarium="${escapeScoreboardText(item.id)}">Visit aquarium</button>` : ''}
                 ${item.isCurrent ? '<span class="badge-you">YOU</span>' : ''}
               </div>
             </td>
@@ -3231,6 +3219,7 @@ export class UIManager {
     html += `</div>`;
 
     container.innerHTML = html;
+    container.querySelectorAll('[data-visit-aquarium]').forEach(button => { button.onclick = () => visitAquarium(this, button.dataset.visitAquarium); });
 
     // Bind events for sorting & account buttons
     container.querySelector('#btn-scoreboard-refresh')?.addEventListener('click', () => this.renderScoreboardTab(sortMode));
@@ -3454,7 +3443,7 @@ export class UIManager {
           </div>
           <div class="aq-actions-col">
             <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish ($1)</button>
-            <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish</button>
+            <button class="btn btn-secondary btn-sm" id="share-aquarium">Share Aquarium</button><button class="btn btn-secondary btn-sm" id="visit-aquarium">Visit Aquarium Link</button>
             <button class="btn btn-outline btn-sm" id="btn-aq-upgrade">🛒 Upgrade</button>
           </div>
         </div>
@@ -3490,6 +3479,15 @@ export class UIManager {
       </div>
     `;
 
+    document.getElementById('share-aquarium')?.addEventListener('click', () => shareAquarium(this));
+    document.getElementById('visit-aquarium')?.addEventListener('click', () => {
+      this.openModal('Visit Aquarium', '<input id="visit-host" placeholder="Paste aquarium link or captain ID" style="width:100%"><button class="btn btn-primary" id="visit-go">Visit</button>');
+      document.getElementById('visit-go').onclick = () => {
+        let host = document.getElementById('visit-host').value.trim();
+        try { host = new URL(host).searchParams.get('aquarium') || host; } catch {}
+        visitAquarium(this, host);
+      };
+    });
     this.startAquariumCanvas(items, theme);
     const styleShop = container.querySelector('.aquarium-style-shop');
     styleShop?.addEventListener('toggle', () => { this.aquariumDecorOpen = styleShop.open; });
@@ -3571,13 +3569,10 @@ export class UIManager {
 
     items.forEach((item) => {
       if (item.type === 'fish' || (!item.type && !item.isRelic)) {
-        const species = FISH_SPECIES.find(s => s.id === (item.speciesId || item.id)) || item;
-        const fishEntity = new Fish(species, 0, 0, { shinyChance: item.isShiny ? 1 : 0 });
-        if (item.crown) fishEntity.crown = item.crown;
-        if (item.isShiny !== undefined) fishEntity.isShiny = !!item.isShiny;
-        if (item.size) fishEntity.size = item.size;
-        if (item.weight) fishEntity.weight = item.weight;
-        fishEntity.scale = Math.min(1.4, Math.max(0.65, (item.scaleFactor || species.scaleFactor || 1.0) * 0.85));
+        const fishEntity = specimen(item, 0, 0);
+        if (!fishEntity) return;
+        const species = fishEntity.species;
+        fishEntity.scale = Math.min(1.4, Math.max(0.4, fishEntity.scale * .85));
 
         aquariumFish.push({
           item,
@@ -3614,8 +3609,8 @@ export class UIManager {
 
     canvas.addEventListener('click', (e) => {
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const x = (e.clientX - rect.left) * canvas.width / rect.width;
+      const y = (e.clientY - rect.top) * canvas.height / rect.height;
       ripples.push({ x, y, r: 2, alpha: 1.0 });
       soundManager.playSplash();
 
@@ -3647,8 +3642,9 @@ export class UIManager {
 
     let aqRaf = null;
     let decorTime = 0;
+    let previousFrame = performance.now();
     const renderAq = () => {
-      if (this.activeModal !== 'journal' || document.getElementById('aquarium-canvas') !== canvas) {
+      if (document.getElementById('aquarium-canvas') !== canvas) {
         cancelAnimationFrame(aqRaf);
         return;
       }
@@ -3688,7 +3684,9 @@ export class UIManager {
       ctx.fillStyle = floorColor2;
       ctx.fillRect(0, canvas.height - 40, canvas.width, 5);
 
-      decorTime += 0.016;
+      const now = performance.now();
+      const frameMs = Math.min(50, now - previousFrame); previousFrame = now;
+      decorTime += frameMs / 1000;
       const decor = normalizeCustomization(AQUARIUM_OPTIONS, this.saveSystem.data.aquarium.decor);
       drawAquariumDecor(ctx, canvas.width, canvas.height, decor, decorTime);
 
@@ -3739,96 +3737,21 @@ export class UIManager {
         }
       }
 
-      // Fish swimming
-      aquariumFish.forEach((f) => {
-        f.timer += 0.05;
-
-        if (foodPellets.length > 0) {
-          let closest = null;
-          let minD = 9999;
-          foodPellets.forEach(fp => {
-            const d = Math.hypot(fp.x - f.x, fp.y - f.y);
-            if (d < minD) { minD = d; closest = fp; }
-          });
-          if (closest && minD < 180) {
-            f.vx += (closest.x > f.x ? 0.04 : -0.04);
-            f.vy += (closest.y > f.y ? 0.03 : -0.03);
-            if (minD < 16) {
-              const pIdx = foodPellets.indexOf(closest);
-              if (pIdx !== -1) foodPellets.splice(pIdx, 1);
-            }
-          }
+      // The aquarium and ocean share Fish.update/render, including species paths.
+      aquariumFish.forEach(f => {
+        const entity = f.entity;
+        if (!entity._inTank) {
+          entity.x = f.x; entity.y = f.y; entity.minY = 35; entity.maxY = canvas.height - 65;
+          entity._inTank = true;
         }
-
-        if (foodPellets.length === 0) {
-          const cruiseVelocity = (f.vx < 0 ? -1 : 1) * f.cruiseSpeed;
-          f.vx += (cruiseVelocity - f.vx) * 0.025;
-          f.vy *= 0.97;
+        if (foodPellets.length) {
+          const food = foodPellets[0];
+          entity.direction = food.x > entity.x ? 1 : -1;
+          if (Math.hypot(food.x - entity.x, food.y - entity.y) < 20) foodPellets.shift();
         }
-        f.vx = Math.max(-3, Math.min(3, f.vx));
-        f.vy = Math.max(-2, Math.min(2, f.vy));
-
-        f.x += f.vx;
-        f.y += f.vy + Math.sin(f.timer) * 0.4;
-
-        if (f.x < 35) { f.vx = Math.abs(f.vx); }
-        if (f.x > canvas.width - 35) { f.vx = -Math.abs(f.vx); }
-        if (f.y < 35) { f.vy = Math.abs(f.vy); }
-        if (f.y > canvas.height - 65) { f.vy = -Math.abs(f.vy); }
-
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.scale((f.vx > 0 ? 1 : -1) * f.scale, f.scale);
-
-        // Body
-        ctx.fillStyle = f.primaryColor;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 16, 9, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Fin
-        ctx.fillStyle = f.finColor;
-        ctx.beginPath();
-        ctx.moveTo(-12, 0);
-        ctx.lineTo(-22, -6 + Math.sin(f.timer * 4) * 3);
-        ctx.lineTo(-22, 6 + Math.sin(f.timer * 4) * 3);
-        ctx.closePath();
-        ctx.fill();
-
-        // Eye
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(8, -2, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#000000';
-        ctx.beginPath();
-        ctx.arc(9, -2, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Shiny glimmer
-        if (f.isShiny) {
-          ctx.fillStyle = 'rgba(254, 240, 138, 0.8)';
-          ctx.beginPath();
-          ctx.arc(Math.sin(f.timer * 2) * 8, Math.cos(f.timer * 2) * 5, 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        // Crown
-        if (f.crown === 'gold' || f.crown === 'silver') {
-          ctx.fillStyle = f.crown === 'gold' ? '#facc15' : '#e2e8f0';
-          ctx.beginPath();
-          ctx.moveTo(4, -10);
-          ctx.lineTo(6, -15);
-          ctx.lineTo(8, -11);
-          ctx.lineTo(10, -16);
-          ctx.lineTo(12, -11);
-          ctx.lineTo(14, -15);
-          ctx.lineTo(16, -10);
-          ctx.closePath();
-          ctx.fill();
-        }
-
-        ctx.restore();
+        entity.update(frameMs, canvas.width, null);
+        entity.render(ctx, 0);
+        f.x = entity.x; f.y = entity.y;
       });
 
       // Ripples
@@ -3949,7 +3872,7 @@ export class UIManager {
     const tankCount = inv.filter(i => save.isItemInAquarium(i.instanceId)).length;
     const lockedCount = inv.filter(i => i.isLocked).length;
 
-    const sellableItems = inv.filter(i => !i.isLocked && !save.isItemInAquarium(i.instanceId));
+    const sellableItems = inv.filter(i => !i.isLocked && !(i.isCrate && !i.unboxed) && !save.isItemInAquarium(i.instanceId));
     const totalSellableValue = sellableItems.reduce((acc, f) => acc + Math.max(1, Math.round(f.value * sellMultiplier)), 0);
 
     let filteredItems = inv;
@@ -4106,6 +4029,18 @@ export class UIManager {
 
     this.openModal("🎒 Inventory", modalBody);
 
+    if (filter === 'crates') {
+      const body = document.getElementById('modal-content');
+      const shop = document.createElement('div');
+      shop.className = 'crate-purchase-grid';
+      CRATE_RANKS.forEach(crate => {
+        const button = document.createElement('button'); button.className = 'btn btn-secondary';
+        button.textContent = `${crate.name} · ${CRATE_GEM_PRICES[crate.rank]} Gems`;
+        button.onclick = async () => { button.disabled = true; if (await premiumPurchase(this, { kind: 'crate', rank: crate.rank })) this.openInventory('crates'); else button.disabled = false; };
+        shop.appendChild(button);
+      });
+      body?.prepend(shop);
+    }
     document.querySelectorAll('.btn-inv-open-crate').forEach(button => {
       button.addEventListener('click', () => {
         const crate = this.saveSystem.getInventory().find(item => item.instanceId === button.dataset.id);

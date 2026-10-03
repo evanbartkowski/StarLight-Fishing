@@ -1,12 +1,14 @@
+import { drawAura } from '../rendering/AuraRenderer.js';
 import { RARITY_CONFIG } from '../data/FishData.js';
 import { calculateCrown, getCrownMultiplier } from '../data/legendaries.js';
 import { soundManager } from '../audio/SoundManager.js';
+import { rollCatchTraits, depthRewardMultiplier } from '../systems/CatchTraits.js';
 
 export class Fish {
   constructor(species, x, y, options = {}) {
     this.species = species;
     this.speciesId = species.id;
-    this.name = species.name;
+    this.name = species.name.replace(/^(?:sea|realm)[_ ]*\d+[_ :?-]+/i, '');
     this.zone = species.zone;
     this.rarity = species.rarity;
     this.rarityColor = RARITY_CONFIG[species.rarity]?.color || '#ffffff';
@@ -17,7 +19,7 @@ export class Fish {
 
     this.x = x;
     this.y = y;
-    this.depthMeters = options.depthMeters || Math.round(y / 15);
+    this.depthMeters = options.depthMeters ?? Math.max(0, (y - (options.surfaceY ?? 220)) / 15);
 
     // Roll random size and weight within species parameters
     const [minCm, maxCm] = species.sizeRange;
@@ -32,13 +34,15 @@ export class Fish {
 
     // Roll shiny golden chance (defaults to 4% unless enhanced by lure)
     const shinyRoll = Math.random();
-    const shinyThreshold = options.shinyChance || 0.04;
+    const shinyThreshold = options.shinyChance ?? 0.04;
     this.isShiny = shinyRoll < shinyThreshold;
 
     // Bigger fish sell for exponentially more + crown bonus (boosted +35% for rewarding fishing)
     const sizeMultiplier = Math.pow(sizeRatio, 1.85);
     let val = Math.round(species.baseValue * Math.min(1.8, sizeMultiplier) * Math.min(1.5, crownMult) * (this.isShiny ? 2 : 1));
-    this.value = Math.max(2, Math.round(val * (options.valueMultiplier || 1)));
+    // Depth scaling: deeper catches yield higher reward multipliers
+    const depthBonusMult = depthRewardMultiplier(this.depthMeters);
+    this.value = Math.max(2, Math.round(val * (options.valueMultiplier || 1) * depthBonusMult));
     const realmSize = options.sizeMultiplier || 1;
     this.size = Math.round(this.size * realmSize * 10) / 10;
     this.weight = Math.round(this.weight * realmSize ** 2.2 * 100) / 100;
@@ -53,6 +57,7 @@ export class Fish {
     this.baseSpeed = species.swimSpeed * (0.85 + Math.random() * 0.35);
     this.speed = this.baseSpeed;
     this.wiggleTimer = Math.random() * Math.PI * 2;
+    this.auraTime = this.wiggleTimer;
     this.wiggleFreq = species.wiggleSpeed;
 
     // Entity state
@@ -131,6 +136,7 @@ export class Fish {
       particles?.addTrauma(.25);
     }
     this.wiggleTimer += this.wiggleFreq * deltaSec;
+    this.auraTime += deltaSec;
 
     // Tick evasion cooldowns & active timers
     if (this.evasionCooldown > 0) this.evasionCooldown -= deltaSec;
@@ -168,6 +174,17 @@ export class Fish {
       let vy = 0;
 
       switch (this.movementType) {
+        case 'spiral': {
+          vx = (this.direction * 25 + Math.cos(this.wiggleTimer) * 45) * deltaSec;
+          vy = Math.sin(this.wiggleTimer) * 45 * deltaSec;
+          break;
+        }
+        case 'lunge': {
+          const pursuing = hook && Math.hypot(hook.x - this.x, hook.y - this.y) < 180;
+          vx = (pursuing ? Math.sign(hook.x - this.x) * 120 : this.direction * 25) * deltaSec;
+          vy = pursuing ? Math.sign(hook.y - this.y) * 60 * deltaSec : Math.sin(this.wiggleTimer) * 8 * deltaSec;
+          break;
+        }
         case 'hover': {
           // Stays virtually in place, hovering with gentle subtle bobbing
           vx = this.direction * (this.speed * 4) * deltaSec;
@@ -382,6 +399,14 @@ export class Fish {
   }
 
   hookTo(hook, slotIndex) {
+    // Roll once; reindexing attached fish or re-catching an escape cannot reroll.
+    if (!this.weightClass) {
+      const traits = rollCatchTraits();
+      this.weightClass = traits.weightClass;
+      this.mutation = traits.mutation;
+      this.weight = Math.round(this.weight * traits.weightMultiplier * 100) / 100;
+      this.value = Math.max(1, Math.round(this.value * traits.weightMultiplier * traits.sellMultiplier));
+    }
     this.state = 'HOOKED';
     this.hook = hook;
     this.hookIndex = slotIndex;
@@ -510,21 +535,8 @@ export class Fish {
     const isRare = s.rarity === 'rare' && !this.isShiny;
 
     if (s.rarity === 'uncommon' || this.isShiny || isRainbow || isEpic || isRare || this.isMythic || this.isSpecialDeep || s.glowColor) {
-      ctx.save();
-      // A feathered oval wash, with no solid center or hard ring.
-      const color = RARITY_CONFIG[s.rarity]?.color || '#c084fc';
-      const rgb = [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16)).join(',');
-      const radius = s.isLeviathan ? 58 : 46;
-      const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-      glow.addColorStop(0, `rgba(${rgb},0.40)`);
-      glow.addColorStop(0.25, `rgba(${rgb},0.31)`);
-      glow.addColorStop(0.55, `rgba(${rgb},0.15)`);
-      glow.addColorStop(1, `rgba(${rgb},0)`);
-      ctx.globalAlpha *= 0.92 + Math.sin(this.wiggleTimer * 1.2) * 0.04;
-      ctx.scale(1.15, 0.72);
-      ctx.fillStyle = glow;
-      ctx.fillRect(-radius, -radius, radius * 2, radius * 2);
-      ctx.restore();
+      const color = this.isShiny ? '#fde68a' : s.glowColor || RARITY_CONFIG[s.rarity]?.color;
+      drawAura(ctx, this.auraTime, color, s.isLeviathan ? 77 : 60, 0.64);
     }
 
     if (this.isGodTier) {
@@ -651,8 +663,12 @@ export class Fish {
     let primary = this.isShiny ? '#fbbf24' : (s.primaryColor || '#38bdf8');
     let secondary = this.isShiny ? '#fef08a' : (s.secondaryColor || '#93c5fd');
     let finColor = this.isShiny ? '#f59e0b' : (s.finColor || '#0284c7');
+    if (this.mutation) {
+      primary = { Albino: '#fff1f2', Bioluminescent: '#22d3ee', Gold: '#fbbf24' }[this.mutation] || primary;
+      finColor = { Albino: '#fda4af', Bioluminescent: '#a5f3fc', Gold: '#f59e0b' }[this.mutation] || finColor;
+    }
 
-    if (isRainbow) {
+    if (isRainbow && !this.mutation) {
       const hue = (this.wiggleTimer * 65 + this.x * 0.15) % 360;
       const rainbowGrad = ctx.createLinearGradient(-30, -15, 30, 15);
       rainbowGrad.addColorStop(0, `hsl(${hue}, 95%, 60%)`);
@@ -664,13 +680,13 @@ export class Fish {
       primary = rainbowGrad;
       secondary = `hsl(${(hue + 180) % 360}, 90%, 75%)`;
       finColor = `hsl(${(hue + 75) % 360}, 95%, 65%)`;
-    } else if (isEpic && !s.isLeviathan) {
+    } else if (isEpic && !s.isLeviathan && !this.mutation) {
       const epicGrad = ctx.createLinearGradient(-25, -12, 25, 12);
       epicGrad.addColorStop(0, s.primaryColor || '#9333ea');
       epicGrad.addColorStop(0.5, '#ec4899');
       epicGrad.addColorStop(1, s.secondaryColor || '#38bdf8');
       primary = epicGrad;
-    } else if (isRare && !s.isLeviathan) {
+    } else if (isRare && !s.isLeviathan && !this.mutation) {
       const rareGrad = ctx.createLinearGradient(-22, -10, 22, 10);
       rareGrad.addColorStop(0, s.primaryColor || '#0284c7');
       rareGrad.addColorStop(0.5, '#38bdf8');
@@ -720,7 +736,19 @@ export class Fish {
     ctx.fillStyle = primary;
     ctx.beginPath();
 
-    if (s.shape === 'star_ribbon') {
+    if (s.name === 'Giant Cave Salamander') {
+      ctx.ellipse(0, 0, 28, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = finColor; ctx.lineWidth = 4;
+      for (const x of [-14, 12]) for (const side of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(x, side * 5); ctx.lineTo(x - 5, side * 15); ctx.lineTo(x + 2, side * 18); ctx.stroke();
+      }
+    } else if (s.name === 'Rainbow Narwhal') {
+      const rainbow = ctx.createLinearGradient(-28, 0, 28, 0);
+      rainbow.addColorStop(0, '#f472b6'); rainbow.addColorStop(.5, '#a78bfa'); rainbow.addColorStop(1, '#67e8f9');
+      ctx.fillStyle = this.mutation ? primary : rainbow;
+      ctx.ellipse(0, 0, 29, 13, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.moveTo(23, -4); ctx.lineTo(50, -7); ctx.lineTo(23, 1); ctx.closePath(); ctx.fill();
+    } else if (s.shape === 'star_ribbon') {
       // Abyssal Star-Weaver: Celestial translucent ribbon eel
       ctx.ellipse(0, 0, 36, 7, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -991,8 +1019,17 @@ export class Fish {
         ctx.quadraticCurveTo(24, t + wiggle, 30, t * 1.4);
         ctx.stroke();
       }
-    } else if (s.shape === 'shark' || s.shape === 'whale' || s.shape === 'swordfish') {
-      ctx.ellipse(0, 0, 28, 12, 0, 0, Math.PI * 2);
+    } else if (s.shape === 'salamander') {
+      ctx.beginPath(); ctx.ellipse(0, 0, 24, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = finColor; ctx.lineWidth = 3;
+      for (const side of [-1, 1]) {
+        for (const x of [-12, 10]) { ctx.beginPath(); ctx.moveTo(x, side * 5); ctx.lineTo(x - 5, side * 17); ctx.lineTo(x + 2, side * 18); ctx.stroke(); }
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(16, side * 5); ctx.lineTo(14 - i * 5, side * (14 + i * 3)); ctx.stroke(); }
+      }
+      ctx.beginPath(); ctx.ellipse(16, 0, 12, 9, 0, 0, Math.PI * 2);
+    } else if (['shark', 'whale', 'swordfish', 'narwhal'].includes(s.shape)) {
+      ctx.beginPath(); ctx.ellipse(0, 0, 28, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = finColor;
       ctx.beginPath();
       ctx.moveTo(-4, -10);
@@ -1002,7 +1039,7 @@ export class Fish {
       ctx.fill();
       ctx.fillStyle = primary;
 
-      if (s.shape === 'swordfish') {
+      if (s.shape === 'swordfish' || s.shape === 'narwhal') {
         ctx.strokeStyle = '#94a3b8';
         ctx.lineWidth = 2.5;
         ctx.beginPath();

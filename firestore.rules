@@ -1,6 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Mutated only by Admin SDK transactions; public visits use a sanitized callable.
+    match /daily_tips/{id} { allow read, write: if false; }
+    match /aquariumTipReceipts/{id} { allow read, write: if false; }
+    match /aquariums/{uid} { allow read, write: if false; }
+    match /premiumReceipts/{id} { allow read, write: if false; }
+    match /catchAnnouncements/{id} { allow read, write: if false; }
+    match /stripeReceipts/{id} { allow read, write: if false; }
+    match /gemCheckouts/{id} { allow read, write: if false; }
     // Purchased gems: only verified Stripe fulfillment can create/increase credit.
     match /players/{uid} {
       allow get: if request.auth != null && request.auth.uid == uid;

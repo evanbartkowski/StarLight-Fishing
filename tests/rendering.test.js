@@ -1,0 +1,64 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { GameLoop } from '../src/GameLoop.js';
+import { auraFrame, drawAura } from '../src/rendering/AuraRenderer.js';
+import { Treasure } from '../src/entities/Treasure.js';
+
+test('auras breathe within subtle bounds and freeze for reduced motion', () => {
+  for (let t = 0; t < 30; t += 0.05) {
+    const frame = auraFrame(t, false);
+    assert.ok(frame.scale >= 0.925 && frame.scale <= 1.075);
+    assert.ok(frame.blend >= 0.1 && frame.blend <= 0.34);
+    assert.deepEqual(auraFrame(t, true), auraFrame(0, true));
+  }
+  assert.notDeepEqual(auraFrame(0, false), auraFrame(1, false));
+});
+
+test('aura textures are reused across frames and entities', () => {
+  let gradients = 0, draws = 0;
+  globalThis.document = { createElement: () => ({ getContext: () => ({
+    createRadialGradient: () => { gradients++; return { addColorStop() {} }; }, fillRect() {},
+  }) }) };
+  const ctx = { globalAlpha: 0.6, save() { this.alpha = this.globalAlpha; },
+    restore() { this.globalAlpha = this.alpha; }, translate() {}, scale() {}, drawImage() { draws++; } };
+  try {
+    for (let i = 0; i < 120; i++) drawAura(ctx, i / 60, '#a855f7', 60);
+    assert.equal(gradients, 2);
+    assert.equal(draws, 240);
+    assert.equal(ctx.globalAlpha, 0.6);
+  } finally { delete globalThis.document; }
+});
+
+test('crate bobbing is time based and stays near its spawn', () => {
+  const a = new Treasure({ isCrate: true }, 0, 100);
+  const b = new Treasure({ isCrate: true }, 0, 100);
+  a.timer = b.timer = 0;
+  for (let i = 0; i < 600; i++) a.update(1000 / 60);
+  for (let i = 0; i < 300; i++) b.update(1000 / 30);
+  assert.ok(Math.abs(a.y - b.y) < 1e-9);
+  assert.ok(Math.abs(a.y - 100) <= 6);
+  const before = a.y;
+  a.y += 80; // Magnetic sonar displacement must survive subsequent bobbing.
+  a.update(0);
+  assert.equal(a.y, before + 80);
+});
+
+test('loop handles timestamp zero, repeated starts, stopping and restarting inside callbacks', () => {
+  const queue = new Map(); let nextId = 0, updates = 0, renders = 0;
+  globalThis.requestAnimationFrame = cb => { const id = nextId++; queue.set(id, cb); return id; };
+  globalThis.cancelAnimationFrame = id => queue.delete(id);
+  const tick = time => { const [id, cb] = queue.entries().next().value; queue.delete(id); cb(time); };
+  const loop = new GameLoop(() => { updates++; }, () => { renders++; });
+  try {
+    loop.start(); loop.start(); assert.equal(queue.size, 1);
+    loop.stop(); assert.equal(queue.size, 0); // RAF identifier zero is valid.
+    loop.start(); tick(0); tick(20); assert.equal(updates, 1); assert.equal(renders, 1);
+    loop.update = () => loop.stop(); tick(40); assert.equal(queue.size, 0); assert.equal(renders, 1);
+    loop.start(); tick(50);
+    loop.update = () => { loop.stop(); loop.start(); };
+    tick(70); assert.equal(queue.size, 1);
+    loop.update = () => {};
+    loop.render = () => loop.stop();
+    tick(80); tick(100); assert.equal(queue.size, 0);
+  } finally { loop.stop(); delete globalThis.requestAnimationFrame; delete globalThis.cancelAnimationFrame; }
+});

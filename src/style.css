@@ -3787,3 +3787,42 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
+#touch-controls { display:none; position:fixed; bottom:max(16px, env(safe-area-inset-bottom)); left:16px; right:16px; z-index:50; gap:12px; pointer-events:none; }
+#touch-controls button { pointer-events:auto; touch-action:none; min-width:64px; min-height:58px; border:1px solid #38bdf8; border-radius:18px; color:white; background:#0c4a6ecc; font-size:20px; }
+#touch-controls button:last-child { margin-left:auto; }
+#touch-controls[hidden] { display:none !important; }
+@media (pointer:coarse) { #touch-controls { display:flex; } }
+@media (max-width:600px) {
+  .modal-content { max-width:calc(100vw - 20px) !important; max-height:88dvh; overflow:auto; padding:14px !important; box-sizing:border-box; }
+  .gacha-reel-viewport { max-width:100%; }
+  .journal-grid, .inventory-grid, .gem-package-grid { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)) !important; }
+  .catch-share-actions { display:flex; flex-wrap:wrap; gap:8px; }
+  button { min-height:44px; }
+}
+@keyframes depthPulse { 50% { box-shadow:0 0 14px currentColor; } }
+.depth-active { animation:depthPulse 2s ease-in-out infinite; }
+.minimap-modal-container path[stroke-dasharray="4 6"] { stroke:var(--depth-color); }
+@media (prefers-reduced-motion:reduce) { .depth-active { animation:none; } }
+.relic-case { --case-color: #b98b60; position: relative; width: 104px; height: 72px; margin: 20px auto; border: 3px solid var(--case-color); border-radius: 12px 12px 8px 8px; background: linear-gradient(145deg,#334155,#0b1324); box-shadow: 0 0 28px color-mix(in srgb,var(--case-color) 30%,transparent), inset 0 0 16px #020617; transform: perspective(250px) rotateY(-12deg); }
+.relic-case-2 { --case-color: #6ee7b7; } .relic-case-3 { --case-color: #fbbf24; } .relic-case-4 { --case-color: #c084fc; } .relic-case-5 { --case-color: #67e8f9; }
+.relic-case i { position: absolute; left: -3px; right: -3px; top: 20px; height: 3px; background: var(--case-color); box-shadow: 0 0 9px var(--case-color); }
+.relic-case b { position: absolute; left: 36px; top: 17px; width: 30px; height: 32px; font: bold 17px/32px serif; text-align: center; color: #071321; background: var(--case-color); clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); }
+.relic-case span { position: absolute; inset: 7px; border-left: 5px solid var(--case-color); border-right: 5px solid var(--case-color); opacity: .55; }
+.crate-rewards { text-align: left; margin: 22px 0; padding: 16px; border: 1px solid #334155; border-radius: 14px; background: #081321; }
+.crate-rewards p { font-size: .8rem; color: #a9bed1; line-height: 1.5; }
+.crate-reward-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(125px,1fr)); gap: 8px; max-height: 260px; overflow-y: auto; }
+.crate-reward { display: flex; flex-direction: column; gap: 5px; padding: 12px; background: linear-gradient(150deg,#19354b,#101a2e); border-bottom: 3px solid #38bdf8; border-radius: 7px; font-size: .78rem; }
+.crate-reward.superGood { border-color: #fbbf24; } .crate-reward.superBad { border-color: #f87171; }
+.crate-reward > span { font-size: 28px; } .crate-reward small { color: #bed3e7; }
+.gem-crate-store { border-top: 1px solid #334155; margin-top: 24px; padding-top: 18px; }
+.gem-crate-store button { margin-top: 8px; width: 100%; }
+.chat-profile { color: #7dd3fc; border: 0; padding: 2px; background: transparent; font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+.chat-profile:disabled { color: #cbd5e1; text-decoration: none; cursor: default; }
+.charted-current { filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 16px #67e8f9); }
+.depth-active { box-shadow: 0 0 14px #67e8f977, inset 0 0 10px #67e8f922; }
+@media (pointer: coarse) {
+  .modal-panel button, .chat-profile { min-height: 40px; }
+  #aquarium-canvas, #visitor-tank { touch-action: manipulation; }
+}
+#world-event-banner { padding: 7px 12px; border: 1px solid #c084fc; border-radius: 12px; color: #f5e7ff; background: #211437ed; font-size: 12px; box-shadow: 0 0 16px #a855f755; text-align: center; }
+#world-event-banner[hidden] { display: none; }

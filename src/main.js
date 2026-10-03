@@ -1,3 +1,6 @@
+import { createTouchControls } from './ui/TouchControls.js';
+import { serverOffset } from './systems/SocialFirebase.js';
+import { visitAquarium } from './ui/AquariumSocial.js';
 import './style.css';
 import { GameLoop } from './GameLoop.js';
 import { soundManager } from './audio/SoundManager.js';
@@ -23,7 +26,7 @@ import { GemShop } from './ui/GemShop.js';
 const canvas = document.querySelector('#game-canvas');
 const ctx = canvas.getContext('2d');
 
-let dpr = Math.min(window.devicePixelRatio || 1, 2);
+let dpr = Math.min(window.devicePixelRatio || 1, window.matchMedia('(pointer: coarse)').matches ? 1.5 : 2);
 let screenWidth = window.innerWidth;
 let screenHeight = window.innerHeight;
 
@@ -32,7 +35,7 @@ let uiManager = null;
 let zoneManager = null;
 
 function handleResize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = Math.min(window.devicePixelRatio || 1, window.matchMedia('(pointer: coarse)').matches ? 1.5 : 2);
   screenWidth = window.innerWidth;
   screenHeight = window.innerHeight;
 
@@ -129,6 +132,7 @@ let targetCameraY = 0;
 const mousePos = { x: screenWidth * 0.5, y: screenHeight * 0.5 };
 let isMouseDown = false;
 const keysDown = {};
+const touchControls = createTouchControls(keysDown, () => { if (gameState === 'DESCENDING') hook.startReel(); });
 let lastSteerMode = 'none'; // 'keyboard' | 'mouse'
 const lastPointerPos = { x: 0, y: 0 };
 
@@ -145,6 +149,16 @@ uiManager = new UIManager(save, triggerCast, startDive, trapSystem, questSystem)
 save.gemShop = new GemShop(save, uiManager);
 chatManager = new ChatManager(save);
 uiManager.setChatManager(chatManager);
+const syncEventClock = () => serverOffset().then(offset => { worldCycle.serverOffset = offset; }).catch(() => {});
+syncEventClock();
+setInterval(() => { if (!document.hidden) syncEventClock(); }, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncEventClock(); });
+const aquariumHost = new URLSearchParams(location.search).get('aquarium');
+if (aquariumHost) {
+  const visitButton = document.createElement('button'); visitButton.className = 'btn btn-secondary';
+  visitButton.textContent = 'Visit Shared Aquarium'; visitButton.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:100';
+  visitButton.onclick = () => visitAquarium(uiManager, aquariumHost); document.body.appendChild(visitButton);
+}
 
 // Handle Stripe Checkout return pipeline
 try {
@@ -370,7 +384,7 @@ function handlePointerMove(e) {
 
   if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
     // Companion hover detection for floating name badges
-    const vessel = save.getUpgradeLevel('boatHull') || 1;
+    const vessel = save.getUpgradeLevel('boatVessel') || 0;
     const dy = (mousePos.y + cameraY) - oceanWorld.boat.y;
     const dx = mousePos.x - oceanWorld.boat.x;
     const boatAngle = oceanWorld.boat.angle || 0;
@@ -421,6 +435,16 @@ canvas.addEventListener('mousedown', handlePointerDown);
 window.addEventListener('mousemove', handlePointerMove);
 window.addEventListener('mouseup', handlePointerUp);
 
+// Clean up hover states on pointer leave
+const clearPetHover = () => {
+  if (oceanWorld) {
+    oceanWorld.hoveredCompanion = null;
+    if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
+  }
+};
+canvas.addEventListener('pointerleave', clearPetHover);
+canvas.addEventListener('mouseleave', clearPetHover);
+
 // Touch events for mobile/tablet
 canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
@@ -443,9 +467,15 @@ window.addEventListener('touchend', (e) => {
   handlePointerUp(e);
 });
 
+window.addEventListener('touchcancel', () => { isMouseDown = false; clearPetHover(); });
+window.addEventListener('blur', () => { isMouseDown = false; clearPetHover(); Object.keys(keysDown).forEach(key => { keysDown[key] = false; }); });
+
 // Keyboard controls
 window.addEventListener('keydown', (e) => {
+  if (e.target?.matches?.('input, textarea, select, [contenteditable=true]')) return;
+  if (uiManager?.activeModal) return;
   const k = e.key.toLowerCase();
+  if (['arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
   keysDown[k] = true;
   if (['arrowleft', 'arrowright', 'a', 'd'].includes(k)) {
     lastSteerMode = 'keyboard';
@@ -500,9 +530,12 @@ function startDive() {
 
 let surfaceIdleTimer = 0;
 let aquariumAutosaveTimer = 0;
+let hudElapsed = 0;
+let lastHudState = null;
 
 // Fixed-step Update Logic (60fps)
 const update = (dt) => {
+  if (uiManager?.premiumBusy || uiManager?.socialBusy) return;
   const deltaSec = dt / 1000;
 
   // Accumulate aquarium tips strictly while actively playing the game
@@ -530,6 +563,8 @@ const update = (dt) => {
   } else {
     surfaceIdleTimer = 0;
   }
+
+  touchControls.update(!uiManager.activeModal && ['DESCENDING', 'REELING'].includes(gameState));
 
   // Keyboard steering (arrow keys take precedence over stationary mouse)
   const isArrowLeft = keysDown['a'] || keysDown['arrowleft'];
@@ -704,7 +739,7 @@ const update = (dt) => {
 
     // Collision detection: Hook vs Fish (active during both descent and reeling!)
     const hookRadius = 36;
-    const canCatch = hook.caughtItems.length < hook.capacity;
+    const canCatch = hook.caughtItems.length < hook.capacity + (hook.capacityBoost || 0);
 
     if (canCatch && (gameState === 'REELING' || gameState === 'DESCENDING' || hook.state === 'REELING' || hook.state === 'DESCENDING')) {
       const prevX = typeof hook.prevX === 'number' ? hook.prevX : hook.x;
@@ -781,15 +816,39 @@ const update = (dt) => {
     // Collision detection: Hook vs Hazards
     if (gameState === 'DESCENDING' || gameState === 'REELING') {
       for (const haz of oceanWorld.entities.hazards) {
-        const dx = haz.x - hook.x;
-        const dy = haz.y - hook.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < hookRadius + haz.radius && !(hook.hazardCooldown > 0)) {
+        if (haz.intersectsHook(hook.x, hook.y, hookRadius) && !(hook.hazardCooldown > 0)) {
           hook.takeHazardHit(haz, particles);
           // Deflect hazard away to prevent rapid repeated hits
-          haz.y += 45;
+          if (!haz.behavior.expedition) haz.y += 45;
           break;
+        }
+      }
+
+      // Reactive flora: kelp slows reeling, spores can make a hooked fish slip free
+      for (const flora of oceanWorld.entities.flora || []) {
+        flora.checkHookInteraction(hook, particles, soundManager);
+      }
+
+      // Power-ups and curses
+      const powerups = oceanWorld.entities.powerups || [];
+      for (let i = powerups.length - 1; i >= 0; i--) {
+        const p = powerups[i];
+        if (Math.hypot(p.x - hook.x, p.y - hook.y) < hookRadius + p.radius) {
+          p.collect(hook, particles, soundManager, oceanWorld);
+          powerups.splice(i, 1);
+        }
+      }
+
+      // Magnetic lure power-up pulls nearby fish toward the hook
+      if (hook.magnetTimer > 0) {
+        if (hook.state === 'DESCENDING') hook.magnetTimer = Math.max(0, hook.magnetTimer - deltaSec);
+        for (const fish of oceanWorld.entities.fish) {
+          if (fish.state !== 'SWIMMING') continue;
+          const d = Math.hypot(fish.x - hook.x, fish.y - hook.y);
+          if (d < 120) {
+            fish.x += (hook.x - fish.x) * 3 * deltaSec;
+            fish.y += (hook.y - fish.y) * 3 * deltaSec;
+          }
         }
       }
     }
@@ -830,12 +889,21 @@ const update = (dt) => {
   }
   cameraY += (targetCameraY - cameraY) * 7.5 * deltaSec;
 
-  // Update HUD
-  uiManager.updateHUD(hook, gameState);
+  // Physics/rendering stay at full speed; DOM counters only need 15 updates/sec.
+  hudElapsed += dt;
+  if (hudElapsed >= 1000 / 15 || gameState !== lastHudState) {
+    uiManager.updateHUD(hook, gameState);
+    hudElapsed = 0;
+    lastHudState = gameState;
+  }
 };
 
 // Render Logic
 const render = () => {
+  ctx.reset?.();
+  ctx.resetTransform();
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
   ctx.save();
   ctx.scale(dpr, dpr);
 
@@ -856,7 +924,13 @@ const render = () => {
   // 3. Animated Water Surface
   oceanWorld.renderWaterSurface(ctx, cameraY);
 
-  // 4. Hazards
+  // 4. Hazards (reactive flora drawn first so it sits behind obstacles)
+  (oceanWorld.entities.flora || []).forEach((flora) => {
+    if (flora.y - cameraY > -80 && flora.y - cameraY < screenHeight + 80) flora.render(ctx, cameraY);
+  });
+  (oceanWorld.entities.powerups || []).forEach((p) => {
+    if (p.y - cameraY > -40 && p.y - cameraY < screenHeight + 40) p.render(ctx, cameraY);
+  });
   oceanWorld.entities.hazards.forEach((hazard) => {
     if (hazard.y - cameraY > -hazard.radius * 2 - 20 && hazard.y - cameraY < screenHeight + hazard.radius * 2 + 20) {
       hazard.render(ctx, cameraY);

@@ -68,7 +68,7 @@ export const WEATHER_STATES = {
     biteRateBonus: 0.15,
     tensionModifier: 1.35, // Tension bar swings 35% faster
     apexSpawnBonus: 1.60, // +60% chance for Apex & Legendary fish
-    description: 'Dramatic lightning flashes & thunderclaps! Apex & Legendary fish awaken, but line tension swings wildly.',
+    description: 'Dramatic lightning flashes & thunderclaps! Apex & Legendary fish awaken, and rough currents demand careful steering.',
     weight: 15,
   },
   FOG: {

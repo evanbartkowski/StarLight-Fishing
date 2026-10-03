@@ -30,7 +30,7 @@ export const ZONES = [
     mechanic: {
       type: 'standard',
       name: 'Calm Waters',
-      description: 'Gentle currents, standard tension dynamics, and clear water.',
+      description: 'Gentle currents, automatic retrieval, and clear water.',
     },
   },
   {
@@ -91,7 +91,7 @@ export const ZONES = [
     mechanic: {
       type: 'pressure',
       name: 'Pressure Bursts',
-      description: 'Violent barometric pressure surges spike line tension. Feather retrieval cautiously!',
+      description: 'Pressure bursts push your hook sideways. Steer clear of nearby hazards!',
       surgeInterval: 4.5,
     },
   },

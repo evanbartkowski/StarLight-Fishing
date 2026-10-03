@@ -42,3 +42,22 @@ specialists.forEach(([name, marineKind, minDepth, speed, detectionRadius], index
     color: REALM_PROFILES[zone].colors[2], glow: REALM_PROFILES[zone].colors[0],
   });
 });
+
+// Late-realm apex predators have their own silhouettes and slower, readable pursuits.
+for (const zone of [4, 5, 6, 7]) {
+  const palette = REALM_PROFILES[zone].colors;
+  for (const [kind, name, depth, radius, form] of [
+    ['shark', 'Megalodon', 650, 105, 'megalodon'],
+    ['plesiosaur', 'Ancient Plesiosaur', 850, 115, 'plesiosaur'],
+    ['mosasaur', 'Abyssal Mosasaur', 1100, 125, 'mosasaur'],
+    ['monster', 'Dread Kraken', 1400, 135, 'kraken'],
+  ]) {
+    MARINE_THREATS.push({
+      id: `apex_${zone}_${kind}_${form}`, name: `${['', '', '', '', 'Atlantean', 'Stormbound', 'Infernal', 'Void'][zone]} ${name}`,
+      zone, marineKind: kind, monsterForm: form, minDepth: depth, maxDepth: 3000,
+      radius, sizeScale: 1.45, isColossal: true, damage: 3, shieldCost: 2, knockback: 95,
+      speed: 105 + zone * 8, detectionRadius: 470, leash: 650,
+      chaseDuration: 2.5, restDuration: 4.5, color: palette[1], glow: palette[3],
+    });
+  }
+}

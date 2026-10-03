@@ -3,18 +3,89 @@ import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 import { checkoutInput, fulfillCheckout } from './checkout.js';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { pruneFleetMessages } from './chatRetention.js';
+import { tipAquarium, publicAquarium } from './aquarium.js';
+import { purchasePremium } from './premium.js';
 
 initializeApp();
 const options = { region: 'us-central1', maxInstances: 3 };
 const stripeClient = () => new Stripe(process.env.STRIPE_SECRET_KEY);
 
+export const serverClock = onCall(options, () => ({ now: Date.now() }));
+
+export const buyPremium = onCall(options, async request => {
+  if (!request.auth?.uid || request.auth.token.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('unauthenticated', 'Sign in to purchase.');
+  try { return await purchasePremium(getFirestore(), request.auth.uid, request.data, FieldValue); }
+  catch (error) {
+    const code = ['invalid-argument', 'failed-precondition', 'resource-exhausted', 'aborted'].includes(error.message) ? error.message : 'internal';
+    throw new HttpsError(code, 'Purchase could not complete. Check your Gems, inventory space and connection.');
+  }
+});
+
+export const aquariumAction = onCall(options, async request => {
+  const uid = request.auth?.uid;
+  if (!uid || request.auth.token.firebase?.sign_in_provider === 'anonymous') throw new HttpsError('unauthenticated', 'Sign in to visit aquariums.');
+  const db = getFirestore();
+  const { action, host, requestId } = request.data || {};
+  try {
+    if (action === 'publish') {
+      const [save, profile] = await Promise.all([db.doc(`captainSaves/${uid}`).get(), db.doc(`leaderboard/${uid}`).get()]);
+      if (!save.exists) throw new Error('not-found');
+      const exhibit = publicAquarium(JSON.parse(save.data().snapshot), profile.data()?.username);
+      await db.doc(`aquariums/${uid}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() });
+      return { host: uid };
+    }
+    if (!/^[\w-]{1,128}$/.test(host || '')) throw new Error('invalid-argument');
+    if (action === 'visit') {
+      const [saved, profile, daily] = await Promise.all([
+        db.doc(`captainSaves/${host}`).get(), db.doc(`leaderboard/${host}`).get(),
+        db.doc(`daily_tips/${uid}_${Math.floor(Date.now() / 86400000)}`).get(),
+      ]);
+      if (!saved.exists) throw new Error('not-found');
+      const exhibit = publicAquarium(JSON.parse(saved.data().snapshot), profile.data()?.username);
+      await db.doc(`aquariums/${host}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() });
+      return { ...exhibit, remaining: Math.max(0, 3 - (daily.data()?.count || 0)), canTip: host !== uid };
+    }
+    if (action === 'tip') return await tipAquarium(db, uid, host, requestId, FieldValue);
+    throw new Error('invalid-argument');
+  } catch (error) {
+    const code = ['invalid-argument', 'not-found', 'resource-exhausted', 'failed-precondition'].includes(error.message) ? error.message : 'internal';
+    throw new HttpsError(code, code === 'resource-exhausted' ? 'You have used all three tips today (UTC).' : 'Aquarium action could not be completed.');
+  }
+});
+
 export const trimFleetRadio = onDocumentCreated({ ...options, document: 'fleetMessages/{messageId}', retry: true },
   () => pruneFleetMessages(getFirestore()));
 export const expireFleetRadio = onSchedule({ ...options, schedule: 'every 1 minutes', timeZone: 'UTC' },
   () => pruneFleetMessages(getFirestore()));
+
+// Broadcast persisted catch reports once, including when cloud-save events retry.
+export const announceCatch = onDocumentWritten({ ...options, document: 'captainSaves/{uid}', retry: true }, async event => {
+  if (!event.data?.after.exists) return;
+  let after, before;
+  try {
+    after = JSON.parse(event.data.after.data().snapshot);
+    before = event.data.before.exists ? JSON.parse(event.data.before.data().snapshot) : {};
+  } catch { return; }
+  if (!after || !Array.isArray(after.inventory)) return;
+  const existing = new Set((before.inventory || []).map(item => item.instanceId));
+  const catches = (after.inventory || []).filter(item => (item.isGodTier || item.isBoss) && !existing.has(item.instanceId)).slice(0, 3);
+  if (after.lastRarePull?.id && after.lastRarePull.id !== before.lastRarePull?.id) catches.push({ instanceId: after.lastRarePull.id, name: after.lastRarePull.name });
+  const db = getFirestore();
+  const profile = await db.doc(`leaderboard/${event.params.uid}`).get();
+  const captain = String(profile.data()?.username || 'A captain').slice(0, 40);
+  for (const item of catches) {
+    const key = `${event.params.uid}_${String(item.instanceId).replace(/[^\w-]/g, '').slice(0, 80)}`;
+    await db.runTransaction(async tx => {
+      const ref = db.doc(`catchAnnouncements/${key}`);
+      if ((await tx.get(ref)).exists) return;
+      tx.create(ref, { createdAt: FieldValue.serverTimestamp() });
+      tx.create(db.collection('fleetMessages').doc(), { senderId: 'server', sender: 'Fleet Radio', kind: 'event', text: `${captain} discovered ${String(item.name).slice(0, 100)}!`, createdAt: FieldValue.serverTimestamp() });
+    });
+  }
+});
 
 export const createGemCheckoutSession = onCall({ ...options, secrets: ['STRIPE_SECRET_KEY'] }, async request => {
   let input;
@@ -23,7 +94,7 @@ export const createGemCheckoutSession = onCall({ ...options, secrets: ['STRIPE_S
   try {
     const stripe = stripeClient();
     const price = await stripe.prices.retrieve(input.price);
-    if (!price.active || price.recurring || !Number.isSafeInteger(price.unit_amount) || price.unit_amount <= 0) throw new Error('Invalid one-time price');
+    if (!price.active || price.recurring || price.currency !== 'usd' || price.unit_amount !== input.amount) throw new Error('Invalid one-time USD bundle price');
     const session = await stripe.checkout.sessions.create({
       mode: 'payment', payment_method_types: ['card'],
       line_items: [{ price: input.price, quantity: 1 }],

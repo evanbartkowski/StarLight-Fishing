@@ -198,3 +198,7 @@ export const ACHIEVEMENTS = [
   },
 ];
 
+
+for (const achievement of ACHIEVEMENTS) {
+  if (['first_catch', 'reach_sea2', 'reach_sea3'].includes(achievement.id)) achievement.reward = Math.round(achievement.reward * .5);
+}

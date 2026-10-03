@@ -197,7 +197,7 @@ export class WorldCycle {
     });
   }
 
-  getGlobalEvent(now = Date.now()) {
+  getGlobalEvent(now = Date.now() + (this.serverOffset || 0)) {
     const cycleTime = now % EVENT_CYCLE_INTERVAL;
     const active = cycleTime < EVENT_CYCLE_DURATION;
     const eventIndex = Math.floor(now / EVENT_CYCLE_INTERVAL) % GLOBAL_EVENTS.length;

@@ -1403,3 +1403,10 @@ const ORIGINAL_SPECIES = [
 
 export const LEGACY_SALVAGE_SPECIES = ORIGINAL_SPECIES.filter(isSalvageSpecies);
 export const FISH_SPECIES = buildRealmFish(ORIGINAL_SPECIES);
+
+// Save-compatible additions to the native roster use existing specimen IDs.
+for (const fish of FISH_SPECIES) {
+  if (fish.name === 'Crystal Eyed Sleeper') { fish.name = 'Giant Cave Salamander'; fish.movementType = 'lunge'; }
+  if (fish.name === 'Mooncloud Whale') { fish.name = 'Rainbow Narwhal'; fish.movementType = 'spiral'; }
+  if (fish.name === 'Mushroom Cap Puffer') fish.movementType = 'spiral';
+}

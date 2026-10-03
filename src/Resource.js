@@ -20,7 +20,6 @@ class Resources {
         // Load each image
         Object.keys(this.toLoad).forEach((key) => {
             const img = new Image();
-            img.src = this.toLoad[key];
             this.images[key] = {
                 image: img,
                 isLoaded: false,
@@ -34,6 +33,8 @@ class Resources {
                 console.warn(`Could not load resource: ${this.toLoad[key]}`);
                 this.images[key].isLoaded = true; // Mark as resolved so app won't hang
             };
+            // Install handlers before src: cached images may resolve immediately.
+            img.src = this.toLoad[key];
         });
     }
 

@@ -15,10 +15,6 @@ export class LeviathanBattleManager {
 
     this.stamina = 1000;
     this.maxStamina = 1000;
-    this.tension = 50;
-    this.maxTension = 100;
-    this.sweetSpotMin = 40;
-    this.sweetSpotMax = 70;
 
     this.boatHull = 100;
     this.screenRumble = 0;
@@ -49,7 +45,6 @@ export class LeviathanBattleManager {
 
     this.stamina = bossDef.maxStamina;
     this.maxStamina = bossDef.maxStamina;
-    this.tension = 50;
     this.boatHull = 100;
     this.screenRumble = 0.6;
 
@@ -126,32 +121,11 @@ export class LeviathanBattleManager {
     this.screenRumble = Math.max(0, this.screenRumble - deltaSec * 0.5);
 
     // ==========================================
-    // PHASE 1: THE SURGE (Line Drag & Tension)
+    // PHASE 1: THE SURGE (Automatic Retrieval)
     // ==========================================
     if (this.phase === 'SURGE') {
-      if (isReelingInput) {
-        // Fast tension climb
-        this.tension = Math.min(this.maxTension, this.tension + 45 * deltaSec);
-      } else {
-        // Drag feathering
-        this.tension = Math.max(0, this.tension - 65 * deltaSec);
-      }
-
-      // Reeling in sweet spot depletes boss stamina
-      const inSweetSpot = this.tension >= this.sweetSpotMin && this.tension <= this.sweetSpotMax;
-      if (inSweetSpot && isReelingInput) {
-        const drain = 60 * deltaSec;
-        this.stamina = Math.max(0, this.stamina - drain);
-      }
-
-      // Snap danger
-      if (this.tension >= this.maxTension) {
-        this.tension = 50;
-        this.stamina = Math.min(this.maxStamina, this.stamina + 100);
-        soundManager.playFishEscape?.();
-        this.screenRumble = 0.5;
-        this.uiManager.showToast('💥 LINE DRAG WARNING! Tension overloaded! Ease the spool!');
-      }
+      // Automatic retrieval: exhaust the boss without a tension minigame.
+      this.stamina = Math.max(0, this.stamina - 60 * deltaSec);
 
       // Transition to Phase 2 Breach at 65% stamina
       if (this.stamina <= this.maxStamina * 0.65) {

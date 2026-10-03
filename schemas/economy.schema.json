@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starlight-fishing.web.app/schemas/economy.schema.json",
+  "title": "Persisted economy fields (logical pity_counter and crates_inventory use existing save names)",
+  "$defs": {
+    "saveEconomy": {
+      "type": "object",
+      "properties": {
+        "gems": { "type": "integer", "minimum": 0, "default": 0 },
+        "cratePityCount": { "description": "pity_counter", "type": "integer", "minimum": 0, "maximum": 9, "default": 0 },
+        "inventory": { "type": "array", "items": { "type": "object" } },
+        "boatSkins": { "type": "array", "uniqueItems": true, "items": { "enum": ["coral", "indigo", "gold"] } }
+      },
+      "additionalProperties": true
+    },
+    "crate": {
+      "description": "One crates_inventory entry in snapshot.inventory",
+      "type": "object",
+      "required": ["instanceId", "isCrate", "crateRank", "unboxed"],
+      "properties": {
+        "instanceId": { "type": "string", "minLength": 1 },
+        "isCrate": { "const": true },
+        "crateRank": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "unboxed": { "type": "boolean" }
+      }
+    },
+    "daily_tips": {
+      "type": "object",
+      "required": ["uid", "day", "count", "requests"],
+      "properties": {
+        "uid": { "type": "string" },
+        "day": { "type": "integer", "minimum": 0 },
+        "count": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "requests": { "type": "array", "maxItems": 3, "uniqueItems": true, "items": { "type": "string" } }
+      }
+    },
+    "stripeTransaction": {
+      "type": "object",
+      "required": ["uid", "gems", "eventId", "creditedAt"],
+      "properties": {
+        "uid": { "type": "string" },
+        "gems": { "type": "integer", "minimum": 1 },
+        "eventId": { "type": "string", "pattern": "^evt_" },
+        "creditedAt": { "description": "Firestore server Timestamp" }
+      }
+    }
+  }
+}

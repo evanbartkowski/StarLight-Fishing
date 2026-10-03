@@ -55,6 +55,23 @@ export function drawMarineThreat(ctx, threat) {
     ctx.quadraticCurveTo(-r * .2, 0, -r * .5, r * (.8 + Math.sin(t) * .1));
     ctx.quadraticCurveTo(0, r * .3, r * .75, 0); ctx.fill(); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(-r * .5, 0); ctx.quadraticCurveTo(-r, r * .2, -r * 1.3, Math.sin(t) * 10); ctx.stroke();
+  } else if (threat.marineKind === 'plesiosaur' || threat.marineKind === 'mosasaur') {
+    const longNeck = threat.marineKind === 'plesiosaur';
+    ctx.beginPath(); ctx.ellipse(-r * .15, 0, r * .55, r * .23, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    for (const side of [-1, 1]) for (const x of [-.4, .15]) {
+      ctx.beginPath(); ctx.moveTo(x * r, side * r * .12);
+      ctx.quadraticCurveTo((x - .1) * r, side * r * .6, (x - .4) * r, side * r * (.55 + Math.sin(t) * .06));
+      ctx.lineTo((x - .2) * r, side * r * .1); ctx.fill(); ctx.stroke();
+    }
+    ctx.strokeStyle = threat.color; ctx.lineWidth = r * .16; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(r * .2, 0);
+    ctx.bezierCurveTo(r * .6, 0, r * .3, -r * (longNeck ? .65 : .15), r * .7, -r * (longNeck ? .5 : .1)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-r * .55, 0); ctx.quadraticCurveTo(-r * .9, r * .2, -r * 1.2, Math.sin(t) * r * .15); ctx.stroke();
+    const headY = -r * (longNeck ? .5 : .1);
+    ctx.fillStyle = threat.color; ctx.beginPath(); ctx.ellipse(r * .76, headY, r * .23, r * .12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffb4a0'; ctx.beginPath(); ctx.arc(r * .78, headY - r * .04, r * .025, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff4d6';
+    for (let i = 0; i < 5; i++) { const x = r * (.67 + i * .055); ctx.beginPath(); ctx.moveTo(x, headY + r * .04); ctx.lineTo(x + r * .025, headY + r * .105); ctx.lineTo(x + r * .04, headY + r * .04); ctx.fill(); }
   } else if (threat.marineKind === 'monster' || threat.marineKind === 'eel') {
     const monster = threat.marineKind === 'monster';
     ctx.strokeStyle = body; ctx.lineWidth = r * (monster ? .38 : .24); ctx.lineCap = 'round';
@@ -99,8 +116,18 @@ export function drawMarineThreat(ctx, threat) {
     ctx.beginPath(); ctx.moveTo(r * .05, r * .12); ctx.lineTo(-r * .25, r * .55); ctx.lineTo(r * .35, r * .18); ctx.fill();
     ctx.strokeStyle = '#14283b'; ctx.lineWidth = 1.5;
     for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(r * (.15 + i * .09), -r * .13); ctx.lineTo(r * (.1 + i * .09), r * .1); ctx.stroke(); }
+    if (threat.behavior.monsterForm === 'megalodon') {
+      ctx.fillStyle = '#180b17'; ctx.beginPath(); ctx.moveTo(r * .42, r * .05);
+      ctx.lineTo(r * .9, 0); ctx.quadraticCurveTo(r * .7, r * .3, r * .42, r * .05); ctx.fill();
+      ctx.fillStyle = '#fff7db';
+      for (let i = 0; i < 6; i++) {
+        const x = r * (.48 + i * .06);
+        ctx.beginPath(); ctx.moveTo(x, r * .04); ctx.lineTo(x + r * .025, r * .13);
+        ctx.lineTo(x + r * .045, r * .035); ctx.closePath(); ctx.fill();
+      }
+    }
   }
-  if (threat.marineKind !== 'jelly') {
+  if (!['jelly', 'plesiosaur', 'mosasaur'].includes(threat.marineKind)) {
     ctx.fillStyle = '#fff2b2'; ctx.beginPath(); ctx.arc(r * .57, -r * .1, Math.max(2, r * .06), 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#091323'; ctx.beginPath(); ctx.arc(r * .59, -r * .1, Math.max(1, r * .025), 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#091323'; ctx.lineWidth = 2;

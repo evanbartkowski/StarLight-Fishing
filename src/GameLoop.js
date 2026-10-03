@@ -1,6 +1,6 @@
 export class GameLoop {
   constructor(update, render) {
-    this.lastFrameTime = 0;
+    this.lastFrameTime = null;
     this.accumulatedTime = 0;
     this.timeStep = 1000 / 60; // 60 updates per second
 
@@ -9,12 +9,15 @@ export class GameLoop {
 
     this.rafId = null;
     this.isRunning = false;
+    this.generation = 0;
   }
 
   mainLoop = (timestamp) => {
     if (!this.isRunning) return;
+    const generation = this.generation;
+    this.rafId = null;
 
-    if (this.lastFrameTime === 0) {
+    if (this.lastFrameTime === null) {
       this.lastFrameTime = timestamp;
       this.rafId = requestAnimationFrame(this.mainLoop);
       return;
@@ -35,6 +38,7 @@ export class GameLoop {
       } catch (err) {
         console.error('Error during GameLoop update:', err);
       }
+      if (!this.isRunning || generation !== this.generation) return;
       this.accumulatedTime -= this.timeStep;
       steps++;
     }
@@ -52,22 +56,27 @@ export class GameLoop {
     }
 
     // Request next frame
-    this.rafId = requestAnimationFrame(this.mainLoop);
+    if (this.isRunning && generation === this.generation) {
+      this.rafId = requestAnimationFrame(this.mainLoop);
+    }
   };
 
   start() {
     if (!this.isRunning) {
       this.isRunning = true;
-      this.lastFrameTime = 0;
+      this.generation++;
+      this.lastFrameTime = null;
       this.accumulatedTime = 0;
       this.rafId = requestAnimationFrame(this.mainLoop);
     }
   }
 
   stop() {
-    if (this.rafId) {
+    if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
     }
     this.isRunning = false;
+    this.rafId = null;
+    this.generation++;
   }
 }

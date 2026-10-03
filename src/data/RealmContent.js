@@ -1,3 +1,4 @@
+import { getRealmDepthZones } from './RealmDepths.js';
 // Native ecology and economy shared by world generation, the chart, and the journal.
 import { FANTASY_SEAS } from '../entities/SeasData.js';
 
@@ -10,6 +11,8 @@ export const REALM_PROFILES = {
   6: { fee: 140000, commonValue: 180, xpMultiplier: 3.8, colors: ['#fb923c', '#ef4444', '#facc15', '#a8a29e', '#f97316'], trail: 'embers', habitat: 'black smokers and rivers of molten basalt', style: 'lava', hazardDensity: 1.5, treasureChance: 0.3 },
   7: { fee: 1000000, commonValue: 420, xpMultiplier: 5, colors: ['#a855f7', '#22d3ee', '#f43f5e', '#818cf8', '#e2e8f0'], trail: 'aurora', habitat: 'gravity wells and shattered timelines', style: 'void', hazardDensity: 1.6, treasureChance: 0.32 },
 };
+
+for (const sea of FANTASY_SEAS) REALM_PROFILES[sea.id].fee = sea.gates.unlockFee;
 
 // Hand-named species use different silhouettes, swimming behaviors, depth niches,
 // sizes, markings, and native palettes. Existing species IDs are retained.
@@ -89,10 +92,31 @@ export function buildRealmFish(originals) {
       evasion: { type: 'dash', cooldown: 1.4, range: 180, label: 'DIVINE SURGE!' },
       lore: 'A god-tier guardian of the deepest ocean. Its luminous crown is said to hold an entire forgotten constellation.',
     });
-    // A resident deep-water population remains available after line upgrades.
-    // Keep surface specialists, but extend a varied subset into the deep shelves.
+    const visitors = {
+      1: [['Lagoon Stingray', 'ray'], ['Sunbeam Whale', 'whale'], ['Kelpback Turtle', 'mossback_turtle']],
+      2: [['Lantern Axolotl', 'salamander'], ['Bubblegum Dumpling', 'disc'], ['Glowfin Swordfish', 'swordfish']],
+      3: [['Rainbow Star Narwhal', 'narwhal'], ['Moon Salamander', 'salamander'], ['Comet Ribbon Ray', 'ray']],
+      4: [['Marbleback Turtle', 'mossback_turtle'], ['Imperial Swordfish', 'swordfish'], ['Royal Teapot Guppy', 'disc']],
+      5: [['Rainbow Cloud Narwhal', 'narwhal'], ['Cloudwhisker Whale', 'whale'], ['Kitewing Sky Ray', 'ray']],
+      6: [['Ember Axolotl', 'salamander'], ['Obsidianback Turtle', 'mossback_turtle'], ['Lava Lantern Puffer', 'disc']],
+      7: [['Prismatic Rift Narwhal', 'narwhal'], ['Hourglass Whale', 'whale'], ['Upside-Down Oracle', 'seahorse']],
+    };
+    visitors[sea.id].forEach(([name, shape], index) => natives.push({
+      ...natives[6 + index], id: `realm_${sea.id}_visitor_${index}`, name, shape,
+      rarity: index === 0 ? 'rare' : 'uncommon',
+      movementType: shape === 'salamander' ? 'erratic' : shape === 'narwhal' ? 'sine_wave' : shape === 'seahorse' ? 'vertical_pulse' : 'diagonal_glide',
+      scaleFactor: shape === 'whale' ? 2.7 : shape === 'narwhal' ? 1.8 : 1.2,
+      isRainbow: shape === 'narwhal', sizeRange: shape === 'whale' ? [250, 500] : [30, 100],
+      lore: `${name} is a native resident of ${sea.name}, adapted to its unusual currents and hidden gardens.`,
+    }));
+    const habitats = getRealmDepthZones(sea.id);
     natives.forEach((fish, index) => {
-      if ((index % 3 === 0 || ['rare', 'epic', 'legendary'].includes(fish.rarity)) && !fish.conditions && !fish.isSpecialDeep) fish.maxDepth = 3000;
+      fish.name = fish.name.replace(/^(?:sea|realm)[_ ]*\d+[_ :?-]+/i, '');
+      if (fish.isSpecialDeep || fish.conditions) return;
+      const habitat = habitats[index < 6 ? 0 : index % 4];
+      fish.habitatZone = habitat.id;
+      fish.minDepth = habitat.index === 0 ? Math.min(fish.minDepth, 20) : habitat.minDepth;
+      fish.maxDepth = habitat.maxDepth;
     });
     // Exactly one modest migrant from each realm may visit the next realm.
     natives[0].sharedSeas = sea.id < 7 ? [sea.id + 1] : [];
@@ -129,6 +153,7 @@ export const REALM_HAZARDS = FANTASY_SEAS.flatMap(sea => HAZARDS[sea.id].map((na
   maxDepth: 3000,
   damage: 1 + Math.floor((sea.id + i) / 3), knockback: 22 + sea.id * 5 + i * 4,
   radius: i === 3 ? 48 : 18 + i * 6, isColossal: i === 3,
+  pulseHazard: sea.id === 6 && i === 0 || sea.id === 2 && i === 1,
   color: REALM_PROFILES[sea.id].colors[i], glow: REALM_PROFILES[sea.id].colors[(i + 1) % 5],
 })));
 export const REALM_TREASURES = FANTASY_SEAS.flatMap(sea => {

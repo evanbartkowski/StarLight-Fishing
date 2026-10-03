@@ -52,13 +52,13 @@ export class ChatManager {
   }
 
   receiveExternalMessage(payload) {
-    if (!this.saveSystem.isChatUnlocked() || payload?.kind !== 'player' || !payload.id ||
+    if (!this.saveSystem.isChatUnlocked() || !['player', 'event'].includes(payload?.kind) || !payload.id ||
         typeof payload.text !== 'string' || !payload.text.trim() || this.seen.has(payload.id)) return;
     const createdAt = payload.createdAt?.toMillis?.() ?? payload.createdAt ?? Date.now();
     if (createdAt <= Date.now() - 86400000) return;
     this.seen.add(payload.id);
     if (this.seen.size > 500) this.seen.delete(this.seen.values().next().value);
-    const message = { createdAt, id: payload.id, sender: String(payload.sender || 'Guest Mariner').slice(0, 40), text: payload.text.slice(0, 180), isSelf: !!payload.isSelf };
+    const message = { senderId: payload.senderId, createdAt, id: payload.id, sender: String(payload.sender || 'Guest Mariner').slice(0, 40), text: payload.text.slice(0, 180), isSelf: !!payload.isSelf };
     this.messages.push(message);
     if (this.messages.length > 30) this.messages.shift();
     this.onMessageReceived?.(message);

@@ -18,7 +18,7 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(56, 189, 248, 0.4)',
     particleType: 'light_rays',
     ambientLight: 1.0,
-    description: 'Warm blue shallows with seagrass fish and shell treasures. Kelp beds, mossy boulders, and waterlogged logs give way to broken wrecks deeper down.',
+    description: 'Breezy coastal blues, warm sunbeams, and gentle sandy shoals teeming with lively reef species.',
     lore: 'Where every novice mariner casts their first line. The tide is gentle and the gulls sing welcoming melodies.',
     gates: {
       reqLevel: 0,
@@ -49,13 +49,13 @@ export const FANTASY_SEAS = [
     waterSurfaceColor: 'rgba(168, 85, 247, 0.45)',
     particleType: 'biolum_plankton',
     ambientLight: 0.75,
-    description: 'Violet water lit by glowing plankton and lantern fish. Fungal shelves, tangled roots, and luminous treasures fill the trench.',
+    description: 'A deep violet and neon-cyan abyss illuminated by floating photophores, pulsating jellies, and glowing plankton.',
     lore: 'Sunlight never pierces this canyon; instead, ancient algae and crystal corals radiate their own cold, ethereal twilight.',
     gates: {
       reqLevel: 3,
       reqVessel: 1, // Coastal Dory
-      reqTackle: { id: 'lineLength', level: 1, label: 'Line Length Lv. 1 (130m)' },
-      unlockFee: 3000,
+      reqTackle: { id: 'lineLength', level: 1, label: 'Line Length Lv. 1 (80m+)' },
+      unlockFee: 200,
     },
     hotspots: [
       { name: "Glow-Squid Rift", type: "Luminescent Trench", bonus: "+25% Rare Neon Catch Rate", coords: [150, 140] },
@@ -79,14 +79,14 @@ export const FANTASY_SEAS = [
     skyHorizon: '#312e81',
     waterSurfaceColor: 'rgba(99, 102, 241, 0.4)',
     particleType: 'starlight_dust',
-    ambientLight: 0.78,
-    description: 'Starlit indigo water with crystal formations, comet-colored fish, meteor fragments, and sharp astral debris.',
+    ambientLight: 0.6,
+    description: 'Starlit crystalline waters mirroring brilliant nebula skies, with cascades of meteor dust and floating crystal shards.',
     lore: 'Legend tells of a fallen comet that shattered upon the sea, embedding starlight into the scales of every creature that dwells here.',
     gates: {
       reqLevel: 5,
       reqVessel: 1, // Coastal Dory
       reqTackle: { id: 'abyssalLantern', level: 1, label: 'Abyssal Lantern Lv. 1' },
-      unlockFee: 17500,
+      unlockFee: 500,
     },
     hotspots: [
       { name: "Nebula Eddy", type: "Starlight Vortex", bonus: "+30% Meteor Dust & Gem Drops", coords: [180, 160] },
@@ -104,20 +104,20 @@ export const FANTASY_SEAS = [
     minDepth: 180,
     maxDepth: 280,
     topColor: '#064e3b',
-    bottomColor: '#065f46',
+    bottomColor: '#022c22',
     skyTop: '#064e3b',
     skyMiddle: '#065f46',
     skyHorizon: '#047857',
     waterSurfaceColor: 'rgba(16, 185, 129, 0.35)',
     particleType: 'emerald_bubbles',
-    ambientLight: 0.70,
-    description: 'Emerald water surrounds sunken columns and broken machinery. Gilded fish swim among ancient coins, relics, and ruined stonework.',
+    ambientLight: 0.45,
+    description: 'Submerged classical marble pillars, emerald currents, ancient brass automatons, and moss-draped amphitheaters.',
     lore: 'The sovereign metropolis swallowed by an ancient deluge. Its clocks still tick and its gilded treasures rest untouched.',
     gates: {
       reqLevel: 8,
       reqVessel: 2, // Expedition Trawler
       reqTackle: { id: 'treasureSonar', level: 1, label: 'Treasure Sonar Lv. 1' },
-      unlockFee: 35000,
+      unlockFee: 1200,
     },
     hotspots: [
       { name: "Sunken Amphitheater", type: "Gilded Relic Field", bonus: "High Ancient Relic Dredging Rate", coords: [140, 240] },
@@ -135,20 +135,20 @@ export const FANTASY_SEAS = [
     minDepth: 280,
     maxDepth: 410,
     topColor: '#4c1d95',
-    bottomColor: '#1e3a8a',
+    bottomColor: '#172554',
     skyTop: '#701a75',
     skyMiddle: '#86198f',
     skyHorizon: '#a21caf',
     waterSurfaceColor: 'rgba(217, 70, 239, 0.35)',
     particleType: 'lilac_winds',
-    ambientLight: 0.65,
-    description: 'Lilac skies hang over a deep blue sea of feather-finned fish, drifting cloud reefs, and aether treasures.',
+    ambientLight: 0.35,
+    description: 'Cloud-shrouded floating sky-islands, lilac winds, shimmering cloud-fins, and gentle celestial wind chimes.',
     lore: 'An impossible sea lifted towards the clouds by volcanic aetherium. Fish here navigate between sea spray and low clouds with equal ease.',
     gates: {
       reqLevel: 11,
       reqVessel: 2, // Expedition Trawler
       reqTackle: { id: 'hookAgility', level: 2, label: 'Hook Agility Lv. 2' },
-      unlockFee: 70000,
+      unlockFee: 2500,
     },
     hotspots: [
       { name: "Sky-Isle Shallows", type: "Floating Shoal", bonus: "Aetherial XP Multiplier (+50%)", coords: [160, 310] },
@@ -166,20 +166,20 @@ export const FANTASY_SEAS = [
     minDepth: 410,
     maxDepth: 530,
     topColor: '#7f1d1d',
-    bottomColor: '#581c87',
+    bottomColor: '#450a0a',
     skyTop: '#450a0a',
     skyMiddle: '#7f1d1d',
     skyHorizon: '#991b1b',
     waterSurfaceColor: 'rgba(239, 68, 68, 0.4)',
     particleType: 'volcanic_embers',
-    ambientLight: 0.58,
-    description: 'Red volcanic water surrounds obsidian spires and thermal vents. Ember-colored fish and mineral treasures reward careful casts through the hazards.',
+    ambientLight: 0.25,
+    description: 'Volcanic reefs, cooled obsidian spires, floating glowing embers, and superheated hydrothermal vents.',
     lore: 'The beating thermal heart of the Seven Seas. Only heavily armored vessels and heat-forged lines dare plumb these bubbling depths.',
     gates: {
       reqLevel: 14,
       reqVessel: 3, // Grand Schooner
       reqTackle: { id: 'lineArmor', level: 3, label: 'Line Armor Lv. 3 (Shields)' },
-      unlockFee: 140000,
+      unlockFee: 5000,
     },
     hotspots: [
       { name: "Obsidian Spire", type: "Volcanic Chimney", bonus: "Golden Coelacanth Habitat", coords: [190, 420] },
@@ -195,22 +195,22 @@ export const FANTASY_SEAS = [
     icon: '🌌',
     coordinates: "??° ??' ??, ??° ??' ??",
     minDepth: 530,
-    maxDepth: 3000,
-    topColor: '#1e1b4b',
-    bottomColor: '#090d22',
+    maxDepth: 2650,
+    topColor: '#09090b',
+    bottomColor: '#000000',
     skyTop: '#020617',
     skyMiddle: '#090d16',
     skyHorizon: '#1e1b4b',
     waterSurfaceColor: 'rgba(56, 189, 248, 0.5)',
     particleType: 'cosmic_aurora',
-    ambientLight: 0.52,
-    description: 'A dark cosmic sea of strange deep-water fish, fractured rings, and ancient timeworn treasures. Its deepest catches demand a fully extended line.',
+    ambientLight: 0.15,
+    description: 'Iridescent aurora waves, space-whale silhouettes drifting in the background, time distortion rings, and cosmic silence.',
     lore: 'Where time curves back upon itself. Reaching the Chrono Tide is the crowning triumph of only the most patient masters of the rod.',
     gates: {
       reqLevel: 18,
       reqVessel: 4, // Mythic Celestial Ketch
       reqTackle: { id: 'fishingRod', level: 4, label: 'Gilded Sovereign Rod+' },
-      unlockFee: 1000000,
+      unlockFee: 12000,
     },
     hotspots: [
       { name: "Singularity Well", type: "Chrono Eddy", bonus: "Celestial Reliquary Crate Vault", coords: [210, 560] },
@@ -220,6 +220,26 @@ export const FANTASY_SEAS = [
     weatherCurrent: 'Cosmic Temporal Flux',
   },
 ];
+
+// Unequal depth bands are shared by the chart, HUD and reward calculations.
+export const DEPTH_SUBZONES = [
+  { id: 'sunlit', name: 'Sunlit Shallows', minRatio: 0, maxRatio: .15, color: '#22d3ee', icon: '☀', borderStyle: 'solid' },
+  { id: 'twilight', name: 'Twilight Zone', minRatio: .15, maxRatio: .4, color: '#818cf8', icon: '◐', borderStyle: 'solid' },
+  { id: 'midnight', name: 'Midnight Abyss', minRatio: .4, maxRatio: .72, color: '#a78bfa', icon: '☾', borderStyle: 'solid' },
+  { id: 'hadal', name: 'Hadal Trench', minRatio: .72, maxRatio: 1, color: '#e879f9', icon: '✦', borderStyle: 'solid' },
+];
+
+export function getDepthSubZone(depth, maxDepth = 600) {
+  const ratio = Math.max(0, Number(depth) || 0) / Math.max(1, Number(maxDepth) || 600);
+  return DEPTH_SUBZONES.find(zone => ratio < zone.maxRatio) || DEPTH_SUBZONES.at(-1);
+}
+
+// Preserve the free starter realm and already purchased unlocks.
+const baselineFees = [0, 3000, 17500, 35000, 70000, 140000, 1000000];
+FANTASY_SEAS.forEach((sea, index) => {
+  sea.gates.reqLevel = Math.round(10 + index * 40 / (FANTASY_SEAS.length - 1));
+  sea.gates.unlockFee = baselineFees[index] * (index < 3 ? 2 : index >= 4 ? 3 : 1);
+});
 
 export function getSeaById(id) {
   const numId = parseInt(id, 10) || 1;

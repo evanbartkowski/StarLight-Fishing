@@ -22,7 +22,7 @@ export class Hazard {
     this.glow = typeConfig.glow || '#ef4444';
     this.isColossal = !!typeConfig.isColossal;
     // Choose a permanent size per giant so its artwork and collision bounds agree.
-    this.sizeScale = this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : 1;
+    this.sizeScale = typeConfig.sizeScale || (this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : 1);
     this.shieldCost = typeConfig.shieldCost || (this.isColossal && this.sizeScale >= 1.85 ? 2 : 1);
     this.radius = (typeConfig.radius || (this.isColossal ? 35 : 20)) * this.sizeScale;
 
@@ -36,6 +36,23 @@ export class Hazard {
   update(dt, worldWidth, hook = null) {
     const deltaSec = dt / 1000;
     this.timer += this.pulseSpeed * deltaSec;
+    if (this.behavior.motion === 'falling') {
+      this.y += 150 * deltaSec;
+      if (this.y > this.homeY + 400) this.y = this.homeY;
+      return;
+    }
+    if (this.behavior.motion === 'probe') {
+      this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.homeX + Math.sin(this.timer) * 100));
+      this.y = this.homeY + Math.cos(this.timer * .7) * 70;
+      return;
+    }
+    if (this.behavior.expedition) {
+      this.x += (this.behavior.moveSpeed || 30) * this.facing * deltaSec;
+      if (this.x > worldWidth + this.radius) this.facing = -1;
+      if (this.x < -this.radius) this.facing = 1;
+      this.y = this.homeY + Math.sin(this.timer) * 12;
+      return;
+    }
     if (this.marineKind) {
       this.restTime = Math.max(0, this.restTime - deltaSec);
       const config = this.behavior;
@@ -67,6 +84,13 @@ export class Hazard {
 
     // Subtle vertical wave undulation
     this.y += Math.sin(this.timer * 1.5) * 0.35;
+  }
+
+  intersectsHook(x, y, hookRadius) {
+    if (this.behavior.pulseHazard && this.timer % 6 < 3.5) return false;
+    const verticalRadius = this.naturalKind === 'submarine' ? this.radius * 0.5 : this.radius;
+    return ((x - this.x) / (this.radius + hookRadius)) ** 2
+      + ((y - this.y) / (verticalRadius + hookRadius)) ** 2 < 1;
   }
 
   renderRealmHazard(ctx) {
@@ -146,11 +170,18 @@ export class Hazard {
     ctx.fillStyle = halo;
     ctx.fillRect(-haloRadius, -haloRadius, haloRadius * 2, haloRadius * 2);
 
+    if (this.behavior.pulseHazard) {
+      const active = this.timer % 6 >= 3.5;
+      ctx.strokeStyle = active ? '#ff5252' : '#fbbf24';
+      ctx.lineWidth = active ? 5 : 2;
+      ctx.beginPath(); ctx.arc(0, 0, this.radius * (active ? 1 : .6 + this.timer % 6 / 10), 0, Math.PI * 2); ctx.stroke();
+    }
     ctx.scale(this.sizeScale, this.sizeScale);
     try {
       if (this.marineKind) {
         drawMarineThreat(ctx, this);
       } else if (this.naturalKind) {
+        if (this.behavior.expedition) ctx.scale(this.facing, 1);
         drawNaturalHazard(ctx, this.naturalKind, this.radius / this.sizeScale, this.timer);
       } else if (this.realmStyle) {
         this.renderRealmHazard(ctx);

@@ -328,7 +328,7 @@ export function getCrownMultiplier(crown) {
   return 1.0;
 }
 
-export function checkMythicSpawn(species, timeOfDay, weather, depthMeters) {
+export function checkMythicSpawn(species, timeOfDay, weather, depthMeters, eventMultiplier = 1) {
   if (!species.spawnConditions) return true;
   const cond = species.spawnConditions;
 
@@ -341,7 +341,7 @@ export function checkMythicSpawn(species, timeOfDay, weather, depthMeters) {
   if (depthMeters < cond.minDepth) {
     return false;
   }
-  return Math.random() < (cond.chance || 0.15);
+  return Math.random() < Math.min(1, (cond.chance || 0.15) * eventMultiplier);
 }
 
 // Mythics retain their identities and conditions, with rewards tied to home waters.

@@ -1,3 +1,6 @@
+import { depthWaterColor } from '../data/RealmDepths.js';
+import { drawDepthScenery } from '../rendering/DepthScenery.js';
+import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { drawAngler } from '../data/CustomizationData.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
@@ -17,11 +20,13 @@ import { ShipsCat, PerchingPelican, BackgroundDolphin, BoatShark } from '../enti
 import { DriftItemManager } from '../entities/DriftItems.js';
 import { HotspotManager } from '../entities/Hotspots.js';
 import { isConditionMet } from '../data/weather.config.js';
+import { InteractiveFlora, FLORA_TYPES } from '../entities/InteractiveFlora.js';
+import { Powerup, POWERUP_TYPES } from '../entities/Powerup.js';
 
 export class OceanWorld {
   constructor(canvas, trapSystem = null) {
     this.canvas = canvas;
-    this.worldWidth = canvas.width;
+    this.worldWidth = canvas.clientWidth || canvas.width || 800;
     this.surfaceY = 220; // Y position of ocean surface
     this.pixelsPerMeter = 15;
     this.maxDepthMeters = 3050;
@@ -33,6 +38,8 @@ export class OceanWorld {
       fish: [],
       hazards: [],
       treasures: [],
+      flora: [],
+      powerups: [],
     };
 
     // Parallax background clouds
@@ -142,6 +149,8 @@ export class OceanWorld {
     this.entities.hazards = [];
     this.entities.treasures = [];
     this.entities.relics = [];
+    this.entities.flora = [];
+    this.entities.powerups = [];
 
     this.boat.x = this.worldWidth * .5;
     this.boat.y = this.surfaceY - 14;
@@ -192,17 +201,28 @@ export class OceanWorld {
     const depthProgress = depth => depth / (depth + 350);
     const fishPool = FISH_SPECIES.filter(species => belongsToRealm(species, this.currentSeaId)
       && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
-    populateBands(fishPool, depth => (5 - depthProgress(depth)) * 1.15 * ecology.fish,
+    populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 1.15 * ecology.fish,
       (species, depth) => (rarityWeight[species.rarity] || 0.01)
         * ({ common: 1 / (1 + depth / 350), uncommon: 1 / (1 + depth / 700), rare: 1 + depth / 300, epic: 1 + depth / 180, legendary: 1 + depth / 120 }[species.rarity] || 1)
         * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 * ecology.rarity : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
 
+    // Sparse realms still need one reachable resident in the first 30m. Random
+    // band selection can otherwise choose only species whose habitat starts deeper.
+    if (!this.entities.fish.some(fish => fish.y < this.surfaceY + 30 * this.pixelsPerMeter)) {
+      const shallow = fishPool.filter(species => species.minDepth < 25 && species.maxDepth > species.minDepth);
+      if (shallow.length) {
+        const species = shallow[Math.floor(Math.random() * shallow.length)];
+        const depth = (species.minDepth + Math.min(25, species.maxDepth, activeMaxDepth)) / 2;
+        this.entities.fish.push(new Fish(species, this.worldWidth / 2, this.surfaceY + depth * this.pixelsPerMeter, fishOptions));
+      }
+    }
+
     // Special deep fish remain solitary and retain their environmental conditions.
     FISH_SPECIES.filter(species => species.isSpecialDeep && belongsToRealm(species, this.currentSeaId)).forEach(species => {
       const end = Math.min(activeMaxDepth, species.maxDepth);
-      if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= (species.spawnChance ?? 0.85)) return;
+      if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= Math.min(1, (species.spawnChance ?? 0.85) * weatherApexMult)) return;
       const y = this.surfaceY + (species.minDepth + Math.random() * (end - species.minDepth)) * this.pixelsPerMeter;
       this.entities.fish.push(new Fish(species, 70 + Math.random() * (this.worldWidth - 140), y, fishOptions));
     });
@@ -214,7 +234,7 @@ export class OceanWorld {
     LEGENDARY_SPECIES.forEach((mythic) => {
       if (!belongsToRealm(mythic, this.currentSeaId)) return;
       if (mythic.minDepth > activeMaxDepth) return;
-      if (checkMythicSpawn(mythic, timeOfDay, weather, activeMaxDepth)) {
+      if (checkMythicSpawn(mythic, timeOfDay, weather, activeMaxDepth, weatherApexMult)) {
         const minSpawnY = this.surfaceY + mythic.minDepth * this.pixelsPerMeter;
         const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, mythic.maxDepth) * this.pixelsPerMeter;
         if (minSpawnY < maxSpawnY) {
@@ -228,7 +248,7 @@ export class OceanWorld {
 
     populateBands(TREASURE_ITEMS.filter(item => belongsToRealm(item, this.currentSeaId)),
       depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2 * ecology.treasure,
-      item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : 1),
+      item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : item.isCrate ? .3 * worldCycle.getCrateDropMultiplier() : 1),
       (item, x, y) => this.entities.treasures.push(new Treasure(item, x, y)));
 
     REALM_RELICS.filter(relic => relic.zone === this.currentSeaId).forEach(relic => {
@@ -239,17 +259,21 @@ export class OceanWorld {
       this.entities.relics.push(new Relic(relic, x, y));
     });
 
-    populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && belongsToRealm(hazard, this.currentSeaId)),
+    populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && !hazard.expedition && belongsToRealm(hazard, this.currentSeaId)),
       depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards,
       hazard => hazard.isColossal ? 0.6 : 1,
+      (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
+    populateBands(EXPEDITION_HAZARDS.filter(h => !h.expedition && h.seas.includes(this.currentSeaId)),
+      depth => .06 + .15 * depthProgress(depth), () => 1,
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     // Creature encounters are sparse groups, separate from static obstacles.
     for (const creature of HAZARD_TYPES.filter(h => h.marineKind && h.zone === this.currentSeaId)) {
       const end = Math.min(activeMaxDepth, creature.maxDepth);
-      const spacing = creature.isColossal ? 750 : 250;
+      const populationBoost = this.currentSeaId >= 5 ? 3 : 1.5;
+      const spacing = (creature.isColossal ? 750 : 250) / populationBoost;
       for (let depth = creature.minDepth; depth + 20 < end; depth += spacing) {
         const chance = creature.isColossal ? .22 : creature.marineKind === 'jelly' ? .3 : .22;
-        if (Math.random() >= Math.min(.85, chance * ecology.enemies * (1 + depthProgress(depth) * .8))) continue;
+        if (Math.random() >= Math.min(.85, chance * ecology.enemies * (1 + depthProgress(depth) * 1.8))) continue;
         const centerDepth = depth + 10 + Math.random() * Math.min(spacing - 20, end - depth - 20);
         const centerX = 120 + Math.random() * Math.max(1, this.worldWidth - 240);
         const count = creature.marineKind === 'jelly' ? 3 + Math.floor(Math.random() * 3) : 1;
@@ -264,6 +288,75 @@ export class OceanWorld {
       }
     }
 
+    // Moving Obstacles: Realm 1 Human Divers (shallow searchlight swimmers) & Deep Metallic Submarines
+    if (this.currentSeaId === 1) {
+      // Human Divers exploring the Sunlit Shoals
+      for (let i = 0; i < 2; i++) {
+        const diverY = this.surfaceY + (12 + i * 16) * this.pixelsPerMeter;
+        const diverHazard = new Hazard({
+          ...EXPEDITION_HAZARDS[0],
+          id: 'human_diver',
+          name: 'Scuba Diver',
+          damage: 1,
+          knockback: 30,
+          radius: 22,
+          color: '#38bdf8',
+          glow: '#fde047',
+          moveSpeed: 32 + i * 8,
+        }, 100 + i * 400, diverY);
+        diverHazard.homeY = diverY;
+        diverHazard.facing = i % 2 === 0 ? 1 : -1;
+        this.entities.hazards.push(diverHazard);
+      }
+    }
+
+    // Mid-to-Deep Submarines (Realms 2, 3, 4, 7)
+    if ([2, 3, 4, 7].includes(this.currentSeaId) && activeMaxDepth >= 240 && Math.random() < 0.08) {
+      const subDepth = 180 + Math.random() * (activeMaxDepth - 200);
+      const subY = this.surfaceY + subDepth * this.pixelsPerMeter;
+      const subHazard = new Hazard({
+        ...EXPEDITION_HAZARDS[1],
+        id: 'deep_submarine',
+        name: 'Deep-Sea Research Submarine',
+        damage: 2,
+        knockback: 65,
+        radius: 150,
+        sizeScale: 1.4,
+        isColossal: true,
+        color: '#475569',
+        glow: '#38bdf8',
+        moveSpeed: 22,
+      }, this.worldWidth * 0.3, subY);
+      subHazard.homeY = subY;
+      subHazard.facing = 1;
+      this.entities.hazards.push(subHazard);
+    }
+
+    // Populate Interactive Realm Flora
+    const floraConfig = FLORA_TYPES[this.currentSeaId] || FLORA_TYPES[1];
+    // Jittered patches across the entire realm, with open water between clusters.
+    const floraStart = Math.min(floraConfig.minDepth, 20);
+    for (let band = floraStart; band < activeMaxDepth - 8; band += 110) {
+      const end = Math.min(band + 110, activeMaxDepth - 8);
+      const depthM = band + Math.random() * (end - band);
+      const clusterX = 45 + Math.random() * Math.max(1, this.worldWidth - 90);
+      const count = 1 + (Math.random() < 0.3 ? 1 : 0);
+      for (let f = 0; f < count; f++) {
+        const fx = Math.max(35, Math.min(this.worldWidth - 35, clusterX + f * 42));
+        const fy = this.surfaceY + depthM * this.pixelsPerMeter + f * 18;
+        this.entities.flora.push(new InteractiveFlora(floraConfig, fx, fy));
+      }
+    }
+
+    // Populate Underwater Power-ups (Rare Spawns: Positive & Negative)
+    const powerupCount = 3 + Math.floor(Math.random() * 3);
+    for (let p = 0; p < powerupCount; p++) {
+      const pDepth = 15 + Math.random() * Math.max(20, activeMaxDepth - 25);
+      const px = 60 + Math.random() * (this.worldWidth - 120);
+      const py = this.surfaceY + pDepth * this.pixelsPerMeter;
+      const pConfig = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)];
+      this.entities.powerups.push(new Powerup(pConfig, px, py));
+    }
   }
 
   update(dt, hook, particles = null) {
@@ -305,6 +398,8 @@ export class OceanWorld {
     this.entities.fish.forEach((fish) => fish.update(dt, this.worldWidth, hook, particles));
     this.entities.hazards.forEach((hazard) => hazard.update(dt, this.worldWidth, hook));
     this.entities.treasures.forEach((treasure) => treasure.update(dt, this.worldWidth, hook));
+    this.entities.flora?.forEach((flora) => flora.update(dt));
+    this.entities.powerups?.forEach((powerup) => powerup.update(dt, this.worldWidth));
 
     // Update vessel companions (only if unlocked)
     if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
@@ -486,6 +581,10 @@ export class OceanWorld {
   renderBoatAndFisherman(ctx, cameraY = 0) {
     if (cameraY > this.surfaceY + 90) return;
 
+    // Recover legacy/resize-invalid transforms before drawing the ship.
+    if (!Number.isFinite(this.boat.x) || this.boat.x < 0 || this.boat.x > this.worldWidth) this.boat.x = this.worldWidth / 2;
+    if (!Number.isFinite(this.boat.y)) this.boat.y = this.surfaceY - 14;
+    if (!Number.isFinite(this.boat.angle)) this.boat.angle = 0;
     const drawBoatY = this.boat.y - cameraY;
     const b = this.boat;
     const vessel = b.vesselLevel || 0;
@@ -497,6 +596,8 @@ export class OceanWorld {
 
     ctx.save();
     ctx.translate(b.x, drawBoatY);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
     ctx.rotate(b.angle);
 
     // ---- Boat Vessel Hull ----
@@ -723,6 +824,9 @@ export class OceanWorld {
       }
     }
 
+    // Cosmetic hull stripe follows the boat transform on every vessel tier.
+    const skinColor = { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24' }[this.saveSystem?.data.boatSkin];
+    if (skinColor) { ctx.fillStyle = skinColor; ctx.fillRect(-b.width * .3, 5, b.width * .6, 7); }
     // Lantern (all vessel tiers)
     const lanternX = vessel >= 4 ? 0 : (vessel >= 2 ? 16 : 0);
     const lanternY = vessel >= 4 ? -22 : -26;
@@ -837,8 +941,8 @@ export class OceanWorld {
     try {
       const sea = getSeaById(this.currentSeaId) || FANTASY_SEAS[0];
       const grad = ctx.createLinearGradient(0, topY, 0, bottomY);
-      grad.addColorStop(0, sea.topColor);
-      grad.addColorStop(1, sea.bottomColor);
+      grad.addColorStop(0, depthWaterColor(visibleTopM, this.currentSeaId));
+      grad.addColorStop(1, depthWaterColor(visibleBottomM, this.currentSeaId));
       ctx.fillStyle = grad;
     } catch (e) {
       ctx.fillStyle = '#0284c7';
@@ -848,6 +952,8 @@ export class OceanWorld {
 
     ctx.save();
     ctx.beginPath(); ctx.rect(0, topY, this.worldWidth, bottomY - topY); ctx.clip();
+
+    drawDepthScenery(ctx, this.currentSeaId, cameraY, this.surfaceY, this.worldWidth, screenHeight);
 
     // Sea 1: Sunlit Caustics (0 - 45m)
     if (this.currentSeaId === 1) {

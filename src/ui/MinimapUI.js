@@ -1,3 +1,4 @@
+import { getRealmDepthZone as getDepthSubZone, getRealmDepthZones } from '../data/RealmDepths.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { REALM_PROFILES } from '../data/RealmContent.js';
@@ -31,8 +32,11 @@ export class MinimapUI {
     const currentSea = getSeaById(currentSeaId);
     const unlockedSeas = this.saveSystem.data.unlockedSeas || [1];
 
+    const currentDepthMeters = this.oceanWorld?.hook?.depthMeters || 0;
+    const currentSubZone = getDepthSubZone(currentDepthMeters, currentSea.id);
+
     let html = `
-      <div class="minimap-modal-container">
+      <div class="minimap-modal-container" style="border:1px solid ${currentSubZone.color};border-radius:12px;padding:8px;--depth-color:${currentSubZone.color}">
         <!-- Header with coordinates and current atmospheric current -->
         <div class="minimap-header-bar">
           <div class="minimap-coords">
@@ -47,17 +51,59 @@ export class MinimapUI {
           </div>
         </div>
 
+        <!-- Vertical Sub-Zone Exploration Gauge -->
+        <div class="minimap-depth-zones-banner" style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px 14px; margin-bottom:14px; display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+            <span style="color:#cbd5e1; font-weight:600;">🌊 Current Depth Layer: <strong style="color:${currentSubZone.color};">${currentSubZone.icon} ${currentSubZone.name}</strong> (${currentDepthMeters.toFixed(1)}m)</span>
+            <span style="color:#94a3b8; font-size:0.75rem;">Depth range: 0m - 3050m</span>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-top:4px;">
+            ${getRealmDepthZones(currentSea.id).map(sz => {
+              const isActive = currentSubZone.id === sz.id;
+              const minM = sz.minDepth;
+              const maxM = sz.maxDepth;
+              return `
+                <div class="${isActive ? 'depth-active' : ''}" style="color:${sz.color};background:${isActive ? 'rgba(56,189,248,0.22)' : 'rgba(30,41,59,0.5)'}; border:1px ${sz.borderStyle} ${isActive ? sz.color : 'rgba(255,255,255,0.12)'}; border-radius:6px; padding:6px; text-align:center; transition:all 0.2s;">
+                  <div style="font-size:0.75rem; font-weight:700; color:${sz.color};">${sz.icon} ${sz.name}</div>
+                  <div style="font-size:0.68rem; color:#94a3b8; font-family:monospace;">${minM}m - ${maxM}m</div>
+                  ${isActive ? '<span style="font-size:0.65rem; background:#38bdf8; color:#0f172a; padding:1px 4px; border-radius:3px; font-weight:800;">CURRENT</span>' : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
         <!-- Interactive Fantasy Nautical Chart Canvas / Grid -->
         <div class="treasure-chart" aria-label="Treasure map of the seven realms">
           <svg viewBox="0 0 760 380" role="img" aria-label="A winding sea route from Sunlit Shoals to the final realm">
-            <defs><pattern id="chart-lines" width="38" height="38" patternUnits="userSpaceOnUse"><path d="M38 0H0V38" fill="none" stroke="#79552d" stroke-opacity=".13"/></pattern></defs>
+            <defs>
+              <pattern id="chart-lines" width="38" height="38" patternUnits="userSpaceOnUse"><path d="M38 0H0V38" fill="none" stroke="#79552d" stroke-opacity=".13"/></pattern>
+              <!-- Dynamic bathymetric contour pattern -->
+              <radialGradient id="realm-glow-${currentSeaId}" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="${currentSea.topColor}" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="${currentSea.bottomColor}" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
             <rect width="760" height="380" fill="url(#chart-lines)"/>
+            <!-- Contour bathymetric lines -->
+            <path d="M40 80 Q 200 40 400 90 T 720 70" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-opacity="0.25" stroke-dasharray="4 6"/>
+            <path d="M30 160 Q 220 130 380 180 T 730 150" fill="none" stroke="#818cf8" stroke-width="1.2" stroke-opacity="0.25" stroke-dasharray="4 6"/>
+            <path d="M20 240 Q 240 210 420 250 T 740 230" fill="none" stroke="#6366f1" stroke-width="1.2" stroke-opacity="0.2" stroke-dasharray="4 6"/>
+            <path d="M10 320 Q 260 290 460 330 T 750 310" fill="none" stroke="#c084fc" stroke-width="1.2" stroke-opacity="0.2" stroke-dasharray="4 6"/>
             <path d="M90 260 C60 150 120 100 205 120 S235 285 330 265 S345 125 435 140 S480 265 555 220 S545 60 635 90 S645 140 705 175" fill="none" stroke="#9a5636" stroke-width="2" stroke-dasharray="5 8"/>
             <g fill="none" stroke="#84613b" opacity=".5"><path d="M20 330q20-12 40 0t40 0m390 0q20-12 40 0t40 0m-290-290q20-12 40 0t40 0"/><circle cx="85" cy="72" r="31"/><path d="M85 28v88M41 72h88M64 51l42 42m0-42L64 93"/></g>
             <path d="M85 35l7 37-7 31-7-31Z" fill="#735334"/><text x="85" y="22" text-anchor="middle" fill="#614025" font-size="12">N</text>
             ${FANTASY_SEAS.map((sea, index) => {
               const [x, y] = [[90,260],[205,120],[330,265],[435,140],[555,220],[635,90],[705,175]][index];
-              return `<g class="chart-island ${sea.id === currentSeaId ? 'charted-current' : ''}" data-chart-realm="${sea.id}" tabindex="0" role="button" aria-label="View ${sea.name}"><path d="M${x-29} ${y-8}l12-22 27 4 19 20-9 25-25 8-29-13Z" fill="${unlockedSeas.includes(sea.id) ? '#8c9d65' : '#b5a17a'}" stroke="#745331" stroke-width="2"/><circle cx="${x}" cy="${y}" r="13" fill="#eee0bb" stroke="#735334"/><text x="${x}" y="${y+4}" text-anchor="middle" fill="#513821" font-size="13" font-weight="bold">${sea.id}</text><text x="${x}" y="${y+53}" text-anchor="middle" fill="#513821" font-size="10">${sea.name.split(',')[0]}</text></g>`;
+              const isSelected = sea.id === currentSeaId;
+              const fillCol = unlockedSeas.includes(sea.id) ? (isSelected ? '#65a30d' : '#8c9d65') : '#b5a17a';
+              return `<g class="chart-island ${isSelected ? 'charted-current' : ''}" data-chart-realm="${sea.id}" tabindex="0" role="button" aria-label="View ${sea.name}">
+                ${isSelected ? `<circle cx="${x}" cy="${y}" r="38" fill="url(#realm-glow-${currentSeaId})"/>` : ''}
+                <path d="M${x-29} ${y-8}l12-22 27 4 19 20-9 25-25 8-29-13Z" fill="${fillCol}" stroke="#745331" stroke-width="2"/>
+                <circle cx="${x}" cy="${y}" r="13" fill="#eee0bb" stroke="#735334"/>
+                <text x="${x}" y="${y+4}" text-anchor="middle" fill="#513821" font-size="13" font-weight="bold">${sea.id}</text>
+                <text x="${x}" y="${y+53}" text-anchor="middle" fill="#513821" font-size="10">${sea.name.split(',')[0]}</text>
+              </g>`;
             }).join('')}
             <text x="365" y="355" text-anchor="middle" fill="#7e5733" font-family="Georgia,serif" font-size="16" font-style="italic">The Seven Seas of Starlight</text>
           </svg>
