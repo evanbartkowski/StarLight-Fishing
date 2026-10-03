@@ -10,7 +10,7 @@ import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { RELIC_TYPES } from '../data/RelicsData.js';
 import { PET_DEFINITIONS } from '../data/PetsData.js';
-import { CRATE_RANKS, rollCrateLoot } from '../data/CrateData.js';
+import { CRATE_RANKS, rollCrateLoot, getCrateDropPreview } from '../data/CrateData.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { worldCycle } from '../systems/WorldCycle.js';
 import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/almanac.config.js';
@@ -37,12 +37,14 @@ export class UIManager {
     this.initWelcomePopup();
 
     this.saveSystem.onAchievementUnlocked = (achievement) => {
-      this.showToast(`🏆 Trophy Unlocked: ${achievement.name}! (+$${achievement.reward}, +${achievementGems(achievement)} gems)`);
+      this.showAchievementPopup(achievement);
+      this.showToast(`🏆 Trophy Unlocked: ${achievement.name}! (+$${achievement.reward})`);
       soundManager.playUpgrade();
     };
 
     this.saveSystem.onLevelUp = (newLevel) => {
       this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${Math.min(750, newLevel * 100)})`);
+      this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${newLevel * 100})`);
       soundManager.playUpgrade();
     };
   }
@@ -176,6 +178,7 @@ export class UIManager {
           <span id="shield-amount">0</span>
         </div>
 
+        <div class="hud-buffs-container" id="hud-buffs"></div>
       </div>
 
       <div class="hud-center">
@@ -219,13 +222,17 @@ export class UIManager {
           🪤 <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
         <button class="icon-btn" id="btn-quests" title="Quests">
+        <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
           📋 <span class="btn-label">Quests</span> <span class="trap-badge-num" id="hud-quest-badge" style="display: none; background: #f59e0b;">!</span>
         </button>
         <button class="icon-btn" id="btn-inventory" title="Inventory">🎒 <span class="btn-label">Inventory</span></button>
         <button class="icon-btn" id="btn-shop" title="Shop">🛒 <span class="btn-label">Shop</span></button>
+        <button class="icon-btn" id="btn-shop" title="Tackle Shop">🛒 <span class="btn-label">Shop</span></button>
         <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
         <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">📻</button>
+        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
+        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
         <button class="icon-btn" id="btn-mute" title="Toggle Sound">🔊</button>
@@ -280,18 +287,21 @@ export class UIManager {
         if (lvlEl) lvlEl.textContent = 'Lv. 0';
         if (coinsEl) coinsEl.textContent = '$0';
         if (speciesEl) speciesEl.textContent = `0 / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`;
+        if (speciesEl) speciesEl.textContent = '0 / 66';
         return;
       }
       if (usernameOrGuest === '__not_found__') {
         if (lvlEl) lvlEl.textContent = 'Lv. —';
         if (coinsEl) coinsEl.textContent = '$—';
         if (speciesEl) speciesEl.textContent = '— / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}';
+        if (speciesEl) speciesEl.textContent = '— / 66';
         return;
       }
       const data = this.saveSystem.getSaveDataForUser(usernameOrGuest);
       if (lvlEl) lvlEl.textContent = `Lv. ${data.level ?? 0}`;
       if (coinsEl) coinsEl.textContent = `$${(data.coins || 0).toLocaleString()}`;
       if (speciesEl) speciesEl.textContent = `${data.speciesCount || 0} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`;
+      if (speciesEl) speciesEl.textContent = `${data.speciesCount || 0} / 66`;
     };
 
     const loggedInView = document.getElementById('auth-logged-in-view');
@@ -353,8 +363,20 @@ export class UIManager {
           this.openTutorial();
           this.saveSystem.data.settings.hasSeenTutorial = true;
           this.saveSystem.save();
+        } else if (!accountManager.isGuest() && accountManager.getCurrentUser()) {
+          setTimeout(() => {
+            const fleetInput = document.getElementById('fleet-input');
+            const fleetPanel = document.getElementById('fleet-radio');
+            if (fleetPanel && !fleetPanel.hidden && fleetInput) {
+              fleetPanel.classList.remove('fleet-minimized');
+              const content = fleetPanel.querySelector('#fleet-content');
+              if (content) content.hidden = false;
+              fleetInput.focus();
+            }
+          }, 500);
         }
       } catch (e) {
+        console.warn('Tutorial/Chat open error:', e);
         console.warn('Tutorial open error:', e);
       }
     };
@@ -432,6 +454,7 @@ export class UIManager {
         updatePreviewStats('__not_found__');
         if (loginFeedback) {
           loginFeedback.textContent = `Enter your password to look up this captain online.`;
+          loginFeedback.textContent = `No account found for "${val}".`;
           loginFeedback.className = 'auth-feedback auth-muted';
         }
       }
@@ -454,6 +477,7 @@ export class UIManager {
       } else {
         if (regFeedback) {
           regFeedback.textContent = `✨ Username will be checked online when you create the account.`;
+          regFeedback.textContent = `✨ Username "${val}" is available!`;
           regFeedback.className = 'auth-feedback auth-success';
         }
       }
@@ -788,6 +812,34 @@ export class UIManager {
 
     if (tensionContainer) tensionContainer.style.display = 'none';
     if (hook && gameState === 'REELING') {
+      if (tensionContainer) {
+        tensionContainer.style.display = 'flex';
+        const tensionPct = Math.min(100, Math.max(0, (hook.tension / hook.maxTension) * 100));
+        const fillEl = document.getElementById('hud-tension-fill');
+        const pctEl = document.getElementById('hud-tension-percent');
+        const sweetEl = document.getElementById('hud-tension-sweet-spot');
+
+        if (fillEl) fillEl.style.width = `${tensionPct}%`;
+        if (pctEl) pctEl.textContent = `${Math.round(tensionPct)}%`;
+
+        if (sweetEl) {
+          const sMinPct = (hook.sweetSpotMin / hook.maxTension) * 100;
+          const sMaxPct = (hook.sweetSpotMax / hook.maxTension) * 100;
+          sweetEl.style.left = `${sMinPct}%`;
+          sweetEl.style.width = `${sMaxPct - sMinPct}%`;
+        }
+
+        if (fillEl) {
+          if (hook.isInSweetSpot) {
+            fillEl.style.background = '#22c55e'; // Green sweet spot!
+          } else if (tensionPct > 80) {
+            fillEl.style.background = '#ef4444'; // Red snap danger
+          } else {
+            fillEl.style.background = '#38bdf8'; // Normal tension
+          }
+        }
+      }
+
       if (heatContainer) {
         if (this.zoneManager?.activeZone?.mechanic?.heatBuildup) {
           heatContainer.style.display = 'flex';
@@ -823,8 +875,40 @@ export class UIManager {
         const aqItems = this.saveSystem.getAquariumItems?.() || [];
         const aqCap = this.saveSystem.getAquariumCapacity?.() || 5;
         aqBtn.title = 'Aquarium';
+        aqBtn.title = `Personal Marine Aquarium (${aqItems.length} / ${aqCap} fish in tank)`;
       }
     }
+  }
+
+  showAchievementPopup(achievement) {
+    let popup = document.getElementById('achievement-popup-toast');
+    if (!popup) {
+      popup = document.createElement('div');
+      popup.id = 'achievement-popup-toast';
+      document.body.appendChild(popup);
+    }
+    const gems = achievementGems(achievement);
+    popup.innerHTML = `
+      <div class="ach-toast-glow"></div>
+      <div class="ach-toast-icon">${achievement.icon || '🏆'}</div>
+      <div class="ach-toast-body">
+        <div class="ach-toast-tag">TROPHY UNLOCKED</div>
+        <div class="ach-toast-name">${achievement.name}</div>
+        <div class="ach-toast-rewards">+${achievement.reward.toLocaleString()} Gold ${gems > 0 ? `· 💎 +${gems}` : ''}</div>
+      </div>
+    `;
+    popup.classList.remove('ach-toast-exit');
+    popup.classList.add('ach-toast-enter');
+
+    if (this._achPopupTimer) clearTimeout(this._achPopupTimer);
+    this._achPopupTimer = setTimeout(() => {
+      popup.classList.remove('ach-toast-enter');
+      popup.classList.add('ach-toast-exit');
+      setTimeout(() => {
+        popup.classList.remove('ach-toast-exit');
+      }, 500);
+      this._achPopupTimer = null;
+    }, 3500);
   }
 
   showToast(message, { dismissOnFishing = false } = {}) {
@@ -927,8 +1011,17 @@ export class UIManager {
     soundManager.playButtonClick();
 
     const activeStation = soundManager.getActiveStation();
+    const save = this.saveSystem;
+    save.data.unlockedSoundtracks ||= ['harbor_breeze', 'rainy_lighthouse', 'deep_blue'];
 
     const stations = [
+      { id: 'harbor_breeze', name: 'Station 1: Harbor Breeze', desc: 'Acoustic nylon chords & gentle swelling ocean waves', icon: '🎸', cost: 0 },
+      { id: 'rainy_lighthouse', name: 'Station 2: Rainy Lighthouse', desc: 'Soft rain patter, rolling thunder & warm low foghorn', icon: '🌧️', cost: 0 },
+      { id: 'deep_blue', name: 'Station 3: Deep Blue Reverie', desc: 'Slow warm synth pads & gentle underwater resonance', icon: '🫧', cost: 0 },
+      { id: 'peaceful_lagoon', name: 'Soundtrack: Peaceful Shallows', desc: 'Serene ambient strings and gentle turquoise ripples', icon: '🕊️', cost: 3 },
+      { id: 'zen_meditation', name: 'Soundtrack: Abyssal Meditation', desc: 'Tranquil harmonic chimes from the deep ocean trenches', icon: '🧘', cost: 4 },
+      { id: 'tropical_solitude', name: 'Soundtrack: Tropical Warmth', desc: 'Bright island percussion and warm offshore breeze', icon: '🌴', cost: 3 },
+      { id: 'ocean_waves', name: 'Soundtrack: Rhythmic Swell', desc: 'Lapping coastal waves and gentle seafoam whispers', icon: '🌊', cost: 3 },
       { id: 'harbor_breeze', name: 'Station 1: Harbor Breeze', desc: 'Acoustic nylon chords & gentle swelling ocean waves', icon: '🎸' },
       { id: 'rainy_lighthouse', name: 'Station 2: Rainy Lighthouse', desc: 'Soft rain patter, rolling thunder & warm low foghorn', icon: '🌧️' },
       { id: 'deep_blue', name: 'Station 3: Deep Blue Reverie', desc: 'Slow warm synth pads & gentle underwater resonance', icon: '🫧' },
@@ -937,6 +1030,7 @@ export class UIManager {
     let html = `
       <div class="radio-modal-container">
         <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:14px;">
+          Tune your vessel's vintage brass radio or custom gramophone to atmospheric soundscapes. Unlocked tracks loop continuously while sailing and fishing.
           Tune your vessel's vintage brass radio to cozy procedural soundscapes. Plays in the background without needing any external audio files.
         </p>
         <div style="display:flex; flex-direction:column; gap:10px;">
@@ -944,13 +1038,18 @@ export class UIManager {
 
     stations.forEach(st => {
       const isActive = activeStation === st.id;
+      const isUnlocked = st.cost === 0 || save.data.unlockedSoundtracks.includes(st.id);
       html += `
+        <div class="radio-station-card ${isActive ? 'radio-station-active' : ''}" data-station="${st.id}" data-cost="${st.cost}" data-unlocked="${isUnlocked}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; background:${isActive ? 'rgba(56,189,248,0.18)' : 'rgba(15,23,42,0.6)'}; border:1px solid ${isActive ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; cursor:pointer; transition:all 0.2s ease;">
         <div class="radio-station-card ${isActive ? 'radio-station-active' : ''}" data-station="${st.id}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; background:${isActive ? 'rgba(56,189,248,0.18)' : 'rgba(15,23,42,0.6)'}; border:1px solid ${isActive ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; cursor:pointer; transition:all 0.2s ease;">
           <span style="font-size:1.8rem;">${st.icon}</span>
           <div style="flex:1;">
             <h4 style="margin:0 0 3px 0; color:#f8fafc; font-size:0.95rem;">${st.name} ${isActive ? '<span style="color:#38bdf8; font-size:0.75rem;">● ON AIR</span>' : ''}</h4>
             <p style="margin:0; font-size:0.78rem; color:#94a3b8;">${st.desc}</p>
           </div>
+          <button class="btn ${isActive ? 'btn-primary' : isUnlocked ? 'btn-secondary' : 'btn-outline'} btn-sm">
+            ${isActive ? 'Playing' : isUnlocked ? 'Tune In' : `💎 ${st.cost} Gems`}
+          </button>
           <button class="btn ${isActive ? 'btn-primary' : 'btn-secondary'} btn-sm">${isActive ? 'Playing' : 'Tune In'}</button>
         </div>
       `;
@@ -964,11 +1063,30 @@ export class UIManager {
       </div>
     `;
 
+    this.openModal('📻 Coastal Radio & Soundtracks', html);
     this.openModal('📻 Coastal Radio Receiver', html);
 
     document.querySelectorAll('.radio-station-card').forEach(card => {
       card.addEventListener('click', (e) => {
         const stId = e.currentTarget.dataset.station;
+        const cost = parseInt(e.currentTarget.dataset.cost, 10) || 0;
+        const isUnlocked = e.currentTarget.dataset.unlocked === 'true';
+
+        if (!isUnlocked && cost > 0) {
+          if (save.getGemBalance() < cost) {
+            this.showToast(`💎 Need ${cost} Gems to unlock this track. You have ${save.getGemBalance()} Gems.`);
+            return;
+          }
+          if (save.spendGems(cost)) {
+            save.data.unlockedSoundtracks.push(stId);
+            save.save();
+            soundManager.startRadioStation(stId);
+            this.showToast(`🎵 Unlocked and playing soundtrack!`);
+            this.openRadio();
+          }
+          return;
+        }
+
         soundManager.startRadioStation(stId);
         this.openRadio();
       });
@@ -1068,9 +1186,14 @@ export class UIManager {
                 ? `<button class="btn btn-disabled" disabled>MAX</button>`
                 : !meetsLevel
                 ? `<button class="btn btn-disabled" disabled>🔒 Unlocks at Lv. ${nextTier.reqLevel}</button>`
-                  : `<button class="btn ${canAfford ? 'btn-buy' : 'btn-disabled'} btn-upgrade" data-upgrade="${upg.id}">
+                : `
+                  <button class="btn ${canAfford ? 'btn-buy' : 'btn-disabled'} btn-upgrade" data-upgrade="${upg.id}">
                     ${currentLvl === 0 && upg.id === 'seabedTraps' ? 'Deploy Pots: ' : currentLvl === 0 && upg.id === 'personalAquarium' ? 'Purchase Tank: ' : 'Upgrade: '}$${nextTier.cost.toLocaleString()}
-                   </button>`
+                  </button>
+                  <button class="btn btn-secondary btn-sm btn-upgrade-gem" data-upgrade="${upg.id}" title="Fast-track this upgrade using gems" style="margin-top: 6px; width: 100%; font-size: 0.8rem; background: rgba(147, 51, 234, 0.22); border: 1px solid rgba(192, 132, 252, 0.45); color: #f0abfc;">
+                    💎 Fast Track: ${Math.max(1, Math.ceil(nextTier.cost / 600))} Gems
+                  </button>
+                `
             }
             ${currentLvl > 0 && upg.id === 'personalAquarium' ? `
               <button class="btn btn-secondary btn-sm" id="btn-shop-view-aquarium" style="margin-top: 6px; width: 100%;">🐠 View Aquarium</button>
@@ -1083,6 +1206,7 @@ export class UIManager {
     itemsHtml += '</div>';
 
     this.openModal('🎣 Starlight Shop', shopHeaderHtml + '<button class="btn btn-secondary" id="shop-gems">Gem Store &middot; Angler and Aquarium Styles</button>' + itemsHtml);
+    this.openModal('🎣 Seven Seas Tackle & Vessel Outfitters', shopHeaderHtml + itemsHtml);
 
     document.getElementById('shop-gems')?.addEventListener('click', () => save.gemShop?.open());
     document.getElementById('btn-shop-inventory')?.addEventListener('click', () => {
@@ -1118,6 +1242,37 @@ export class UIManager {
           } else {
             this.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
           }
+          this.onUpgradePurchased?.();
+          this.openShop();
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-upgrade-gem').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const upgId = e.currentTarget.dataset.upgrade;
+        const currentLvl = save.getUpgradeLevel(upgId);
+        const upg = UPGRADE_DEFINITIONS[upgId];
+        const nextTier = upg.tiers[currentLvl + 1];
+        if (!nextTier) return;
+        const gemCost = Math.max(1, Math.ceil(nextTier.cost / 600));
+
+        if (save.getGemBalance() < gemCost) {
+          this.showToast(`💎 Need ${gemCost} Gems to fast-track. You currently have ${save.getGemBalance()} Gems.`);
+          return;
+        }
+
+        if (save.spendGems(gemCost)) {
+          save.setUpgradeLevel(upgId, currentLvl + 1);
+
+          if (upgId === 'seabedTraps' && save.data.traps) {
+            save.data.traps.count = nextTier.trapCount || 1;
+            save.data.traps.maxStorage = nextTier.maxStorage || 12;
+            save.save();
+          }
+
+          soundManager.playUpgrade();
+          this.showToast(`💎 Fast-tracked ${upg.name} to Level ${currentLvl + 1} with ${gemCost} Gems!`);
           this.onUpgradePurchased?.();
           this.openShop();
         }
@@ -1190,6 +1345,7 @@ export class UIManager {
               ${isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '📦' : item.isMythic ? '🌟' : '🐟'}
             </div>
             <div class="catch-item-details">
+              <div class="catch-item-name">${item.name} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-name">${item.name} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-specs">
                 ${
@@ -1325,6 +1481,7 @@ export class UIManager {
           const totalEl = document.getElementById('summary-total-cash');
           if (totalEl) totalEl.textContent = `+$${remainingGold.toLocaleString()}`;
           this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`, { dismissOnFishing: true });
+          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
         }
       });
     });
@@ -1355,6 +1512,7 @@ export class UIManager {
       if (soldCount > 0) {
         soundManager.playCoin();
         this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`, { dismissOnFishing: true });
+        this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`);
       }
       this._onCatchSummaryContinue = null;
       this.closeModal();
@@ -1370,6 +1528,7 @@ export class UIManager {
     });
   }
 
+  // Mystery Loot Crate Unboxing Modal & Drop Preview
   // Mystery Loot Crate Unboxing Modal
   openCratesModal(crates, hook, onContinue) {
     this.activeModal = 'crate_opening';
@@ -1379,18 +1538,28 @@ export class UIManager {
       this._currentCrateContext = null;
       if (hook) this.openCatchSummary(hook, onContinue);
       else this.openInventory();
+      this.openCatchSummary(hook, onContinue);
       return;
     }
 
     const currentCrate = crates[0];
-    const rankInfo = CRATE_RANKS.find((r) => r.rank === currentCrate.crateRank) || CRATE_RANKS[0];
+    const rank = currentCrate.crateRank || 1;
+    const rankInfo = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
+    const preview = getCrateDropPreview(rank);
 
     const modalBody = `
       <div class="crate-unboxing-panel" style="text-align: center; padding: 20px 10px;">
         <div style="font-size: 0.85rem; text-transform: uppercase; color: #facc15; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px;">
           Rank ${rankInfo.rank} Mystery Crate (${crates.length} Remaining)
         </div>
-        <h3 style="margin: 0 0 16px 0; color: #f8fafc; font-size: 1.4rem;">${currentCrate.name || rankInfo.name}</h3>
+        <h3 style="margin: 0 0 12px 0; color: #f8fafc; font-size: 1.35rem;">${currentCrate.name || rankInfo.name}</h3>
+
+        <!-- Interactive Drop Preview Pill -->
+        <div style="margin-bottom: 14px;">
+          <button class="btn btn-secondary btn-sm" id="btn-inspect-crate-drops" style="font-size: 0.82rem; padding: 5px 14px; border-radius: 999px;">
+            🔍 Inspect Drop Table (${preview.rates.superGood}% Jackpot · ${preview.rates.fair}% Fair · ${preview.rates.superBad}% Hazard)
+          </button>
+        </div>
 
         <div id="crate-display-stage" style="margin: 20px auto; width: 140px; height: 140px; background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(15, 23, 42, 0) 70%); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
           <span id="crate-icon-anim" style="font-size: 4.8rem; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6)); transition: transform 0.2s;">
@@ -1398,11 +1567,22 @@ export class UIManager {
           </span>
         </div>
 
-        <p id="crate-status-desc" style="color: #cbd5e1; font-size: 0.95rem; max-width: 380px; margin: 0 auto 20px auto; line-height: 1.5;">
+        <!-- CS:GO Horizontal Spinning Reel Stage -->
+        <div class="gacha-reel-container" id="gacha-reel-viewport">
+          <div class="gacha-reel-pointer"></div>
+          <div class="gacha-reel-strip" id="gacha-reel-track">
+            <!-- Populated dynamically on spin -->
+            <div class="gacha-reel-placeholder">
+              <span style="font-size: 3.8rem; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">${rankInfo.icon}</span>
+            </div>
+          </div>
+        </div>
+
+        <p id="crate-status-desc" style="color: #cbd5e1; font-size: 0.92rem; max-width: 420px; margin: 12px auto; line-height: 1.4;">
           ${currentCrate.lore || rankInfo.desc}
         </p>
 
-        <div id="crate-loot-result" style="display: none; margin-bottom: 20px;"></div>
+        <div id="crate-loot-result" style="display: none; margin-bottom: 16px;"></div>
 
         <div class="crate-actions">
           <button class="btn btn-primary" id="btn-crack-crate" style="padding: 12px 28px; font-size: 1.05rem; font-weight: 800; background: #eab308; color: #1e293b; border-color: #ca8a04; cursor: pointer; transition: all 0.2s ease;">
@@ -1414,45 +1594,102 @@ export class UIManager {
 
     this.openModal(`🎁 Opening ${rankInfo.name}`, modalBody);
 
+    document.getElementById('btn-inspect-crate-drops')?.addEventListener('click', () => {
+      this.openCrateDropPreviewModal(rankInfo.rank, () => {
+        this.openCratesModal(crates, hook, onContinue);
+      });
+    });
+
     const crackBtn = document.getElementById('btn-crack-crate');
     if (crackBtn) {
       crackBtn.addEventListener('click', () => {
         crackBtn.disabled = true;
+        const track = document.getElementById('gacha-reel-track');
         const iconEl = document.getElementById('crate-icon-anim');
         const descEl = document.getElementById('crate-status-desc');
         const resultEl = document.getElementById('crate-loot-result');
 
-        // Suspenseful shake animation
-        let shakes = 0;
-        soundManager.playCast();
-        const shakeInterval = setInterval(() => {
-          shakes++;
-          if (iconEl) {
-            const rot = (shakes % 2 === 0 ? -14 : 14);
-            iconEl.style.transform = `rotate(${rot}deg) scale(1.15)`;
+        if (currentCrate.unboxed || (!hook && !this.saveSystem.getInventory().includes(currentCrate))) return;
+
+        // Roll the authoritative loot item
+        const loot = rollCrateLoot(currentCrate.crateRank, this.saveSystem);
+        const realmReward = currentCrate.rewardMultiplier || 1;
+        loot.coins = Math.round(loot.coins * realmReward);
+        loot.xp = Math.round(loot.xp * Math.min(5, Math.sqrt(realmReward)));
+        currentCrate.unboxed = true;
+        currentCrate.loot = loot;
+        const storedCrateId = currentCrate.instanceId || currentCrate.inventoryRef?.instanceId;
+        if (storedCrateId) this.saveSystem.removeItemFromInventory(storedCrateId);
+        currentCrate.value = 0;
+
+        // Generate 35 items for the CS:GO carousel reel strip with winning item at index 28
+        const winningIndex = 28;
+        const stripItems = [];
+        const allPossible = [...preview.tables.superGood, ...preview.tables.fair, ...preview.tables.superBad];
+
+        for (let i = 0; i < 35; i++) {
+          if (i === winningIndex) {
+            stripItems.push(loot);
+          } else {
+            const randItem = allPossible[Math.floor(Math.random() * allPossible.length)];
+            stripItems.push(randItem);
           }
-          if (shakes >= 8) {
-            clearInterval(shakeInterval);
-            if (iconEl) iconEl.style.transform = 'scale(1.25)';
+        }
 
-            // Do not reward an already opened or removed inventory crate.
-            if (currentCrate.unboxed || (!hook && !this.saveSystem.getInventory().includes(currentCrate))) return;
-            // Roll loot
-            const loot = rollCrateLoot(currentCrate.crateRank, this.saveSystem);
-            const realmReward = currentCrate.rewardMultiplier || 1;
-            loot.coins = Math.round(loot.coins * realmReward);
-            loot.xp = Math.round(loot.xp * Math.min(5, Math.sqrt(realmReward)));
-            currentCrate.unboxed = true;
-            currentCrate.loot = loot;
-            const storedCrateId = currentCrate.instanceId || currentCrate.inventoryRef?.instanceId;
-            if (storedCrateId) this.saveSystem.removeItemFromInventory(storedCrateId);
-            currentCrate.value = 0; // Value is claimed directly to prevent double counting on Sell All
+        // Render carousel cards in track
+        if (track) {
+          track.innerHTML = stripItems.map((item, idx) => {
+            const grade = item.grade || (item.coins > 300 ? 'super_good' : item.coins < 0 ? 'super_bad' : 'fair');
+            const borderColor = grade === 'super_good' ? '#f59e0b' : grade === 'super_bad' ? '#ef4444' : '#38bdf8';
+            return `
+              <div class="gacha-reel-card ${idx === winningIndex ? 'gacha-winning-card' : ''}" style="border-bottom: 4px solid ${borderColor};">
+                <span class="gacha-card-icon">${item.icon || '🎁'}</span>
+                <span class="gacha-card-name">${(item.name || 'Loot').substring(0, 16)}</span>
+              </div>
+            `;
+          }).join('');
+        }
 
+        // Animate the horizontal reel
+        const cardWidth = 110; // 100px width + 10px margin
+        const viewportWidth = 460;
+        // Position winning card under center pointer with slight natural jitter
+        const jitter = (Math.random() - 0.5) * 35;
+        const targetScroll = winningIndex * cardWidth - (viewportWidth / 2) + (cardWidth / 2) + jitter;
+
+        soundManager.playCast();
+        let scrollPos = 0;
+        let lastTickCard = -1;
+        const startTime = Date.now();
+        const spinDuration = 3800; // ~3.8 seconds suspenseful deceleration
+
+        const spinInterval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(1, elapsed / spinDuration);
+          // Ease-out cubic curve
+          const easeProgress = 1 - Math.pow(1 - progress, 3.2);
+          scrollPos = targetScroll * easeProgress;
+
+          if (track) {
+            track.style.transform = `translateX(-${scrollPos}px)`;
+          }
+
+          // Suspenseful ticking audio
+          const currentCardIdx = Math.floor((scrollPos + viewportWidth / 2) / cardWidth);
+          if (currentCardIdx !== lastTickCard && currentCardIdx < stripItems.length) {
+            lastTickCard = currentCardIdx;
+            try { soundManager.playReelClick(0.8); } catch (e) {}
+          }
+
+          if (progress >= 1) {
+            clearInterval(spinInterval);
+
+            // Reel stopped on winner!
             const isJackpot = loot.grade === 'super_good';
             const isBad = loot.grade === 'super_bad';
             soundManager.playChestOpen(isJackpot);
 
-            this.saveSystem.data.gems += loot.gems;
+            this.saveSystem.data.gems = (this.saveSystem.data.gems || 0) + (loot.gems || 0);
             if (loot.gems) this.showToast(`Rare crate find: +${loot.gems} gem!`);
             // Apply coins and XP
             this.saveSystem.adjustCoins(loot.coins);
@@ -1483,6 +1720,7 @@ export class UIManager {
             this.saveSystem.save();
 
             if (this.questSystem) {
+              this.questSystem.dispatch({ type: 'catch_crate', item: currentCrate, loot });
               this.questSystem.dispatch({ type: 'open_crate', item: currentCrate, loot });
             }
 
@@ -1507,7 +1745,7 @@ export class UIManager {
 
             resultEl.style.display = 'block';
             resultEl.innerHTML = `
-              <div style="border: 2px solid ${borderColor}; background: ${bgGlow}; border-radius: 12px; padding: 18px; margin-top: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+              <div style="border: 2px solid ${borderColor}; background: ${bgGlow}; border-radius: 12px; padding: 18px; margin-top: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); animation: gachaWinnerPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
                 <div style="margin-bottom: 8px;">${gradeTag}</div>
                 <div style="font-size: 3.2rem; margin: 8px 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">${loot.icon}</div>
                 <h4 style="margin: 0 0 6px 0; font-size: 1.3rem; color: #f8fafc;">${loot.name}</h4>
@@ -1527,8 +1765,8 @@ export class UIManager {
               </div>
             `;
 
-            // Next button
             crates.shift(); // remove opened crate
+            // Next button
             if (crates.length > 0) {
               crackBtn.disabled = false;
               crackBtn.textContent = `Open Next Crate (${crates.length} Remaining) 🎁`;
@@ -1545,9 +1783,71 @@ export class UIManager {
               };
             }
           }
-        }, 60);
+        }, 16);
       });
     }
+  }
+
+  // Interactive drop preview modal showing tables and tier pull percentages
+  openCrateDropPreviewModal(crateRank, onBack) {
+    const preview = getCrateDropPreview(crateRank);
+    const modalBody = `
+      <div class="drop-preview-modal-panel" style="padding: 10px 4px; max-width: 580px; margin: 0 auto;">
+        <p style="color: #cbd5e1; font-size: 0.9rem; margin-bottom: 16px;">
+          Inspecting <strong>${preview.rankConfig.name}</strong>. Here are all potential items and probability percentages:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; text-align: center;">
+          <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #f59e0b;">JACKPOT</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fef08a;">${preview.rates.superGood}%</div>
+          </div>
+          <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #38bdf8;">FAIR SALVAGE</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #bae6fd;">${preview.rates.fair}%</div>
+          </div>
+          <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: 8px; padding: 10px;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #ef4444;">HAZARD / TRASH</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fca5a5;">${preview.rates.superBad}%</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <h4 style="color: #facc15; font-size: 0.95rem; margin-bottom: 8px;">⭐ Super Good Drops (${preview.rates.superGood}%):</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            ${preview.tables.superGood.map(item => `
+              <span class="preview-item-chip chip-gold" title="${item.flavor || ''}">${item.icon} ${item.name} (+$${item.coins})</span>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 8px;">✨ Fair Salvage (${preview.rates.fair}%):</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            ${preview.tables.fair.map(item => `
+              <span class="preview-item-chip chip-blue" title="${item.flavor || ''}">${item.icon} ${item.name} (+$${item.coins})</span>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <h4 style="color: #ef4444; font-size: 0.95rem; margin-bottom: 8px;">⚠️ Hazards & Scrap (${preview.rates.superBad}%):</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            ${preview.tables.superBad.map(item => `
+              <span class="preview-item-chip chip-red" title="${item.flavor || ''}">${item.icon} ${item.name} (${item.coins >= 0 ? `+$${item.coins}` : `-$${Math.abs(item.coins)}`})</span>
+            `).join('')}
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-preview-back" style="width: 100%; padding: 10px;">🔙 Return to Crate Unboxing</button>
+      </div>
+    `;
+
+    this.openModal(`📦 Drop Rates: ${preview.rankConfig.name}`, modalBody);
+    document.getElementById('btn-preview-back')?.addEventListener('click', () => {
+      if (onBack) onBack();
+      else this.closeModal();
+    });
   }
 
   // Sunken Safe & Chest Lockpicking Minigame
@@ -1783,6 +2083,7 @@ export class UIManager {
           <div>
             <h3 style="margin: 0; color: #f8fafc; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
               <span>📋</span> Quests
+              <span>📋</span> Harbor Noticeboard Missions
             </h3>
             <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem;">Complete daily coastal tasks to earn gold, research XP, and bonus rewards!</p>
           </div>
@@ -1845,6 +2146,7 @@ export class UIManager {
     `;
 
     this.openModal("📋 Quests", questsHtml);
+    this.openModal("📋 Harbor Noticeboard — Angler Quests", questsHtml);
 
     document.querySelectorAll('.btn-claim-quest').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -2063,7 +2365,7 @@ export class UIManager {
       currentAlmanacZone = zoneKey;
       const isAberrations = zoneKey === 'aberrations';
 
-      const zonePills = [...FANTASY_SEAS.map(sea => ({ id: `sea_${sea.id}`, name: sea.name, icon: sea.icon })), { id: 'aberrations', name: 'Aberrations', icon: '??' }];
+      const zonePills = [...FANTASY_SEAS.map(sea => ({ id: `sea_${sea.id}`, name: sea.name, icon: sea.icon })), { id: 'aberrations', name: 'Aberrations', icon: '☣️' }];
 
       let navHtml = '<div class="almanac-zone-pills">';
       zonePills.forEach((z) => {
@@ -2217,6 +2519,7 @@ export class UIManager {
             ? `<span class="grade-badge grade-trophy" style="background:#6b21a8;color:#f5d0fe;border:1px solid #d8b4fe;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">🏆 TROPHY</span>`
             : `<span class="grade-badge grade-average" style="background:#0369a1;color:#bae6fd;padding:2px 6px;border-radius:4px;font-size:10px;">Average</span>`;
 
+          const cleanFishName = (species.name || '').replace(/^(sea\d+_|realm_\d+_)/i, '');
           html += `
             <div class="journal-card journal-discovered rarity-border-${species.rarity}">
               <div class="journal-card-top">
@@ -2225,10 +2528,10 @@ export class UIManager {
                 <span class="zone-tag">${gradeBadge}</span>
               </div>
               <div class="journal-visual">
-                <canvas class="journal-fish-preview" data-species="${species.id}" width="240" height="100" aria-label="${species.name}"></canvas>
+                <canvas class="journal-fish-preview" data-species="${species.id}" width="240" height="100" aria-label="${cleanFishName}"></canvas>
               </div>
               <div class="journal-card-info">
-                <h4>${species.name} ${goldCrownBadge} ${silverCrownBadge}</h4>
+                <h4>${cleanFishName} ${goldCrownBadge} ${silverCrownBadge}</h4>
                 <p class="journal-lore">${species.lore}</p>
                 <div class="journal-meta" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 0.8rem;">
                   <span>Caught: <strong>${entry.timesCaught || entry.count || 0}</strong></span>
@@ -2392,6 +2695,7 @@ export class UIManager {
 
       return `
 <div class="traps-panel"><div class="museum-intro"><p class="eyebrow">QUIET WATERS, HIDDEN FINDS</p><h3>Seabed Drift Pots</h3><p>Let your pots soak while you explore. Collect shellfish, lost coins, and ancient fragments.</p></div>
+        <div class="traps-panel">
           <div class="traps-header-info">
             <div class="stat-box">
               <span class="stat-label">Active Drift Pots</span>
@@ -2434,6 +2738,7 @@ export class UIManager {
             <div class="journal-card journal-discovered" style="border-color: #f59e0b; background: rgba(30, 41, 59, 0.9);">
               <div class="journal-card-top">
                 <span class="rarity-tag" style="background: #f59e0b; color: #1e293b; font-weight: 800;">${save.isPetEquipped(pet.id) ? 'ABOARD' : 'RESTING'}</span>
+                <span class="rarity-tag" style="background: #f59e0b; color: #1e293b; font-weight: 800;">ACTIVE COMPANION</span>
                 <span class="zone-tag">${pet.species}</span>
               </div>
               <div class="journal-visual" style="font-size: 3rem; padding: 15px 0; text-align: center;">
@@ -2447,6 +2752,8 @@ export class UIManager {
                 </div>
                 <div class="journal-meta" style="margin-top: 8px;">
                   <button class="btn btn-secondary" data-equip-pet="${pet.id}" aria-pressed="${save.isPetEquipped(pet.id)}">${save.isPetEquipped(pet.id) ? 'Let rest ashore' : 'Bring aboard'}</button>
+                <div class="journal-meta" style="margin-top: 8px; justify-content: flex-end;">
+                  <span style="color: #4ade80; font-weight: 700;">🐾 Aboard Vessel</span>
                 </div>
               </div>
             </div>
@@ -2514,10 +2821,11 @@ export class UIManager {
               <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
               <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Fossils</button>
               <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
-              <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Museum</button>
+              <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
             </div>
             <div id="journal-tab-content">
               ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml(currentAlmanacZone)}
+              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml('sunken_shallows')}
             </div>
           </div>
         </div>
@@ -2570,7 +2878,15 @@ export class UIManager {
         const fish = new Fish(species, 0, 0);
         fish.isShiny = false; fish.crown = null; fish.scale = 0.65;
         const ctx = canvas.getContext('2d');
+        const isSilhouette = canvas.classList.contains('silhouette');
+        if (isSilhouette) {
+          ctx.save();
+          ctx.filter = 'brightness(0) contrast(100%) opacity(0.35)';
+        }
         ctx.translate(120, 50); fish.render(ctx, 0);
+        if (isSilhouette) {
+          ctx.restore();
+        }
       });
       document.querySelectorAll('.almanac-pill-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
@@ -2742,6 +3058,7 @@ export class UIManager {
     if (!isGuest && currentUser) {
       userRank = sorted.findIndex(e => e.isCurrent) + 1;
       userStats = sorted.find(e => e.isCurrent) || board.ownScore;
+      userStats = sorted.find(e => e.isCurrent);
     }
 
     let html = `
@@ -2754,6 +3071,7 @@ export class UIManager {
               <h3 class="scoreboard-title">World Angler Scoreboard</h3>
               <p class="scoreboard-subtitle">
                 ${board.online ? 'Shared rankings across the Seven Seas. Scores update every minute; guests are unranked.' : 'Offline: showing accounts saved in this browser only. World rankings are currently unavailable.'}
+                Official rankings of registered captain accounts across the Seven Seas (Guest records are unranked).
               </p>
             </div>
           </div>
@@ -2790,10 +3108,12 @@ export class UIManager {
           <div class="user-banner-col">
             <span class="user-banner-label">Your Captain Account</span>
             <span class="user-banner-val">👤 <strong>${escapeScoreboardText(currentUser)}</strong></span>
+            <span class="user-banner-val">👤 <strong>${currentUser}</strong></span>
           </div>
           <div class="user-banner-col">
             <span class="user-banner-label">Current Standing</span>
             <span class="user-banner-val" style="color: #facc15;">${userRank > 0 ? `#${userRank}` : board.syncFailed ? 'Sync pending' : 'Outside Top 100'}</span>
+            <span class="user-banner-val" style="color: #facc15;">#${userRank > 0 ? userRank : 'Unranked'}</span>
           </div>
           <div class="user-banner-col">
             <span class="user-banner-label">Level</span>
@@ -2816,9 +3136,12 @@ export class UIManager {
         <div class="scoreboard-empty-state">
           <div style="font-size: 3.2rem; margin-bottom: 8px;">📜</div>
           <h4>No Ranked Captains Yet</h4>
+          <h4>No Registered Accounts Found</h4>
           <p>
             ${board.online ? 'Captains appear here after playing online with a registered account.' : 'No registered captain saves were found in this browser.'}
             Guest accounts are not ranked.
+            No player accounts have been created yet on this vessel. Guest accounts are not ranked.
+            Create an account to be ranked #1 on the scoreboard!
           </p>
           <button class="btn btn-primary" id="btn-scoreboard-register-empty">
             ⚓ Create First Captain Account
@@ -2884,6 +3207,7 @@ export class UIManager {
               <div class="captain-cell">
                 <span class="captain-avatar">${item.level >= 20 ? '👑' : item.level >= 10 ? '⚓' : '⛵'}</span>
                 <span class="captain-username">${escapeScoreboardText(item.username)}</span>
+                <span class="captain-username">${item.username}</span>
                 ${item.isCurrent ? '<span class="badge-you">YOU</span>' : ''}
               </div>
             </td>
@@ -3028,7 +3352,7 @@ export class UIManager {
     const exhibited = collection.filter(item => displays.includes(item.id) && item.found);
     const gallery = Array.from({ length: 6 }, (_, index) => {
       const item = exhibited[index];
-      return `<div class="museum-plinth"><span>${item ? '&#129460;' : '&#10022;'}</span><strong>${item ? item.name : 'Empty exhibit'}</strong></div>`;
+      return `<div class="museum-plinth"><span>${item ? '🦴' : '✦'}</span><strong>${item ? item.name : 'Empty exhibit'}</strong></div>`;
     }).join('');
     document.getElementById('journal-tab-content').innerHTML = `<div class="museum-intro"><p class="eyebrow">THE CAPTAIN'S COLLECTION</p><h3>Your Fossil Gallery</h3><p>Choose six discoveries to exhibit. Reconstructed sets earn a one-time gem achievement.</p></div><div class="museum-gallery">${gallery}</div><h3 class="collection-heading">Arrange your collection</h3><div class="fossil-grid">${collection.map(item => `<article class="fossil-card ${item.found ? 'fossil-discovered' : 'fossil-locked'}"><div class="fossil-info"><h4>${item.found ? item.name : 'Undiscovered specimen'}</h4><p class="fossil-lore">${item.found ? item.lore || 'A remarkable relic of the ancient ocean.' : item.minDepth ? `Search below ${item.minDepth}m.` : 'Find all four fragments to reconstruct this set.'}</p><button class="btn btn-secondary btn-sm" data-exhibit="${item.id}" ${item.found ? '' : 'disabled'}>${displays.includes(item.id) ? 'Remove from gallery' : 'Place in museum'}</button></div></article>`).join('')}</div>`;
     document.querySelectorAll('[data-exhibit]').forEach(button => button.addEventListener('click', () => {
@@ -3121,8 +3445,16 @@ export class UIManager {
             <strong style="color: #facc15;">🪙 $${pendingTips.toLocaleString()}</strong>
             <button class="btn btn-sm btn-buy" id="btn-collect-tips" ${pendingTips > 0 ? '' : 'disabled'}>💰 Collect</button>
           </div>
+          <div class="aq-theme-selector">
+            <span class="aq-lbl">Theme:</span>
+            <button class="theme-btn ${theme === 'reef' ? 'active' : ''}" data-theme="reef">🪸 Reef</button>
+            <button class="theme-btn ${theme === 'abyss' ? 'active' : ''}" data-theme="abyss">🌌 Abyss</button>
+            <button class="theme-btn ${theme === 'atlantis' ? 'active' : ''}" data-theme="atlantis">🏛️ Atlantis</button>
+            <button class="theme-btn ${theme === 'nebula' ? 'active' : ''}" data-theme="nebula">✨ Nebula</button>
+          </div>
           <div class="aq-actions-col">
             <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish ($1)</button>
+            <button class="btn btn-secondary btn-sm" id="btn-feed-fish">🌾 Feed Fish</button>
             <button class="btn btn-outline btn-sm" id="btn-aq-upgrade">🛒 Upgrade</button>
           </div>
         </div>
@@ -3239,8 +3571,17 @@ export class UIManager {
 
     items.forEach((item) => {
       if (item.type === 'fish' || (!item.type && !item.isRelic)) {
+        const species = FISH_SPECIES.find(s => s.id === (item.speciesId || item.id)) || item;
+        const fishEntity = new Fish(species, 0, 0, { shinyChance: item.isShiny ? 1 : 0 });
+        if (item.crown) fishEntity.crown = item.crown;
+        if (item.isShiny !== undefined) fishEntity.isShiny = !!item.isShiny;
+        if (item.size) fishEntity.size = item.size;
+        if (item.weight) fishEntity.weight = item.weight;
+        fishEntity.scale = Math.min(1.4, Math.max(0.65, (item.scaleFactor || species.scaleFactor || 1.0) * 0.85));
+
         aquariumFish.push({
           item,
+          entity: fishEntity,
           x: 60 + Math.random() * (canvas.width - 120),
           y: 40 + Math.random() * (canvas.height - 120),
           vx: (Math.random() < 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.9),
@@ -3602,6 +3943,7 @@ export class UIManager {
     const sellMultiplier = 1 + rodTier.sellBonus;
 
     const fishCount = inv.filter(i => i.type === 'fish').length;
+    const crateCount = inv.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed).length;
     const fossilCount = inv.filter(i => i.type === 'fossil' || i.category === 'fossil').length;
     const relicCount = inv.filter(i => i.type === 'relic' || i.isRelic).length;
     const tankCount = inv.filter(i => save.isItemInAquarium(i.instanceId)).length;
@@ -3613,6 +3955,8 @@ export class UIManager {
     let filteredItems = inv;
     if (filter === 'fish') {
       filteredItems = inv.filter(i => i.type === 'fish');
+    } else if (filter === 'crates') {
+      filteredItems = inv.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed);
     } else if (filter === 'fossils') {
       filteredItems = inv.filter(i => i.type === 'fossil' || i.category === 'fossil');
     } else if (filter === 'relics') {
@@ -3739,6 +4083,7 @@ export class UIManager {
         <div class="inventory-controls-bar">
           <div class="inv-tabs">
             <button class="tab-btn ${filter === 'all' ? 'active' : ''}" data-filter="all">All (${inv.length})</button>
+            <button class="tab-btn ${filter === 'crates' ? 'active' : ''}" data-filter="crates">📦 Crates (${crateCount})</button>
             <button class="tab-btn ${filter === 'fish' ? 'active' : ''}" data-filter="fish">🐟 Fish (${fishCount})</button>
             <button class="tab-btn ${filter === 'relics' ? 'active' : ''}" data-filter="relics">🏺 Relics (${relicCount})</button>
             <button class="tab-btn ${filter === 'fossils' ? 'active' : ''}" data-filter="fossils">🦴 Fossils (${fossilCount})</button>
@@ -3828,6 +4173,7 @@ export class UIManager {
         if (res) {
           soundManager.playCoin();
           this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`, { dismissOnFishing: true });
+          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
           this.openInventory(filter);
         }
       });
@@ -3863,6 +4209,7 @@ export class UIManager {
       const result = this.saveSystem.sellAllItems(sellMultiplier);
       soundManager.playCoin();
       this.showToast(`🪙 Sold ${result.count} items for +$${result.totalGold.toLocaleString()}!`, { dismissOnFishing: true });
+      this.showToast(`🪙 Sold ${result.count} items for +$${result.totalGold.toLocaleString()}!`);
       this.openInventory(returnFilter);
     });
 
@@ -4056,6 +4403,7 @@ export class UIManager {
             <div class="milestone-title-row">
               <h4>${ach.name}</h4>
               <span class="milestone-bounty">+$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
+              <span class="milestone-bounty">+$${ach.reward.toLocaleString()}</span>
             </div>
             <p class="milestone-desc">${ach.description}</p>
             <div class="milestone-bar-container">
@@ -4095,6 +4443,7 @@ export class UIManager {
             <div class="ach-title-row">
               <h4>${ach.name}</h4>
               <span class="ach-reward">+$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
+              <span class="ach-reward">+$${ach.reward.toLocaleString()}</span>
             </div>
             <p class="ach-desc">${ach.description}</p>
             <div class="ach-prog-bar">
@@ -4217,6 +4566,7 @@ export class UIManager {
             <div class="stat-row"><span>Max Depth Reached:</span><strong>${stats.maxDepthReached}m</strong></div>
             <div class="stat-row"><span>Total Gold Earned:</span><strong>$${stats.totalGoldEarned.toLocaleString()}</strong></div>
             <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}</strong></div>
+            <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / 66</strong></div>
             <div class="stat-row"><span>Prehistoric Fossils Found:</span><strong>${stats.totalFossilsCollected} / 5</strong></div>
             <div class="stat-row"><span>Biggest Catch:</span><strong>${stats.biggestCatchName} (${stats.biggestCatchCm} cm, ${stats.heaviestCatchKg} kg)</strong></div>
           </div>

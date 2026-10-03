@@ -734,7 +734,7 @@ export class SaveSystem {
   }
 
   isChatUnlocked() {
-    return this.getUpgradeLevel('maritimeRadio') >= 1;
+    return (!accountManager.isGuest() && !!accountManager.getCurrentUser()) || (this.getUpgradeLevel('maritimeRadio') >= 1);
   }
 
   recordNPCInteraction() {
@@ -989,6 +989,26 @@ export class SaveSystem {
 
   getGemBalance() {
     return this.data.gems + (this.gemShop?.getBalance() || 0);
+  }
+
+  spendGems(amount) {
+    if (amount <= 0) return true;
+    if (this.data.gems >= amount) {
+      this.data.gems -= amount;
+      this.save();
+      return true;
+    }
+    const total = this.getGemBalance();
+    if (total >= amount) {
+      const remaining = amount - this.data.gems;
+      this.data.gems = 0;
+      if (this.gemShop) {
+        this.gemShop.balance = Math.max(0, this.gemShop.balance - remaining);
+      }
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   claimDailyLogin(now = Date.now()) {

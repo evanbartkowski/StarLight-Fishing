@@ -146,6 +146,29 @@ save.gemShop = new GemShop(save, uiManager);
 chatManager = new ChatManager(save);
 uiManager.setChatManager(chatManager);
 
+// Handle Stripe Checkout return pipeline
+try {
+  const urlParams = new URLSearchParams(window.location.search);
+  const checkoutStatus = urlParams.get('checkout');
+  if (checkoutStatus === 'success') {
+    uiManager.showToast('🎉 Gem bundle purchased successfully! Your balance has been updated.');
+    soundManager.playUpgrade();
+    urlParams.delete('checkout');
+    urlParams.delete('session_id');
+    const cleanSearch = urlParams.toString();
+    const newUrl = window.location.pathname + (cleanSearch ? '?' + cleanSearch : '') + window.location.hash;
+    window.history.replaceState({}, document.title, newUrl);
+  } else if (checkoutStatus === 'cancelled') {
+    uiManager.showToast('Checkout cancelled. No gems were purchased.');
+    urlParams.delete('checkout');
+    const cleanSearch = urlParams.toString();
+    const newUrl = window.location.pathname + (cleanSearch ? '?' + cleanSearch : '') + window.location.hash;
+    window.history.replaceState({}, document.title, newUrl);
+  }
+} catch (e) {
+  console.warn('Checkout return param handling error:', e);
+}
+
 questSystem.onQuestCompleted = (q) => {
   uiManager.showToast(`📋 Noticeboard Mission Complete: ${q.title}! Claim your reward!`);
 };
@@ -358,16 +381,22 @@ function handlePointerMove(e) {
 
     if (save.isPetEquipped('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
       oceanWorld.hoveredCompanion = 'angela';
+      if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
     } else if (save.isPetEquipped('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
       oceanWorld.hoveredCompanion = 'evan';
+      if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
+    } else if (save.isPetEquipped('dolphin') && oceanWorld.dolphin && oceanWorld.dolphin.checkHover(mousePos.x, mousePos.y, cameraY)) {
+      oceanWorld.hoveredCompanion = 'dolphin';
     } else {
       oceanWorld.hoveredCompanion = null;
+      if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
     }
 
     // Dynamically update fisherman orientation (left or right side of boat)
     oceanWorld.setAimDirection(dx < 0 ? -1 : 1);
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     oceanWorld.hoveredCompanion = null;
+    if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
     // Only steer hook to mouse if the mouse is actively being moved
     if (lastSteerMode === 'mouse') {
       hook.setTargetX(mousePos.x);

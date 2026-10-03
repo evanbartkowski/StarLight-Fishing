@@ -415,7 +415,6 @@ export class BackgroundDolphin {
   }
 }
 
-
 // Irene cruises under the surface alongside the player's vessel.
 export class BoatShark {
   constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; }

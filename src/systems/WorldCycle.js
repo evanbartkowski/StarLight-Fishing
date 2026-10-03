@@ -1,5 +1,62 @@
-// Atmospheric World Cycle System: Day/Night Cycle & Dynamic Weather
-// Transitions naturally every 10 minutes (600 seconds) for a cozy, relaxing ambiance
+// Atmospheric World Cycle System: Day/Night Cycle, Dynamic Weather & Global Events
+// Synchronized global event cycle triggers every 35 minutes for 5 minutes duration
+
+export const GLOBAL_EVENTS = [
+  {
+    id: 'blood_moon',
+    name: 'Blood Moon',
+    icon: '🩸',
+    description: 'A crimson moon awakens prehistoric horrors! Legendary fish & apex monsters rise from the deep.',
+    legendaryMultiplier: 2.5,
+    crateMultiplier: 2.0,
+    sky: {
+      top: '#2b0707',
+      middle: '#7f1d1d',
+      horizon: '#ef4444',
+      sunColor: '#dc2626',
+      sunGlow: '#f87171',
+      isNight: true,
+      ambientLight: 0.75,
+    },
+  },
+  {
+    id: 'abyssal_storm',
+    name: 'Abyssal Storm',
+    icon: '⚡',
+    description: 'Electric storm surges dredge lost sunken crates and tempest relics to reachable depths!',
+    legendaryMultiplier: 2.0,
+    crateMultiplier: 2.5,
+    sky: {
+      top: '#050b14',
+      middle: '#1e1b4b',
+      horizon: '#38bdf8',
+      sunColor: '#c084fc',
+      sunGlow: '#60a5fa',
+      isNight: true,
+      ambientLight: 0.7,
+    },
+  },
+  {
+    id: 'aurora_borealis',
+    name: 'Aurora Borealis',
+    icon: '🌌',
+    description: 'Cosmic lights shimmer across the ocean. Rare mutated & shiny fish glow brightly!',
+    legendaryMultiplier: 2.2,
+    crateMultiplier: 2.2,
+    sky: {
+      top: '#022c22',
+      middle: '#064e3b',
+      horizon: '#34d399',
+      sunColor: '#a7f3d0',
+      sunGlow: '#38bdf8',
+      isNight: true,
+      ambientLight: 0.85,
+    },
+  },
+];
+
+export const EVENT_CYCLE_INTERVAL = 35 * 60 * 1000; // 35 minutes cycle
+export const EVENT_CYCLE_DURATION = 5 * 60 * 1000;  // 5 minutes duration
 
 export class WorldCycle {
   constructor() {
@@ -140,6 +197,32 @@ export class WorldCycle {
     });
   }
 
+  getGlobalEvent(now = Date.now()) {
+    const cycleTime = now % EVENT_CYCLE_INTERVAL;
+    const active = cycleTime < EVENT_CYCLE_DURATION;
+    const eventIndex = Math.floor(now / EVENT_CYCLE_INTERVAL) % GLOBAL_EVENTS.length;
+    const eventDef = GLOBAL_EVENTS[eventIndex];
+    const timeRemainingMs = active ? (EVENT_CYCLE_DURATION - cycleTime) : (EVENT_CYCLE_INTERVAL - cycleTime);
+
+    return {
+      active,
+      eventIndex,
+      ...eventDef,
+      timeRemainingSec: Math.ceil(timeRemainingMs / 1000),
+      timeRemainingMs,
+    };
+  }
+
+  getApexSpawnMultiplier() {
+    const event = this.getGlobalEvent();
+    return event.active ? event.legendaryMultiplier : 1.0;
+  }
+
+  getCrateDropMultiplier() {
+    const event = this.getGlobalEvent();
+    return event.active ? event.crateMultiplier : 1.0;
+  }
+
   // Time of Day state: 'DAWN' (0-90s) | 'DAY' (90-360s) | 'DUSK' (360-450s) | 'NIGHT' (450-600s)
   getTimeOfDay() {
     if (this.timer < 90) return 'DAWN';
@@ -153,6 +236,12 @@ export class WorldCycle {
   }
 
   getTimeLabel() {
+    const event = this.getGlobalEvent();
+    if (event.active) {
+      const min = Math.floor(event.timeRemainingSec / 60);
+      const sec = event.timeRemainingSec % 60;
+      return `${event.icon} ${event.name} (${min}m ${sec}s)`;
+    }
     const t = this.getTimeOfDay();
     switch (t) {
       case 'DAWN': return '🌅 Dawn Twilight';
@@ -174,6 +263,10 @@ export class WorldCycle {
   }
 
   getSkyColors() {
+    const event = this.getGlobalEvent();
+    if (event.active && event.sky) {
+      return event.sky;
+    }
     const t = this.getTimeOfDay();
     const progress = this.timer;
 

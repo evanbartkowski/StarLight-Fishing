@@ -830,20 +830,54 @@ export const CRATE_LOOT_TABLES = {
   },
 };
 
+export const CRATE_GEM_PRICES = {
+  1: 2,  // Driftwood Crate: 2 Gems
+  2: 5,  // Ironbound Strongbox: 5 Gems
+  3: 10, // Corsair's Chest: 10 Gems
+  4: 20, // Abyssal Leviathan Coffer: 20 Gems
+  5: 40, // Mythic Celestial Reliquary: 40 Gems
+};
+
 /**
- * Rolls random loot for a caught crate based on its rank
+ * Rolls loot for a crate rank.
+ * @param {number} crateRank - 1 to 5
+ * @param {object|null} saveSystem - Optional save system for skeleton / pity tracking
+ * @returns {object} Loot reward packet
  */
 export function rollCrateLoot(crateRank, saveSystem = null) {
   const rank = Math.min(5, Math.max(1, parseInt(crateRank, 10) || 1));
   const rankConfig = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
   const tables = CRATE_LOOT_TABLES[rank] || CRATE_LOOT_TABLES[1];
 
+  let pityTriggered = false;
+  if (saveSystem && saveSystem.data) {
+    saveSystem.data.cratePityCount = saveSystem.data.cratePityCount || 0;
+    if (saveSystem.data.cratePityCount >= 9) {
+      // 10th consecutive pull guarantees an Epic / super_good jackpot!
+      pityTriggered = true;
+    }
+  }
+
   const rand = Math.random();
   let grade = 'fair';
-  if (rand < rankConfig.badChance) {
+  if (pityTriggered) {
+    grade = 'super_good';
+  } else if (rand < rankConfig.badChance) {
     grade = 'super_bad';
   } else if (rand > (1 - rankConfig.superGoodChance)) {
     grade = 'super_good';
+  }
+
+  // Update persistent pity counter
+  if (saveSystem && saveSystem.data) {
+    if (grade === 'super_good') {
+      saveSystem.data.cratePityCount = 0;
+    } else {
+      saveSystem.data.cratePityCount = (saveSystem.data.cratePityCount || 0) + 1;
+    }
+    if (typeof saveSystem.save === 'function') {
+      saveSystem.save();
+    }
   }
 
   let tableList = tables.fair;
@@ -884,5 +918,33 @@ export function rollCrateLoot(crateRank, saveSystem = null) {
     bonusFossil: item.bonusFossil || null,
     bonusSkeleton: item.bonusSkeleton || null,
     skeletonAwarded,
+    pityTriggered,
+  };
+}
+
+export function getCrateDropPreview(crateRank, saveSystem = null) {
+  const rank = Math.min(5, Math.max(1, parseInt(crateRank, 10) || 1));
+  const rankConfig = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
+  const tables = CRATE_LOOT_TABLES[rank] || CRATE_LOOT_TABLES[1];
+  const badPct = Math.round(rankConfig.badChance * 100);
+  const goodPct = Math.round(rankConfig.superGoodChance * 100);
+  const fairPct = Math.max(0, 100 - badPct - goodPct);
+  const pityCount = saveSystem?.data?.cratePityCount || 0;
+
+  return {
+    rankConfig,
+    pityCount,
+    pityThreshold: 10,
+    rates: {
+      superGood: goodPct,
+      fair: fairPct,
+      superBad: badPct,
+      gems: 2,
+    },
+    tables: {
+      superGood: tables.superGood,
+      fair: tables.fair,
+      superBad: tables.superBad,
+    },
   };
 }
