@@ -260,18 +260,19 @@ export class Hazard {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // Tasteful pulsing danger glow signalling obstacle threat (organic ambient radiance, no harsh ring)
-    const pulse = 0.5 + 0.5 * Math.sin(this.timer * 2.2);
-    const haloRadius = this.radius * (1.25 + pulse * 0.12) + 8;
-    const haloStrength = this.isColossal ? 0.28 : this.marineKind ? 0.22 : 0.18;
-    const halo = ctx.createRadialGradient(0, 0, this.radius * 0.3, 0, 0, haloRadius);
-    halo.addColorStop(0, `rgba(239, 68, 68, ${haloStrength * (0.8 + pulse * 0.4)})`);
-    halo.addColorStop(0.5, `rgba(220, 38, 38, ${haloStrength * 0.45})`);
-    halo.addColorStop(0.85, `rgba(185, 28, 28, ${haloStrength * 0.15})`);
-    halo.addColorStop(1, 'rgba(239, 68, 68, 0)');
-    ctx.fillStyle = halo;
+    // Noticeable yet soft danger aura that smoothly fades out (ambient oceanic threat radiance)
+    const pulse = 0.5 + 0.5 * Math.sin(this.timer * 2.4);
+    const auraRadius = this.radius * (1.35 + pulse * 0.18) + 12;
+    const auraStrength = this.isColossal ? 0.38 : this.marineKind ? 0.32 : 0.26;
+    const auraGrad = ctx.createRadialGradient(0, 0, this.radius * 0.2, 0, 0, auraRadius);
+    auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.85 + pulse * 0.3)})`);
+    auraGrad.addColorStop(0.35, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
+    auraGrad.addColorStop(0.65, `rgba(220, 38, 38, ${auraStrength * 0.25})`);
+    auraGrad.addColorStop(0.88, `rgba(185, 28, 28, ${auraStrength * 0.08})`);
+    auraGrad.addColorStop(1, 'rgba(185, 28, 28, 0)');
+    ctx.fillStyle = auraGrad;
     ctx.beginPath();
-    ctx.arc(0, 0, haloRadius, 0, Math.PI * 2);
+    ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.scale(this.sizeScale, this.sizeScale);

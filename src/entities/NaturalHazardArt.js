@@ -11,28 +11,115 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
     ctx.fillStyle = '#f43f5e'; ctx.beginPath(); ctx.arc(0, 0, r * .2, 0, Math.PI * 2); ctx.fill();
-  } else if (kind === 'diver' || kind === 'submarine') {
-    const light = ctx.createLinearGradient(r * .5, 0, r * 4, 0);
-    light.addColorStop(0, '#fef08a88'); light.addColorStop(1, '#fef08a00');
-    ctx.fillStyle = light; ctx.beginPath(); ctx.moveTo(r * .5, 0); ctx.lineTo(r * 4, -r); ctx.lineTo(r * 4, r); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = kind === 'diver' ? '#172554' : '#64748b';
-    ctx.beginPath(); ctx.ellipse(0, 0, r, r * .45, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(r * .6, 0, r * .22, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#facc15'; ctx.lineWidth = r * .18;
-    ctx.beginPath(); ctx.moveTo(-r * .6, 0); ctx.lineTo(-r * 1.1, Math.sin(time * 3) * r * .3); ctx.stroke();
-    ctx.fillStyle = '#334155'; ctx.fillRect(-r * .3, -r * .65, r * .45, r * .35);
-    if (kind === 'submarine') {
-      ctx.fillRect(-r * .1, -r * .95, r * .055, r * .4);
-      ctx.fillRect(-r * .1, -r * .95, r * .22, r * .055);
-      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.ellipse(0, 0, r, r * .45, 0, 0, Math.PI * 2); ctx.stroke();
-      for (let i = -2; i <= 2; i++) {
-        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .075, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#67e8f9'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .047, 0, Math.PI * 2); ctx.fill();
-      }
-      ctx.fillStyle = '#334155';
-      ctx.beginPath(); ctx.moveTo(-r * .8, 0); ctx.lineTo(-r * 1.1, -r * .5); ctx.lineTo(-r * 1.1, r * .5); ctx.closePath(); ctx.fill();
+  } else if (kind === 'diver') {
+    // Authentic Human Scuba Diver with swim fins, air tank, diving mask, and flashlight beam
+    const light = ctx.createLinearGradient(r * .5, 0, r * 4.5, 0);
+    light.addColorStop(0, '#fef08a66');
+    light.addColorStop(0.3, '#fef08a33');
+    light.addColorStop(1, '#fef08a00');
+    ctx.fillStyle = light;
+    ctx.beginPath();
+    ctx.moveTo(r * .5, 0);
+    ctx.lineTo(r * 4.5, -r * 1.1);
+    ctx.lineTo(r * 4.5, r * 1.1);
+    ctx.closePath();
+    ctx.fill();
+
+    // Human diver wetsuit body (torso and limbs)
+    ctx.fillStyle = '#1e293b'; // Sleek dark wetsuit
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 0.75, r * 0.38, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Yellow neoprene accent stripe along suit
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = r * 0.09;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.45, 0);
+    ctx.lineTo(r * 0.35, 0);
+    ctx.stroke();
+
+    // Diver head & dive hood
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(r * 0.65, -r * 0.05, r * 0.26, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Scuba mask visor (cyan glass with glare)
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.ellipse(r * 0.8, -r * 0.06, r * 0.12, r * 0.16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(r * 0.77, -r * 0.12, r * 0.04, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Silver scuba cylinder tank strapped on back
+    ctx.fillStyle = '#94a3b8';
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(-r * 0.4, -r * 0.55, r * 0.7, r * 0.22, r * 0.08);
+    } else {
+      ctx.rect(-r * 0.4, -r * 0.55, r * 0.7, r * 0.22);
     }
+    ctx.fill();
+    ctx.stroke();
+    // Tank valve & regulator
+    ctx.fillStyle = '#ca8a04';
+    ctx.fillRect(r * 0.26, -r * 0.52, r * 0.08, r * 0.16);
+
+    // Kicking legs and flexible swim flippers
+    const kick = Math.sin(time * 4) * r * 0.28;
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = r * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.4, 0);
+    ctx.lineTo(-r * 0.95, kick);
+    ctx.stroke();
+
+    // Bright flipper blade
+    ctx.fillStyle = '#0284c7';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.9, kick - r * 0.08);
+    ctx.lineTo(-r * 1.35, kick - r * 0.22);
+    ctx.lineTo(-r * 1.3, kick + r * 0.22);
+    ctx.lineTo(-r * 0.9, kick + r * 0.08);
+    ctx.closePath();
+    ctx.fill();
+
+    // Handheld dive torch / searchlight
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(r * 0.45, -r * 0.08, r * 0.2, r * 0.14);
+  } else if (kind === 'submarine') {
+    const light = ctx.createLinearGradient(r * .5, 0, r * 4.5, 0);
+    light.addColorStop(0, '#fef08a99'); light.addColorStop(1, '#fef08a00');
+    ctx.fillStyle = light; ctx.beginPath(); ctx.moveTo(r * .5, 0); ctx.lineTo(r * 4.5, -r * 1.2); ctx.lineTo(r * 4.5, r * 1.2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#334155';
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * .48, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(r * .6, 0, r * .22, 0, Math.PI * 2); ctx.fill();
+    // Conning tower & periscope
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(-r * .3, -r * .7, r * .5, r * .35);
+    ctx.fillRect(-r * .1, -r * .98, r * .06, r * .4);
+    ctx.fillRect(-r * .1, -r * .98, r * .24, r * .06);
+    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * .48, 0, 0, Math.PI * 2); ctx.stroke();
+    for (let i = -2; i <= 2; i++) {
+      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .085, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .055, 0, Math.PI * 2); ctx.fill();
+    }
+    // Rear propulsion thruster
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.moveTo(-r * .8, 0); ctx.lineTo(-r * 1.15, -r * .5); ctx.lineTo(-r * 1.15, r * .5); ctx.closePath(); ctx.fill();
+    const propAngle = time * 8;
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-r * 1.15, -Math.sin(propAngle) * r * 0.4);
+    ctx.lineTo(-r * 1.15, Math.sin(propAngle) * r * 0.4);
+    ctx.stroke();
   } else if (kind === 'plant') {
     ctx.fillStyle = '#526257';
     ctx.beginPath(); ctx.ellipse(0, r * .65, r * .7, r * .22, 0, 0, Math.PI * 2); ctx.fill();

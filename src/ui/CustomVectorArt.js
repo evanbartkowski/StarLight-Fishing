@@ -966,39 +966,47 @@ export const MISC_ART = {
   `),
 
   sellAll: svgWrap(`
-    <!-- Gilded coin pouch with overflowing gold coins -->
-    <path d="M14 18c0-5 4-8 10-8s10 3 10 8l-2 18a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4l-2-18z" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>
-    <path d="M12 18h24" stroke="#facc15" stroke-width="2.5" stroke-linecap="round"/>
-    <ellipse cx="24" cy="18" rx="8" ry="3" fill="#ca8a04"/>
-    <!-- Big shiny gold coin emblem -->
-    <circle cx="24" cy="28" r="7" fill="#facc15" stroke="#ca8a04" stroke-width="1.2"/>
-    <text x="24" y="32" font-size="9" font-weight="900" fill="#713f12" text-anchor="middle" font-family="sans-serif">$</text>
-    <!-- Little coin glint -->
-    <circle cx="27" cy="24" r="1.2" fill="#ffffff"/>
+    <!-- Gilded coin pouch with overflowing gold coins and emerald accents -->
+    <path d="M14 17c0-6 4-9 10-9s10 3 10 9l-2 18a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4l-2-18z" fill="#059669" stroke="#064e3b" stroke-width="1.5"/>
+    <path d="M12 17h24" stroke="#facc15" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="24" cy="17" rx="8" ry="3.5" fill="#d97706" stroke="#b45309" stroke-width="1"/>
+    <!-- Stack of shining gold doubloons -->
+    <ellipse cx="24" cy="28" rx="8" ry="5" fill="#facc15" stroke="#b45309" stroke-width="1.2"/>
+    <ellipse cx="24" cy="26" rx="8" ry="5" fill="#fde047" stroke="#ca8a04" stroke-width="1.2"/>
+    <text x="24" y="29.5" font-size="8.5" font-weight="900" fill="#713f12" text-anchor="middle" font-family="sans-serif">$</text>
+    <!-- Sparkling light glints -->
+    <path d="M28 20l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#ffffff"/>
+    <circle cx="18" cy="27" r="1.2" fill="#ffffff"/>
   `),
 
   keepAll: svgWrap(`
-    <!-- Heavy maritime wooden keep-chest / tackle locker with brass latches -->
-    <rect x="8" y="16" width="32" height="24" rx="3" fill="#0284c7" stroke="#0369a1" stroke-width="1.5"/>
-    <path d="M8 24h32" stroke="#38bdf8" stroke-width="1.5"/>
-    <!-- Vault clasp lock -->
-    <rect x="21" y="21" width="6" height="7" rx="1.5" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
-    <!-- Brass rivets -->
-    <circle cx="11" cy="19" r="1.2" fill="#facc15"/>
-    <circle cx="37" cy="19" r="1.2" fill="#facc15"/>
-    <circle cx="11" cy="37" r="1.2" fill="#facc15"/>
-    <circle cx="37" cy="37" r="1.2" fill="#facc15"/>
-    <!-- Inward keeper arrow / safe glyph -->
-    <path d="M24 10v7m-3-3l3 3 3-3" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Reinforced marine treasure vault chest with gilded iron bands -->
+    <path d="M8 18h32v4H8z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
+    <rect x="9" y="22" width="30" height="17" rx="2" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
+    <!-- Gilded corner brackets and vertical bands -->
+    <rect x="13" y="18" width="4" height="21" fill="#facc15"/>
+    <rect x="31" y="18" width="4" height="21" fill="#facc15"/>
+    <!-- Reinforced gold master lock latch -->
+    <rect x="21" y="22" width="6" height="8" rx="1.5" fill="#fef08a" stroke="#ca8a04" stroke-width="1.2"/>
+    <circle cx="24" cy="25.5" r="1.3" fill="#854d0e"/>
+    <path d="M24 27v1.8" stroke="#854d0e" stroke-width="1"/>
+    <!-- Keeper chevron downward glow -->
+    <path d="M21 11l3 3 3-3" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M24 6v8" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
   `),
 
   viewInventory: svgWrap(`
-    <!-- Detailed backpack / coastal tackle bag -->
-    <rect x="10" y="14" width="28" height="26" rx="4" fill="#334155" stroke="#475569" stroke-width="1.5"/>
-    <path d="M15 14v-4a4 4 0 0 1 8 0v4m2 0v-4a4 4 0 0 1 8 0v4" stroke="#64748b" stroke-width="1.5" fill="none"/>
-    <rect x="14" y="24" width="20" height="13" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1"/>
-    <path d="M21 24v3h6v-3" stroke="#facc15" stroke-width="1.2"/>
-    <circle cx="24" cy="30" r="1.5" fill="#38bdf8"/>
+    <!-- Nautical Captain's Tackle Bag & Field Rucksack -->
+    <path d="M12 16c0-4 3-7 12-7s12 3 12 7l-2 23a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3l-2-23z" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
+    <!-- Top flap leather finish with brass buckles -->
+    <path d="M11 16c0 3 4 5 13 5s13-2 13-5v-1c0-2-3-4-13-4s-13 2-13 4v1z" fill="#475569" stroke="#1e293b" stroke-width="1"/>
+    <rect x="14" y="24" width="20" height="12" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+    <!-- Compass rose emblem on pocket -->
+    <circle cx="24" cy="30" r="3.5" fill="none" stroke="#facc15" stroke-width="1"/>
+    <polygon points="24,27.5 25.5,30 24,32.5 22.5,30" fill="#facc15"/>
+    <!-- Straps & buckles -->
+    <rect x="16" y="16" width="3" height="7" fill="#ca8a04"/>
+    <rect x="29" y="16" width="3" height="7" fill="#ca8a04"/>
   `),
 };
 

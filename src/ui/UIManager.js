@@ -1406,10 +1406,10 @@ export class UIManager {
 
         ${listHtml}
 
-        ${hook.caughtItems.some(item => item.species && (['rare', 'epic', 'legendary', 'mythic'].includes(item.rarity) || item.isGodTier)) ? '<button class="btn btn-secondary" id="share-best-catch">Create Catch Card</button>' : ''}
+        ${hook.caughtItems.some(item => item.species && (item.rarity === 'legendary' || item.isMythic || item.isGodTier)) ? '<div style="text-align:center;margin:10px 0;"><button class="btn btn-secondary" id="share-best-catch" style="border-color:#eab308;color:#fef08a;"><span style="display:inline-block;width:14px;height:14px;vertical-align:middle;margin-right:4px;">${MISC_ART.trophyCup}</span> Create Catch Card</button></div>' : ''}
         <div class="summary-footer">
           <div class="total-earnings">
-            <span>Remaining Haul Value:</span>
+            <span>Haul Value:</span>
             <strong class="total-cash" id="summary-total-cash">+$${remainingGold.toLocaleString()}</strong>
           </div>
           <div class="summary-actions">

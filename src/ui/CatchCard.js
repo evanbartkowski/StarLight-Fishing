@@ -144,8 +144,30 @@ export function openCatchCard(ui, item, player, onBack) {
 
   // Subtitle: Captain & Realm Location
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '600 16px sans-serif';
-  ctx.fillText(`Angler: ${player}  •  Waters: ${realm.name}`, 400, 412, 720);
+  ctx.font = '600 15px sans-serif';
+  ctx.fillText(`Angler: ${player}  •  Waters: ${realm.name}`, 400, 408, 720);
+
+  // 8. Official Website URL badge & watermark
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+  ctx.lineWidth = 1.2;
+  const webPillW = 240;
+  const webPillH = 22;
+  const webPillX = 400 - webPillW / 2;
+  const webPillY = 432;
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(webPillX, webPillY, webPillW, webPillH, 11);
+  } else {
+    ctx.rect(webPillX, webPillY, webPillW, webPillH);
+  }
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = '700 11px sans-serif';
+  ctx.letterSpacing = '0.5px';
+  ctx.fillText('starlight-fishing.web.app', 400, webPillY + 11);
   ctx.restore();
   const blob = () => new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not export image.')), 'image/png'));
   document.getElementById('copy-catch').onclick = async () => {
