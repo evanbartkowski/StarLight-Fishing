@@ -9,6 +9,16 @@ const regions = {
 };
 
 const zoneCache = new Map();
+const WATER_STOPS = {
+  1: ['#54d7cf', '#22a6a9', '#147c91', '#0a486b', '#061b3f'],
+  2: ['#70dfce', '#31baba', '#286a9d', '#26245c', '#0e102e'],
+  3: ['#8bd8e6', '#4b9bb8', '#46517f', '#2a2a60', '#100f32'],
+  4: ['#81d6be', '#2ba98e', '#17677c', '#19445b', '#0b202e'],
+  5: ['#c2c5ed', '#8d99d0', '#486b9e', '#30345f', '#14172e'],
+  6: ['#d49262', '#a85342', '#623848', '#352846', '#140f24'],
+  7: ['#7a8ae2', '#455ba7', '#243769', '#211e50', '#0b0d22'],
+};
+
 export const getRealmDepthZones = realm => {
   if (zoneCache.has(realm)) return zoneCache.get(realm);
   const [starts, names, colors] = regions[realm] || regions[1];
@@ -20,12 +30,12 @@ export const getRealmDepthZones = realm => {
 };
 export const getRealmDepthZone = (depth, realm = 1) => getRealmDepthZones(realm).find(zone => depth < zone.maxDepth) || getRealmDepthZones(realm)[3];
 
-// Blend over 60m at boundaries instead of abrupt screen-wide palette changes.
 export function depthWaterColor(depth, realm) {
   const zones = getRealmDepthZones(realm), zone = getRealmDepthZone(depth, realm);
-  const next = zones[zone.index + 1];
-  if (!next) return zone.color;
-  const blend = Math.max(0, Math.min(1, (depth - zone.maxDepth + 60) / 60));
-  const rgb = [1, 3, 5].map(offset => Math.round(parseInt(zone.color.slice(offset, offset + 2), 16) * (1 - blend) + parseInt(next.color.slice(offset, offset + 2), 16) * blend));
+  const stops = WATER_STOPS[realm] || WATER_STOPS[1];
+  const span = Math.max(1, zone.maxDepth - zone.minDepth);
+  const blend = Math.max(0, Math.min(1, (depth - zone.minDepth) / span));
+  const from = stops[zone.index], to = stops[zone.index + 1];
+  const rgb = [1, 3, 5].map(offset => Math.round(parseInt(from.slice(offset, offset + 2), 16) * (1 - blend) + parseInt(to.slice(offset, offset + 2), 16) * blend));
   return `rgb(${rgb.join(',')})`;
 }

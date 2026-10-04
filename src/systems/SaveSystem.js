@@ -1,4 +1,3 @@
-import { depthRewardMultiplier, displaySpeciesName } from './CatchTraits.js';
 import { DAILY_GEMS, DAILY_REWARDS, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
 import { CRATE_RANKS } from '../data/CrateData.js';
 import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization } from '../data/CustomizationData.js';
@@ -10,8 +9,6 @@ import { FISH_SPECIES } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { calculateGradeTier, claimZonePerk } from '../data/almanac.config.js';
 import { accountManager } from './AccountManager.js';
-
-const CRATE_DEFINITIONS = new Map(TREASURE_ITEMS.filter(item => item.isCrate).map(item => [item.id, item]));
 
 const STORAGE_KEY = 'seven_seas_fishing_save_v2';
 const LEGACY_STORAGE_KEY = 'fishing_game_save_v1';
@@ -33,7 +30,6 @@ export class SaveSystem {
     return {
       level: 0,
       gems: 0,
-      cratePityCount: 0,
       dailyLogin: { lastDay: null, streak: 0 },
       ownedAppearance: [],
       gemEconomyVersion: 1,
@@ -65,7 +61,6 @@ export class SaveSystem {
       buffs: {},
       stats: {
         totalFishCaught: 0,
-        totalCatchScore: 0,
         maxDepthReached: 0,
         totalGoldEarned: 0,
         totalTreasureCollected: 0,
@@ -103,6 +98,7 @@ export class SaveSystem {
         lastTipCollectedAt: Date.now(),
       },
       unlockedBobbers: ['pelican_bobber'],
+      journal: {}, // speciesId -> { count, maxSize, minSize, maxWeight, shinyCount, goldCrown, silverCrown, firstCaughtAt }
       worldTime: 600,
       currentWeather: 'CLEAR',
       zonePerks: {}, // perkId -> true
@@ -283,7 +279,6 @@ export class SaveSystem {
         ...parsed,
         level: (parsed.level === 1 && (!parsed.xp || parsed.xp === 0) && (!parsed.stats?.totalFishCaught || parsed.stats.totalFishCaught === 0)) ? 0 : Math.max(0, parsed.level ?? 0),
         gems: Number.isFinite(parsed.gems) ? Math.max(0, Math.floor(parsed.gems)) : 0,
-        cratePityCount: Number.isSafeInteger(parsed.cratePityCount) ? Math.max(0, Math.min(9, parsed.cratePityCount)) : 0,
         dailyLogin: { ...def.dailyLogin, ...(parsed.dailyLogin || {}) },
         ownedAppearance: Array.isArray(parsed.ownedAppearance) ? parsed.ownedAppearance : [],
         xp: Math.max(0, parsed.xp || 0),
@@ -346,18 +341,6 @@ export class SaveSystem {
     return this.data;
   }
 
-  // Nested award helpers defer persistence until the complete reward is ready.
-  mutateAtomically(callback) {
-    const previous = JSON.stringify(this.data);
-    this._batchSave = true;
-    try {
-      const result = callback();
-      localStorage.setItem(this.getActiveStorageKey(), JSON.stringify(this.data));
-      return result;
-    } catch (error) { this.data = JSON.parse(previous); throw error; }
-    finally { this._batchSave = false; }
-  }
-
   save() {
     if (this._batchSave) return;
     try {
@@ -365,6 +348,22 @@ export class SaveSystem {
       localStorage.setItem(storageKey, JSON.stringify(this.data));
     } catch (e) {
       console.error('Failed to save game to localStorage:', e);
+    }
+  }
+
+  mutateAtomically(mutator) {
+    if (this._batchSave) return mutator();
+    const previous = JSON.stringify(this.data);
+    this._batchSave = true;
+    try {
+      const result = mutator();
+      this._batchSave = false;
+      this.save();
+      return result;
+    } catch (error) {
+      this.data = JSON.parse(previous);
+      this._batchSave = false;
+      throw error;
     }
   }
 
@@ -506,7 +505,6 @@ export class SaveSystem {
       }
       this.addXp(180);
     } else if (isFossil) {
-      if (this.data.fossils[item.id]?.count > 0) return;
       if (!this.data.fossils[item.id]) {
         this.data.fossils[item.id] = {
           count: 0,
@@ -562,9 +560,7 @@ export class SaveSystem {
         xpGain += 75;
       }
 
-      const depthReward = depthRewardMultiplier(item.depthMeters || 0);
-      this.data.stats.totalCatchScore = (this.data.stats.totalCatchScore || 0) + Math.round(xpGain * depthReward);
-      this.addXp(Math.round(xpGain * Math.sqrt(item.species?.xpMultiplier || 1) * depthReward));
+      this.addXp(Math.round(xpGain * Math.sqrt(item.species?.xpMultiplier || 1)));
 
       // Grade evaluation
       if (!item.gradeTier && item.species) {
@@ -801,9 +797,7 @@ export class SaveSystem {
     }
     // Recover crate metadata for catches saved before inventory supported opening.
     for (const item of this.data.inventory) {
-      if (/^(?:sea|realm)[_ ]*\d+[_ :?-]+/i.test(item.name || '')) item.name = displaySpeciesName(item.name);
-      if (item.isCrate !== undefined) continue;
-      const definition = CRATE_DEFINITIONS.get(item.id);
+      const definition = TREASURE_ITEMS.find(entry => entry.id === item.id && entry.isCrate);
       if (definition && item.isCrate === undefined) {
         item.isCrate = true;
         item.crateRank = definition.crateRank;
@@ -839,8 +833,6 @@ export class SaveSystem {
       rarity: item.rarity || 'common',
       size: item.size || 0,
       weight: item.weight || 0,
-      weightClass: item.weightClass || 'Regular',
-      mutation: item.mutation || null,
       value: item.value || 0,
       sellValue: item.sellValue || item.value || 0,
       icon: isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '💎' : (item.isMythic ? '🌟' : '🐟'),
@@ -851,7 +843,6 @@ export class SaveSystem {
       crown: item.crown || null,
       isMythic: !!item.isMythic,
       isGodTier: !!item.isGodTier,
-      isBoss: !!item.isBoss || !!item.species?.isLeviathan,
       lore: item.lore || item.species?.lore || '',
       isLocked: item.isLocked !== undefined ? !!item.isLocked : (item.rarity === 'legendary' || item.rarity === 'mythic' || !!item.isMythic),
       caughtAt: Date.now(),
@@ -930,7 +921,7 @@ export class SaveSystem {
   sellAllItems(multiplier = 1) {
     const inv = this.getInventory();
     const itemsToSell = inv.filter((item) =>
-      !item.isLocked && !(item.isCrate && !item.unboxed) && !this.isItemInAquarium(item.instanceId)
+      !item.isLocked && !this.isItemInAquarium(item.instanceId)
     );
 
     if (itemsToSell.length === 0) {
@@ -1011,7 +1002,7 @@ export class SaveSystem {
     const today = utcDay(now);
     const { lastDay, streak } = this.data.dailyLogin;
     const nextStreak = lastDay === today - 1 ? streak % DAILY_GEMS.length + 1 : 1;
-    return { available: !accountManager.isGuest() && (lastDay === null || today > lastDay), nextStreak, ...DAILY_REWARDS[nextStreak - 1], claimed: lastDay === today };
+    return { ...DAILY_REWARDS[nextStreak - 1], available: !accountManager.isGuest() && (lastDay === null || today > lastDay), nextStreak, claimed: lastDay === today };
   }
 
   getGemBalance() {
@@ -1019,10 +1010,19 @@ export class SaveSystem {
   }
 
   spendGems(amount) {
-    if (!Number.isSafeInteger(amount) || amount < 0) return false;
-    if (amount === 0) return true;
+    if (amount <= 0) return true;
     if (this.data.gems >= amount) {
       this.data.gems -= amount;
+      this.save();
+      return true;
+    }
+    const total = this.getGemBalance();
+    if (total >= amount) {
+      const remaining = amount - this.data.gems;
+      this.data.gems = 0;
+      if (this.gemShop) {
+        this.gemShop.balance = Math.max(0, this.gemShop.balance - remaining);
+      }
       this.save();
       return true;
     }
@@ -1032,15 +1032,21 @@ export class SaveSystem {
   claimDailyLogin(now = Date.now()) {
     const status = this.getDailyLoginStatus(now);
     if (!status.available) return 0;
+    const reward = { gems: status.gems, xp: status.xp, crates: [...status.crates] };
+    if (!status.weekly && !status.monthly) {
+      if (Math.random() < 0.08) reward.xp += 200;
+      if (Math.random() < 0.03) reward.crates.push(1);
+    }
     this.mutateAtomically(() => {
-      const bonusXp = !status.weekly && !status.monthly && Math.random() < .08 ? 200 : 0;
-      const crates = [...status.crates];
-      if (!status.weekly && !status.monthly && Math.random() < .03) crates.push(1);
-      const pendingCrates = [...(this.data.dailyLogin.pendingCrates || []), ...crates];
-      this.data.dailyLogin = { lastDay: utcDay(now), streak: status.nextStreak, pendingCrates,
-        lastReward: { gems: status.gems, xp: status.xp + bonusXp, crates } };
-      this.data.gems += status.gems;
-      if (status.xp + bonusXp) this.addXp(status.xp + bonusXp);
+      this.data.dailyLogin = {
+        ...this.data.dailyLogin,
+        lastDay: utcDay(now),
+        streak: status.nextStreak,
+        lastReward: reward,
+        pendingCrates: [...(this.data.dailyLogin.pendingCrates || []), ...reward.crates],
+      };
+      this.data.gems += reward.gems;
+      if (reward.xp) this.addXp(reward.xp);
       this.collectDailyCrates();
     });
     return status.gems;
@@ -1054,9 +1060,11 @@ export class SaveSystem {
       const rank = pending[0], crate = CRATE_RANKS.find(item => item.rank === rank);
       if (!crate) break;
       if (!this.addItemToInventory({ ...crate, isCrate: true, category: 'crate', crateRank: rank, value: 0 })) break;
-      pending.shift(); delivered++;
+      pending.shift();
+      delivered++;
     }
-    this.save(); return delivered;
+    this.save();
+    return delivered;
   }
 
   getAppearanceCost(values) {

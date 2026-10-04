@@ -25,6 +25,21 @@ import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+const HUD_ICONS = {
+  map: '<svg viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15m6-12v15"/></svg>',
+  trap: '<svg viewBox="0 0 24 24"><path d="M4 8h16l-2 12H6L4 8Zm2 0 2-5h8l2 5M8 12v4m4-4v4m4-4v4M12 3v-1"/></svg>',
+  quests: '<svg viewBox="0 0 24 24"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Zm2 5h8m-8 4h8m-8 4h5"/></svg>',
+  inventory: '<svg viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8Zm3 0V6a4 4 0 0 1 8 0v2m-4 4v4m-2-2 2 2 2-2"/></svg>',
+  shop: '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 1.9-1.4L21 9H6m4 12h.01M18 21h.01"/></svg>',
+  journal: '<svg viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5zm0 0v13M8 6h8m-8 4h8m-8 4h6"/></svg>',
+  aquarium: '<svg viewBox="0 0 24 24"><path d="M3 12c3-5 10-7 15-3l3-3v12l-3-3c-5 4-12 2-15-3Zm5-1h.01m2 5 2-2m-8-3-2-2m16 3h1"/></svg>',
+  radio: '<svg viewBox="0 0 24 24"><path d="M4 7h16v14H4zM7 7l10-4m-9 8h5m-5 4h5m5 1h.01"/><circle cx="17" cy="12" r="1"/></svg>',
+  settings: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-6v3m0 14v3m10-10h-3M5 12H2m17.1-7.1-2.1 2.1M7 17l-2.1 2.1m14.2 0L17 17M7 7 4.9 4.9"/></svg>',
+  help: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.6 1.3c-.9 1.1-2.2 1.4-2.2 3.2m0 3h.01"/></svg>',
+  sound: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1a5 5 0 0 1 0 6m2-9a9 9 0 0 1 0 12"/></svg>',
+  muted: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1 5 6m0-6-5 6"/></svg>',
+};
+const hudIcon = name => `<span class="hud-icon" aria-hidden="true">${HUD_ICONS[name]}</span>`;
 
 export class UIManager {
   constructor(saveSystem, onCastTrigger, onStartDive, trapSystem = null, questSystem = null) {
@@ -194,8 +209,9 @@ export class UIManager {
 
       </div>
 
+      <div id="world-event-banner" hidden role="status"></div>
+
       <div class="hud-center">
-        <div id="world-event-banner" hidden role="status"></div>
         <div class="hud-buffs-container" id="hud-buffs"></div>
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
           <div class="depth-number" id="hud-depth">0.0m</div>
@@ -219,21 +235,21 @@ export class UIManager {
       </div>
 
       <div class="hud-right">
-        <button class="icon-btn" id="btn-minimap" title="Charted Waters Map & World Navigation">🗺️ <span class="btn-label">Map</span></button>
+        <button class="icon-btn" id="btn-minimap" title="Charted Waters Map & World Navigation">${hudIcon('map')} <span class="btn-label">Map</span></button>
         <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
-          🪤 <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
+          ${hudIcon('trap')} <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
         </button>
         <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
-          📋 <span class="btn-label">Quests</span>
+          ${hudIcon('quests')} <span class="btn-label">Quests</span>
         </button>
-        <button class="icon-btn" id="btn-inventory" title="Inventory">🎒 <span class="btn-label">Inventory</span></button>
-        <button class="icon-btn" id="btn-shop" title="Shop">🛒 <span class="btn-label">Shop</span></button>
-        <button class="icon-btn" id="btn-journal" title="Open Field Journal or Trophy Room">📜 <span class="btn-label">Journal</span></button>
-        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
-        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
-        <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
-        <button class="icon-btn" id="btn-tutorial" title="How to Play">❓</button>
-        <button class="icon-btn" id="btn-mute" title="Toggle Sound">🔊</button>
+        <button class="icon-btn" id="btn-inventory" title="Inventory">${hudIcon('inventory')} <span class="btn-label">Inventory</span></button>
+        <button class="icon-btn" id="btn-shop" title="Shop">${hudIcon('shop')} <span class="btn-label">Shop</span></button>
+        <button class="icon-btn" id="btn-journal" title="Open Field Journal or Trophy Room">${hudIcon('journal')} <span class="btn-label">Journal</span></button>
+        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">${hudIcon('aquarium')} <span class="btn-label">Aquarium</span></button>
+        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">${hudIcon('radio')} <span class="btn-label">Radio</span></button>
+        <button class="icon-btn" id="btn-settings" title="Settings">${hudIcon('settings')}</button>
+        <button class="icon-btn" id="btn-tutorial" title="How to Play">${hudIcon('help')}</button>
+        <button class="icon-btn" id="btn-mute" title="Toggle Sound">${hudIcon('sound')}</button>
       </div>
     `;
     document.body.appendChild(hud);
@@ -616,7 +632,8 @@ export class UIManager {
       const isMuted = soundManager.toggleMute();
       this.saveSystem.data.settings.isMuted = isMuted;
       this.saveSystem.save();
-      muteBtn.textContent = isMuted ? '🔇' : '🔊';
+      muteBtn.innerHTML = hudIcon(isMuted ? 'muted' : 'sound');
+      muteBtn.title = isMuted ? 'Unmute Sound' : 'Mute Sound';
       soundManager.playButtonClick();
     });
 
@@ -697,7 +714,10 @@ export class UIManager {
     const eventBanner = document.getElementById('world-event-banner');
     if (eventBanner) {
       eventBanner.hidden = !event.active;
-      if (event.active) eventBanner.textContent = `${event.icon} ${event.name} | ${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} | Legends x${event.legendaryMultiplier} | Crates x${event.crateMultiplier}`;
+      if (event.active) {
+        eventBanner.textContent = `${event.icon} ${event.name} · ${event.description}`;
+        eventBanner.title = `${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} remaining · Legends x${event.legendaryMultiplier} · Crates x${event.crateMultiplier}`;
+      }
     }
     const lvl = this.saveSystem.data.level;
     const currentXp = this.saveSystem.data.xp;
@@ -852,7 +872,7 @@ export class UIManager {
     const invBtn = document.getElementById('btn-inventory');
     if (invBtn) {
       invBtn.title = `Inventory (${invCount} / ${invCap} slots)`;
-      invBtn.innerHTML = `🎒 <span class="btn-label">Inventory</span> <span style="font-size: 0.72rem; color: ${invCount >= invCap ? '#ef4444' : '#38bdf8'}; font-weight:700;">(${invCount}/${invCap})</span>`;
+      invBtn.innerHTML = `${hudIcon('inventory')} <span class="btn-label">Inventory</span> <span style="font-size: 0.72rem; color: ${invCount >= invCap ? '#ef4444' : '#38bdf8'}; font-weight:700;">(${invCount}/${invCap})</span>`;
     }
 
     // Update Personal Aquarium Button visibility

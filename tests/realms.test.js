@@ -27,8 +27,8 @@ function advancedSave() {
   return save;
 }
 
-test('shooters telegraph bounded projectiles and chargers keep their committed heading', () => {
-  const hook = { x: 350, y: 500, state: 'DESCENDING' };
+test('shooters fire fast horizontal projectiles and chargers keep their committed heading', () => {
+  const hook = { x: 210, y: 650, state: 'DESCENDING' };
   const config = { id: 'attack-test', damage: 1, radius: 20, speed: 80, color: '#ff0000' };
   const shooter = new Hazard({ ...config, attack: 'shoot' }, 200, 500);
   shooter.attackCooldown = 0;
@@ -38,6 +38,8 @@ test('shooters telegraph bounded projectiles and chargers keep their committed h
   for (let i = 0; i < 44; i++) shooter.update(16, 800, hook);
   assert.equal(shooter.shots.length, 1);
   const shot = shooter.shots[0];
+  assert.ok(Math.abs(shot.vy) <= Math.abs(shot.vx), 'shots stay within 45 degrees of horizontal');
+  assert.ok(Math.hypot(shot.vx, shot.vy) >= 439, 'shots travel faster than before');
   assert.equal(shooter.intersectsHook(shot.x, shot.y, 1), true);
   assert.equal(shooter.shots.length, 0);
   const charger = new Hazard({ ...config, attack: 'dash' }, 200, 500);
@@ -580,6 +582,9 @@ test('marine hunters chase briefly, respect habitat bounds, and jellyfish move s
   hook.x = 650; hook.y = 5000; hook.state = 'IDLE';
   resting.update(16, 1280, hook);
   assert.ok(resting.chaseTime === 0, 'surface hook does not attract hunters');
+  const distantHook = { x: 100, y: 8000, state: 'DESCENDING' };
+  resting.update(16, 1280, distantHook);
+  assert.equal(resting.facing, -1, 'hunters face the active hook before it enters detection range');
 });
 
 test('Aether island scenery scrolls with world depth instead of sticking to the corner', () => {

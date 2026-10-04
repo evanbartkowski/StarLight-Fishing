@@ -1,4 +1,3 @@
-import { REALM_PROFILES } from './RealmContent.js';
 // Dedicated Mythic & Legendary Fish Roster
 // Features atmospheric spawn conditions, size variance, and crown algorithms
 
@@ -150,156 +149,6 @@ export const LEGENDARY_SPECIES = [
       chance: 0.18,
     },
   },
-  {
-    id: 'abyssal_kraken_colossus',
-    name: 'Colossal Abyssal Kraken',
-    isMythic: true,
-    isSpecialDeep: true,
-    isLeviathan: true,
-    isRainbow: true,
-    zone: 6,
-    minDepth: 420,
-    maxDepth: 2800,
-    rarity: 'legendary',
-    baseValue: 5800,
-    baseWeight: 980.0,
-    sizeRange: [550, 950],
-    scaleFactor: 5.6,
-    shape: 'colossal_kraken',
-    primaryColor: '#701a75',
-    secondaryColor: '#f43f5e',
-    finColor: '#4a044e',
-    glowColor: '#e879f9',
-    eyeColor: '#facc15',
-    swimSpeed: 1.1,
-    wiggleSpeed: 3.5,
-    evasion: { type: 'repel', cooldown: 2.2, force: 280, label: 'KRAKEN ABYSSAL MAELSTROM!' },
-    lore: 'A slumbering kraken titan of prehistoric origin. Its massive undulating tentacles crackle with bio-electric lightning across the deep.',
-    spawnConditions: {
-      minDepth: 420,
-      chance: 0.28,
-    },
-  },
-  {
-    id: 'cosmic_jormungandr',
-    name: 'Jörmungandr the Void Serpent',
-    isMythic: true,
-    isSpecialDeep: true,
-    isLeviathan: true,
-    isRainbow: true,
-    zone: 7,
-    minDepth: 650,
-    maxDepth: 3000,
-    rarity: 'legendary',
-    baseValue: 8800,
-    baseWeight: 1450.0,
-    sizeRange: [650, 1200],
-    scaleFactor: 6.2,
-    shape: 'world_serpent',
-    primaryColor: '#0f172a',
-    secondaryColor: '#38bdf8',
-    finColor: '#6366f1',
-    glowColor: '#818cf8',
-    eyeColor: '#a5f3fc',
-    swimSpeed: 1.6,
-    wiggleSpeed: 4.5,
-    evasion: { type: 'teleport', cooldown: 1.9, blinkDist: 320, label: 'VOID WORMHOLE!' },
-    lore: 'The mythic World Serpent of the Chrono Void. Ancient starlight scales cycle through dazzling rainbow spectra as it glides.',
-    spawnConditions: {
-      minDepth: 650,
-      chance: 0.32,
-    },
-  },
-  {
-    id: 'ancient_megalodon_behemoth',
-    name: 'Apex Abyssal Megalodon',
-    isMythic: true,
-    isSpecialDeep: true,
-    isLeviathan: true,
-    isRainbow: false,
-    zone: 5,
-    minDepth: 340,
-    maxDepth: 2500,
-    rarity: 'legendary',
-    baseValue: 6400,
-    baseWeight: 1250.0,
-    sizeRange: [480, 850],
-    scaleFactor: 5.2,
-    shape: 'megalodon_behemoth',
-    primaryColor: '#1e293b',
-    secondaryColor: '#f97316',
-    finColor: '#0f172a',
-    glowColor: '#fb923c',
-    eyeColor: '#ef4444',
-    swimSpeed: 2.2,
-    wiggleSpeed: 5,
-    evasion: { type: 'dash', cooldown: 1.7, speedMult: 4.8, label: 'APEX BEHEMOTH RUSH!' },
-    lore: 'A colossal apex mega-predator preserved from the dawn of the ocean. Volcanic fissure scars pulse red-hot across its armored flanks.',
-    spawnConditions: {
-      minDepth: 340,
-      chance: 0.26,
-    },
-  },
-  {
-    id: 'gargantuan_angler_dreadnought',
-    name: 'Gargantuan Abyssal Dreadnought',
-    isMythic: true,
-    isSpecialDeep: true,
-    isLeviathan: true,
-    isRainbow: false,
-    zone: 4,
-    minDepth: 260,
-    maxDepth: 2200,
-    rarity: 'legendary',
-    baseValue: 5100,
-    baseWeight: 820.0,
-    sizeRange: [400, 720],
-    scaleFactor: 4.8,
-    shape: 'gargantuan_angler',
-    primaryColor: '#18181b',
-    secondaryColor: '#22d3ee',
-    finColor: '#09090b',
-    glowColor: '#06b6d4',
-    eyeColor: '#67e8f9',
-    swimSpeed: 1.0,
-    wiggleSpeed: 3,
-    evasion: { type: 'camouflage', cooldown: 2.6, duration: 2.5, label: 'PITCH-BLACK AMBUSH!' },
-    lore: 'An ancient leviathan anglerfish carrying a miniature captive star atop its glowing lure. Its cavernous jaws bristle with crystal fangs.',
-    spawnConditions: {
-      minDepth: 260,
-      chance: 0.25,
-    },
-  },
-  {
-    id: 'astral_void_wyrm',
-    name: 'Astral Void Wyrm',
-    isMythic: true,
-    isSpecialDeep: true,
-    isLeviathan: true,
-    isRainbow: true,
-    zone: 7,
-    minDepth: 850,
-    maxDepth: 3000,
-    rarity: 'legendary',
-    baseValue: 9900,
-    baseWeight: 1700.0,
-    sizeRange: [720, 1350],
-    scaleFactor: 6.5,
-    shape: 'void_wyrm',
-    primaryColor: '#2e1065',
-    secondaryColor: '#ec4899',
-    finColor: '#3b0764',
-    glowColor: '#f472b6',
-    eyeColor: '#ffffff',
-    swimSpeed: 1.8,
-    wiggleSpeed: 4.2,
-    evasion: { type: 'zigzag', cooldown: 1.8, label: 'COSMIC SLIPSTREAM!' },
-    lore: 'The grandest celestial monster of the infinite trench. Majestic astral wings ripple with brilliant rainbow auroras as it sings.',
-    spawnConditions: {
-      minDepth: 850,
-      chance: 0.35,
-    },
-  },
 ];
 
 /**
@@ -328,7 +177,7 @@ export function getCrownMultiplier(crown) {
   return 1.0;
 }
 
-export function checkMythicSpawn(species, timeOfDay, weather, depthMeters, eventMultiplier = 1) {
+export function checkMythicSpawn(species, timeOfDay, weather, depthMeters) {
   if (!species.spawnConditions) return true;
   const cond = species.spawnConditions;
 
@@ -341,14 +190,5 @@ export function checkMythicSpawn(species, timeOfDay, weather, depthMeters, event
   if (depthMeters < cond.minDepth) {
     return false;
   }
-  return Math.random() < Math.min(1, (cond.chance || 0.15) * eventMultiplier);
-}
-
-// Mythics retain their identities and conditions, with rewards tied to home waters.
-for (const fish of LEGENDARY_SPECIES) {
-  const profile = REALM_PROFILES[fish.zone];
-  if (profile) {
-    fish.baseValue = Math.max(fish.baseValue, profile.commonValue * 60);
-    fish.xpMultiplier = profile.xpMultiplier;
-  }
+  return Math.random() < (cond.chance || 0.15);
 }

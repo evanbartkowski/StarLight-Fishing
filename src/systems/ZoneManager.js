@@ -130,14 +130,14 @@ export class ZoneManager {
       }
     }
 
-    // Zone 3: Abyssal Rift — Pressure Surge lateral currents
+    // Zone 3: Abyssal Rift — Pressure Surge tension spikes
     if (this.activeZoneId === 'abyssal_rift') {
       this.surgeTimer += deltaSec;
       if (this.surgeTimer > 5.5) {
         this.surgeTimer = 0;
         const dampener = this.saveSystem.hasZonePerk('pressure_stabilizer') ? 0.6 : 1.0;
         const spike = 18 * dampener;
-        hook.vx += (Math.random() < 0.5 ? -1 : 1) * spike;
+        hook.tension = Math.min(hook.maxTension, hook.tension + spike);
         this.isSurging = true;
         setTimeout(() => { this.isSurging = false; }, 800);
       }
@@ -150,9 +150,8 @@ export class ZoneManager {
         this.lineHeat = Math.min(100, this.lineHeat + 28 * deltaSec);
         if (this.lineHeat >= 100) {
           this.lineHeat = 40;
-          hook.kelpSlowTimer = Math.max(hook.kelpSlowTimer || 0, 1.5);
-          hook.kelpSlowMultiplier = 0.65;
-          this.uiManager.showToast('🔥 BOILING OVERHEAT! Reel cooling for a moment!');
+          hook.tension = hook.maxTension; // Force snap
+          this.uiManager.showToast('🔥 BOILING OVERHEAT! Line melted and snapped!');
         }
       } else {
         // Pausing reel cools down spool
@@ -217,3 +216,4 @@ export class ZoneManager {
     ctx.restore();
   }
 }
+

@@ -1,48 +1,54 @@
-import { getRealmDepthZones, getRealmDepthZone } from '../data/RealmDepths.js';
+import { getRealmDepthZones } from '../data/RealmDepths.js';
+
+function drawWreck(ctx, color) {
+  ctx.fillStyle = '#1c343d';
+  ctx.beginPath(); ctx.moveTo(-125, 10); ctx.lineTo(122, 10); ctx.lineTo(86, 54); ctx.lineTo(-88, 54); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#233e46'; ctx.fillRect(-5, -105, 7, 116); ctx.fillRect(53, -66, 6, 76);
+  ctx.beginPath(); ctx.moveTo(1, -99); ctx.lineTo(48, -40); ctx.lineTo(5, -40); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-1, -76); ctx.lineTo(-44, -22); ctx.lineTo(-1, -22); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#54727a'; ctx.lineWidth = 2;
+  for (let rib = -3; rib <= 3; rib++) { ctx.beginPath(); ctx.moveTo(rib * 27, 12); ctx.lineTo(rib * 23, 48); ctx.stroke(); }
+}
+
+function drawRuins(ctx, color) {
+  ctx.fillStyle = '#203a43'; ctx.strokeStyle = color; ctx.lineWidth = 4;
+  for (let column = -2; column <= 2; column++) {
+    const x = column * 48, height = 48 + Math.abs(column) % 2 * 24;
+    ctx.fillRect(x - 11, -height, 22, height + 34);
+    ctx.fillRect(x - 17, -height - 7, 34, 8);
+  }
+  ctx.beginPath(); ctx.moveTo(-130, -43); ctx.quadraticCurveTo(0, -132, 130, -43); ctx.stroke();
+}
+
+function drawDeepLandmark(ctx, realm, color) {
+  if (realm === 6) {
+    ctx.fillStyle = '#263640'; ctx.strokeStyle = color; ctx.lineWidth = 4;
+    for (let vent = -2; vent <= 2; vent++) {
+      const x = vent * 48, height = 54 + (Math.abs(vent) % 2) * 26;
+      ctx.beginPath(); ctx.moveTo(x - 20, 62); ctx.lineTo(x - 12, -height); ctx.lineTo(x + 10, -height - 26); ctx.lineTo(x + 24, 62); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    return;
+  }
+  ctx.strokeStyle = color; ctx.lineWidth = 7; ctx.lineCap = 'round';
+  for (let rib = -2; rib <= 2; rib++) {
+    ctx.beginPath(); ctx.moveTo(rib * 34, 58); ctx.quadraticCurveTo(rib * 50, -70, rib * 20, -105); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.moveTo(-105, 52); ctx.lineTo(105, 52); ctx.stroke();
+}
 
 export function drawDepthScenery(ctx, realm, cameraY, surfaceY, width, height) {
   const zones = getRealmDepthZones(realm);
-  const current = getRealmDepthZone(Math.max(0, (cameraY + height / 2 - surfaceY) / 15), realm);
-  // Broad silhouettes stay visible between landmarks; no scene objects are allocated.
-  ctx.save(); ctx.globalAlpha *= .15; ctx.fillStyle = current.color;
-  ctx.beginPath(); ctx.moveTo(0, 0);
-  for (let y = -100; y < height + 180; y += 80) ctx.lineTo(25 + Math.sin((y + cameraY * .25) / 160 + current.index) * (25 + current.index * 8), y);
-  ctx.lineTo(0, height); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(width, 0);
-  for (let y = -100; y < height + 180; y += 80) ctx.lineTo(width - 30 - Math.cos((y + cameraY * .25) / 180) * 25, y);
-  ctx.lineTo(width, height); ctx.closePath(); ctx.fill(); ctx.restore();
-  for (const zone of zones) {
-    for (let depth = zone.minDepth + 12; depth < zone.maxDepth; depth += 42) {
-      const y = surfaceY + depth * 15 - cameraY;
-      if (y < -220 || y > height + 220) continue;
-      ctx.save(); ctx.translate(width * .5, y); ctx.globalAlpha *= .26;
-      ctx.fillStyle = zone.index > 1 ? '#74a4b8' : '#acd4cc'; ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 3;
-      if (realm === 1 && zone.index === 1) {
-        // Broken merchant hull, mast and ribs.
-        ctx.beginPath(); ctx.moveTo(-160, 20); ctx.lineTo(150, 20); ctx.lineTo(95, 75); ctx.lineTo(-100, 60); ctx.closePath(); ctx.fill();
-        ctx.fillRect(-14, -105, 7, 125);
-        for (let i = -3; i <= 3; i++) ctx.fillRect(i * 35, -10, 5, 45);
-      } else if (zone.index === 2 || realm === 4 && zone.index > 0 || realm === 7 && zone.index === 1) {
-        // Distant drowned city, varied towers and ruined archways.
-        for (let i = -3; i <= 3; i++) {
-          const h = 60 + ((i * i + zone.index) % 4) * 28;
-          ctx.fillRect(i * 63 - 18, -h, 36, h + 60);
-          ctx.beginPath(); ctx.moveTo(i * 63 - 25, -h); ctx.lineTo(i * 63, -h - 28); ctx.lineTo(i * 63 + 25, -h); ctx.fill();
-          ctx.save(); ctx.globalAlpha *= .8; ctx.fillStyle = '#041724';
-          for (let windowY = -h + 18; windowY < 25; windowY += 26) { ctx.fillRect(i * 63 - 10, windowY, 6, 11); ctx.fillRect(i * 63 + 4, windowY, 6, 11); }
-          ctx.restore();
-          if (i < 3) { ctx.beginPath(); ctx.arc(i * 63 + 32, 15, 28, Math.PI, 0); ctx.lineWidth = 8; ctx.stroke(); }
-        }
-      } else {
-        // Fungal shelves, crystal spires, cloud roots or volcanic chimneys.
-        for (let i = -3; i <= 3; i++) {
-          const x = i * 70, h = 30 + zone.index * 35 + (i * i % 3) * 25;
-          ctx.beginPath(); ctx.moveTo(x - 22, 70); ctx.lineTo(x - 12, -h); ctx.lineTo(x + 6, -h - 30); ctx.lineTo(x + 24, 70); ctx.closePath(); ctx.fill();
-          if (realm === 2 || realm === 5) { ctx.beginPath(); ctx.ellipse(x, -h, 45, 17, 0, 0, Math.PI * 2); ctx.fill(); }
-          if (realm === 6) { ctx.beginPath(); ctx.moveTo(x, -h); ctx.bezierCurveTo(x - 35, -h - 45, x + 30, -h - 80, x - 10, -h - 135); ctx.stroke(); }
-        }
-      }
-      ctx.restore();
-    }
+  for (const zone of zones.slice(1)) {
+    const span = zone.maxDepth - zone.minDepth;
+    const landmarkDepth = zone.minDepth + Math.min(120, span * .28);
+    const y = surfaceY + landmarkDepth * 15 - cameraY;
+    if (y < -180 || y > height + 180) continue;
+    const side = zone.index % 2 ? .3 : .7;
+    ctx.save(); ctx.translate(width * side, y); ctx.globalAlpha *= .26;
+    if (zone.index === 1) drawWreck(ctx, zone.color);
+    else if (zone.index === 2) drawRuins(ctx, zone.color);
+    else drawDeepLandmark(ctx, realm, zone.color);
+    ctx.restore();
   }
 }

@@ -332,16 +332,21 @@ export class BackgroundDolphin {
   update(dt, surfaceY, weather) {
     this.timer += dt / 1000;
     this.active = true;
-    const phase = this.timer * .42;
+    const phase = this.timer * .48;
     const radius = Math.min(100, Math.max(20, this.worldWidth * .15));
     this.x = Math.max(35, Math.min(this.worldWidth - 35, this.worldWidth * .65 + Math.sin(phase) * radius));
-    this.y = surfaceY + 56;
-    this.direction = Math.cos(phase) >= 0 ? 1 : -1;
+    const verticalPhase = phase * 1.4;
+    this.y = surfaceY + 56 + Math.sin(verticalPhase) * 16;
+    const horizontalVelocity = Math.cos(phase) * radius * .48;
+    this.direction = horizontalVelocity >= 0 ? 1 : -1;
     const cycle = this.timer % 18;
     this.arcTimer = cycle;
     const jumping = cycle < this.arcDuration;
-    this.arcY = jumping ? -Math.sin(cycle / this.arcDuration * Math.PI) * 90 : Math.sin(phase * 2) * 6;
-    this.rotation = jumping ? -.5 + cycle / this.arcDuration : Math.cos(phase * 2) * .06;
+    const jumpPhase = cycle / this.arcDuration * Math.PI;
+    this.arcY = jumping ? -(Math.sin(jumpPhase) ** 2) * 78 : 0;
+    const jumpVelocity = jumping ? -78 * Math.PI / this.arcDuration * Math.sin(jumpPhase * 2) : 0;
+    const verticalVelocity = Math.cos(verticalPhase) * 16 * 1.4 + jumpVelocity;
+    this.rotation = Math.atan2(verticalVelocity, Math.abs(horizontalVelocity)) * .7;
   }
 
   render(ctx, cameraY = 0) {
@@ -385,19 +390,26 @@ export class BackgroundDolphin {
 
 // Irene cruises under the surface alongside the player's vessel.
 export class BoatShark {
-  constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; this.isHovered = false; }
+  constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; this.rotation = 0; this.isHovered = false; }
   update(dt, boat, surfaceY) {
     this.timer += dt / 1000;
-    this.x = boat.x + Math.sin(this.timer * 0.35) * 125;
-    this.y = surfaceY + 90 + Math.sin(this.timer * 0.7) * 6;
-    this.direction = Math.cos(this.timer * 0.35) >= 0 ? 1 : -1;
+    const phase = this.timer * .42;
+    const horizontalVelocity = Math.cos(phase) * 125 * .42;
+    const verticalVelocity = Math.cos(phase * 1.6) * 18 * .42 * 1.6;
+    this.x = boat.x + Math.sin(phase) * 125;
+    this.y = surfaceY + 82 + Math.sin(phase * 1.6) * 18;
+    this.direction = horizontalVelocity >= 0 ? 1 : -1;
+    this.rotation = Math.atan2(verticalVelocity, Math.abs(horizontalVelocity)) * .65;
   }
   checkHover(x, y, cameraY = 0) {
-    this.isHovered = ((x - this.x) / 52) ** 2 + ((y - this.y + cameraY) / 30) ** 2 <= 1;
+    const dx = x - this.x, dy = y - this.y + cameraY;
+    const localX = dx * Math.cos(this.rotation) + dy * Math.sin(this.rotation);
+    const localY = -dx * Math.sin(this.rotation) + dy * Math.cos(this.rotation);
+    this.isHovered = (localX / 52) ** 2 + (localY / 30) ** 2 <= 1;
     return this.isHovered;
   }
   render(ctx, cameraY = 0) {
-    ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.scale(this.direction, 1);
+    ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.rotate(this.rotation); ctx.scale(this.direction, 1);
     drawMarinePet(ctx, 'shark', this.timer); ctx.restore();
     if (this.isHovered) drawPetNameplate(ctx, this.x, this.y - cameraY + 38, 'Irene the Shark');
   }

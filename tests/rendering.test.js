@@ -2,7 +2,41 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameLoop } from '../src/GameLoop.js';
 import { auraFrame, drawAura } from '../src/rendering/AuraRenderer.js';
+import { drawDepthScenery } from '../src/rendering/DepthScenery.js';
+import { Powerup, POWERUP_TYPES } from '../src/entities/Powerup.js';
 import { Treasure } from '../src/entities/Treasure.js';
+
+test('depth scenery preserves the shallow view and fixes rare landmarks to deep world depths', () => {
+  const calls = [];
+  const ctx = new Proxy({ globalAlpha: 1 }, {
+    get: (target, key) => key in target ? target[key] : (...args) => calls.push({ key, args }),
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+  drawDepthScenery(ctx, 1, 0, 220, 800, 600);
+  assert.equal(calls.length, 0);
+
+  drawDepthScenery(ctx, 1, 4420, 220, 800, 600);
+  const firstLandmark = calls.filter(call => call.key === 'translate');
+  assert.equal(firstLandmark.length, 1);
+  calls.length = 0;
+  drawDepthScenery(ctx, 1, 4500, 220, 800, 600);
+  const nextLandmark = calls.filter(call => call.key === 'translate');
+  assert.equal(nextLandmark.length, 1);
+  assert.equal(nextLandmark[0].args[1], firstLandmark[0].args[1] - 80);
+});
+
+test('powerups render as bright, faceted pickups with a moving ring', () => {
+  const calls = [];
+  const gradient = { addColorStop() {} };
+  const ctx = new Proxy({}, {
+    get: (_, key) => key === 'createRadialGradient' ? () => gradient : (...args) => calls.push({ key, args }),
+    set: () => true,
+  });
+  new Powerup(POWERUP_TYPES[0], 100, 200).render(ctx);
+  assert.ok(calls.filter(call => call.key === 'lineTo').length >= 7);
+  assert.ok(calls.some(call => call.key === 'setLineDash'));
+  assert.ok(calls.some(call => call.key === 'fillText' && call.args[0] === POWERUP_TYPES[0].icon));
+});
 
 test('auras breathe within subtle bounds and freeze for reduced motion', () => {
   for (let t = 0; t < 30; t += 0.05) {

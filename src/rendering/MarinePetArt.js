@@ -3,16 +3,20 @@ export function drawMarinePet(ctx, kind, time = 0) {
   const sway = Math.sin(time * 3) * 3;
   if (dolphin) {
     ctx.fillStyle = '#4e8eaa';
-    ctx.beginPath(); ctx.moveTo(-28, -2); ctx.lineTo(-47, -17 + sway); ctx.quadraticCurveTo(-45, -3, -38, 1); ctx.lineTo(-48, 15 + sway); ctx.quadraticCurveTo(-34, 11, -28, 4); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(-48, -17 + sway); ctx.quadraticCurveTo(-46, -6, -38, 1); ctx.quadraticCurveTo(-46, 5, -48, 17 + sway); ctx.quadraticCurveTo(-34, 12, -28, 5); ctx.fill();
     ctx.fillStyle = '#71b9c9';
-    ctx.beginPath(); ctx.moveTo(-34, 1); ctx.bezierCurveTo(-24, -17, -4, -21, 13, -15); ctx.quadraticCurveTo(22, -13, 27, -8); ctx.lineTo(44, -5); ctx.quadraticCurveTo(49, -3, 44, 1); ctx.lineTo(27, 2); ctx.bezierCurveTo(16, 15, -13, 14, -34, 1); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-34, 1); ctx.bezierCurveTo(-25, -13, -10, -21, 8, -18); ctx.bezierCurveTo(19, -16, 25, -10, 29, -7); ctx.lineTo(45, -4); ctx.quadraticCurveTo(51, -2, 46, 1); ctx.lineTo(28, 3); ctx.bezierCurveTo(19, 14, -8, 17, -25, 9); ctx.quadraticCurveTo(-32, 6, -34, 1); ctx.fill();
     ctx.fillStyle = '#d9e9ed';
-    ctx.beginPath(); ctx.moveTo(-25, 5); ctx.quadraticCurveTo(3, 17, 29, 3); ctx.quadraticCurveTo(6, 11, -25, 5); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-25, 7); ctx.quadraticCurveTo(2, 17, 28, 4); ctx.quadraticCurveTo(12, 13, -8, 12); ctx.closePath(); ctx.fill();
     ctx.fillStyle = '#4e8eaa';
-    ctx.beginPath(); ctx.moveTo(-8, -14); ctx.quadraticCurveTo(-3, -34, 8, -25); ctx.quadraticCurveTo(12, -18, 16, -13); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(0, 7); ctx.quadraticCurveTo(-4, 21, -16, 20); ctx.lineTo(-8, 4); ctx.fill();
-    ctx.fillStyle = '#102434'; ctx.beginPath(); ctx.arc(21, -8, 1.8, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(8, -16, 1.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-7, -15); ctx.quadraticCurveTo(-2, -34, 8, -27); ctx.quadraticCurveTo(13, -21, 15, -14); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-2, 8); ctx.quadraticCurveTo(-5, 22, -18, 20); ctx.quadraticCurveTo(-13, 10, -7, 5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#468ba4'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(15, -11); ctx.quadraticCurveTo(19, -7, 17, -2); ctx.stroke();
+    ctx.fillStyle = '#102434'; ctx.beginPath(); ctx.arc(22, -9, 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(22.5, -9.5, .6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#355f72'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(35, 2); ctx.quadraticCurveTo(41, 4, 47, 1); ctx.stroke();
   } else {
     ctx.fillStyle = '#43586c';
     ctx.beginPath(); ctx.moveTo(-29, 0); ctx.lineTo(-49, -17 + sway); ctx.lineTo(-42, -2); ctx.lineTo(-50, 17 + sway); ctx.lineTo(-28, 6); ctx.fill();

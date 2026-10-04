@@ -36,7 +36,7 @@ const specialists = [
 specialists.forEach(([name, marineKind, minDepth, speed, detectionRadius], index) => {
   const zone = index + 1;
   MARINE_THREATS.push({ id: `marine_${zone}_specialist`, name, zone, marineKind, minDepth, maxDepth: 3000,
-    attack: ['lionfish', 'nautilus', 'jelly'].includes(marineKind) ? 'shoot' : 'dash',
+    attack: marineKind === 'jelly' ? undefined : ['lionfish', 'nautilus'].includes(marineKind) ? 'shoot' : 'dash',
     radius: 28 + index * 3, damage: 2 + Math.floor(index / 2), knockback: 35 + index * 9,
     speed, detectionRadius, leash: 400 + index * 80,
     chaseDuration: marineKind === 'crab' ? 1.2 : zone >= 5 ? 4 : 2.5,

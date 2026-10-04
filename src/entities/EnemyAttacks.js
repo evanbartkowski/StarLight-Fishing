@@ -9,8 +9,16 @@ export function updateAttack(enemy, dt, hook, width) {
   enemy.attackCooldown = Math.max(0, (enemy.attackCooldown ?? 1.5) - step);
   const active = hook && ['DESCENDING', 'REELING'].includes(hook.state);
   if (!enemy.attackState && active && !enemy.attackCooldown && Math.hypot(hook.x - enemy.x, hook.y - enemy.y) < 400) {
-    const dx = hook.x - enemy.x, dy = hook.y - enemy.y, length = Math.hypot(dx, dy) || 1;
-    enemy.attackState = { x: dx / length, y: dy / length, warning: .65, remaining: .75 };
+    const dx = hook.x - enemy.x, dy = hook.y - enemy.y;
+    const length = Math.hypot(dx, dy) || 1;
+    let x = dx / length, y = dy / length;
+    if (enemy.behavior.attack === 'shoot') {
+      const direction = Math.sign(dx) || enemy.facing || 1;
+      const angle = Math.max(-Math.PI / 4, Math.min(Math.PI / 4, Math.atan2(dy, Math.abs(dx))));
+      x = direction * Math.cos(angle);
+      y = Math.sin(angle);
+    }
+    enemy.attackState = { x, y, warning: .45, remaining: .75 };
   }
   const attack = enemy.attackState;
   if (!attack) return true;
@@ -18,7 +26,7 @@ export function updateAttack(enemy, dt, hook, width) {
   if (attack.warning > 0) { attack.warning -= step; return true; }
   enemy.facing = attack.x < 0 ? -1 : 1;
   if (enemy.behavior.attack === 'shoot') {
-    if (enemy.shots.length < 2) enemy.shots.push({ x: enemy.x, y: enemy.y, vx: attack.x * 240, vy: attack.y * 240, life: 2.5 });
+    if (enemy.shots.length < 2) enemy.shots.push({ x: enemy.x, y: enemy.y, vx: attack.x * 440, vy: attack.y * 440, life: 2.5 });
     enemy.attackState = null; enemy.attackCooldown = 3.5;
   } else {
     enemy.x += attack.x * 480 * step; enemy.y += attack.y * 480 * step;
@@ -32,16 +40,14 @@ export function updateAttack(enemy, dt, hook, width) {
 
 export function drawAttack(ctx, enemy, cameraY, height = 2000) {
   if (!enemy.attackState && !enemy.shots?.length) return;
-  ctx.save(); ctx.strokeStyle = '#fb7185'; ctx.lineWidth = 2;
-  if (enemy.attackState?.warning > 0 && Math.abs(enemy.y - cameraY) < height + 400) {
-    ctx.globalAlpha = .5; ctx.setLineDash([5, 8]); ctx.beginPath(); ctx.moveTo(enemy.x, enemy.y - cameraY);
-    ctx.lineTo(enemy.x + enemy.attackState.x * 240, enemy.y - cameraY + enemy.attackState.y * 240); ctx.stroke(); ctx.setLineDash([]);
-  }
+  ctx.save();
   ctx.globalAlpha = 1;
   for (const shot of enemy.shots || []) {
     const y = shot.y - cameraY; if (y < -15 || y > height + 15) continue;
-    ctx.fillStyle = '#fb7185'; ctx.beginPath(); ctx.arc(shot.x, y, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ffe4e6'; ctx.beginPath(); ctx.arc(shot.x - 1, y - 1, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = enemy.glow || '#67e8f9'; ctx.shadowColor = enemy.glow || '#67e8f9'; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(shot.x, y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ecfeff'; ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(shot.x - 1, y - 1, 2.5, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
 }

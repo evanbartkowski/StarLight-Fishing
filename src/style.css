@@ -737,6 +737,10 @@ html, body {
   user-select: none;
 }
 
+.hud-icon { display: inline-flex; flex: 0 0 18px; width: 18px; height: 18px; align-items: center; justify-content: center; color: #82d4d2; filter: drop-shadow(0 0 4px #41b7c866); }
+.hud-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn:hover .hud-icon { color: #f5d58c; filter: drop-shadow(0 0 5px #e4be7466); }
+
 .icon-btn:hover {
   background: linear-gradient(180deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%);
   border-color: rgba(56, 189, 248, 0.65);
@@ -3826,8 +3830,10 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   .modal-panel button, .chat-profile { min-height: 40px; }
   #aquarium-canvas, #visitor-tank { touch-action: manipulation; }
 }
-#world-event-banner { padding: 7px 12px; border: 1px solid #c084fc; border-radius: 12px; color: #f5e7ff; background: #211437ed; font-size: 12px; box-shadow: 0 0 16px #a855f755; text-align: center; }
+#world-event-banner { padding: 6px 12px; border: 1px solid #c084fc; border-radius: 10px; color: #f5e7ff; background: #211437ed; font-size: 11px; line-height: 1.35; box-shadow: 0 0 16px #a855f755; text-align: center; }
 #world-event-banner[hidden] { display: none; }
+#world-event-banner:not([hidden]) { position: fixed; z-index: 12; top: 72px; left: 50%; transform: translateX(-50%); width: min(460px, calc(100vw - 24px)); max-height: 40px; overflow: hidden; pointer-events: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+@media (max-width: 800px) { #world-event-banner:not([hidden]) { top: 56px; width: calc(100vw - 16px); } }
 
 /* Compact, consistent inventory cards and a crate action visible before previews. */
 .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); max-height: none; overflow: visible; padding: 0; align-items: stretch; }

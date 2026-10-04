@@ -1,4 +1,4 @@
-import { depthWaterColor } from '../data/RealmDepths.js';
+import { depthWaterColor, getRealmDepthZone } from '../data/RealmDepths.js';
 import { drawDepthScenery } from '../rendering/DepthScenery.js';
 import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
@@ -209,6 +209,24 @@ export class OceanWorld {
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
 
+    const schoolSpecies = fishPool.filter(species => ['common', 'uncommon'].includes(species.rarity));
+    for (let start = 0; start < Math.min(activeMaxDepth, 3000); start += 50) {
+      if (Math.random() >= .004) continue;
+      const end = Math.min(start + 50, activeMaxDepth, 3000);
+      const candidates = schoolSpecies.filter(species => species.minDepth < end && species.maxDepth > start);
+      if (!candidates.length) continue;
+      const species = candidates[Math.floor(Math.random() * candidates.length)];
+      const low = Math.max(start, species.minDepth), high = Math.min(end, species.maxDepth);
+      const depth = low + Math.random() * (high - low);
+      const centerX = 110 + Math.random() * Math.max(1, this.worldWidth - 220);
+      const schoolSize = 10 + Math.floor(Math.random() * 7);
+      for (let member = 0; member < schoolSize; member++) {
+        const x = Math.max(70, Math.min(this.worldWidth - 70, centerX + (member - (schoolSize - 1) / 2) * 9));
+        const y = this.surfaceY + depth * this.pixelsPerMeter + (Math.random() - .5) * 44;
+        this.entities.fish.push(new Fish(species, x, y, fishOptions));
+      }
+    }
+
     // Sparse realms still need one reachable resident in the first 30m. Random
     // band selection can otherwise choose only species whose habitat starts deeper.
     if (!this.entities.fish.some(fish => fish.y < this.surfaceY + 30 * this.pixelsPerMeter)) {
@@ -321,6 +339,23 @@ export class OceanWorld {
         diverHazard.facing = i % 2 === 0 ? 1 : -1;
         this.entities.hazards.push(diverHazard);
       }
+
+      const deepestSubDepth = Math.min(activeMaxDepth - 20, 1300);
+      if (deepestSubDepth >= 680 && Math.random() < .012) {
+        const subDepth = 650 + Math.random() * (deepestSubDepth - 650);
+        const subY = this.surfaceY + subDepth * this.pixelsPerMeter;
+        const subHazard = new Hazard({
+          ...EXPEDITION_HAZARDS[1],
+          id: 'deep_submarine',
+          name: 'Sunken Shoals Research Submarine',
+          seas: [1], minDepth: 650, maxDepth: 1600,
+          radius: 135, sizeScale: 1.8, isColossal: true,
+          color: '#475569', glow: '#67e8f9', moveSpeed: 12,
+        }, this.worldWidth * .3, subY);
+        subHazard.homeY = subY;
+        subHazard.facing = 1;
+        this.entities.hazards.push(subHazard);
+      }
     }
 
     // Mid-to-Deep Submarines (Realms 2, 3, 4, 7)
@@ -353,10 +388,14 @@ export class OceanWorld {
       const end = Math.min(band + 110, activeMaxDepth - 8);
       const depthM = band + Math.random() * (end - band);
       const clusterX = 45 + Math.random() * Math.max(1, this.worldWidth - 90);
-      const count = 1 + (Math.random() < 0.3 ? 1 : 0);
+      const groupRoll = Math.random();
+      const count = groupRoll < .48 ? 1 : groupRoll < .76 ? 2 : groupRoll < .91 ? 3 : groupRoll < .98 ? 4 : 5;
+      const groupAngle = Math.random() * Math.PI * 2;
       for (let f = 0; f < count; f++) {
-        const fx = Math.max(35, Math.min(this.worldWidth - 35, clusterX + f * 42));
-        const fy = this.surfaceY + depthM * this.pixelsPerMeter + f * 18;
+        const radius = Math.sqrt(Math.random()) * 48;
+        const angle = groupAngle + f * Math.PI * 2 / count;
+        const fx = Math.max(35, Math.min(this.worldWidth - 35, clusterX + Math.cos(angle) * radius));
+        const fy = this.surfaceY + depthM * this.pixelsPerMeter + Math.sin(angle) * radius * .55;
         this.entities.flora.push(new InteractiveFlora(floraConfig, fx, fy));
       }
     }
@@ -966,7 +1005,12 @@ export class OceanWorld {
     ctx.save();
     ctx.beginPath(); ctx.rect(0, topY, this.worldWidth, bottomY - topY); ctx.clip();
 
+    this.renderAmbientWater(ctx, cameraY, screenHeight);
     drawDepthScenery(ctx, this.currentSeaId, cameraY, this.surfaceY, this.worldWidth, screenHeight);
+
+    if (getRealmDepthZone((visibleTopM + visibleBottomM) * .5, this.currentSeaId).index > 0) {
+      this.renderUnderwaterStarlight(ctx, cameraY, screenHeight);
+    }
 
     // Sea 1: Sunlit Caustics (0 - 45m)
     if (this.currentSeaId === 1) {
@@ -1008,6 +1052,51 @@ export class OceanWorld {
     // Render Weather Effects: Rain ripples, fog drift, night stars & biolum plankton
     worldCycle.renderWeatherEffects(ctx, cameraY, this.worldWidth, screenHeight, this.surfaceY);
     drawEventAtmosphere(ctx, worldCycle.getGlobalEvent(), worldCycle.timer, this.worldWidth, screenHeight, this.surfaceY, cameraY, this.currentSeaId);
+  }
+
+  renderAmbientWater(ctx, cameraY, screenHeight) {
+    const palette = REALM_PROFILES[this.currentSeaId]?.colors || REALM_PROFILES[1].colors;
+    const first = Math.floor((cameraY - this.surfaceY) / 230) - 1;
+    const last = Math.ceil((cameraY + screenHeight - this.surfaceY) / 230);
+    const time = this.causticTimer;
+    ctx.save(); ctx.globalAlpha *= .14; ctx.lineWidth = 1.5;
+    for (let band = first; band <= last; band++) {
+      const y = this.surfaceY + band * 230 - cameraY;
+      const x = ((band * 173) % (this.worldWidth + 220) + this.worldWidth + 220) % (this.worldWidth + 220) - 110;
+      for (let strand = 0; strand < 3; strand++) {
+        const offset = strand * 13;
+        ctx.strokeStyle = palette[(band + strand + 10) % palette.length];
+        ctx.beginPath(); ctx.moveTo(x - 90, y + offset);
+        ctx.bezierCurveTo(x - 30, y - 18 + Math.sin(time + band + strand) * 8 + offset,
+          x + 35, y + 18 + Math.cos(time * .8 + band) * 7 + offset, x + 105, y + Math.sin(time + strand) * 5 + offset);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  renderUnderwaterStarlight(ctx, cameraY, screenHeight) {
+    const time = this.causticTimer;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let index = 0; index < 4; index++) {
+      const period = 8 + index * 1.25;
+      const phase = ((time + index * 2.7) % period) / period;
+      if (phase > .2) continue;
+      const cycle = Math.floor((time + index * 2.7) / period);
+      const startX = ((index * 263 + cycle * 127) % (this.worldWidth + 180)) - 90;
+      const startY = ((index * 173 + cycle * 97) % (screenHeight + 120)) - 60;
+      const progress = phase / .2;
+      const x = startX + progress * (150 + index * 25);
+      const y = startY + progress * (85 + index * 12);
+      const alpha = .75 * (1 - progress * .65);
+      ctx.strokeStyle = `rgba(186, 230, 253, ${alpha * .45})`;
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = '#a5f3fc'; ctx.shadowBlur = 9;
+      ctx.beginPath(); ctx.moveTo(x - 27, y - 17); ctx.lineTo(x, y); ctx.stroke();
+      ctx.fillStyle = `rgba(240, 253, 250, ${alpha})`;
+      ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
   }
 
   // Sea 1: Sunlit Caustics
