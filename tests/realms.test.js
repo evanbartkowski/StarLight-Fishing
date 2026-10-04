@@ -50,6 +50,14 @@ test('shooters fire fast horizontal projectiles and chargers keep their committe
   assert.ok(charger.x > 230); assert.equal(charger.y, 500);
 });
 
+test('same obstacle types vary in size between instances', () => {
+  const config = { id: 'size-test', radius: 30, naturalKind: 'kelp' };
+  const smaller = new Hazard(config, 400, 500);
+  const larger = new Hazard(config, 200, 500);
+  assert.ok(smaller.sizeScale < larger.sizeScale);
+  assert.ok(smaller.radius < larger.radius);
+});
+
 test('fossils are realm-specific, solitary, and never respawn after discovery and reload', () => {
   const save = advancedSave();
   const random = Math.random;

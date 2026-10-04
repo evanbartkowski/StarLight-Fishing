@@ -2,6 +2,11 @@ import { drawNaturalHazard } from './NaturalHazardArt.js';
 import { updateAttack, drawAttack } from './EnemyAttacks.js';
 import { drawMarineThreat } from './MarineThreatArt.js';
 
+function obstacleScaleAt(x, y) {
+  const value = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453);
+  return .78 + (value - Math.floor(value)) * .48;
+}
+
 export class Hazard {
   constructor(typeConfig, x, y) {
     this.type = typeConfig.id;
@@ -23,7 +28,7 @@ export class Hazard {
     this.glow = typeConfig.glow || '#ef4444';
     this.isColossal = !!typeConfig.isColossal;
     // Choose a permanent size per giant so its artwork and collision bounds agree.
-    this.sizeScale = typeConfig.sizeScale || (this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : 1);
+    this.sizeScale = typeConfig.sizeScale || (this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : obstacleScaleAt(x, y));
     this.shieldCost = typeConfig.shieldCost || (this.isColossal && this.sizeScale >= 1.85 ? 2 : 1);
     this.radius = (typeConfig.radius || (this.isColossal ? 35 : 20)) * this.sizeScale;
 
@@ -169,7 +174,7 @@ export class Hazard {
     // A soft red halo signals danger without outlining the collision circle.
     const pulse = .5 + .5 * Math.sin(this.timer * 1.6);
     const haloRadius = this.radius * (1.35 + pulse * .08) + 10;
-    const haloStrength = this.isColossal ? .2 : this.marineKind ? .1 : .045;
+    const haloStrength = this.isColossal ? .22 : this.marineKind ? .15 : .1;
     const halo = ctx.createRadialGradient(0, 0, this.radius * .15, 0, 0, haloRadius);
     halo.addColorStop(0, `rgba(255,88,88,${haloStrength + pulse * haloStrength * .2})`);
     halo.addColorStop(.5, `rgba(255,88,88,${haloStrength * .55})`);

@@ -341,16 +341,16 @@ export class OceanWorld {
         this.entities.hazards.push(diverHazard);
       }
 
-      const deepestSubDepth = Math.min(activeMaxDepth - 20, 1300);
-      if (deepestSubDepth >= 680 && Math.random() < .012) {
-        const subDepth = 650 + Math.random() * (deepestSubDepth - 650);
+      const deepestSubDepth = Math.min(activeMaxDepth - 20, 1800);
+      if (deepestSubDepth >= 1000 && Math.random() < .006) {
+        const subDepth = 900 + Math.random() * (deepestSubDepth - 900);
         const subY = this.surfaceY + subDepth * this.pixelsPerMeter;
         const subHazard = new Hazard({
           ...EXPEDITION_HAZARDS[1],
           id: 'deep_submarine',
           name: 'Sunken Shoals Research Submarine',
           seas: [1], minDepth: 650, maxDepth: 1600,
-          radius: 135, sizeScale: 1.8, isColossal: true,
+          radius: 170, sizeScale: 1.7, isColossal: true,
           color: '#475569', glow: '#67e8f9', moveSpeed: 12,
         }, this.worldWidth * .3, subY);
         subHazard.homeY = subY;
@@ -360,8 +360,8 @@ export class OceanWorld {
     }
 
     // Mid-to-Deep Submarines (Realms 2, 3, 4, 7)
-    if ([2, 3, 4, 7].includes(this.currentSeaId) && activeMaxDepth >= 240 && Math.random() < 0.08) {
-      const subDepth = 180 + Math.random() * (activeMaxDepth - 200);
+    if ([2, 3, 4, 7].includes(this.currentSeaId) && activeMaxDepth >= 800 && Math.random() < 0.02) {
+      const subDepth = 650 + Math.random() * (activeMaxDepth - 650);
       const subY = this.surfaceY + subDepth * this.pixelsPerMeter;
       const subHazard = new Hazard({
         ...EXPEDITION_HAZARDS[1],
@@ -369,8 +369,8 @@ export class OceanWorld {
         name: 'Deep-Sea Research Submarine',
         damage: 2,
         knockback: 65,
-        radius: 150,
-        sizeScale: 1.4,
+        radius: 170,
+        sizeScale: 1.7,
         isColossal: true,
         color: '#475569',
         glow: '#38bdf8',

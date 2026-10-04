@@ -34,14 +34,16 @@ export class HotspotManager {
 			if (spot.x < 34 || spot.x > width - 34) continue;
 			const y = spot.y - cameraY;
 			const pulse = .5 + .5 * Math.sin(this.timer * 2 + spot.index);
-			const color = spot.index === 1 ? '#f4d68a' : '#82d4d2';
-			ctx.globalAlpha = .34 + pulse * .2; ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-			ctx.beginPath(); ctx.ellipse(spot.x, y + 5, 20 + pulse * 5, 5 + pulse * 2, 0, 0, Math.PI * 2); ctx.stroke();
-			ctx.globalAlpha = .86; ctx.fillStyle = '#082a3a'; ctx.strokeStyle = color; ctx.lineWidth = 2;
-			ctx.beginPath(); ctx.arc(spot.x, y - 2, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-			ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif'; ctx.fillText(spot.index === 1 ? '✦' : '⌖', spot.x, y - 2);
-			ctx.font = '11px sans-serif'; ctx.fillStyle = '#e7f6ed'; ctx.globalAlpha = .9;
-			ctx.fillText(spot.name, spot.x, y - 22);
+			const color = spot.index === 1 ? '#f4d68a' : '#8bd9d1';
+			ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.globalAlpha = .2 + pulse * .12;
+			for (let ring = 0; ring < 3; ring++) {
+				const phase = (pulse + ring / 3) % 1;
+				ctx.beginPath(); ctx.ellipse(spot.x, y + 5, 13 + phase * 15, 3 + phase * 4, 0, 0, Math.PI * 2); ctx.stroke();
+			}
+			ctx.globalAlpha = .48 + pulse * .25; ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 9;
+			ctx.beginPath(); ctx.arc(spot.x, y - 3, 2.5 + pulse, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+			ctx.font = '10px sans-serif'; ctx.fillStyle = '#d9f4eb'; ctx.globalAlpha = .58;
+			ctx.fillText(spot.name, spot.x, y - 17);
 		}
 		ctx.restore();
 	}
