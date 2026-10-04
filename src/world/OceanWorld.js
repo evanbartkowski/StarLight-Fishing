@@ -340,44 +340,32 @@ export class OceanWorld {
         diverHazard.facing = i % 2 === 0 ? 1 : -1;
         this.entities.hazards.push(diverHazard);
       }
-
-      const deepestSubDepth = Math.min(activeMaxDepth - 20, 1800);
-      if (deepestSubDepth >= 1000 && Math.random() < .006) {
-        const subDepth = 900 + Math.random() * (deepestSubDepth - 900);
-        const subY = this.surfaceY + subDepth * this.pixelsPerMeter;
-        const subHazard = new Hazard({
-          ...EXPEDITION_HAZARDS[1],
-          id: 'deep_submarine',
-          name: 'Sunken Shoals Research Submarine',
-          seas: [1], minDepth: 650, maxDepth: 1600,
-          radius: 170, sizeScale: 1.7, isColossal: true,
-          color: '#475569', glow: '#67e8f9', moveSpeed: 12,
-        }, this.worldWidth * .3, subY);
-        subHazard.homeY = subY;
-        subHazard.facing = 1;
-        this.entities.hazards.push(subHazard);
-      }
     }
 
-    // Mid-to-Deep Submarines (Realms 2, 3, 4, 7)
-    if ([2, 3, 4, 7].includes(this.currentSeaId) && activeMaxDepth >= 800 && Math.random() < 0.02) {
-      const subDepth = 650 + Math.random() * (activeMaxDepth - 650);
+    // Deep-Sea Survey Submarine Hazard (Abyssal Depths Only: minDepth >= 1350m)
+    // Never spawns in shallow or mid waters; colossal imposing deep-ocean research vessel
+    if ([1, 2, 3, 4, 7].includes(this.currentSeaId) && activeMaxDepth >= 1400 && Math.random() < 0.016) {
+      const minSub = 1350;
+      const subDepth = minSub + Math.random() * (activeMaxDepth - minSub);
       const subY = this.surfaceY + subDepth * this.pixelsPerMeter;
       const subHazard = new Hazard({
         ...EXPEDITION_HAZARDS[1],
         id: 'deep_submarine',
-        name: 'Deep-Sea Research Submarine',
+        name: 'Deep Abyssal Research Submarine',
+        seas: [1, 2, 3, 4, 7],
+        minDepth: 1350,
+        maxDepth: 3500,
         damage: 2,
-        knockback: 65,
-        radius: 170,
-        sizeScale: 1.7,
+        knockback: 75,
+        radius: 240,
+        sizeScale: 2.4,
         isColossal: true,
-        color: '#475569',
+        color: '#1e293b',
         glow: '#38bdf8',
-        moveSpeed: 22,
-      }, this.worldWidth * 0.3, subY);
+        moveSpeed: 16,
+      }, this.worldWidth * 0.35, subY);
       subHazard.homeY = subY;
-      subHazard.facing = 1;
+      subHazard.facing = Math.random() < 0.5 ? 1 : -1;
       this.entities.hazards.push(subHazard);
     }
 

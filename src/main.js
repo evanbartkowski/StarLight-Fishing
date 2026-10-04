@@ -485,6 +485,9 @@ window.addEventListener('keydown', (e) => {
   if (e.key === ' ' && gameState === 'DESCENDING') {
     hook.startReel();
   }
+  if ((k === 'i' || k === 'b') && (gameState === 'AIMING' || gameState === 'SURFACE_IDLE')) {
+    uiManager.openInventory();
+  }
 });
 
 window.addEventListener('keyup', (e) => {

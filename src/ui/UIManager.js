@@ -243,7 +243,9 @@ export class UIManager {
         <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
           ${hudIcon('quests')} <span class="btn-label">Quests</span>
         </button>
-        <button class="icon-btn" id="btn-inventory" title="Inventory">${hudIcon('inventory')} <span class="btn-label">Inventory</span></button>
+        <button class="icon-btn" id="btn-inventory" title="Inventory">
+          ${hudIcon('inventory')} <span class="btn-label">Inventory</span> <span class="inv-badge-num" id="hud-inv-badge" style="font-size: 0.72rem; color: #38bdf8; font-weight: 700;"></span>
+        </button>
         <button class="icon-btn" id="btn-shop" title="Shop">${hudIcon('shop')} <span class="btn-label">Shop</span></button>
         <button class="icon-btn" id="btn-journal" title="Open Field Journal or Trophy Room">${hudIcon('journal')} <span class="btn-label">Journal</span></button>
         <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">${hudIcon('aquarium')} <span class="btn-label">Aquarium</span></button>
@@ -873,7 +875,11 @@ export class UIManager {
     const invBtn = document.getElementById('btn-inventory');
     if (invBtn) {
       invBtn.title = `Inventory (${invCount} / ${invCap} slots)`;
-      invBtn.innerHTML = `${hudIcon('inventory')} <span class="btn-label">Inventory</span> <span style="font-size: 0.72rem; color: ${invCount >= invCap ? '#ef4444' : '#38bdf8'}; font-weight:700;">(${invCount}/${invCap})</span>`;
+      const invBadge = document.getElementById('hud-inv-badge');
+      if (invBadge) {
+        invBadge.textContent = `(${invCount}/${invCap})`;
+        invBadge.style.color = invCount >= invCap ? '#ef4444' : '#38bdf8';
+      }
     }
 
     // Update Personal Aquarium Button visibility
@@ -1275,66 +1281,82 @@ export class UIManager {
     if (hook.caughtItems.length === 0) {
       listHtml += `
         <div class="empty-catch">
-          <p class="empty-icon">🪹</p>
+          <div class="empty-icon" style="width:48px;height:48px;margin:0 auto 10px;">${MISC_ART.harvestBasket}</div>
           <p>The line surfaced without catches this dive!</p>
           <p class="empty-sub">Cast deeper into the Seven Seas to discover valuable fish and fossils.</p>
         </div>
       `;
     } else {
-      hook.caughtItems.forEach((item) => {
+      hook.caughtItems.forEach((item, itemIdx) => {
         const isCrate = !!item.isCrate || item.category === 'crate';
         const itemVal = isCrate && item.unboxed ? 0 : Math.max(1, Math.round(item.value * sellMultiplier));
         subtotal += itemVal;
 
         const isRelic = !!item.isRelic;
-        const isFossil = item.category === 'fossil';
+        const isFossil = item.category === 'fossil' || item.type === 'fossil';
         const isTreasure = item.isTreasure && !isCrate;
+        const isFish = !isCrate && !isRelic && !isFossil && !isTreasure;
+
         const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.isGodTier ? 'GOD TIER' : item.rarity.toUpperCase()}</span>`;
-        const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
-        const fossilTag = isFossil ? `<span class="fossil-tag">🦴 FOSSIL</span>` : '';
-        const relicTag = isRelic ? `<span class="relic-tag" style="background:#854d0e;color:#fef08a;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">🏺 ${item.restored ? 'RESTORED' : 'RELIC'}</span>` : '';
+        const shinyTag = item.isShiny ? `<span class="shiny-tag"><svg viewBox="0 0 24 24" width="11" height="11" fill="#1e1b4b" style="vertical-align:middle;margin-right:2px;"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>SHINY</span>` : '';
+        const fossilTag = isFossil ? `<span class="fossil-tag"><span style="display:inline-block;width:11px;height:11px;vertical-align:middle;margin-right:2px;">${JOURNAL_TAB_ART.fossils}</span>FOSSIL</span>` : '';
+        const relicTag = isRelic ? `<span class="relic-tag" style="background:#854d0e;color:#fef08a;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;"><span style="display:inline-block;width:11px;height:11px;vertical-align:middle;margin-right:2px;">${JOURNAL_TAB_ART.relics}</span>${item.restored ? 'RESTORED' : 'RELIC'}</span>` : '';
         const crateTag = isCrate
           ? (item.unboxed
-            ? `<span class="crate-tag" style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">🎁 UNLOCKED</span>`
-            : `<span class="crate-tag" style="background:#f59e0b;color:#1e293b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">🎁 UNOPENED</span>`)
+            ? `<span class="crate-tag" style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">UNLOCKED</span>`
+            : `<span class="crate-tag" style="background:#f59e0b;color:#1e293b;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">UNOPENED</span>`)
           : '';
-        const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
+        const mythicTag = item.isMythic ? `<span class="mythic-tag">MYTHIC</span>` : '';
         const crownTag = item.crown === 'gold'
-          ? `<span class="crown-tag">${item.rarity === 'legendary' ? '👑' : '◇'} GIANT</span>`
+          ? `<span class="crown-tag">GIANT RECORD</span>`
           : item.crown === 'silver'
-          ? `<span class="crown-tag crown-silver">🥈 SILVER CROWN</span>`
+          ? `<span class="crown-tag crown-silver">SILVER CROWN</span>`
           : '';
         const gradeBadge = item.gradeTier?.id === 'Monster'
-          ? `<span class="grade-badge grade-monster" style="background:#b45309;color:#fef08a;border:1px solid #facc15;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">👑 MONSTER (3x)</span>`
+          ? `<span class="grade-badge grade-monster" style="background:#b45309;color:#fef08a;border:1px solid #facc15;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">MONSTER (3x)</span>`
           : item.gradeTier?.id === 'Trophy'
-          ? `<span class="grade-badge grade-trophy" style="background:#6b21a8;color:#f5d0fe;border:1px solid #d8b4fe;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">🏆 TROPHY (1.5x)</span>`
+          ? `<span class="grade-badge grade-trophy" style="background:#6b21a8;color:#f5d0fe;border:1px solid #d8b4fe;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">TROPHY (1.5x)</span>`
           : item.gradeTier?.id === 'Small'
-          ? `<span class="grade-badge grade-small" style="background:#334155;color:#94a3b8;padding:2px 6px;border-radius:4px;font-size:10px;">🐟 Small</span>`
+          ? `<span class="grade-badge grade-small" style="background:#334155;color:#94a3b8;padding:2px 6px;border-radius:4px;font-size:10px;">Small</span>`
           : '';
         const aberrationTag = item.isAberration
-          ? `<span class="aberration-tag" style="background:#581c87;color:#f3e8ff;border:1px solid #c084fc;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">☣️ ABERRATION (${item.aberrationMult || 4.0}x)</span>`
+          ? `<span class="aberration-tag" style="background:#581c87;color:#f3e8ff;border:1px solid #c084fc;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">ABERRATION (${item.aberrationMult || 4.0}x)</span>`
           : '';
 
         const instId = item.inventoryRef?.instanceId;
 
+        // Custom artwork slot: real canvas for fish, bespoke vector illustration for crates, fossils, relics, and treasures
+        let iconHtml = '';
+        if (isFish) {
+          iconHtml = `<canvas class="catch-item-canvas" id="catch-summary-canvas-${itemIdx}" width="112" height="88"></canvas>`;
+        } else if (isCrate) {
+          iconHtml = `<div class="catch-item-art-icon" style="transform: scale(0.65);">${crateArtwork(item.crateRank || 1)}</div>`;
+        } else if (isFossil) {
+          iconHtml = `<div class="catch-item-art-icon">${FOSSIL_ART.boneFragment || JOURNAL_TAB_ART.fossils}</div>`;
+        } else if (isRelic) {
+          iconHtml = `<div class="catch-item-art-icon">${JOURNAL_TAB_ART.relics}</div>`;
+        } else {
+          iconHtml = `<div class="catch-item-art-icon">${SHOP_ART.personalAquarium || JOURNAL_TAB_ART.almanac}</div>`;
+        }
+
         listHtml += `
           <div class="catch-item-card rarity-border-${item.rarity}" id="catch-card-${instId}">
             <div class="catch-item-icon">
-              ${isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '📦' : item.isMythic ? '🌟' : '🐟'}
+              ${iconHtml}
             </div>
             <div class="catch-item-details">
               <div class="catch-item-name">${item.name} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
               <div class="catch-item-specs">
                 ${
                   isCrate
-                    ? `<span>🎁 Rank ${item.crateRank || 1} Mystery Loot Crate • ${item.unboxed ? `Loot: <strong>${item.loot?.name || 'Claimed'}</strong>` : 'Crack open to claim loot!'}</span>`
+                    ? `<span>Rank ${item.crateRank || 1} Mystery Loot Crate • ${item.unboxed ? `Loot: <strong>${item.loot?.name || 'Claimed'}</strong>` : 'Crack open to claim loot!'}</span>`
                     : !isTreasure && !isRelic
-                    ? `<span>📏 <strong>${item.size} cm</strong></span> <span>⚖️ ${item.weight} kg</span> ${item.crown ? `<span>⭐ Size Record</span>` : ''}`
+                    ? `<span><strong>${item.size} cm</strong></span> <span>${item.weight} kg</span> ${item.crown ? `<span>• Size Record</span>` : ''}`
                     : isRelic
-                    ? `<span>🏺 Archaeological Artifact (${item.relicType?.era || 'Ancient'}) • ${item.restored ? '✨ Restored' : '🪥 Needs Cleaning'}</span>`
+                    ? `<span>Archaeological Artifact (${item.relicType?.era || 'Ancient'}) • ${item.restored ? 'Restored' : 'Needs Cleaning'}</span>`
                     : isFossil
-                    ? `<span>🏛️ Prehistoric Museum Relic</span>`
-                    : `<span>🗺️ Sunken Treasure</span>`
+                    ? `<span>Prehistoric Museum Specimen</span>`
+                    : `<span>Sunken Dredged Treasure</span>`
                 }
               </div>
             </div>
@@ -1352,8 +1374,12 @@ export class UIManager {
               </div>
               ${!isCrate && instId ? `
                 <div class="catch-item-actions-row" id="catch-actions-${instId}">
-                  <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" title="Keep safe in tackle box">🎒 Keep</button>
-                  <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-val="${itemVal}" title="Sell immediately for gold">🪙 Sell Now</button>
+                  <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" title="Keep safe in tackle box">
+                    <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.inventory}</span> Keep
+                  </button>
+                  <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-val="${itemVal}" title="Sell immediately for gold">
+                    <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sell Now
+                  </button>
                 </div>
               ` : ''}
             </div>
@@ -1371,7 +1397,7 @@ export class UIManager {
       <div class="summary-container">
         ${isStorageFull ? `
           <div style="background: rgba(239, 68, 68, 0.22); border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; text-align: center; color: #fecaca; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
-            ⚠️ You ran out of storage and need to sell items!
+            You ran out of storage and need to sell items!
           </div>
         ` : ''}
         <div class="summary-header-stats">
@@ -1398,16 +1424,32 @@ export class UIManager {
             <strong class="total-cash" id="summary-total-cash">+$${remainingGold.toLocaleString()}</strong>
           </div>
           <div class="summary-actions">
-            ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;">🎁 Crack Open Crates (${unboxedCrates.length})</button>` : ''}
-            ${hasUnrestoredRelic ? `<button class="btn btn-warning" id="btn-restore-relic">🪥 Restoration Desk</button>` : ''}
-            <button class="btn btn-primary" id="btn-keep-all-catches">🎒 Keep All Catches</button>
-            <button class="btn btn-buy" id="btn-sell-all-catches">🪙 Sell All Catches Now</button>
-            <button class="btn btn-secondary" id="btn-summary-inventory">🎒 View Inventory</button>
+            ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Crack Open Crates (${unboxedCrates.length})</button>` : ''}
+            ${hasUnrestoredRelic ? `<button class="btn btn-warning" id="btn-restore-relic"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${JOURNAL_TAB_ART.relics}</span> Restoration Desk</button>` : ''}
+            <button class="btn btn-primary" id="btn-keep-all-catches"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Keep All Catches</button>
+            <button class="btn btn-buy" id="btn-sell-all-catches"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.shop}</span> Sell All Catches Now</button>
+            <button class="btn btn-secondary" id="btn-summary-inventory"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> View Inventory</button>
           </div>
       </div>
     `;
 
-    this.openModal('⛵ Dive Completed', modalBody);
+    this.openModal('Dive Completed', modalBody);
+
+    // Render authentic fish previews onto summary canvases
+    hook.caughtItems.forEach((item, itemIdx) => {
+      const canvas = document.getElementById(`catch-summary-canvas-${itemIdx}`);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const fish = specimen(item, canvas.width / 2, canvas.height / 2);
+      if (fish) {
+        fish.scale = 1.35;
+        fish.direction = 1;
+        fish.render(ctx, 0);
+      }
+    });
 
     if (hasUnrestoredRelic) {
       const restoreBtn = document.getElementById('btn-restore-relic');
@@ -1440,7 +1482,7 @@ export class UIManager {
         const instId = e.currentTarget.dataset.id;
         const actionsDiv = document.getElementById(`catch-actions-${instId}`);
         if (actionsDiv) {
-          actionsDiv.innerHTML = '<span class="status-badge kept-badge">🎒 In Tackle Box</span>';
+          actionsDiv.innerHTML = `<span class="status-badge kept-badge"><span style="display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.inventory}</span> In Tackle Box</span>`;
         }
         soundManager.playButtonClick();
       });
@@ -1457,7 +1499,7 @@ export class UIManager {
           soundManager.playCoin();
           const actionsDiv = document.getElementById(`catch-actions-${instId}`);
           if (actionsDiv) {
-            actionsDiv.innerHTML = `<span class="status-badge sold-badge">🪙 Sold (+$${res.gold.toLocaleString()})</span>`;
+            actionsDiv.innerHTML = `<span class="status-badge sold-badge"><span style="display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sold (+$${res.gold.toLocaleString()})</span>`;
           }
           remainingGold = Math.max(0, remainingGold - res.gold);
           const totalEl = document.getElementById('summary-total-cash');
@@ -1505,7 +1547,6 @@ export class UIManager {
     document.getElementById('btn-summary-inventory')?.addEventListener('click', () => {
       this._onCatchSummaryContinue = null;
       this.closeModal();
-      if (onContinue) onContinue();
       this.openInventory();
     });
   }
