@@ -1316,6 +1316,23 @@ html, body {
   gap: 10px;
 }
 
+.summary-btn-art {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.summary-btn-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .empty-catch {
   text-align: center;
   padding: 30px;
@@ -3297,6 +3314,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   display: flex;
   align-items: center;
   height: 100%;
+  padding-left: 20px;
   padding: 0;
   margin: 0;
   box-sizing: border-box;
@@ -3886,10 +3904,10 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   .modal-panel button, .chat-profile { min-height: 40px; }
   #aquarium-canvas, #visitor-tank { touch-action: manipulation; }
 }
-#world-event-banner { padding: 6px 12px; border: 1px solid #c084fc; border-radius: 10px; color: #f5e7ff; background: #211437ed; font-size: 11px; line-height: 1.35; box-shadow: 0 0 16px #a855f755; text-align: center; }
+#world-event-banner { padding: 6px 14px; border: 1px solid rgba(192, 132, 252, 0.6); border-radius: 12px; color: #f5e7ff; background: rgba(33, 20, 55, 0.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font-size: 11px; font-weight: 600; line-height: 1.35; box-shadow: 0 4px 18px rgba(168, 85, 247, 0.35); text-align: center; }
 #world-event-banner[hidden] { display: none; }
-#world-event-banner:not([hidden]) { position: fixed; z-index: 12; top: 72px; left: 50%; transform: translateX(-50%); width: min(460px, calc(100vw - 24px)); max-height: 40px; overflow: hidden; pointer-events: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
-@media (max-width: 800px) { #world-event-banner:not([hidden]) { top: 56px; width: calc(100vw - 16px); } }
+#world-event-banner:not([hidden]) { position: fixed; z-index: 12; top: 124px; left: 50%; transform: translateX(-50%); width: min(440px, calc(100vw - 32px)); max-height: 44px; overflow: hidden; pointer-events: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+@media (max-width: 800px) { #world-event-banner:not([hidden]) { top: 116px; width: calc(100vw - 20px); } }
 
 /* Compact, consistent inventory cards and a crate action visible before previews. */
 .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); max-height: none; overflow: visible; padding: 0; align-items: stretch; }

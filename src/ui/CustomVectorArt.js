@@ -964,5 +964,41 @@ export const MISC_ART = {
     <!-- Star shine -->
     <polygon points="24,14 25.5,18 30,18 26.5,20.5 28,25 24,22 20,25 21.5,20.5 18,18 22.5,18" fill="#fef08a"/>
   `),
+
+  sellAll: svgWrap(`
+    <!-- Gilded coin pouch with overflowing gold coins -->
+    <path d="M14 18c0-5 4-8 10-8s10 3 10 8l-2 18a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4l-2-18z" fill="#16a34a" stroke="#14532d" stroke-width="1.5"/>
+    <path d="M12 18h24" stroke="#facc15" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="24" cy="18" rx="8" ry="3" fill="#ca8a04"/>
+    <!-- Big shiny gold coin emblem -->
+    <circle cx="24" cy="28" r="7" fill="#facc15" stroke="#ca8a04" stroke-width="1.2"/>
+    <text x="24" y="32" font-size="9" font-weight="900" fill="#713f12" text-anchor="middle" font-family="sans-serif">$</text>
+    <!-- Little coin glint -->
+    <circle cx="27" cy="24" r="1.2" fill="#ffffff"/>
+  `),
+
+  keepAll: svgWrap(`
+    <!-- Heavy maritime wooden keep-chest / tackle locker with brass latches -->
+    <rect x="8" y="16" width="32" height="24" rx="3" fill="#0284c7" stroke="#0369a1" stroke-width="1.5"/>
+    <path d="M8 24h32" stroke="#38bdf8" stroke-width="1.5"/>
+    <!-- Vault clasp lock -->
+    <rect x="21" y="21" width="6" height="7" rx="1.5" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
+    <!-- Brass rivets -->
+    <circle cx="11" cy="19" r="1.2" fill="#facc15"/>
+    <circle cx="37" cy="19" r="1.2" fill="#facc15"/>
+    <circle cx="11" cy="37" r="1.2" fill="#facc15"/>
+    <circle cx="37" cy="37" r="1.2" fill="#facc15"/>
+    <!-- Inward keeper arrow / safe glyph -->
+    <path d="M24 10v7m-3-3l3 3 3-3" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  `),
+
+  viewInventory: svgWrap(`
+    <!-- Detailed backpack / coastal tackle bag -->
+    <rect x="10" y="14" width="28" height="26" rx="4" fill="#334155" stroke="#475569" stroke-width="1.5"/>
+    <path d="M15 14v-4a4 4 0 0 1 8 0v4m2 0v-4a4 4 0 0 1 8 0v4" stroke="#64748b" stroke-width="1.5" fill="none"/>
+    <rect x="14" y="24" width="20" height="13" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1"/>
+    <path d="M21 24v3h6v-3" stroke="#facc15" stroke-width="1.2"/>
+    <circle cx="24" cy="30" r="1.5" fill="#38bdf8"/>
+  `),
 };
 

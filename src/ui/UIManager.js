@@ -815,8 +815,8 @@ export class UIManager {
       const depthEl = document.getElementById('hud-depth');
       if (depthEl) {
         const subZ = getDepthSubZone(depthM, this.saveSystem.getCurrentSea());
-        depthEl.textContent = `${depthM.toFixed(1)}m (${subZ.name})`;
-        depthEl.title = `Sonar Depth Sounder • ${subZ.name}`;
+        depthEl.textContent = `${depthM.toFixed(1)}m`;
+        depthEl.title = `Depth: ${depthM.toFixed(1)}m • ${subZ.name}`;
       }
 
       const fillPct = Math.min(100, (depthM / hook.maxDepthMeters) * 100);
@@ -1069,9 +1069,6 @@ export class UIManager {
 
     html += `
         </div>
-        <div style="margin-top:16px; text-align:center;">
-          <button class="btn btn-secondary btn-sm" id="btn-radio-off" ${!activeStation ? 'disabled' : ''}>Turn Off Radio</button>
-        </div>
       </div>
     `;
 
@@ -1099,14 +1096,6 @@ export class UIManager {
         this.openRadio();
       });
     });
-
-    const offBtn = document.getElementById('btn-radio-off');
-    if (offBtn) {
-      offBtn.addEventListener('click', () => {
-        soundManager.stopRadioStation();
-        this.openRadio();
-      });
-    }
   }
 
   showBottleMessage(message) {
@@ -1426,9 +1415,9 @@ export class UIManager {
           <div class="summary-actions">
             ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Crack Open Crates (${unboxedCrates.length})</button>` : ''}
             ${hasUnrestoredRelic ? `<button class="btn btn-warning" id="btn-restore-relic"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${JOURNAL_TAB_ART.relics}</span> Restoration Desk</button>` : ''}
-            <button class="btn btn-primary" id="btn-keep-all-catches"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Keep All Catches</button>
-            <button class="btn btn-buy" id="btn-sell-all-catches"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.shop}</span> Sell All Catches Now</button>
-            <button class="btn btn-secondary" id="btn-summary-inventory"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> View Inventory</button>
+            <button class="btn btn-primary" id="btn-keep-all-catches"><span class="summary-btn-art">${MISC_ART.keepAll}</span> Keep All</button>
+            <button class="btn btn-buy" id="btn-sell-all-catches"><span class="summary-btn-art">${MISC_ART.sellAll}</span> Sell All</button>
+            <button class="btn btn-secondary" id="btn-summary-inventory"><span class="summary-btn-art">${MISC_ART.viewInventory}</span> View Inventory</button>
           </div>
       </div>
     `;
@@ -1540,7 +1529,9 @@ export class UIManager {
       }
       this._onCatchSummaryContinue = null;
       this.closeModal();
-      if (onContinue) onContinue();
+      if (typeof onContinue === 'function') {
+        onContinue();
+      }
     });
 
     // View Inventory
@@ -1623,10 +1614,21 @@ export class UIManager {
       });
     });
 
+    const later = document.createElement('button');
+    later.className = 'btn btn-secondary'; later.id = 'btn-store-crate'; later.textContent = 'Keep sealed for later';
+    document.querySelector('.crate-actions')?.appendChild(later);
+    later.onclick = () => {
+      this.saveSystem.save();
+      this._currentCrateContext = null;
+      if (hook) this.openCatchSummary(hook, onContinue);
+      else this.openInventory('crates');
+    };
+
     const crackBtn = document.getElementById('btn-crack-crate');
     if (crackBtn) {
       crackBtn.onclick = () => {
         crackBtn.disabled = true;
+        later.hidden = true;
         const track = document.getElementById('gacha-reel-track');
         const iconEl = document.getElementById('crate-icon-anim');
         const descEl = document.getElementById('crate-status-desc');

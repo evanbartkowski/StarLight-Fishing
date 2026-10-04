@@ -528,6 +528,12 @@ function startDive() {
   hook.applyUpgrades(save);
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
   gameState = 'SURFACE_IDLE';
+  isMouseDown = false;
+  lastSteerMode = 'mouse';
+  Object.keys(keysDown).forEach(k => { keysDown[k] = false; });
+  if (uiManager) {
+    uiManager.activeModal = null;
+  }
 
   // Offer occasional harbor encounters after resurfacing.
   npcSystem.checkRandomEncounter('catch');

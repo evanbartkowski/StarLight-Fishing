@@ -22,118 +22,16 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.beginPath(); ctx.moveTo(-r * .6, 0); ctx.lineTo(-r * 1.1, Math.sin(time * 3) * r * .3); ctx.stroke();
     ctx.fillStyle = '#334155'; ctx.fillRect(-r * .3, -r * .65, r * .45, r * .35);
     if (kind === 'submarine') {
-      // 1. Dual powerful searchlight cones projecting into the abyss
-      const searchLight = ctx.createLinearGradient(r * 0.4, 0, r * 4.5, 0);
-      searchLight.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
-      searchLight.addColorStop(0.2, 'rgba(186, 230, 253, 0.4)');
-      searchLight.addColorStop(1, 'rgba(56, 189, 248, 0)');
-      ctx.fillStyle = searchLight;
-      ctx.beginPath();
-      ctx.moveTo(r * 0.45, -r * 0.15);
-      ctx.lineTo(r * 4.5, -r * 1.3);
-      ctx.lineTo(r * 4.5, r * 1.3);
-      ctx.lineTo(r * 0.45, r * 0.15);
-      ctx.closePath();
-      ctx.fill();
-
-      // 2. Heavy Titanium Research Submarine Hull
-      const hullGrad = ctx.createLinearGradient(0, -r * 0.5, 0, r * 0.5);
-      hullGrad.addColorStop(0, '#38bdf8');
-      hullGrad.addColorStop(0.18, '#1e293b');
-      hullGrad.addColorStop(0.85, '#0f172a');
-      hullGrad.addColorStop(1, '#020617');
-      ctx.fillStyle = hullGrad;
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = Math.max(2, r * 0.025);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r, r * 0.42, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      // 3. Conning Tower / Command Sail with periscope mast & sonar dome
-      ctx.fillStyle = '#1e293b';
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(-r * 0.35, -r * 0.85, r * 0.5, r * 0.46, [6, 6, 0, 0]);
-      ctx.fill();
-      ctx.stroke();
-      // Periscope & communications mast
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.15, -r * 0.85);
-      ctx.lineTo(-r * 0.15, -r * 1.15);
-      ctx.lineTo(-r * 0.02, -r * 1.15);
-      ctx.stroke();
-      // Navigation red/green beacon on mast
-      ctx.fillStyle = Math.sin(time * 4) > 0 ? '#38bdf8' : '#0284c7';
-      ctx.beginPath();
-      ctx.arc(-r * 0.02, -r * 1.15, r * 0.035, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 4. Heavy Stern Propeller Hub, Shroud & Rotating Screw
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.8, -r * 0.16);
-      ctx.lineTo(-r * 1.1, -r * 0.38);
-      ctx.lineTo(-r * 1.1, r * 0.38);
-      ctx.lineTo(-r * 0.8, r * 0.16);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#475569';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Propeller blades spinning
-      const propAngle = time * 12;
-      ctx.strokeStyle = '#cbd5e1';
-      ctx.lineWidth = Math.max(2.5, r * 0.035);
-      ctx.beginPath();
-      ctx.moveTo(-r * 1.12, 0);
-      ctx.lineTo(-r * 1.12 + Math.sin(propAngle) * r * 0.08, Math.cos(propAngle) * r * 0.28);
-      ctx.moveTo(-r * 1.12, 0);
-      ctx.lineTo(-r * 1.12 - Math.sin(propAngle) * r * 0.08, -Math.cos(propAngle) * r * 0.28);
-      ctx.stroke();
-
-      // 5. Armored Observation Deck & Glowing Research Portholes
-      const domeGrad = ctx.createRadialGradient(r * 0.65, 0, 2, r * 0.65, 0, r * 0.22);
-      domeGrad.addColorStop(0, '#ffffff');
-      domeGrad.addColorStop(0.4, '#7dd3fc');
-      domeGrad.addColorStop(1, '#0284c7');
-      ctx.fillStyle = domeGrad;
-      ctx.beginPath();
-      ctx.arc(r * 0.68, 0, r * 0.22, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#0284c7';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Row of glowing science portholes along flank
-      for (let i = -3; i <= 1; i++) {
-        const px = i * r * 0.2;
-        ctx.fillStyle = '#0f172a';
-        ctx.beginPath();
-        ctx.arc(px, 0, r * 0.075, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#38bdf8';
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(px, 0, r * 0.05, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+      ctx.fillRect(-r * .1, -r * .95, r * .055, r * .4);
+      ctx.fillRect(-r * .1, -r * .95, r * .22, r * .055);
+      ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0, 0, r, r * .45, 0, 0, Math.PI * 2); ctx.stroke();
+      for (let i = -2; i <= 2; i++) {
+        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .075, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#67e8f9'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .047, 0, Math.PI * 2); ctx.fill();
       }
-
-      // Hull panelling seam lines
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.7, -r * 0.2);
-      ctx.lineTo(r * 0.6, -r * 0.2);
-      ctx.moveTo(-r * 0.7, r * 0.2);
-      ctx.lineTo(r * 0.6, r * 0.2);
-      ctx.stroke();
+      ctx.fillStyle = '#334155';
+      ctx.beginPath(); ctx.moveTo(-r * .8, 0); ctx.lineTo(-r * 1.1, -r * .5); ctx.lineTo(-r * 1.1, r * .5); ctx.closePath(); ctx.fill();
     }
   } else if (kind === 'plant') {
     ctx.fillStyle = '#526257';
