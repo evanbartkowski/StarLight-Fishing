@@ -831,11 +831,15 @@ export class SoundManager {
   startRadioStation(stationId) {
     this.ensureAudio();
     this.stopRadioStation();
-    const stations = { harbor_breeze: 'tropical', rainy_lighthouse: 'aquarain', deep_blue: 'ocean-vibes', peaceful_lagoon: 'peaceful', zen_meditation: 'meditation', tropical_solitude: 'tropical', ocean_waves: 'ocean-waves' };
+    const stations = {
+      harbor_breeze: '/sprites/seamusic.mp3', rainy_lighthouse: '/music/aquarain.mp3', deep_blue: '/sprites/oceanmusic2.mp3',
+      peaceful_lagoon: '/music/peaceful.mp3', zen_meditation: '/music/meditation.mp3', tropical_solitude: '/music/tropical.mp3',
+      ocean_waves: '/music/ocean-waves.mp3', midnight_current: '/music/ocean-vibes.mp3',
+    };
     if (!stations[stationId]) return;
     this.activeStation = stationId;
     this.syncRecordedMusic();
-    this.radioTrack = new Audio(`/music/${stations[stationId]}.mp3`);
+    this.radioTrack = new Audio(stations[stationId]);
     this.radioTrack.loop = true;
     this.applyVolumes();
     this.radioTrack.play()?.catch(() => {});

@@ -3910,3 +3910,19 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .inventory-card.rarity-border-mythic, .inventory-card.rarity-border-god { --rarity-color:#e879f9; }
 .inventory-card.item-locked-border { border-color:var(--rarity-color) !important; }
 @media(max-width:420px) { .crew-grid { gap:8px; } .crew-card { padding:10px; } .crew-card h3 { font-size:.95rem; } .crew-card .btn { padding:8px 4px; font-size:.75rem; } }
+
+/* Settings & Career Records polish */
+.settings-wrapper { max-width: 880px; margin: 0 auto; }
+.settings-section h3 { display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(103,207,228,.2); }
+.settings-section .btn { width: 100%; margin-top: 4px; }
+.settings-section .setting-item label { display: flex; justify-content: space-between; font-weight: 600; color: #d6e4f0; }
+.career-section { grid-column: 1 / -1; }
+.career-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.career-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px; border-radius: 12px; background: rgba(8,20,34,.55); border: 1px solid rgba(103,207,228,.18); text-align: center; transition: transform .15s, border-color .15s; }
+.career-tile:hover { transform: translateY(-2px); border-color: #67cfe4; }
+.career-icon { font-size: 1.4rem; }
+.career-tile strong { font-size: 1.05rem; color: #f8fafc; word-break: break-word; }
+.career-tile small { color: #8fa8bf; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+.career-record { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(250,204,21,.14), rgba(250,204,21,.03)); border: 1px solid rgba(250,204,21,.3); color: #fde68a; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.career-record span { color: #cbd5e1; }
+@media (max-width: 600px) { .career-grid { grid-template-columns: repeat(3, 1fr); } .career-tile { padding: 10px 4px; } }

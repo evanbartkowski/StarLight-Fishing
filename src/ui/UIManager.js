@@ -1025,23 +1025,20 @@ export class UIManager {
     save.data.unlockedSoundtracks ||= ['harbor_breeze', 'rainy_lighthouse', 'deep_blue'];
 
     const stations = [
-      { id: 'harbor_breeze', name: 'Station 1: Harbor Breeze', desc: 'Acoustic nylon chords & gentle swelling ocean waves', icon: '🎸', cost: 0 },
-      { id: 'rainy_lighthouse', name: 'Station 2: Rainy Lighthouse', desc: 'Soft rain patter, rolling thunder & warm low foghorn', icon: '🌧️', cost: 0 },
-      { id: 'deep_blue', name: 'Station 3: Deep Blue Reverie', desc: 'Slow warm synth pads & gentle underwater resonance', icon: '🫧', cost: 0 },
+      { id: 'harbor_breeze', name: 'Station 1: Harbor Breeze', desc: 'Sunny shoreline melodies and gentle swelling waves', icon: '🎸', cost: 0 },
+      { id: 'rainy_lighthouse', name: 'Station 2: Rainy Lighthouse', desc: 'Soft rain, rolling thunder & a warm low foghorn', icon: '🌧️', cost: 0 },
+      { id: 'deep_blue', name: 'Station 3: Deep Blue Reverie', desc: 'Slow underwater pads and drifting resonance', icon: '🫧', cost: 0 },
       { id: 'peaceful_lagoon', name: 'Soundtrack: Peaceful Shallows', desc: 'Serene ambient strings and gentle turquoise ripples', icon: '🕊️', cost: 3 },
       { id: 'zen_meditation', name: 'Soundtrack: Abyssal Meditation', desc: 'Tranquil harmonic chimes from the deep ocean trenches', icon: '🧘', cost: 4 },
       { id: 'tropical_solitude', name: 'Soundtrack: Tropical Warmth', desc: 'Bright island percussion and warm offshore breeze', icon: '🌴', cost: 3 },
       { id: 'ocean_waves', name: 'Soundtrack: Rhythmic Swell', desc: 'Lapping coastal waves and gentle seafoam whispers', icon: '🌊', cost: 3 },
-      { id: 'harbor_breeze', name: 'Station 1: Harbor Breeze', desc: 'Acoustic nylon chords & gentle swelling ocean waves', icon: '🎸' },
-      { id: 'rainy_lighthouse', name: 'Station 2: Rainy Lighthouse', desc: 'Soft rain patter, rolling thunder & warm low foghorn', icon: '🌧️' },
-      { id: 'deep_blue', name: 'Station 3: Deep Blue Reverie', desc: 'Slow warm synth pads & gentle underwater resonance', icon: '🫧' },
+      { id: 'midnight_current', name: 'Soundtrack: Midnight Current', desc: 'Dreamy night-tide synths drifting over dark water', icon: '🌙', cost: 3 },
     ];
 
     let html = `
       <div class="radio-modal-container">
         <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:14px;">
-          Tune your vessel's vintage brass radio or custom gramophone to atmospheric soundscapes. Unlocked tracks loop continuously while sailing and fishing.
-          Tune your vessel's vintage brass radio to cozy procedural soundscapes. Plays in the background without needing any external audio files.
+          Tune your vessel's vintage brass radio to atmospheric soundscapes. Every station plays its own unique track, looping while you sail and fish.
         </p>
         <div style="display:flex; flex-direction:column; gap:10px;">
     `;
@@ -4452,21 +4449,22 @@ export class UIManager {
       <div class="settings-wrapper">
         <div class="settings-section"><h3>Captain Save</h3><p id="cloud-save-status">${escapeScoreboardText(accountManager.isGuest() ? 'Guest progress is saved on this browser.' : accountManager.cloudStatus)}</p><button class="btn btn-secondary" id="btn-cloud-save" ${accountManager.cloudSession ? '' : 'disabled'}>Save to cloud now</button><p class="customize-note">For an older local account, sign in once on the original laptop to migrate your progress.</p></div>
         <div class="settings-section"><h3>Your Angler</h3><p>Choose your colors and headwear.</p><button class="btn btn-primary" id="btn-customize-angler">Customize Appearance</button></div>
-        <div class="settings-section">
-          <h3>🎮 Career Statistics</h3>
-          <div class="stats-table">
-            <div class="stat-row"><span>Angler Level:</span><strong>Level ${this.saveSystem.data.level}</strong></div>
-            <div class="stat-row"><span>Total Fish Caught:</span><strong>${stats.totalFishCaught}</strong></div>
-            <div class="stat-row"><span>Gold Crowns Found:</span><strong>👑 ${stats.goldCrowns || 0} Giant Records</strong></div>
-            <div class="stat-row"><span>Silver Crowns Found:</span><strong>🥈 ${stats.silverCrowns || 0} Mini Records</strong></div>
-            <div class="stat-row"><span>Mythic Titans Landed:</span><strong>🌟 ${stats.mythicsCaught || 0}</strong></div>
-            <div class="stat-row"><span>Max Depth Reached:</span><strong>${stats.maxDepthReached}m</strong></div>
-            <div class="stat-row"><span>Total Gold Earned:</span><strong>$${stats.totalGoldEarned.toLocaleString()}</strong></div>
-            <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}</strong></div>
-            <div class="stat-row"><span>Unique Species Discovered:</span><strong>${stats.uniqueSpeciesCaught} / 66</strong></div>
-            <div class="stat-row"><span>Prehistoric Fossils Found:</span><strong>${stats.totalFossilsCollected} / ${TREASURE_ITEMS.filter(item => item.category === 'fossil').length}</strong></div>
-            <div class="stat-row"><span>Biggest Catch:</span><strong>${stats.biggestCatchName} (${stats.biggestCatchCm} cm, ${stats.heaviestCatchKg} kg)</strong></div>
+        <div class="settings-section career-section">
+          <h3>🎮 Career Records</h3>
+          <div class="career-grid">
+            ${[
+              ['🎣', 'Angler Level', `Lv. ${this.saveSystem.data.level}`],
+              ['🐟', 'Fish Caught', stats.totalFishCaught.toLocaleString()],
+              ['🧭', 'Max Depth', `${stats.maxDepthReached}m`],
+              ['💰', 'Gold Earned', `$${stats.totalGoldEarned.toLocaleString()}`],
+              ['📖', 'Species Found', `${stats.uniqueSpeciesCaught} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`],
+              ['🦴', 'Fossils', `${stats.totalFossilsCollected} / ${TREASURE_ITEMS.filter(item => item.category === 'fossil').length}`],
+              ['👑', 'Gold Crowns', stats.goldCrowns || 0],
+              ['🥈', 'Silver Crowns', stats.silverCrowns || 0],
+              ['🌟', 'Mythic Titans', stats.mythicsCaught || 0],
+            ].map(([icon, label, value]) => `<div class="career-tile"><span class="career-icon">${icon}</span><strong>${value}</strong><small>${label}</small></div>`).join('')}
           </div>
+          <div class="career-record">🏆 Biggest Catch: <strong>${escapeScoreboardText(stats.biggestCatchName || 'None yet')}</strong> <span>${stats.biggestCatchCm} cm · ${stats.heaviestCatchKg} kg</span></div>
         </div>
 
         <div class="settings-section">
