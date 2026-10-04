@@ -1,5 +1,6 @@
 import { depthRewardMultiplier, displaySpeciesName } from './CatchTraits.js';
-import { DAILY_GEMS, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
+import { DAILY_GEMS, DAILY_REWARDS, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
+import { CRATE_RANKS } from '../data/CrateData.js';
 import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization } from '../data/CustomizationData.js';
 import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
@@ -1010,7 +1011,7 @@ export class SaveSystem {
     const today = utcDay(now);
     const { lastDay, streak } = this.data.dailyLogin;
     const nextStreak = lastDay === today - 1 ? streak % DAILY_GEMS.length + 1 : 1;
-    return { available: !accountManager.isGuest() && (lastDay === null || today > lastDay), nextStreak, gems: DAILY_GEMS[nextStreak - 1], claimed: lastDay === today };
+    return { available: !accountManager.isGuest() && (lastDay === null || today > lastDay), nextStreak, ...DAILY_REWARDS[nextStreak - 1], claimed: lastDay === today };
   }
 
   getGemBalance() {
@@ -1031,10 +1032,31 @@ export class SaveSystem {
   claimDailyLogin(now = Date.now()) {
     const status = this.getDailyLoginStatus(now);
     if (!status.available) return 0;
-    this.data.dailyLogin = { lastDay: utcDay(now), streak: status.nextStreak };
-    this.data.gems += status.gems;
-    this.save();
+    this.mutateAtomically(() => {
+      const bonusXp = !status.weekly && !status.monthly && Math.random() < .08 ? 200 : 0;
+      const crates = [...status.crates];
+      if (!status.weekly && !status.monthly && Math.random() < .03) crates.push(1);
+      const pendingCrates = [...(this.data.dailyLogin.pendingCrates || []), ...crates];
+      this.data.dailyLogin = { lastDay: utcDay(now), streak: status.nextStreak, pendingCrates,
+        lastReward: { gems: status.gems, xp: status.xp + bonusXp, crates } };
+      this.data.gems += status.gems;
+      if (status.xp + bonusXp) this.addXp(status.xp + bonusXp);
+      this.collectDailyCrates();
+    });
     return status.gems;
+  }
+
+  collectDailyCrates() {
+    if (!this._batchSave) return this.mutateAtomically(() => this.collectDailyCrates());
+    const pending = this.data.dailyLogin.pendingCrates ||= [];
+    let delivered = 0;
+    while (pending.length && !this.isInventoryFull()) {
+      const rank = pending[0], crate = CRATE_RANKS.find(item => item.rank === rank);
+      if (!crate) break;
+      if (!this.addItemToInventory({ ...crate, isCrate: true, category: 'crate', crateRank: rank, value: 0 })) break;
+      pending.shift(); delivered++;
+    }
+    this.save(); return delivered;
   }
 
   getAppearanceCost(values) {

@@ -60,11 +60,7 @@ try {
       Object.assign(shop, { ui: window.smokeUI, save: window.smokeUI.saveSystem, matchesUser: () => false });
       shop.open();
     });
-    assert.equal(await page.locator('[data-case-buy]').count(), 5);
-    await page.locator('[data-case-preview="3"]').click();
-    await page.waitForSelector('.preview-item-chip');
-    await page.locator('#btn-preview-back').click();
-    assert.equal(await page.locator('[data-case-buy]').count(), 5);
+    assert.equal(await page.locator('[data-gem-package]').count(), 3);
     await page.evaluate(async () => {
       const { accountManager } = await import('/src/systems/AccountManager.js');
       const guest = accountManager.isGuest, captain = accountManager.getCurrentUser;
@@ -79,8 +75,24 @@ try {
         if (document.getElementById('fleet-toggle').getAttribute('aria-expanded') !== 'true') throw Error('Chat accessibility state is stale');
       } finally { accountManager.isGuest = guest; accountManager.getCurrentUser = captain; }
     });
-    await page.evaluate(() => window.smokeUI.openInventory('crates'));
+    await page.evaluate(() => {
+      const save = window.smokeUI.saveSystem;
+      save.data.inventory = [];
+      save.data.gems = 50;
+      save.save();
+      window.smokeUI.openInventory('crates');
+    });
     assert.equal(await page.locator('.crate-purchase-grid button').count(), 5);
+    await page.locator('.crate-purchase-grid button').first().click();
+    assert.equal(await page.locator('.btn-inv-open-crate').count(), 1);
+    assert.equal(await page.evaluate(() => window.smokeUI.saveSystem.data.gems), 48);
+    await page.evaluate(() => {
+      const save = window.smokeUI.saveSystem;
+      const purchased = save.getInventory().find(item => item.isCrate && !item.unboxed);
+      save.removeItemFromInventory(purchased.instanceId);
+      save.data.gems = 50;
+      save.save();
+    });
     await page.evaluate(async () => {
       const save = window.smokeUI.saveSystem;
       const { CRATE_RANKS } = await import('/src/data/CrateData.js');
@@ -177,6 +189,27 @@ try {
     await page.click('#download-catch');
     assert.equal((await download).suggestedFilename(), 'starlight-catch.png');
     await page.screenshot({ path: `tests/catch-card-${viewport.width}.png` });
+    await page.evaluate(() => window.smokeUI.openJournal('crew'));
+    assert.equal(await page.locator('.crew-card').count(), 4);
+    const crew = await page.locator('.crew-card').evaluateAll(nodes => nodes.slice(0, 2).map(node => ({ x: node.getBoundingClientRect().x, y: node.getBoundingClientRect().y })));
+    assert.equal(crew[0].y, crew[1].y);
+    assert.ok(crew[1].x > crew[0].x);
+    await page.screenshot({ path: `tests/crew-preview-${viewport.width}.png` });
+    await page.evaluate(() => { window.smokeUI.questSystem = { getActiveQuests: () => [] }; window.smokeUI.openQuestsModal(); });
+    assert.equal((await page.locator('#modal-title').textContent()).replace(/[^a-z ]/gi, '').trim(), 'Quests');
+    assert.ok((await page.locator('.quests-container h3').textContent()).includes('Harbor Noticeboard'));
+    await page.evaluate(() => window.smokeUI.openDailyLogin());
+    assert.equal(await page.locator('.daily-reward-day').count(), 30);
+    assert.equal(await page.locator('.daily-reward-day.milestone').count(), 5);
+    // Guest purchase uses earned Gems; no external services or wallets involved.
+    await page.evaluate(() => { window.smokeUI.saveSystem.data.gems = 50; window.smokeUI.openInventory('crates'); });
+    const beforeCrates = await page.evaluate(() => window.smokeUI.saveSystem.data.inventory.filter(item => item.isCrate).length);
+    await page.locator('.crate-purchase-grid button').first().click();
+    await page.waitForFunction(before => window.smokeUI.saveSystem.data.inventory.filter(item => item.isCrate).length === before + 1, beforeCrates);
+    const borders = await page.locator('.inventory-card').first().evaluate(node => {
+      const style = getComputedStyle(node); return [style.borderTopColor, style.borderRightColor, style.borderBottomColor, style.borderLeftColor];
+    });
+    assert.equal(new Set(borders).size, 1, 'Inventory rarity color must outline every edge');
     assert.deepEqual(errors, [], `Browser errors at ${viewport.width}px`);
     console.log(`PASS browser smoke ${viewport.width}px: boot, shop, vault, interruption-safe crate, aquarium, almanac, depth chart, catch PNG`);
     await page.close();

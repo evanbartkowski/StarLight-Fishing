@@ -22,6 +22,26 @@ function fixture(remote = null) {
   return { manager, cloud, calls };
 }
 
+test('purchase sync waits for an in-flight save and flushes newer local progress', async () => {
+  const f = fixture({ snapshot: '{"gems":1}', revision: 1 });
+  await f.manager.login('Captain', 'password');
+  let release;
+  f.cloud.writeCloudSave = async (uid, snapshot, revision) => {
+    if (revision === 1) await new Promise(resolve => { release = resolve; });
+    return revision + 1;
+  };
+  const key = f.manager.getActiveSaveKey();
+  storage.set(key, '{"gems":2}');
+  const autosave = f.manager.syncCloudSave();
+  await Promise.resolve(); await Promise.resolve();
+  storage.set(key, '{"gems":3}');
+  const purchaseSync = f.manager.syncCloudSave();
+  release(); await Promise.all([autosave, purchaseSync]);
+  assert.equal(f.manager.cloudSession.snapshot, '{"gems":3}');
+  assert.equal(f.manager.cloudSession.revision, 3);
+  assert.equal(f.manager.cloudSession.busy, false);
+});
+
 test('a captain can log in on a second laptop and load private saved progress', async () => {
   const snapshot = JSON.stringify({ level: 20, coins: 1234 });
   const f = fixture({ snapshot, revision: 4 });

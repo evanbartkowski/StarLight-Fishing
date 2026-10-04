@@ -1,3 +1,4 @@
+import { drawTipJar } from '../rendering/TipJarArt.js';
 import { aquariumAction } from '../systems/SocialFirebase.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { specimen } from './CatchCard.js';
@@ -38,9 +39,7 @@ export async function visitAquarium(ui, host) {
       drawAquariumDecor(ctx, 700, 340, decor, now / 1000);
       treasures.forEach(entity => entity.render(ctx, 0));
       fish.forEach(entity => { entity.update(dt, 700, null); entity.render(ctx, 0); });
-      ctx.fillStyle = '#e0f2fe55'; ctx.strokeStyle = '#bae6fd'; ctx.lineWidth = 2;
-      ctx.fillRect(615, 265, 48, 55); ctx.strokeRect(615, 265, 48, 55);
-      ctx.fillStyle = '#fde68a'; ctx.font = '13px sans-serif'; ctx.fillText('TIP JAR', 613, 252);
+      drawTipJar(ctx);
       for (let i = coins.length - 1; i >= 0; i--) {
         const coin = coins[i]; coin.y += dt * .18;
         ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(639, coin.y, 7, 0, Math.PI * 2); ctx.fill();

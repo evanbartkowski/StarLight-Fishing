@@ -1,5 +1,6 @@
 import { accountManager } from './AccountManager.js';
 import { buyPremium } from './SocialFirebase.js';
+import { CRATE_RANKS, CRATE_GEM_PRICES } from '../data/CrateData.js';
 
 /** Apply the server's version together with its snapshot, preventing stale writes. */
 export function acceptServerSave(save, session, result) {
@@ -15,6 +16,19 @@ export async function premiumPurchase(ui, input) {
   if (ui.premiumBusy) return false;
   ui.premiumBusy = true;
   try {
+    if (accountManager.isGuest() && input.kind === 'crate') {
+      const crate = CRATE_RANKS.find(item => item.rank === input.rank);
+      if (!crate) throw new Error('Choose a valid crate.');
+      if (save.isInventoryFull()) throw new Error('Your inventory is full. Free a slot before buying a crate.');
+      const cost = CRATE_GEM_PRICES[crate.rank];
+      if (save.data.gems < cost) throw new Error(`You need ${cost} earned Gems for this crate.`);
+      save.mutateAtomically(() => {
+        save.data.gems -= cost;
+        if (!save.addItemToInventory({ ...crate, isCrate: true, crateRank: crate.rank, category: 'crate', value: 0 })) throw new Error('Your inventory is full.');
+      });
+      ui.showToast('Sealed case stored in your Crate Vault.');
+      return true;
+    }
     save.save();
     await accountManager.syncCloudSave();
     const session = accountManager.cloudSession;

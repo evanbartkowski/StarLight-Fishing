@@ -1,13 +1,9 @@
 import { accountManager } from '../systems/AccountManager.js';
-import { premiumPurchase } from '../systems/PremiumPurchases.js';
-import { CRATE_RANKS, CRATE_GEM_PRICES } from '../data/CrateData.js';
-import { crateArtwork } from './CratePresentation.js';
 
 export const GEM_BUNDLES = [
-  { id: 'pocket', gems: 10, name: 'Pocket of Gems · $1.99' },
-  { id: 'chest', gems: 35, name: 'Gem Chest · $4.99' },
-  { id: 'vault', gems: 100, name: 'Captain’s Gem Vault · $9.99' },
-  { id: 'ocean', gems: 225, name: 'Ocean of Gems · $19.99' },
+  { id: 'pocket', gems: 10, name: 'Pocket of Gems' },
+  { id: 'chest', gems: 35, name: 'Gem Chest' },
+  { id: 'vault', gems: 100, name: 'Captain’s Gem Vault' },
 ];
 
 export class GemShop {
@@ -85,31 +81,6 @@ export class GemShop {
     this.ui.activeModal = 'gem-shop';
     const signedIn = this.matchesUser();
     this.ui.openModal('Gem Store', `<div class="gem-store"><p>Gems unlock permanent angler and aquarium styles. Owned styles are free to reuse.</p><p>Balance: 💎 ${this.save.getGemBalance()}</p><div class="gem-package-grid">${GEM_BUNDLES.map(bundle => `<article><h3>${bundle.name}</h3><strong>💎 ${bundle.gems}</strong><p>One-time purchase. Final price shown in Stripe Checkout.</p><button class="btn btn-primary" data-gem-package="${bundle.id}" ${signedIn ? '' : 'disabled'}>Continue to Checkout</button></article>`).join('')}</div><p id="gem-store-status" role="status">${signedIn ? 'Purchases are credited after payment is confirmed.' : 'Sign in to a captain account to purchase gems.'}</p></div>`);
-    const extras = document.createElement('div');
-    extras.innerHTML = '<button class="btn btn-secondary" id="gem-crate-vault">Crate Vault</button><p>Boat paint · 5 Gems each, free to reuse once owned</p>';
-    for (const skin of ['coral', 'indigo', 'gold']) {
-      const button = document.createElement('button'); button.className = 'btn btn-secondary'; button.textContent = skin;
-      button.onclick = async () => { button.disabled = true; await premiumPurchase(this.ui, { kind: 'boatSkin', skin }); button.disabled = false; };
-      extras.appendChild(button);
-    }
-    document.querySelector('.gem-store').appendChild(extras);
-    const cases = document.createElement('section');
-    cases.className = 'gem-crate-store';
-    cases.innerHTML = `<h3>Collector Cases</h3><p>Buy a sealed case for your Crate Vault. Open it whenever you choose; no expiry or extra key required.</p><div class="gem-package-grid">${CRATE_RANKS.map(crate => `<article>${crateArtwork(crate.rank)}<h4>${crate.name}</h4><p>${CRATE_GEM_PRICES[crate.rank]} Gems</p><button class="btn btn-secondary" data-case-preview="${crate.rank}">View items & odds</button><button class="btn btn-primary" data-case-buy="${crate.rank}">Buy & store · ${CRATE_GEM_PRICES[crate.rank]} Gems</button></article>`).join('')}</div>`;
-    extras.before(cases);
-    cases.querySelectorAll('[data-case-preview]').forEach(button => {
-      button.onclick = () => this.ui.openCrateDropPreviewModal(Number(button.dataset.casePreview), () => this.open());
-    });
-    cases.querySelectorAll('[data-case-buy]').forEach(button => {
-      button.onclick = async () => {
-        if (this.ui.premiumBusy) return;
-        button.disabled = true;
-        const delivered = await premiumPurchase(this.ui, { kind: 'crate', rank: Number(button.dataset.caseBuy) });
-        if (delivered && button.isConnected) { this.open(); this.ui.showToast('Sealed case stored in your Crate Vault.'); }
-        else button.disabled = false;
-      };
-    });
-    extras.querySelector('#gem-crate-vault').onclick = () => this.ui.openInventory('crates');
     document.querySelectorAll('[data-gem-package]').forEach(button => button.addEventListener('click', async () => {
       if (this.checkoutBusy) return;
       this.checkoutBusy = true;

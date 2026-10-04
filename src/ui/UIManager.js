@@ -4,7 +4,7 @@ import { displaySpeciesName } from '../systems/CatchTraits.js';
 import { openCatchCard, specimen } from './CatchCard.js';
 import { shareAquarium, visitAquarium } from './AquariumSocial.js';
 import { premiumPurchase } from '../systems/PremiumPurchases.js';
-import { DAILY_GEMS, achievementGems } from '../data/GemEconomy.js';
+import { DAILY_REWARDS, achievementGems } from '../data/GemEconomy.js';
 import { Fish } from '../entities/Fish.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
 import { Treasure } from '../entities/Treasure.js';
@@ -199,7 +199,7 @@ export class UIManager {
         <div class="hud-buffs-container" id="hud-buffs"></div>
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
           <div class="depth-number" id="hud-depth">0.0m</div>
-          <div class="zone-badge" id="hud-zone">🏖️ Sunken Shallows</div>
+          <div class="zone-badge" id="hud-zone">Sunken Shallows</div>
           <div class="depth-bar-track">
             <div class="depth-bar-fill" id="hud-depth-fill"></div>
           </div>
@@ -228,7 +228,7 @@ export class UIManager {
         </button>
         <button class="icon-btn" id="btn-inventory" title="Inventory">🎒 <span class="btn-label">Inventory</span></button>
         <button class="icon-btn" id="btn-shop" title="Shop">🛒 <span class="btn-label">Shop</span></button>
-        <button class="icon-btn" id="btn-journal" title="Field Journal & Trophy Logbook">📜 <span class="btn-label">Journal</span></button>
+        <button class="icon-btn" id="btn-journal" title="Open Field Journal or Trophy Room">📜 <span class="btn-label">Journal</span></button>
         <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">🫧 <span class="btn-label">Aquarium</span></button>
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">📻 <span class="btn-label">Radio</span></button>
         <button class="icon-btn" id="btn-settings" title="Settings">⚙️</button>
@@ -792,7 +792,7 @@ export class UIManager {
       const depthEl = document.getElementById('hud-depth');
       if (depthEl) {
         const subZ = getDepthSubZone(depthM, this.saveSystem.getCurrentSea());
-        depthEl.textContent = `${depthM.toFixed(1)}m (${subZ.icon} ${subZ.name})`;
+        depthEl.textContent = `${depthM.toFixed(1)}m (${subZ.name})`;
         depthEl.title = `Sonar Depth Sounder • ${subZ.name}`;
       }
 
@@ -805,14 +805,14 @@ export class UIManager {
         reelBtn.style.display = (gameState === 'DESCENDING' || hook.state === 'DESCENDING') ? 'inline-flex' : 'none';
       }
 
-      let activeZoneName = '🏖️ Sunken Shallows';
+      let activeZoneName = 'Sunken Shallows';
       if (this.zoneManager) {
         const az = this.zoneManager.getCurrentZone();
         if (az) {
           const currentSea = FANTASY_SEAS.find(s => s.id === this.saveSystem.getCurrentSea());
           const realmName = currentSea ? currentSea.name : az.name;
           const subZ = getDepthSubZone(depthM, this.saveSystem.getCurrentSea());
-          activeZoneName = `${currentSea?.icon || az.icon} ${realmName} • ${subZ.name}`;
+          activeZoneName = `${realmName} • ${subZ.name}`;
         }
       }
       document.getElementById('hud-zone').textContent = activeZoneName;
@@ -1175,8 +1175,8 @@ export class UIManager {
                   <button class="btn ${canAfford ? 'btn-buy' : 'btn-disabled'} btn-upgrade" data-upgrade="${upg.id}">
                     ${currentLvl === 0 && upg.id === 'seabedTraps' ? 'Deploy Pots: ' : currentLvl === 0 && upg.id === 'personalAquarium' ? 'Purchase Tank: ' : 'Upgrade: '}$${nextTier.cost.toLocaleString()}
                   </button>
-                  <button class="btn btn-secondary btn-sm btn-upgrade-gem" data-upgrade="${upg.id}" title="Fast-track this upgrade using gems" style="margin-top: 6px; width: 100%; font-size: 0.8rem; background: rgba(147, 51, 234, 0.22); border: 1px solid rgba(192, 132, 252, 0.45); color: #f0abfc;">
-                    💎 Fast Track: ${Math.max(1, Math.ceil(nextTier.cost / 600))} Gems
+                  <button class="btn btn-secondary btn-sm btn-upgrade-gem" data-upgrade="${upg.id}" title="Upgrade this tier using Gems" style="margin-top: 6px; width: 100%; font-size: 0.8rem; background: rgba(147, 51, 234, 0.22); border: 1px solid rgba(192, 132, 252, 0.45); color: #f0abfc;">
+                    💎 Upgrade: ${Math.max(1, Math.ceil(nextTier.cost / 600))} Gems
                   </button>
                 `
             }
@@ -2067,8 +2067,7 @@ export class UIManager {
         <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div>
             <h3 style="margin: 0; color: #f8fafc; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
-              <span>📋</span> Quests
-              <span>📋</span> Harbor Noticeboard Missions
+              <span>📋</span> Harbor Noticeboard
             </h3>
             <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem;">Complete daily coastal tasks to earn gold, research XP, and bonus rewards!</p>
           </div>
@@ -2131,7 +2130,6 @@ export class UIManager {
     `;
 
     this.openModal("📋 Quests", questsHtml);
-    this.openModal("📋 Harbor Noticeboard — Angler Quests", questsHtml);
 
     document.querySelectorAll('.btn-claim-quest').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -2707,76 +2705,17 @@ export class UIManager {
       `;
     };
 
-    const renderCrewTab = () => {
-      let crewHtml = `
-        <div class="crew-panel" style="padding: 10px 0;">
-          <p class="skeleton-header-tip" style="margin-bottom: 20px;">
-            🐾 <strong>Vessel Companions & Deck Crew:</strong> Charming sea creatures and deck pets that visit and join your boat by chance as you spend time fishing across the Seven Seas!
-          </p>
-          <div class="journal-grid">
-      `;
-
-      Object.values(PET_DEFINITIONS).forEach((pet) => {
-        const isUnlocked = save.hasPet(pet.id);
-        if (isUnlocked) {
-          crewHtml += `
-            <div class="journal-card journal-discovered" style="border-color: #f59e0b; background: rgba(30, 41, 59, 0.9);">
-              <div class="journal-card-top">
-                <span class="rarity-tag" style="background: #f59e0b; color: #1e293b; font-weight: 800;">${save.isPetEquipped(pet.id) ? 'ABOARD' : 'RESTING'}</span>
-                <span class="rarity-tag" style="background: #f59e0b; color: #1e293b; font-weight: 800;">ACTIVE COMPANION</span>
-                <span class="zone-tag">${pet.species}</span>
-              </div>
-              <div class="journal-visual" style="font-size: 3rem; padding: 15px 0; text-align: center;">
-                <span style="filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.4));">${pet.icon}</span>
-              </div>
-              <div class="journal-card-info">
-                <h4 style="color: #fef08a;">${pet.name}</h4>
-                <p class="journal-lore">${pet.lore}</p>
-                <div style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; font-size: 0.85rem; color: #38bdf8; line-height: 1.4;">
-                  ✨ <strong>Perk:</strong> ${pet.perk}
-                </div>
-                <div class="journal-meta" style="margin-top: 8px;">
-                  <button class="btn btn-secondary" data-equip-pet="${pet.id}" aria-pressed="${save.isPetEquipped(pet.id)}">${save.isPetEquipped(pet.id) ? 'Let rest ashore' : 'Bring aboard'}</button>
-                <div class="journal-meta" style="margin-top: 8px; justify-content: flex-end;">
-                  <span style="color: #4ade80; font-weight: 700;">🐾 Aboard Vessel</span>
-                </div>
-              </div>
-            </div>
-          `;
-        } else {
-          crewHtml += `
-            <div class="journal-card journal-undiscovered" style="opacity: 0.75; border-style: dashed;">
-              <div class="journal-card-top">
-                <span class="rarity-tag" style="background: #475569; color: #cbd5e1;">LOCKED COMPANION</span>
-                <span class="zone-tag">${pet.species}</span>
-              </div>
-              <div class="journal-visual" style="font-size: 3rem; padding: 15px 0; text-align: center;">
-                <span style="filter: grayscale(100%) opacity(35%);">${pet.icon}</span>
-              </div>
-              <div class="journal-card-info">
-                <h4 style="color: #94a3b8;">${pet.name}</h4>
-                <p class="journal-lore" style="font-style: italic; color: #64748b;">"${pet.lore}"</p>
-                <div style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; font-size: 0.85rem; color: #fbbf24; line-height: 1.4;">
-                  🎲 <strong>How to Attract:</strong> ${pet.unlockHint}
-                </div>
-                <div class="journal-meta" style="margin-top: 8px; justify-content: flex-end;">
-                  <span style="color: #94a3b8; font-weight: 600;">🔒 Not yet arrived</span>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-      });
-
-      crewHtml += `
-          </div>
-          <div style="margin-top: 20px; text-align: center; color: #94a3b8; font-size: 0.88rem; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px;">
-            💡 <em>Tip: The more dives you make and fish you catch across the Seven Seas, the higher your chance of attracting friendly companions to your boat!</em>
-          </div>
-        </div>
-      `;
-      return crewHtml;
-    };
+    const renderCrewTab = () => `<div class="crew-panel">
+      <p class="skeleton-header-tip">Your vessel companions. Bring each friend aboard or let them rest ashore.</p>
+      <div class="crew-grid">${Object.values(PET_DEFINITIONS).map(pet => {
+        const unlocked = save.hasPet(pet.id), aboard = save.isPetEquipped(pet.id);
+        return `<article class="crew-card ${unlocked ? '' : 'crew-locked'}">
+          <div class="crew-card-top"><span>${pet.species}</span><span>${unlocked ? aboard ? 'Aboard' : 'Resting' : 'Undiscovered'}</span></div>
+          <div class="crew-portrait">${pet.icon}</div><h3>${pet.name}</h3>
+          <p>${pet.lore}</p><p class="crew-perk">${unlocked ? pet.perk : pet.unlockHint}</p>
+          ${unlocked ? `<button class="btn btn-secondary" data-equip-pet="${pet.id}" aria-pressed="${aboard}">${aboard ? 'Let rest ashore' : 'Bring aboard'}</button>` : ''}
+        </article>`;
+      }).join('')}</div></div>`;
 
     const relicData = save.data.relics || {};
     const restoredRelicsCount = Object.values(relicData).filter(r => r.restored).length;
@@ -2791,7 +2730,7 @@ export class UIManager {
             📖 Field Journal & Collections
           </button>
           <button class="primary-tab-btn ${primaryMenu === 'logbook' ? 'active' : ''}" id="primary-menu-logbook">
-            🏆 Logbook & Trophy Room
+            🏆 Trophy Room
           </button>
         </div>
 
@@ -2810,12 +2749,11 @@ export class UIManager {
             </div>
             <div id="journal-tab-content">
               ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml(currentAlmanacZone)}
-              ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml('sunken_shallows')}
             </div>
           </div>
         </div>
 
-        <!-- Primary Menu 2: Logbook & Trophy Room -->
+        <!-- Primary Menu 2: Trophy Room -->
         <div id="view-logbook" style="display: ${primaryMenu === 'logbook' ? 'block' : 'none'};">
           ${this.getLogbookHtml()}
         </div>
@@ -4410,12 +4348,23 @@ export class UIManager {
     const status = save.getDailyLoginStatus();
     const guest = accountManager.isGuest();
     const streak = save.data.dailyLogin.streak;
-    this.openModal('Daily Captain Reward', `<div class="daily-rewards"><h3>💎 ${save.getGemBalance()} gems</h3><p>Earn gems from achievements, daily rewards, and rare crates, or buy an optional bundle in the Gem Store. Spend them on your angler and aquarium.</p><button class="btn btn-secondary" id="open-gem-store">Gem Store</button><div class="daily-reward-grid">${DAILY_GEMS.map((gems, index) => `<div class="daily-reward-day ${status.available && index + 1 === status.nextStreak ? 'ready' : ''}"><span>Day ${index + 1}</span><strong>💎 ${gems}</strong></div>`).join('')}</div><p>${guest ? 'Sign in to a captain account to claim daily gems.' : status.claimed ? `Reward claimed. Current streak: ${streak} day${streak === 1 ? '' : 's'}.` : 'Visit daily for increasing rewards and a day-30 bonus.'}</p><button class="btn btn-primary" id="claim-daily-gems" ${status.available ? '' : 'disabled'}>${status.claimed ? 'Claimed today' : `Claim 💎 ${status.gems}`}</button><p class="customize-note">Resets at 00:00 UTC. Missing a day restarts the 30-day streak.</p></div>`);
-    document.getElementById('open-gem-store').addEventListener('click', () => this.saveSystem.gemShop?.open());
-    document.getElementById('claim-daily-gems').addEventListener('click', () => {
+    const describe = reward => `${reward.gems} Gems${reward.xp ? ` + ${reward.xp} XP` : ''}${reward.crates.length ? ` + ${reward.crates.length} sealed crate${reward.crates.length > 1 ? 's' : ''}` : ''}`;
+    this.openModal('Daily Check-in', `<div class="daily-rewards"><h3>${save.getGemBalance()} Gems</h3>
+      <p>Different rewards each day. Every seventh day brings a celebration bundle; day 30 brings the monthly treasure haul.</p>
+      <button class="btn btn-secondary" id="open-gem-store">Gem Store</button>
+      <div class="daily-reward-grid">${DAILY_REWARDS.map(reward => `<div class="daily-reward-day ${reward.weekly || reward.monthly ? 'milestone' : ''} ${status.available && reward.day === status.nextStreak ? 'ready' : ''}"><span>${reward.monthly ? 'Monthly haul' : reward.weekly ? 'Weekly bundle' : 'Day ' + reward.day}</span><strong>${describe(reward)}</strong></div>`).join('')}</div>
+      <p>${guest ? 'Sign in to claim check-in rewards.' : status.claimed ? `Claimed today. Streak: ${streak} days.` : describe(status)}</p>
+      <button class="btn btn-primary" id="claim-daily-gems" ${status.available ? '' : 'disabled'}>${status.claimed ? 'Claimed today' : 'Claim rewards'}</button>
+      ${(save.data.dailyLogin.pendingCrates || []).length ? `<p>${save.data.dailyLogin.pendingCrates.length} reward crates are waiting for inventory space.</p><button class="btn btn-secondary" id="collect-daily-crates">Collect waiting crates</button>` : ''}
+      <p class="customize-note">Ordinary days also have an 8% chance of 200 bonus XP and a 3% chance of a sealed crate. Resets at 00:00 UTC. Missing a day restarts the 30-day streak.</p></div>`);
+    document.getElementById('open-gem-store').onclick = () => save.gemShop?.open();
+    document.getElementById('claim-daily-gems').onclick = () => {
       const gems = save.claimDailyLogin();
-      if (gems) { this.showToast(`Daily reward: +${gems} gem${gems === 1 ? '' : 's'}!`); accountManager.syncCloudSave(); }
+      if (gems) { this.showToast(`Check-in: ${describe(save.data.dailyLogin.lastReward)}`); accountManager.syncCloudSave(); }
       this.openDailyLogin();
+    };
+    document.getElementById('collect-daily-crates')?.addEventListener('click', () => {
+      const count = save.collectDailyCrates(); this.showToast(count ? `${count} crates stored in your inventory.` : 'Free an inventory slot first.'); this.openDailyLogin();
     });
   }
 

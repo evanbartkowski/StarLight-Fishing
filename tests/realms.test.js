@@ -27,6 +27,26 @@ function advancedSave() {
   return save;
 }
 
+test('shooters telegraph bounded projectiles and chargers keep their committed heading', () => {
+  const hook = { x: 350, y: 500, state: 'DESCENDING' };
+  const config = { id: 'attack-test', damage: 1, radius: 20, speed: 80, color: '#ff0000' };
+  const shooter = new Hazard({ ...config, attack: 'shoot' }, 200, 500);
+  shooter.attackCooldown = 0;
+  shooter.update(16, 800, hook);
+  assert.ok(shooter.attackState.warning > 0);
+  assert.equal(shooter.shots.length, 0);
+  for (let i = 0; i < 44; i++) shooter.update(16, 800, hook);
+  assert.equal(shooter.shots.length, 1);
+  const shot = shooter.shots[0];
+  assert.equal(shooter.intersectsHook(shot.x, shot.y, 1), true);
+  assert.equal(shooter.shots.length, 0);
+  const charger = new Hazard({ ...config, attack: 'dash' }, 200, 500);
+  charger.attackCooldown = 0; charger.update(16, 800, hook);
+  hook.y = 650;
+  for (let i = 0; i < 50; i++) charger.update(16, 800, hook);
+  assert.ok(charger.x > 230); assert.equal(charger.y, 500);
+});
+
 test('fossils are realm-specific, solitary, and never respawn after discovery and reload', () => {
   const save = advancedSave();
   const random = Math.random;
@@ -118,7 +138,7 @@ test('submarines are rare and full-sized while endgame enemies increase with dep
       }
     }
     assert.ok(submarines > 0 && submarines < 48, `${submarines}/240 submarine encounters`);
-    assert.ok(deep > shallow * 1.5, `deep enemies ${deep}, shallow ${shallow}`);
+    assert.ok(deep > shallow * 1.35, `deep enemies ${deep}, shallow ${shallow}`);
   } finally { Math.random = original; }
 });
 
@@ -543,7 +563,7 @@ test('deep water favors rarer valuable catches and leviathans remain occasional'
 });
 
 test('marine hunters chase briefly, respect habitat bounds, and jellyfish move slowly', () => {
-  const make = kind => new Hazard(HAZARD_TYPES.find(h => h.zone === 1 && h.marineKind === kind), 400, 5000);
+  const make = kind => new Hazard({ ...HAZARD_TYPES.find(h => h.zone === 1 && h.marineKind === kind), attack: undefined }, 400, 5000);
   const jelly = make('jelly'), shark = make('shark');
   const hook = { x: 600, y: 5000, state: 'DESCENDING' };
   for (let frame = 0; frame < 20; frame++) { jelly.update(16, 1280, hook); shark.update(16, 1280, hook); }

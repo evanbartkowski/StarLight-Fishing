@@ -5,26 +5,54 @@ globalThis.localStorage = { getItem: key => storage.get(key) ?? null, setItem: (
 const { accountManager } = await import('../src/systems/AccountManager.js');
 const { SaveSystem } = await import('../src/systems/SaveSystem.js');
 const { rollCrateLoot } = await import('../src/data/CrateData.js');
-const { achievementGems } = await import('../src/data/GemEconomy.js');
+const { achievementGems, DAILY_GEMS } = await import('../src/data/GemEconomy.js');
 const { ACHIEVEMENTS } = await import('../src/data/AchievementsData.js');
 function fresh() { storage.clear(); accountManager.activeUser = 'GemCaptain'; return new SaveSystem(); }
+
+test('weekly and monthly check-ins queue sealed crates until space is available', () => {
+  const save = fresh(), day = 20000;
+  save.data.dailyLogin = { lastDay: day - 1, streak: 29 };
+  for (let i = 0; i < save.getInventoryCapacity(); i++) save.addItemToInventory({ id: `fish${i}`, value: 1 });
+  assert.equal(save.claimDailyLogin(day * 86400000), 100);
+  assert.equal(save.data.dailyLogin.lastReward.xp, 5000);
+  assert.deepEqual(save.data.dailyLogin.pendingCrates, [3, 3, 4, 4, 5]);
+  save.load();
+  assert.equal(save.claimDailyLogin(day * 86400000), 0);
+  save.removeItemFromInventory(save.data.inventory[0].instanceId);
+  assert.equal(save.collectDailyCrates(), 1);
+  assert.deepEqual(save.data.dailyLogin.pendingCrates, [3, 4, 4, 5]);
+  assert.equal(save.collectDailyCrates(), 0);
+  save.load(); assert.deepEqual(save.data.dailyLogin.pendingCrates, [3, 4, 4, 5]);
+});
+
+test('guests can buy a sealed crate with earned Gems and cannot overspend', async () => {
+  const { premiumPurchase } = await import('../src/systems/PremiumPurchases.js');
+  const { CRATE_GEM_PRICES } = await import('../src/data/CrateData.js');
+  const save = fresh(); accountManager.activeUser = null; save.data.gems = CRATE_GEM_PRICES[1];
+  const ui = { saveSystem: save, showToast() {} };
+  assert.equal(await premiumPurchase(ui, { kind: 'crate', rank: 1 }), true);
+  assert.equal(save.data.gems, 0);
+  assert.equal(save.data.inventory.filter(item => item.isCrate && !item.unboxed).length, 1);
+  assert.equal(await premiumPurchase(ui, { kind: 'crate', rank: 1 }), false);
+  assert.equal(save.data.inventory.length, 1);
+});
 
 test('daily login is once per UTC day, survives reload, and increases across thirty days and resets after day thirty', () => {
   const save = fresh();
   const start = Date.parse('2026-10-01T23:59:00Z');
-  assert.equal(save.claimDailyLogin(start), 1);
+  assert.equal(save.claimDailyLogin(start), DAILY_GEMS[0]);
   assert.equal(save.claimDailyLogin(start + 30000), 0);
   save.load();
   assert.equal(save.claimDailyLogin(start), 0);
   const nextDay = Date.parse('2026-10-02T00:00:00Z');
   for (let day = 2; day <= 30; day++) {
-    assert.equal(save.claimDailyLogin(nextDay + (day - 2) * 86400000), day === 30 ? 5 : 1 + Math.floor((day - 1) / 10));
+    assert.equal(save.claimDailyLogin(nextDay + (day - 2) * 86400000), DAILY_GEMS[day - 1]);
   }
-  assert.equal(save.data.gems, 62);
+  assert.ok(save.data.gems >= DAILY_GEMS.reduce((sum, value) => sum + value, 0));
   assert.equal(save.claimDailyLogin(start), 0, 'clock rollback must not reclaim older days');
-  assert.equal(save.claimDailyLogin(nextDay + 29 * 86400000), 1);
+  assert.equal(save.claimDailyLogin(nextDay + 29 * 86400000), DAILY_GEMS[0]);
   assert.equal(save.data.dailyLogin.streak, 1);
-  assert.equal(save.claimDailyLogin(nextDay + 32 * 86400000), 1);
+  assert.equal(save.claimDailyLogin(nextDay + 32 * 86400000), DAILY_GEMS[0]);
   assert.equal(save.data.dailyLogin.streak, 1, 'missed days restart the streak');
 });
 
@@ -33,13 +61,28 @@ test('daily rewards require a signed-in captain and stay isolated per save', () 
   accountManager.activeUser = null;
   assert.equal(save.claimDailyLogin(), 0);
   accountManager.activeUser = 'GemCaptain';
-  assert.equal(save.claimDailyLogin(), 1);
+  assert.equal(save.claimDailyLogin(), DAILY_GEMS[0]);
   save.switchToAccount('SecondCaptain');
   assert.equal(save.data.gems, 0);
-  assert.equal(save.claimDailyLogin(), 1);
+  assert.equal(save.claimDailyLogin(), DAILY_GEMS[0]);
   save.switchToAccount('GemCaptain');
-  assert.equal(save.data.gems, 1);
+  assert.equal(save.data.gems, DAILY_GEMS[0]);
   assert.equal(save.claimDailyLogin(), 0);
+});
+
+test('ordinary check-ins can award bonus XP and a sealed crate', () => {
+  const save = fresh();
+  const random = Math.random;
+  const rolls = [0.01, 0.01];
+  Math.random = () => rolls.shift() ?? 0.99;
+  try {
+    save.claimDailyLogin(Date.parse('2026-10-01T12:00:00Z'));
+    assert.equal(save.data.dailyLogin.lastReward.xp, 200);
+    assert.deepEqual(save.data.dailyLogin.lastReward.crates, [1]);
+    const earnedXp = save.data.xp + Array.from({ length: save.data.level }, (_, level) => save.getXpRequired(level)).reduce((sum, required) => sum + required, 0);
+    assert.equal(earnedXp, 200);
+    assert.equal(save.data.inventory.filter(item => item.isCrate).length, 1);
+  } finally { Math.random = random; }
 });
 
 test('achievement gems are awarded once and legacy earned rewards migrate only once', () => {

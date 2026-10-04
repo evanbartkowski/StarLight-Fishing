@@ -248,18 +248,20 @@ export class AccountManager {
 
   async syncCloudSave() {
     const session = this.cloudSession;
+    if (session?.syncPromise) { await session.syncPromise; return this.syncCloudSave(); }
     if (!session || session.username !== this.activeUser || session.busy) return;
     const snapshot = localStorage.getItem(this.getActiveSaveKey());
     if (!snapshot || snapshot === session.snapshot) return;
     session.busy = true;
-    try {
+    session.syncPromise = (async () => { try {
       session.revision = await (await this.loadCloud()).writeCloudSave(session.uid, snapshot, session.revision);
       session.snapshot = snapshot;
       localStorage.setItem(`${this.getSaveKeyForUser(session.username)}_cloud_revision`, String(session.revision));
       this.cloudStatus = 'Saved to cloud';
     } catch (error) {
       this.cloudStatus = error.message?.includes('Newer progress') ? error.message : 'Cloud sync failed - saved locally';
-    } finally { session.busy = false; }
+    } finally { session.busy = false; } })();
+    try { await session.syncPromise; } finally { session.syncPromise = null; }
   }
 
   continueAsGuest() {

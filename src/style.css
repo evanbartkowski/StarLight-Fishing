@@ -1206,7 +1206,8 @@ html, body {
   align-items: center;
   justify-content: space-between;
   background: rgba(30, 41, 59, 0.5);
-  border-left: 4px solid #64748b;
+  border: 1px solid var(--rarity-color, #64748b);
+  border-left-width: 4px;
   border-radius: 10px;
   padding: 10px 14px;
   gap: 12px;
@@ -1288,11 +1289,12 @@ html, body {
 .rarity-epic { background: rgba(168, 85, 247, 0.25); color: #c084fc; }
 .rarity-legendary { background: rgba(250, 204, 21, 0.25); color: #facc15; }
 
-.rarity-border-common { border-left-color: #a0aec0; }
-.rarity-border-uncommon { border-left-color: #48bb78; }
-.rarity-border-rare { border-left-color: #38bdf8; }
-.rarity-border-epic { border-left-color: #a855f7; }
-.rarity-border-legendary { border-left-color: #facc15; }
+.rarity-border-common { --rarity-color: #a0aec0; border-left-color: var(--rarity-color); }
+.rarity-border-uncommon { --rarity-color: #48bb78; border-left-color: var(--rarity-color); }
+.rarity-border-rare { --rarity-color: #38bdf8; border-left-color: var(--rarity-color); }
+.rarity-border-epic { --rarity-color: #a855f7; border-left-color: var(--rarity-color); }
+.rarity-border-legendary { --rarity-color: #facc15; border-left-color: var(--rarity-color); }
+.rarity-border-mythic, .rarity-border-god { --rarity-color: #e879f9; border-left-color: var(--rarity-color); }
 
 .shiny-tag {
   background: linear-gradient(90deg, #f59e0b, #eab308);
@@ -3858,3 +3860,24 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 
 .crate-unboxing-panel .gacha-reel-pointer { background: #67e8f9; box-shadow: 0 0 10px #22d3ee; }
+
+.crew-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; width:100%; }
+.crew-card { display:flex; flex-direction:column; min-width:0; padding:18px; border:1px solid #3d7588; border-radius:16px; background:linear-gradient(145deg,#183b4d,#101d30); }
+.crew-card-top { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; color:#a5f3fc; font-size:.75rem; }
+.crew-portrait { font-size:3.5rem; text-align:center; padding:16px 0; }
+.crew-card h3 { color:#e0f2fe; margin-bottom:8px; }
+.crew-card p { font-size:.83rem; line-height:1.5; color:#bdcedc; margin-bottom:10px; }
+.crew-perk { padding:10px; border-radius:8px; background:#08182788; }
+.crew-card button { margin-top:auto; }
+.crew-locked { opacity:.7; border-style:dashed; }
+.daily-reward-day.milestone { border:2px solid #a78bfa; background:#362355; }
+.daily-reward-day strong { font-size:.8rem; line-height:1.45; }
+.inventory-card { border:2px solid var(--rarity-color,#94a3b8); }
+.inventory-card.rarity-border-common { --rarity-color:#94a3b8; }
+.inventory-card.rarity-border-uncommon { --rarity-color:#22c55e; }
+.inventory-card.rarity-border-rare { --rarity-color:#38bdf8; }
+.inventory-card.rarity-border-epic { --rarity-color:#a855f7; }
+.inventory-card.rarity-border-legendary { --rarity-color:#eab308; }
+.inventory-card.rarity-border-mythic, .inventory-card.rarity-border-god { --rarity-color:#e879f9; }
+.inventory-card.item-locked-border { border-color:var(--rarity-color) !important; }
+@media(max-width:420px) { .crew-grid { gap:8px; } .crew-card { padding:10px; } .crew-card h3 { font-size:.95rem; } .crew-card .btn { padding:8px 4px; font-size:.75rem; } }

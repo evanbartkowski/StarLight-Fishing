@@ -1,11 +1,11 @@
 const regions = {
-  1: [[0, 180, 720, 1650], ['Coral Nursery', 'Wreckwood Shelf', 'Drowned Harbour', 'Pearl Trench'], ['#167d9b', '#12556a', '#103344', '#081a2e']],
-  2: [[0, 260, 880, 1850], ['Lantern Gardens', 'Spore Forest', 'Glass Caverns', 'Blacklight Chasm'], ['#164c70', '#273452', '#322349', '#110f2f']],
-  3: [[0, 320, 1050, 2050], ['Starglass Shoals', 'Meteor Orchard', 'Fallen Observatory', 'Comet Graveyard'], ['#304879', '#293863', '#201d48', '#10132d']],
-  4: [[0, 220, 950, 1900], ['Palace Gardens', 'Sunken Forum', 'Imperial Necropolis', 'Forgotten Throne'], ['#17676e', '#15515a', '#163945', '#09242e']],
-  5: [[0, 380, 1150, 2200], ['Cloudroot Reefs', 'Storm Archipelago', 'Floating Citadels', 'Silent Firmament'], ['#55517e', '#393e69', '#282c54', '#141b38']],
-  6: [[0, 280, 1000, 2000], ['Obsidian Gardens', 'Furnace Vents', 'Basalt Cathedral', 'Molten Core'], ['#653e48', '#4f293b', '#361c32', '#220f20']],
-  7: [[0, 450, 1250, 2350], ['Fractured Reefs', 'Clockwork Ruins', 'Memory Mausoleum', 'Event Horizon'], ['#383768', '#302651', '#23193d', '#110f25']],
+  1: [[0, 180, 720, 1650], ['Coral Nursery', 'Wreckwood Shelf', 'Drowned Harbour', 'Pearl Trench'], ['#148994', '#254c69', '#24304e', '#071d37']],
+  2: [[0, 260, 880, 1850], ['Lantern Gardens', 'Spore Forest', 'Glass Caverns', 'Blacklight Chasm'], ['#1a6969', '#43385d', '#293c69', '#160d2f']],
+  3: [[0, 320, 1050, 2050], ['Starglass Shoals', 'Meteor Orchard', 'Fallen Observatory', 'Comet Graveyard'], ['#305c81', '#504075', '#24395b', '#15112d']],
+  4: [[0, 220, 950, 1900], ['Palace Gardens', 'Sunken Forum', 'Imperial Necropolis', 'Forgotten Throne'], ['#26766e', '#275970', '#38334e', '#0b2830']],
+  5: [[0, 380, 1150, 2200], ['Cloudroot Reefs', 'Storm Archipelago', 'Floating Citadels', 'Silent Firmament'], ['#605e97', '#30577b', '#493861', '#131e40']],
+  6: [[0, 280, 1000, 2000], ['Obsidian Gardens', 'Furnace Vents', 'Basalt Cathedral', 'Molten Core'], ['#483953', '#843d38', '#40304c', '#420f24']],
+  7: [[0, 450, 1250, 2350], ['Fractured Reefs', 'Clockwork Ruins', 'Memory Mausoleum', 'Event Horizon'], ['#414b7e', '#514060', '#2d3658', '#160d2b']],
 };
 
 const zoneCache = new Map();

@@ -1,3 +1,4 @@
+import { drawMarinePet, drawPetNameplate } from '../rendering/MarinePetArt.js';
 // BoatCompanions.js — Cozy low-maintenance crew aboard the vessel
 // ShipsCat, PerchingPelican, and BackgroundDolphin
 
@@ -357,76 +358,11 @@ export class BackgroundDolphin {
     ctx.rotate(rot);
     ctx.scale(this.direction * 1.35, 1.35);
 
-    // Dolphin body (sleek grey-blue)
-    ctx.fillStyle = '#7dd3e1';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 18, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Lighter underbelly
-    ctx.fillStyle = '#cbd5e1';
-    ctx.beginPath();
-    ctx.ellipse(0, 2, 14, 3, 0, 0, Math.PI);
-    ctx.fill();
-
-    // Curved dorsal fin
-    ctx.fillStyle = '#475569';
-    ctx.beginPath();
-    ctx.moveTo(-3, -5);
-    ctx.quadraticCurveTo(-1, -13, 5, -5);
-    ctx.closePath();
-    ctx.fill();
-
-    // Snout / rostrum
-    ctx.fillStyle = '#64748b';
-    ctx.beginPath();
-    ctx.moveTo(16, -2);
-    ctx.lineTo(24, 0);
-    ctx.lineTo(16, 2);
-    ctx.closePath();
-    ctx.fill();
-
-    // Flukes (tail fin)
-    ctx.beginPath();
-    ctx.moveTo(-16, 0);
-    ctx.lineTo(-24, -6);
-    ctx.lineTo(-22, 0);
-    ctx.lineTo(-24, 6);
-    ctx.closePath();
-    ctx.fill();
-
-    // Eye
-    ctx.fillStyle = '#0f172a';
-    ctx.beginPath();
-    ctx.arc(13, -2, 1.2, 0, Math.PI * 2);
-    ctx.fill();
+    drawMarinePet(ctx, 'dolphin', this.timer);
 
     ctx.restore();
 
-    // Render floating nameplate when hovered
-    if (this.isHovered) {
-      ctx.save();
-      ctx.translate(this.x, drawY - 34);
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 1.5;
-      const text = '🐬 Gracie the Dolphin';
-      ctx.font = 'bold 11px Outfit, sans-serif';
-      const tw = ctx.measureText(text).width;
-      ctx.beginPath();
-      if (typeof ctx.roundRect === 'function') {
-        ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
-      } else {
-        ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
-      }
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#e0f2fe';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(text, 0, 0);
-      ctx.restore();
-    }
+    if (this.isHovered) drawPetNameplate(ctx, this.x, drawY - 40, 'Gracie the Dolphin');
   }
 
   checkHover(mouseX, mouseY, cameraY = 0) {
@@ -441,7 +377,7 @@ export class BackgroundDolphin {
     const rotation = this.rotation;
     const localX = dx * Math.cos(rotation) + dy * Math.sin(rotation);
     const localY = -dx * Math.sin(rotation) + dy * Math.cos(rotation);
-    const inside = (localX / 36) ** 2 + (localY / 26) ** 2 <= 1;
+    const inside = (localX / 49) ** 2 + (localY / 32) ** 2 <= 1;
     this.isHovered = inside;
     return inside;
   }
@@ -462,18 +398,7 @@ export class BoatShark {
   }
   render(ctx, cameraY = 0) {
     ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.scale(this.direction, 1);
-    ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.ellipse(0, 0, 33, 11, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#cbd5e1'; ctx.beginPath(); ctx.ellipse(3, 4, 25, 5, 0, 0, Math.PI); ctx.fill();
-    ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.moveTo(-5, -8); ctx.lineTo(2, -29); ctx.lineTo(13, -7); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(-28, 0); ctx.lineTo(-46, -16 + Math.sin(this.timer * 3) * 3); ctx.lineTo(-40, 0); ctx.lineTo(-45, 14); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(-8, 21); ctx.lineTo(15, 7); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(23, -3, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(24, -3, 1.5, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-    if (this.isHovered) {
-      ctx.save(); ctx.font = '600 12px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillStyle = '#0b2033'; ctx.fillRect(this.x - 66, this.y - cameraY + 25, 132, 23);
-      ctx.fillStyle = '#c8f4f7'; ctx.fillText('Irene the Shark', this.x, this.y - cameraY + 41); ctx.restore();
-    }
+    drawMarinePet(ctx, 'shark', this.timer); ctx.restore();
+    if (this.isHovered) drawPetNameplate(ctx, this.x, this.y - cameraY + 38, 'Irene the Shark');
   }
 }

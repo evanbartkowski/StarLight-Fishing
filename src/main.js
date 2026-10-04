@@ -934,6 +934,7 @@ const render = () => {
     if (p.y - cameraY > -40 && p.y - cameraY < screenHeight + 40) p.render(ctx, cameraY);
   });
   oceanWorld.entities.hazards.forEach((hazard) => {
+    hazard.renderAttacks(ctx, cameraY, screenHeight);
     if (hazard.y - cameraY > -hazard.radius * 2 - 20 && hazard.y - cameraY < screenHeight + hazard.radius * 2 + 20) {
       hazard.render(ctx, cameraY);
     }

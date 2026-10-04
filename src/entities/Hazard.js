@@ -1,4 +1,5 @@
 import { drawNaturalHazard } from './NaturalHazardArt.js';
+import { updateAttack, drawAttack } from './EnemyAttacks.js';
 import { drawMarineThreat } from './MarineThreatArt.js';
 
 export class Hazard {
@@ -36,6 +37,7 @@ export class Hazard {
   update(dt, worldWidth, hook = null) {
     const deltaSec = dt / 1000;
     this.timer += this.pulseSpeed * deltaSec;
+    if (updateAttack(this, dt, hook, worldWidth)) return;
     if (this.behavior.motion === 'falling') {
       this.y += 150 * deltaSec;
       if (this.y > this.homeY + 400) this.y = this.homeY;
@@ -87,6 +89,8 @@ export class Hazard {
   }
 
   intersectsHook(x, y, hookRadius) {
+    const shotIndex = this.shots?.findIndex(shot => Math.hypot(shot.x - x, shot.y - y) < hookRadius + 7) ?? -1;
+    if (shotIndex >= 0) { this.shots.splice(shotIndex, 1); return true; }
     if (this.behavior.pulseHazard && this.timer % 6 < 3.5) return false;
     const verticalRadius = this.naturalKind === 'submarine' ? this.radius * 0.5 : this.radius;
     return ((x - this.x) / (this.radius + hookRadius)) ** 2
@@ -639,4 +643,6 @@ export class Hazard {
 
     ctx.restore();
   }
+
+  renderAttacks(ctx, cameraY, height) { drawAttack(ctx, this, cameraY, height); }
 }

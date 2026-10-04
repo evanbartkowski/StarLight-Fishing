@@ -14,6 +14,7 @@ export const MARINE_THREATS = Object.entries(names).flatMap(([realm, roster]) =>
   const zone = Number(realm);
   return {
     id: `marine_${zone}_${i}`, name, zone, marineKind: i === 0 ? 'jelly' : i === 2 ? 'monster' : zone === 2 || zone === 7 ? 'eel' : zone === 4 || zone === 5 ? 'ray' : 'shark',
+    attack: i === 1 ? 'dash' : undefined,
     minDepth: [40, 250, 900][i], maxDepth: 3000,
     radius: [22, 34, 65][i], damage: [1, 2, 3][i], knockback: [25, 50, 85][i],
     speed: [18, 245, 140][i] * (1 + (zone - 1) * .085), detectionRadius: [140, 340, 480][i] * (1 + (zone - 1) * .05), leash: [130, 600, 800][i],
@@ -35,6 +36,7 @@ const specialists = [
 specialists.forEach(([name, marineKind, minDepth, speed, detectionRadius], index) => {
   const zone = index + 1;
   MARINE_THREATS.push({ id: `marine_${zone}_specialist`, name, zone, marineKind, minDepth, maxDepth: 3000,
+    attack: ['lionfish', 'nautilus', 'jelly'].includes(marineKind) ? 'shoot' : 'dash',
     radius: 28 + index * 3, damage: 2 + Math.floor(index / 2), knockback: 35 + index * 9,
     speed, detectionRadius, leash: 400 + index * 80,
     chaseDuration: marineKind === 'crab' ? 1.2 : zone >= 5 ? 4 : 2.5,
