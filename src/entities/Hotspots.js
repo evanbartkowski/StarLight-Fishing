@@ -34,7 +34,7 @@ export class HotspotManager {
 			if (spot.x < 34 || spot.x > width - 34) continue;
 			const y = spot.y - cameraY;
 			const pulse = .5 + .5 * Math.sin(this.timer * 2 + spot.index);
-			const color = spot.index === 1 ? '#f4d68a' : '#8bd9d1';
+			const color = '#91dff6';
 			ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.globalAlpha = .2 + pulse * .12;
 			for (let ring = 0; ring < 3; ring++) {
 				const phase = (pulse + ring / 3) % 1;
@@ -42,8 +42,6 @@ export class HotspotManager {
 			}
 			ctx.globalAlpha = .48 + pulse * .25; ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 9;
 			ctx.beginPath(); ctx.arc(spot.x, y - 3, 2.5 + pulse, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-			ctx.font = '10px sans-serif'; ctx.fillStyle = '#d9f4eb'; ctx.globalAlpha = .58;
-			ctx.fillText(spot.name, spot.x, y - 17);
 		}
 		ctx.restore();
 	}
@@ -56,11 +54,12 @@ export class HotspotManager {
 		if (!spot) return null;
 		spot.readyAt = this.timer + 90;
 		const multiplier = this.currentSeaId;
-		const reward = spot.index === 0
-			? { coins: 140 * multiplier, xp: 55 * multiplier }
-			: spot.index === 1
-				? { buff: 'sirensGrace', durationMs: 45000 + multiplier * 5000 }
-				: { coins: 90 * multiplier, xp: 85 * multiplier };
-		return { ...spot, reward, isSunkenSafe: spot.index === 2 };
+		const reward = {
+			coins: (spot.index === 0 ? 140 : 90) * multiplier,
+			xp: (spot.index === 0 ? 55 : 85) * multiplier,
+			buff: 'sirensGrace',
+			durationMs: 45000 + multiplier * 5000,
+		};
+		return { index: spot.index, reward, isSunkenSafe: spot.index === 2 };
 	}
 }

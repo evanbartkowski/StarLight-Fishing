@@ -519,7 +519,7 @@ test('Atlantis columns scroll past the camera and disappear below their world de
   const ctx = new Proxy({}, { get: (_, key) => key === 'fillRect' ? (...args) => rectangles.push(args) : () => {}, set: () => true });
   world.renderSunkenAtlantisPillars(ctx, 600, 720);
   const firstFrame = rectangles.splice(0);
-  assert.equal(firstFrame.length, 6);
+  assert.ok(firstFrame.length > 6);
   world.renderSunkenAtlantisPillars(ctx, 800, 720);
   const secondFrame = rectangles.splice(0);
   assert.equal(secondFrame.length, firstFrame.length);
@@ -536,7 +536,7 @@ test('stars and plankton stay at world positions as a dive begins', () => {
   world.causticTimer = 15;
   for (const method of ['renderAstralStarlightCascades', 'renderBioluminescentPlankton']) {
     const points = [];
-    const ctx = new Proxy({}, { get: (_, key) => key === 'arc' ? (x, y) => points.push([x, y]) : () => {}, set: () => true });
+    const ctx = new Proxy({}, { get: (_, key) => key === 'arc' ? (x, y) => points.push([x, y]) : key === 'createLinearGradient' ? () => ({ addColorStop() {} }) : () => {}, set: () => true });
     world[method](ctx, 300, 720);
     const before = points.splice(0).filter(([, y]) => y > 100 && y < 600);
     world[method](ctx, 350, 720);

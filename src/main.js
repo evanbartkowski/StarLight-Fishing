@@ -618,7 +618,7 @@ const update = (dt) => {
           if (hit.reward?.coins) saveSystem.addCoins(hit.reward.coins);
           if (hit.reward?.xp) saveSystem.addXp(hit.reward.xp);
           if (hit.reward?.buff) saveSystem.addBuff(hit.reward.buff, hit.reward.durationMs);
-          uiManager?.showToast?.(`${hit.name}: ${hit.reward?.coins ? `+$${hit.reward.coins} · ` : ''}${hit.reward?.xp ? `+${hit.reward.xp} XP · ` : ''}${hit.reward?.buff ? 'Siren\'s Grace' : 'bonus catch'}`);
+          uiManager?.showToast?.(`Surface glow: ${hit.reward?.coins ? `+$${hit.reward.coins} · ` : ''}${hit.reward?.xp ? `+${hit.reward.xp} XP · ` : ''}Siren's Grace`);
           if (particles) {
             particles.emitSparkles(hook.x, oceanWorld.surfaceY, 28, hit.isSunkenSafe ? '#fbbf24' : '#38bdf8');
             particles.addFloatingText(

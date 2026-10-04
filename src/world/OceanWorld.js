@@ -206,6 +206,7 @@ export class OceanWorld {
     populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 1.15 * ecology.fish,
       (species, depth) => (rarityWeight[species.rarity] || 0.01)
         * ({ common: 1 / (1 + depth / 350), uncommon: 1 / (1 + depth / 700), rare: 1 + depth / 300, epic: 1 + depth / 180, legendary: 1 + depth / 120 }[species.rarity] || 1)
+        * (['whale', 'mossback_turtle', 'octopus', 'ray'].includes(species.shape) ? 2 : 1)
         * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 * ecology.rarity : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
@@ -1129,6 +1130,17 @@ export class OceanWorld {
   renderBioluminescentPlankton(ctx, cameraY, screenHeight) {
     ctx.save();
     const time = this.causticTimer;
+    ctx.globalCompositeOperation = 'lighter';
+    for (let ribbon = 0; ribbon < 6; ribbon++) {
+      const x = ((ribbon * 197 + Math.sin(time * .22 + ribbon) * 70) % (this.worldWidth + 100) + this.worldWidth + 100) % (this.worldWidth + 100) - 50;
+      const hue = ribbon % 2 ? '91, 141, 255' : '83, 255, 218';
+      ctx.globalAlpha = .09 + (Math.sin(time * .5 + ribbon) + 1) * .035;
+      ctx.strokeStyle = `rgba(${hue}, .8)`; ctx.lineWidth = 10 + ribbon % 3 * 5; ctx.shadowColor = `rgb(${hue})`; ctx.shadowBlur = 26;
+      ctx.beginPath(); ctx.moveTo(x, this.surfaceY - cameraY + 20);
+      ctx.bezierCurveTo(x - 80, screenHeight * .32, x + 95, screenHeight * .62, x + Math.sin(time * .3 + ribbon) * 40, screenHeight + 40);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
     const spacing = 48;
     const drift = time * 8;
     const first = Math.floor((cameraY - this.surfaceY - drift - 20) / spacing);
@@ -1146,6 +1158,11 @@ export class OceanWorld {
       ctx.beginPath();
       ctx.arc(px, py, 2.5 + Math.sin(time + i) * 1.0, 0, Math.PI * 2);
       ctx.fill();
+      if (i % 5 === 0) {
+        ctx.globalAlpha = .24 + pulse * .18; ctx.strokeStyle = isCyan ? '#67e8f9' : '#d8b4fe'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(px, py + 5); ctx.bezierCurveTo(px - 12, py + 17, px + 12, py + 24, px + Math.sin(time + i) * 7, py + 36); ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
     }
     ctx.restore();
   }
@@ -1165,20 +1182,21 @@ export class OceanWorld {
       if (driftY < Math.max(18, this.surfaceY - cameraY + 18) || driftY > screenHeight) continue;
 
       const alpha = 0.35 + Math.sin(time * 2 + i) * 0.35;
-      ctx.fillStyle = `rgba(254, 240, 138, ${alpha})`;
-      ctx.shadowColor = '#facc15';
-      ctx.shadowBlur = 8;
-
-      ctx.beginPath();
-      ctx.arc(driftX, driftY, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Slanted starlight trail
-      ctx.strokeStyle = `rgba(199, 210, 254, ${alpha * 0.5})`;
+      const size = 3 + i % 4 * 1.2;
+      ctx.save(); ctx.translate(driftX, driftY); ctx.rotate(time * .45 + i * .8);
+      const shard = ctx.createLinearGradient(0, -size * 1.5, 0, size * 1.5);
+      shard.addColorStop(0, `rgba(255,255,255,${alpha})`); shard.addColorStop(.45, `rgba(191,219,254,${alpha * .8})`); shard.addColorStop(1, `rgba(167,139,250,${alpha * .35})`);
+      ctx.fillStyle = shard; ctx.strokeStyle = `rgba(224,231,255,${alpha})`; ctx.lineWidth = 1;
+      ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 11;
+      ctx.beginPath(); ctx.moveTo(0, -size * 1.65); ctx.lineTo(size, size * .9); ctx.lineTo(0, size * .45); ctx.lineTo(-size, size * 1.1); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+      ctx.globalAlpha = alpha; ctx.fillStyle = '#f8fbff'; ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(driftX, driftY, 1.35, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.strokeStyle = `rgba(199, 210, 253, ${alpha * .34})`;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(driftX, driftY);
-      ctx.lineTo(driftX - 12, driftY - 18);
+      ctx.moveTo(driftX - 3, driftY - 3);
+      ctx.lineTo(driftX - 15, driftY - 20);
       ctx.stroke();
     }
     ctx.restore();
@@ -1209,8 +1227,23 @@ export class OceanWorld {
     ctx.fillRect(72, basePillarY - 192, 44, 12);
     ctx.fillRect(72, basePillarY, 44, 14);
 
-    // Marble Pillar 2 (Right flank)
     const p2X = this.worldWidth - 120;
+    ctx.globalAlpha = .72; ctx.strokeStyle = 'rgba(116, 232, 216, .5)'; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.moveTo(116, basePillarY - 24);
+    ctx.bezierCurveTo(this.worldWidth * .28, basePillarY - 170, this.worldWidth * .68, basePillarY - 170, p2X, basePillarY - 24); ctx.stroke();
+    for (let tower = 0; tower < 7; tower++) {
+      const tx = 80 + tower * (this.worldWidth - 160) / 6;
+      const towerHeight = 65 + (tower % 3) * 24;
+      ctx.fillStyle = tower % 2 ? 'rgba(39, 105, 112, .34)' : 'rgba(69, 111, 126, .3)';
+      ctx.fillRect(tx, basePillarY - towerHeight, 24, towerHeight + 35);
+      ctx.fillStyle = tower % 2 ? '#f6d994' : '#8cf2e0';
+      for (let window = 0; window < 3; window++) {
+        ctx.globalAlpha = .35 + .2 * Math.sin(this.causticTimer + tower + window);
+        ctx.fillRect(tx + 6 + (window % 2) * 8, basePillarY - towerHeight + 13 + window * 19, 4, 8);
+      }
+    }
+
+    // Marble Pillar 2 (Right flank)
     ctx.fillStyle = 'rgba(226, 232, 240, 0.4)';
     ctx.fillRect(p2X, basePillarY - 150, 26, 150);
     for (let fl = 0; fl < 4; fl++) {
