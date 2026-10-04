@@ -361,13 +361,13 @@ export class BackgroundDolphin {
     ctx.save();
     ctx.translate(this.x, drawY);
     ctx.rotate(rot);
-    ctx.scale(this.direction * 1.35, 1.35);
+    ctx.scale(this.direction * 0.88, 0.88);
 
     drawMarinePet(ctx, 'dolphin', this.timer);
 
     ctx.restore();
 
-    if (this.isHovered) drawPetNameplate(ctx, this.x, drawY - 40, 'Gracie the Dolphin');
+    if (this.isHovered) drawPetNameplate(ctx, this.x, drawY - 32, 'Gracie the Dolphin');
   }
 
   checkHover(mouseX, mouseY, cameraY = 0) {
@@ -382,7 +382,7 @@ export class BackgroundDolphin {
     const rotation = this.rotation;
     const localX = dx * Math.cos(rotation) + dy * Math.sin(rotation);
     const localY = -dx * Math.sin(rotation) + dy * Math.cos(rotation);
-    const inside = (localX / 49) ** 2 + (localY / 32) ** 2 <= 1;
+    const inside = (localX / 42) ** 2 + (localY / 26) ** 2 <= 1;
     this.isHovered = inside;
     return inside;
   }
@@ -409,8 +409,8 @@ export class BoatShark {
     return this.isHovered;
   }
   render(ctx, cameraY = 0) {
-    ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.rotate(this.rotation); ctx.scale(this.direction, 1);
+    ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.rotate(this.rotation); ctx.scale(this.direction * 0.82, 0.82);
     drawMarinePet(ctx, 'shark', this.timer); ctx.restore();
-    if (this.isHovered) drawPetNameplate(ctx, this.x, this.y - cameraY + 38, 'Irene the Shark');
+    if (this.isHovered) drawPetNameplate(ctx, this.x, this.y - cameraY + 32, 'Irene the Shark');
   }
 }

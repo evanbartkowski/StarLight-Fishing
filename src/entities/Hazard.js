@@ -137,11 +137,67 @@ export class Hazard {
       ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#064e3b'; ctx.fillRect(-r * 0.22, -r * 0.35, r * 0.44, r * 0.85);
     } else if (this.realmStyle === 'crystal') {
-      for (let i = 0; i < 3 + this.variant; i++) {
-        ctx.save(); ctx.rotate(i * Math.PI * 2 / (3 + this.variant) + this.timer * 0.08);
-        ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.22, 0);
-        ctx.lineTo(0, r * 0.5); ctx.lineTo(-r * 0.22, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+      // Astral Shimmersea cosmic crystalline hazard with glowing core, facets & starbursts
+      const shards = 4 + (this.variant % 3);
+      // Outer orbiting stardust particles
+      for (let s = 0; s < 4; s++) {
+        const starAngle = this.timer * 0.8 + s * (Math.PI / 2);
+        const starDist = r * (0.8 + 0.15 * Math.sin(this.timer * 1.5 + s));
+        const sx = Math.cos(starAngle) * starDist;
+        const sy = Math.sin(starAngle) * starDist;
+        ctx.fillStyle = '#c7d2fe';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
+        ctx.fill();
       }
+
+      // Faceted prismatic crystal spires
+      for (let i = 0; i < shards; i++) {
+        ctx.save();
+        ctx.rotate(i * Math.PI * 2 / shards + this.timer * 0.09);
+        // Base facet
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.lineTo(r * 0.26, -r * 0.2);
+        ctx.lineTo(r * 0.12, r * 0.45);
+        ctx.lineTo(-r * 0.12, r * 0.45);
+        ctx.lineTo(-r * 0.26, -r * 0.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner crystalline refraction facet
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(199, 210, 254, 0.65)' : 'rgba(165, 180, 252, 0.45)';
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.85);
+        ctx.lineTo(r * 0.14, -r * 0.2);
+        ctx.lineTo(0, r * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Radiant glowing starlight core
+      const coreGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.45);
+      coreGrad.addColorStop(0, '#ffffff');
+      coreGrad.addColorStop(0.4, '#a5b4fc');
+      coreGrad.addColorStop(0.8, '#6366f1');
+      coreGrad.addColorStop(1, 'rgba(79, 70, 229, 0)');
+      ctx.fillStyle = coreGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sparkling 4-point star glint in center
+      ctx.fillStyle = '#ffffff';
+      const glintSize = r * (0.28 + 0.08 * Math.sin(this.timer * 3));
+      ctx.beginPath();
+      ctx.moveTo(0, -glintSize);
+      ctx.quadraticCurveTo(0, 0, glintSize, 0);
+      ctx.quadraticCurveTo(0, 0, 0, glintSize);
+      ctx.quadraticCurveTo(0, 0, -glintSize, 0);
+      ctx.quadraticCurveTo(0, 0, 0, -glintSize);
+      ctx.fill();
     } else if (this.realmStyle === 'spore') {
       for (let i = 0; i < 6 + this.variant; i++) {
         const a = i * 2.4;
@@ -171,17 +227,24 @@ export class Hazard {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // A soft red halo signals danger without outlining the collision circle.
-    const pulse = .5 + .5 * Math.sin(this.timer * 1.6);
-    const haloRadius = this.radius * (1.35 + pulse * .08) + 10;
-    const haloStrength = this.isColossal ? .22 : this.marineKind ? .15 : .1;
-    const halo = ctx.createRadialGradient(0, 0, this.radius * .15, 0, 0, haloRadius);
-    halo.addColorStop(0, `rgba(255,88,88,${haloStrength + pulse * haloStrength * .2})`);
-    halo.addColorStop(.5, `rgba(255,88,88,${haloStrength * .55})`);
-    halo.addColorStop(.75, `rgba(239,68,68,${haloStrength * .2})`);
-    halo.addColorStop(1, 'rgba(239,68,68,0)');
+    // Noticeable pulsing red danger halo signalling obstacle threat
+    const pulse = .5 + .5 * Math.sin(this.timer * 2.2);
+    const haloRadius = this.radius * (1.35 + pulse * .14) + 12;
+    const haloStrength = this.isColossal ? .48 : this.marineKind ? .38 : .30;
+    const halo = ctx.createRadialGradient(0, 0, this.radius * .2, 0, 0, haloRadius);
+    halo.addColorStop(0, `rgba(255, 68, 68, ${haloStrength + pulse * 0.15})`);
+    halo.addColorStop(.45, `rgba(239, 68, 68, ${haloStrength * 0.75})`);
+    halo.addColorStop(.75, `rgba(220, 38, 38, ${haloStrength * 0.35})`);
+    halo.addColorStop(1, 'rgba(239, 68, 68, 0)');
     ctx.fillStyle = halo;
     ctx.fillRect(-haloRadius, -haloRadius, haloRadius * 2, haloRadius * 2);
+
+    // Subtle crisp warning danger ring at perimeter
+    ctx.strokeStyle = `rgba(248, 113, 113, ${0.28 + pulse * 0.22})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * (1.08 + pulse * 0.06), 0, Math.PI * 2);
+    ctx.stroke();
 
     ctx.scale(this.sizeScale, this.sizeScale);
     try {

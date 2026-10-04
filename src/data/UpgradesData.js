@@ -2,7 +2,7 @@ export const UPGRADE_DEFINITIONS = {
   lineLength: {
     id: 'lineLength',
     name: 'Fishing Line Length',
-    icon: '🧵',
+    icon: '🪢',
     description: 'Extends your fishing line to reach deeper oceanic seas and mythical zones.',
     tiers: [
       { level: 0, cost: 0, depth: 60, reqLevel: 0, label: '60m (Sea 1: Sunlit Shoals)' },
@@ -23,7 +23,7 @@ export const UPGRADE_DEFINITIONS = {
   hookCapacity: {
     id: 'hookCapacity',
     name: 'Tackle Capacity',
-    icon: '🪣',
+    icon: '🧺',
     description: 'Allows your line to hold more fish, treasures, and fossils on a single cast.',
     tiers: [
       { level: 0, cost: 0, capacity: 3, reqLevel: 0, label: '3 Catches' },
@@ -44,7 +44,7 @@ export const UPGRADE_DEFINITIONS = {
   reelPower: {
     id: 'reelPower',
     name: 'Reel Winch & Motor',
-    icon: '⚙️',
+    icon: '⚡',
     description: 'Hauls the fishing line back to the boat faster with higher mechanical torque.',
     tiers: [
       { level: 0, cost: 0, multiplier: 1.0, reqLevel: 0, label: 'Manual Hand-Crank (1.0x)' },
@@ -64,7 +64,7 @@ export const UPGRADE_DEFINITIONS = {
   highTensionLine: {
     id: 'highTensionLine',
     name: 'Reinforced Braided Line',
-    icon: '🧵',
+    icon: '🧬',
     description: 'Increases line snap threshold and widens sweet spot retrieval windows.',
     tiers: [
       { level: 0, cost: 0, threshold: 100, sweetSpotMult: 1.0, reqLevel: 0, label: 'Mono-Filament (100 Strain)' },
@@ -82,7 +82,7 @@ export const UPGRADE_DEFINITIONS = {
   hookAgility: {
     id: 'hookAgility',
     name: 'Hook Maneuverability',
-    icon: '🧭',
+    icon: '🎯',
     description: 'Sharper steering response underwater to weave between hazards and snatch high-value fish.',
     tiers: [
       { level: 0, cost: 0, speedMult: 1.0, reqLevel: 0, label: 'Standard Lead Sinker (1.0x)' },
@@ -171,7 +171,7 @@ export const UPGRADE_DEFINITIONS = {
   fossilRadar: {
     id: 'fossilRadar',
     name: 'Paleo Fossil Scanner',
-    icon: '🦴',
+    icon: '🦖',
     description: 'Specialized geo-resonance scanner that boosts fossil discovery rates in deep seabed silt.',
     tiers: [
       { level: 0, cost: 0, fossilBonus: 1.0, reqLevel: 0, label: 'Uncalibrated (1.0x)' },
@@ -222,7 +222,7 @@ export const UPGRADE_DEFINITIONS = {
   seabedTraps: {
     id: 'seabedTraps',
     name: 'Seabed Drift Pots',
-    icon: '🪤',
+    icon: '🦞',
     description: 'Deploy idle drift traps that passively catch coastal crabs, oysters, and prehistoric bone fragments.',
     tiers: [
       { level: 0, cost: 0, trapCount: 0, maxStorage: 0, reqLevel: 0, label: 'Not Purchased (0 Pots)' },
@@ -238,7 +238,7 @@ export const UPGRADE_DEFINITIONS = {
   personalAquarium: {
     id: 'personalAquarium',
     name: 'Personal Marine Aquarium',
-    icon: '🐠',
+    icon: '🫧',
     description: 'A luxurious glass marine tank for your vessel cabin. Houses live swimming specimens and ancient relics while generating passive visitor tips.',
     tiers: [
       { level: 0, cost: 0, capacity: 0, reqLevel: 0, label: 'Not Purchased (Locked)' },
@@ -254,7 +254,7 @@ export const UPGRADE_DEFINITIONS = {
   tackleBox: {
     id: 'tackleBox',
     name: 'Storage Tackle Box',
-    icon: '🎒',
+    icon: '🧰',
     description: 'Expands your permanent inventory storage capacity by +5 slots per upgrade up to Level 100.',
     tiers: Array.from({ length: 101 }, (_, lvl) => {
       const capacity = 15 + lvl * 5;

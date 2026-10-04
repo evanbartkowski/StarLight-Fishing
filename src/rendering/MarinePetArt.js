@@ -2,21 +2,97 @@ export function drawMarinePet(ctx, kind, time = 0) {
   const dolphin = kind === 'dolphin';
   const sway = Math.sin(time * 3) * 3;
   if (dolphin) {
-    ctx.fillStyle = '#4e8eaa';
-    ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(-48, -17 + sway); ctx.quadraticCurveTo(-46, -6, -38, 1); ctx.quadraticCurveTo(-46, 5, -48, 17 + sway); ctx.quadraticCurveTo(-34, 12, -28, 5); ctx.fill();
-    ctx.fillStyle = '#71b9c9';
-    ctx.beginPath(); ctx.moveTo(-34, 1); ctx.bezierCurveTo(-25, -13, -10, -21, 8, -18); ctx.bezierCurveTo(19, -16, 25, -10, 30, -7); ctx.quadraticCurveTo(36, -5, 43, -4); ctx.lineTo(54, -3); ctx.quadraticCurveTo(59, -1, 54, 2); ctx.lineTo(39, 4); ctx.quadraticCurveTo(31, 4, 26, 7); ctx.bezierCurveTo(16, 16, -8, 17, -25, 9); ctx.quadraticCurveTo(-32, 6, -34, 1); ctx.fill();
-    ctx.fillStyle = '#d9e9ed';
-    ctx.beginPath(); ctx.moveTo(-25, 7); ctx.quadraticCurveTo(2, 17, 27, 6); ctx.quadraticCurveTo(36, 5, 49, 2); ctx.quadraticCurveTo(36, 11, 21, 13); ctx.quadraticCurveTo(-4, 18, -25, 7); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#4e8eaa';
-    ctx.beginPath(); ctx.moveTo(-5, -15); ctx.quadraticCurveTo(0, -36, 10, -28); ctx.quadraticCurveTo(15, -21, 16, -14); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(-2, 8); ctx.quadraticCurveTo(-5, 22, -18, 20); ctx.quadraticCurveTo(-13, 10, -7, 5); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#468ba4'; ctx.lineWidth = 1.3;
-    ctx.beginPath(); ctx.moveTo(17, -12); ctx.quadraticCurveTo(21, -8, 18, -3); ctx.stroke();
-    ctx.fillStyle = '#102434'; ctx.beginPath(); ctx.arc(23, -10, 1.8, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(23.5, -10.5, .6, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#355f72'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(39, 4); ctx.quadraticCurveTo(47, 5, 56, 1); ctx.stroke();
+    // Flukes / Tail fin
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.moveTo(-28, 0);
+    ctx.quadraticCurveTo(-40, -14 + sway, -46, -15 + sway);
+    ctx.quadraticCurveTo(-42, -5, -34, 1);
+    ctx.quadraticCurveTo(-42, 7, -46, 15 + sway);
+    ctx.quadraticCurveTo(-40, 14 + sway, -28, 4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Main Dolphin Body - smooth, cute, friendly curved silhouette
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.moveTo(-32, 1);
+    // Upper back arching up to cute rounded melon forehead
+    ctx.bezierCurveTo(-20, -15, 0, -22, 22, -16);
+    // Rounded melon forehead curving down to smiling snout
+    ctx.bezierCurveTo(34, -13, 38, -6, 42, -2);
+    // Snout tip
+    ctx.quadraticCurveTo(46, 0, 42, 2);
+    // Lower jaw & smiling cheek
+    ctx.bezierCurveTo(35, 5, 26, 8, 16, 12);
+    // Belly curving back to tail
+    ctx.bezierCurveTo(-2, 17, -20, 14, -32, 1);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cute soft creamy/cyan underbelly
+    ctx.fillStyle = '#e0f2fe';
+    ctx.beginPath();
+    ctx.moveTo(-22, 6);
+    ctx.bezierCurveTo(0, 15, 22, 9, 36, 1);
+    ctx.quadraticCurveTo(28, 7, 16, 9);
+    ctx.quadraticCurveTo(-4, 13, -22, 6);
+    ctx.closePath();
+    ctx.fill();
+
+    // Cute rounded Dorsal Fin
+    ctx.fillStyle = '#0ea5e9';
+    ctx.beginPath();
+    ctx.moveTo(-6, -18);
+    ctx.quadraticCurveTo(-2, -32, 8, -26);
+    ctx.quadraticCurveTo(10, -20, 12, -15);
+    ctx.closePath();
+    ctx.fill();
+
+    // Pectoral Fin (flipper)
+    ctx.fillStyle = '#0284c7';
+    ctx.beginPath();
+    ctx.moveTo(4, 4);
+    ctx.quadraticCurveTo(2, 18, -8, 17);
+    ctx.quadraticCurveTo(-5, 9, 0, 4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Adorable Blushing Pink Cheek
+    ctx.fillStyle = 'rgba(251, 113, 133, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(23, -1, 4.5, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Gentle upward-curving smile line
+    ctx.strokeStyle = '#0369a1';
+    ctx.lineWidth = 1.4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(31, 1);
+    ctx.quadraticCurveTo(37, 1.5, 43, 0);
+    ctx.stroke();
+
+    // Big Kawaii Anime / Cartoon Eye (Sparkly & Cute)
+    // Dark outer eye
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.ellipse(24, -8, 3.2, 3.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Shiny oceanic blue iris hint
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.arc(24, -7.5, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    // Primary big glossy catchlight
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(23, -9.2, 1.3, 0, Math.PI * 2);
+    ctx.fill();
+    // Secondary subtle highlight
+    ctx.beginPath();
+    ctx.arc(25.2, -6.8, 0.7, 0, Math.PI * 2);
+    ctx.fill();
   } else {
     ctx.fillStyle = '#43586c';
     ctx.beginPath(); ctx.moveTo(-29, 0); ctx.lineTo(-49, -17 + sway); ctx.lineTo(-42, -2); ctx.lineTo(-50, 17 + sway); ctx.lineTo(-28, 6); ctx.fill();
@@ -32,9 +108,8 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.beginPath(); ctx.moveTo(22, 5); ctx.quadraticCurveTo(33, 5, 43, 1); ctx.stroke();
     ctx.fillStyle = '#f1f5f9';
     for (let x = 28; x < 39; x += 4) { ctx.beginPath(); ctx.moveTo(x, 3); ctx.lineTo(x + 2, 7); ctx.lineTo(x + 3, 2); ctx.fill(); }
-    ctx.fillStyle = '#102434'; ctx.beginPath(); ctx.arc(29, -4, 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(29.5, -4.5, .6, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(dolphin ? 21 : 29.5, dolphin ? -8.5 : -4.5, .6, 0, Math.PI * 2); ctx.fill();
 }
 
 export function drawPetNameplate(ctx, x, y, text) {

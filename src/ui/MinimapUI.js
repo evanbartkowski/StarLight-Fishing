@@ -120,7 +120,6 @@ export class MinimapUI {
             }).join('')}
             <text x="365" y="355" text-anchor="middle" fill="#7e5733" font-family="Georgia,serif" font-size="16" font-style="italic">The Seven Seas of Starlight</text>
           </svg>
-          <p>Follow the dotted route. Select an island to inspect its waters.</p>
         </div>
         <div class="fantasy-chart-map-view">
           <div class="seas-grid-layout">
