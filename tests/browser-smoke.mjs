@@ -34,13 +34,23 @@ try {
     if (await welcome.isVisible()) await welcome.click();
     await page.waitForTimeout(300);
     // Use actual input and the running game loop before switching to UI fixtures.
-    const castPoint = { x: viewport.width * .8, y: viewport.height * .58 };
+    const castPoint = { x: viewport.width * .08, y: viewport.height * .58 };
     if (viewport.width < 500) await page.touchscreen.tap(castPoint.x, castPoint.y);
     else await page.mouse.click(castPoint.x, castPoint.y);
     await page.waitForFunction(() => parseFloat(document.getElementById('hud-depth').textContent) > 1, null, { timeout: 15000 });
     if (viewport.width < 500) await page.locator('#touch-controls [data-key=" "]').tap();
     else await page.keyboard.press('Space');
-    await page.locator('#btn-keep-all-catches').click({ timeout: 20000 });
+    try {
+      await page.locator('#btn-keep-all-catches').click({ timeout: 20000 });
+    } catch (error) {
+      const state = await page.evaluate(() => ({
+        title: document.getElementById('modal-title')?.textContent,
+        modal: document.getElementById('modal-content')?.textContent?.slice(0, 180),
+        depth: document.getElementById('hud-depth')?.textContent,
+        zone: document.getElementById('hud-zone')?.textContent,
+      }));
+      throw new Error(`Catch summary did not open: ${JSON.stringify({ state, errors })}; ${error.message}`);
+    }
     await page.waitForFunction(() => document.getElementById('hud-depth-container').style.display === 'none', null, { timeout: 20000 });
     // Let the actual game know a modal is open so random NPC popups cannot replace
     // the shared modal while the isolated UI fixture exercises its contents.

@@ -210,9 +210,9 @@ export class UIManager {
       </div>
 
       <div id="world-event-banner" hidden role="status"></div>
+      <div class="hud-buffs-container" id="hud-buffs" aria-live="polite"></div>
 
       <div class="hud-center">
-        <div class="hud-buffs-container" id="hud-buffs"></div>
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
           <div class="depth-number" id="hud-depth">0.0m</div>
           <div class="zone-badge" id="hud-zone">Sunken Shallows</div>

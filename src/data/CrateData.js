@@ -1,3 +1,6 @@
+import { CRATE_GEM_PRICES, DIVINE_CRATE_LOOT } from '../../functions/shared/CrateData.js';
+export { CRATE_GEM_PRICES, DIVINE_CRATE_LOOT };
+
 // CrateData.js — Ranked Mystery Loot Crates & Chests
 // Dredged from the ocean depths with random loot: Super Good, Fair, or Super Bad!
 
@@ -838,9 +841,14 @@ export function rollCrateLoot(crateRank, saveSystem = null) {
   const rankConfig = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
   const tables = CRATE_LOOT_TABLES[rank] || CRATE_LOOT_TABLES[1];
 
-  const rand = Math.random();
+  const pityTriggered = (saveSystem?.data?.cratePityCount || 0) >= 9;
+  const rawRoll = Math.random();
+  const divine = rawRoll < .001;
+  const rand = (rawRoll - .001) / .999;
   let grade = 'fair';
-  if (rand < rankConfig.badChance) {
+  if (pityTriggered || divine) {
+    grade = 'super_good';
+  } else if (rand < rankConfig.badChance) {
     grade = 'super_bad';
   } else if (rand > (1 - rankConfig.superGoodChance)) {
     grade = 'super_good';
@@ -854,7 +862,7 @@ export function rollCrateLoot(crateRank, saveSystem = null) {
   }
 
   // Pick random item
-  const item = tableList[Math.floor(Math.random() * tableList.length)];
+  const item = divine ? DIVINE_CRATE_LOOT : tableList[Math.floor(Math.random() * tableList.length)];
 
   // Slight variance on positive coins (+/- 10%)
   let finalCoins = item.coins;
@@ -867,6 +875,10 @@ export function rollCrateLoot(crateRank, saveSystem = null) {
   let skeletonAwarded = null;
   if (item.bonusSkeleton && saveSystem && typeof saveSystem.awardSkeletonPiece === 'function') {
     skeletonAwarded = saveSystem.awardSkeletonPiece(item.bonusSkeleton.target);
+  }
+  if (saveSystem?.data) {
+    saveSystem.data.cratePityCount = grade === 'super_good' ? 0 : (saveSystem.data.cratePityCount || 0) + 1;
+    saveSystem.save?.();
   }
 
   return {
@@ -884,19 +896,26 @@ export function rollCrateLoot(crateRank, saveSystem = null) {
     bonusFossil: item.bonusFossil || null,
     bonusSkeleton: item.bonusSkeleton || null,
     skeletonAwarded,
+    pityTriggered,
+    rarity: divine ? 'god' : grade === 'super_good' ? 'epic' : grade === 'fair' ? 'rare' : 'common',
+    isDivine: divine,
   };
 }
 
-export function getCrateDropPreview(crateRank) {
+export function getCrateDropPreview(crateRank, saveSystem = null) {
   const rank = Math.min(5, Math.max(1, parseInt(crateRank, 10) || 1));
   const rankConfig = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
   const tables = CRATE_LOOT_TABLES[rank] || CRATE_LOOT_TABLES[1];
-  const badPct = Math.round(rankConfig.badChance * 100);
-  const goodPct = Math.round(rankConfig.superGoodChance * 100);
+  const guaranteed = (saveSystem?.data?.cratePityCount || 0) >= 9;
+  const badPct = guaranteed ? 0 : rankConfig.badChance * 99.9;
+  const goodPct = guaranteed ? 100 : rankConfig.superGoodChance * 99.9 + .1;
   const fairPct = Math.max(0, 100 - badPct - goodPct);
+  const pityCount = saveSystem?.data?.cratePityCount || 0;
 
   return {
     rankConfig,
+    pityCount,
+    pityThreshold: 10,
     rates: {
       superGood: goodPct,
       fair: fairPct,
@@ -904,9 +923,9 @@ export function getCrateDropPreview(crateRank) {
       gems: 2,
     },
     tables: {
-      superGood: tables.superGood,
-      fair: tables.fair,
-      superBad: tables.superBad,
+      superGood: [...tables.superGood.map(item => ({ ...item, chance: (goodPct - .1) / tables.superGood.length })), { ...DIVINE_CRATE_LOOT, chance: .1 }],
+      fair: tables.fair.map(item => ({ ...item, chance: fairPct / tables.fair.length })),
+      superBad: tables.superBad.map(item => ({ ...item, chance: badPct / tables.superBad.length })),
     },
   };
 }

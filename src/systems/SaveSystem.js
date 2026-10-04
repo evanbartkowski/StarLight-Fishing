@@ -507,19 +507,13 @@ export class SaveSystem {
     } else if (isFossil) {
       if (!this.data.fossils[item.id]) {
         this.data.fossils[item.id] = {
-          count: 0,
+          count: 1,
           firstFoundAt: Date.now(),
         };
+        this.data.stats.totalFossilsCollected = Object.keys(this.data.fossils).length;
+        if (Math.random() < 0.35) this.awardSkeletonPiece();
+        this.addXp(140);
       }
-      this.data.fossils[item.id].count += 1;
-      this.data.stats.totalFossilsCollected = Object.keys(this.data.fossils).length;
-
-      // 30% chance a deep fossil find also grants a skeleton bone piece
-      if (Math.random() < 0.35) {
-        this.awardSkeletonPiece();
-      }
-
-      this.addXp(140);
     } else if (isTreasure) {
       this.data.stats.totalTreasureCollected += 1;
       this.addXp(40);
@@ -921,7 +915,7 @@ export class SaveSystem {
   sellAllItems(multiplier = 1) {
     const inv = this.getInventory();
     const itemsToSell = inv.filter((item) =>
-      !item.isLocked && !this.isItemInAquarium(item.instanceId)
+      !item.isLocked && !(item.isCrate && !item.unboxed) && !this.isItemInAquarium(item.instanceId)
     );
 
     if (itemsToSell.length === 0) {
@@ -1013,16 +1007,6 @@ export class SaveSystem {
     if (amount <= 0) return true;
     if (this.data.gems >= amount) {
       this.data.gems -= amount;
-      this.save();
-      return true;
-    }
-    const total = this.getGemBalance();
-    if (total >= amount) {
-      const remaining = amount - this.data.gems;
-      this.data.gems = 0;
-      if (this.gemShop) {
-        this.gemShop.balance = Math.max(0, this.gemShop.balance - remaining);
-      }
       this.save();
       return true;
     }

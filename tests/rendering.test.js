@@ -38,6 +38,18 @@ test('powerups render as bright, faceted pickups with a moving ring', () => {
   assert.ok(calls.some(call => call.key === 'fillText' && call.args[0] === POWERUP_TYPES[0].icon));
 });
 
+test('realm treasures draw named artifacts without placeholder marks', () => {
+  const calls = [];
+  const gradient = { addColorStop() {} };
+  const ctx = new Proxy({ globalAlpha: 1 }, {
+    get: (target, key) => key in target ? target[key] : key === 'createRadialGradient' ? () => gradient : (...args) => calls.push({ key, args }),
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+  new Treasure({ id: 'realm_1_treasure_5', name: 'Reef King Crown', rarity: 'legendary', realmStyle: 'reef', color: '#2dd4bf', glow: '#38bdf8' }, 100, 200).render(ctx);
+  assert.ok(calls.filter(call => call.key === 'lineTo').length >= 6);
+  assert.ok(!calls.some(call => call.key === 'fillText' && call.args[0] === '?'));
+});
+
 test('auras breathe within subtle bounds and freeze for reduced motion', () => {
   for (let t = 0; t < 30; t += 0.05) {
     const frame = auraFrame(t, false);

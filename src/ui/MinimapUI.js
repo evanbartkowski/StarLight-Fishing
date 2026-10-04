@@ -8,13 +8,13 @@ import { REALM_PROFILES } from '../data/RealmContent.js';
 import { FANTASY_SEAS, getSeaById, canUnlockSea } from '../entities/SeasData.js';
 
 const REALM_MARKERS = [
-  { color: '#52b788', path: 'M-30 -6 Q-30 -27 -10 -22 L4 -30 20 -15 Q37 -9 22 12 L6 25 -14 20Z' },
-  { color: '#b980ee', path: 'M-27 0 Q-27 -27 0 -29 Q30 -26 29 0 L15 5 12 23 -10 26 -14 5Z' },
-  { color: '#74b9ef', path: 'M0 -32 9 -12 30 -8 15 6 20 29 0 17 -22 28 -16 5 -31 -10 -10 -12Z' },
-  { color: '#3caea3', path: 'M-28 22 -28 -10 -18 -10 -18 -24 -7 -24 -7 -10 7 -10 7 -24 19 -24 19 -10 28 -10 28 22Z' },
-  { color: '#c8b9f1', path: 'M-31 3 Q-39 -14 -19 -17 Q-15 -34 1 -24 Q20 -33 26 -15 Q42 -6 27 10 Q8 27 -10 15 Q-25 23 -31 3Z' },
-  { color: '#d96c78', path: 'M-31 23 -15 -10 -7 -26 9 -26 17 -9 31 23Z M-7 -23 0 -11 8 -23' },
-  { color: '#8970c7', path: 'M0 -32 12 -13 29 -6 15 10 9 30 -7 15 -29 8 -15 -8Z M-27 -22 -16 -27 -18 -15Z M23 18 32 24 22 30Z' },
+  { color: '#4e9b71', shore: '#e3c884', contour: '#b7d28a', path: 'M-30 -5 Q-29 -23 -14 -25 Q-4 -34 8 -25 Q20 -28 25 -14 Q38 -4 25 9 Q17 24 2 20 Q-13 29 -22 15 Q-36 8 -30 -5Z', detail: 'M-19 -7 Q-10 -17 1 -11 T18 -13 M-15 8 Q-4 1 8 7 T20 5' },
+  { color: '#558fb5', shore: '#9ad8d0', contour: '#b7e7e1', path: 'M-31 -2 Q-28 -22 -10 -28 Q8 -35 22 -20 Q34 -7 25 8 Q18 25 -1 26 Q-18 23 -25 12Z', detail: 'M-20 -8 Q-7 -20 4 -12 T18 -16 M-14 10 Q0 1 14 10' },
+  { color: '#6a91b9', shore: '#d8d5ac', contour: '#dce7eb', path: 'M0 -32 Q8 -24 10 -13 Q27 -14 31 -4 Q19 2 15 7 Q25 21 16 29 Q5 19 0 15 Q-13 30 -23 23 Q-17 8 -20 3 Q-34 -4 -27 -14 Q-13 -10 -8 -14Z', detail: 'M-14 -4 Q-4 -14 5 -5 T17 -7 M-12 13 Q0 4 10 14' },
+  { color: '#458c81', shore: '#d4c58e', contour: '#a8d8b0', path: 'M-29 22 Q-33 5 -27 -13 L-18 -15 -17 -27 -7 -27 -6 -14 5 -13 7 -26 17 -24 18 -12 28 -10 30 8 24 24Z', detail: 'M-21 11 Q-10 2 -1 9 T17 5 M-13 -7 Q-4 -15 7 -7' },
+  { color: '#8581ad', shore: '#ddd0a5', contour: '#dfd8ef', path: 'M-31 0 Q-35 -15 -19 -19 Q-12 -34 2 -25 Q18 -34 25 -18 Q40 -9 28 5 Q25 22 9 20 Q-5 31 -15 19 Q-29 20 -31 0Z', detail: 'M-21 -6 Q-10 -18 0 -9 T19 -12 M-17 9 Q-4 1 8 10 T20 7' },
+  { color: '#9b5548', shore: '#dfb377', contour: '#efbf79', path: 'M-31 22 Q-22 5 -15 -12 L-9 -28 4 -31 12 -23 16 -8 29 7 33 23Z', detail: 'M-19 15 Q-8 3 -4 -12 M1 -19 Q11 -8 18 5' },
+  { color: '#555c99', shore: '#aaa3c7', contour: '#b8c3ee', path: 'M0 -32 Q10 -25 12 -13 Q29 -8 28 2 Q16 8 14 13 Q17 27 5 31 Q-3 19 -10 16 Q-24 23 -31 12 Q-20 1 -20 -5 Q-31 -17 -19 -23 Q-9 -13 -3 -16Z', detail: 'M-16 -8 Q-4 -18 5 -8 T18 -10 M-16 9 Q-5 2 6 11' },
 ];
 
 export class MinimapUI {
@@ -110,9 +110,11 @@ export class MinimapUI {
               const fillCol = marker.color;
               return `<g class="chart-island ${isSelected ? 'charted-current' : ''}" data-chart-realm="${sea.id}" tabindex="0" role="button" aria-label="View ${sea.name}">
                 ${isSelected ? `<circle cx="${x}" cy="${y}" r="38" fill="url(#realm-glow-${currentSeaId})"/>` : ''}
-                <path class="realm-landmass" transform="translate(${x} ${y})" d="${marker.path}" fill="${fillCol}" fill-opacity="${unlockedSeas.includes(sea.id) ? 1 : .55}" stroke="${isSelected ? '#e0f2fe' : '#344359'}" stroke-width="2"/>
-                <circle cx="${x}" cy="${y}" r="13" fill="#eee0bb" stroke="#735334"/>
-                <text x="${x}" y="${y+4}" text-anchor="middle" fill="#513821" font-size="13" font-weight="bold">${sea.id}</text>
+                <path d="${marker.path}" transform="translate(${x} ${y})" fill="${marker.shore}" fill-opacity="${unlockedSeas.includes(sea.id) ? .95 : .5}" stroke="${isSelected ? '#f4e6bd' : '#4c5d67'}" stroke-width="2.5"/>
+                <path class="realm-landmass" transform="translate(${x} ${y}) scale(.84)" d="${marker.path}" fill="${fillCol}" fill-opacity="${unlockedSeas.includes(sea.id) ? 1 : .55}" stroke="${marker.contour}" stroke-width="1.4"/>
+                <path d="${marker.detail}" transform="translate(${x} ${y})" fill="none" stroke="${marker.contour}" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
+                <circle cx="${x}" cy="${y}" r="9" fill="#102a39" fill-opacity=".75" stroke="${marker.shore}" stroke-width="1.4"/>
+                <text x="${x}" y="${y+3.5}" text-anchor="middle" fill="#f3e7c6" font-size="10" font-weight="bold">${sea.id}</text>
                 <text x="${x}" y="${y+53}" text-anchor="middle" fill="#513821" font-size="10">${sea.name.split(',')[0]}</text>
               </g>`;
             }).join('')}

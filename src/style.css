@@ -1822,7 +1822,8 @@ html, body {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  margin-top: 5px;
+  justify-content: center;
+  margin-top: 0;
 }
 
 .hud-buff-pill {
@@ -2998,8 +2999,10 @@ html, body {
 /* Effects and dive instruments never take space away from the top controls. */
 #game-hud .hud-center { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: min(520px, calc(100vw - 16px)); gap: 6px; pointer-events: none; }
 .hud-center button { pointer-events: auto; }
-.hud-buffs-container { justify-content: center; margin-top: 0; }
+#game-hud .hud-buffs-container:not(:empty) { position: fixed; z-index: 12; top: 116px; left: 50%; transform: translateX(-50%); width: min(700px, calc(100vw - 20px)); max-height: 42px; overflow: hidden; pointer-events: none; }
 .hud-buffs-container:empty { display: none; }
+.hud-buff-pill { min-width: 0; max-width: 225px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 800px) { #game-hud .hud-buffs-container:not(:empty) { top: 101px; width: calc(100vw - 16px); } }
 
 .customize-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; margin: 14px 0; }
 .customize-field { display: flex; flex-direction: column; gap: 6px; color: #cbd5e1; font-size: 0.85rem; }

@@ -615,6 +615,10 @@ const update = (dt) => {
           hook.biteTimer = 0;
           hook.hasBitten = true;
           soundManager.playRareChime();
+          if (hit.reward?.coins) saveSystem.addCoins(hit.reward.coins);
+          if (hit.reward?.xp) saveSystem.addXp(hit.reward.xp);
+          if (hit.reward?.buff) saveSystem.addBuff(hit.reward.buff, hit.reward.durationMs);
+          uiManager?.showToast?.(`${hit.name}: ${hit.reward?.coins ? `+$${hit.reward.coins} · ` : ''}${hit.reward?.xp ? `+${hit.reward.xp} XP · ` : ''}${hit.reward?.buff ? 'Siren\'s Grace' : 'bonus catch'}`);
           if (particles) {
             particles.emitSparkles(hook.x, oceanWorld.surfaceY, 28, hit.isSunkenSafe ? '#fbbf24' : '#38bdf8');
             particles.addFloatingText(
@@ -836,7 +840,7 @@ const update = (dt) => {
       for (let i = powerups.length - 1; i >= 0; i--) {
         const p = powerups[i];
         if (Math.hypot(p.x - hook.x, p.y - hook.y) < hookRadius + p.radius) {
-          p.collect(hook, particles, soundManager, oceanWorld);
+          p.collect(hook, particles, soundManager);
           powerups.splice(i, 1);
         }
       }
@@ -847,9 +851,9 @@ const update = (dt) => {
         for (const fish of oceanWorld.entities.fish) {
           if (fish.state !== 'SWIMMING') continue;
           const d = Math.hypot(fish.x - hook.x, fish.y - hook.y);
-          if (d < 120) {
-            fish.x += (hook.x - fish.x) * 3 * deltaSec;
-            fish.y += (hook.y - fish.y) * 3 * deltaSec;
+          if (d < 200) {
+            fish.x += (hook.x - fish.x) * 4 * deltaSec;
+            fish.y += (hook.y - fish.y) * 4 * deltaSec;
           }
         }
       }

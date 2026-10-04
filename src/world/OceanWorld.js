@@ -108,6 +108,7 @@ export class OceanWorld {
 
   setCurrentSea(seaId) {
     this.currentSeaId = parseInt(seaId, 10) || 1;
+    this.hotspotManager?.setSea(this.currentSeaId);
   }
 
   setZoneManager(zoneMgr) {
@@ -209,24 +210,6 @@ export class OceanWorld {
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
 
-    const schoolSpecies = fishPool.filter(species => ['common', 'uncommon'].includes(species.rarity));
-    for (let start = 0; start < Math.min(activeMaxDepth, 3000); start += 50) {
-      if (Math.random() >= .004) continue;
-      const end = Math.min(start + 50, activeMaxDepth, 3000);
-      const candidates = schoolSpecies.filter(species => species.minDepth < end && species.maxDepth > start);
-      if (!candidates.length) continue;
-      const species = candidates[Math.floor(Math.random() * candidates.length)];
-      const low = Math.max(start, species.minDepth), high = Math.min(end, species.maxDepth);
-      const depth = low + Math.random() * (high - low);
-      const centerX = 110 + Math.random() * Math.max(1, this.worldWidth - 220);
-      const schoolSize = 10 + Math.floor(Math.random() * 7);
-      for (let member = 0; member < schoolSize; member++) {
-        const x = Math.max(70, Math.min(this.worldWidth - 70, centerX + (member - (schoolSize - 1) / 2) * 9));
-        const y = this.surfaceY + depth * this.pixelsPerMeter + (Math.random() - .5) * 44;
-        this.entities.fish.push(new Fish(species, x, y, fishOptions));
-      }
-    }
-
     // Sparse realms still need one reachable resident in the first 30m. Random
     // band selection can otherwise choose only species whose habitat starts deeper.
     if (!this.entities.fish.some(fish => fish.y < this.surfaceY + 30 * this.pixelsPerMeter)) {
@@ -264,6 +247,24 @@ export class OceanWorld {
         }
       }
     });
+
+    const schoolSpecies = fishPool.filter(species => ['common', 'uncommon'].includes(species.rarity));
+    for (let start = 0; start < Math.min(activeMaxDepth, 3000); start += 50) {
+      if (Math.random() >= .004) continue;
+      const end = Math.min(start + 50, activeMaxDepth, 3000);
+      const candidates = schoolSpecies.filter(species => species.minDepth < end && species.maxDepth > start);
+      if (!candidates.length) continue;
+      const species = candidates[Math.floor(Math.random() * candidates.length)];
+      const low = Math.max(start, species.minDepth), high = Math.min(end, species.maxDepth);
+      const depth = low + Math.random() * (high - low);
+      const centerX = 110 + Math.random() * Math.max(1, this.worldWidth - 220);
+      const schoolSize = 10 + Math.floor(Math.random() * 7);
+      for (let member = 0; member < schoolSize; member++) {
+        const x = Math.max(70, Math.min(this.worldWidth - 70, centerX + (member - (schoolSize - 1) / 2) * 9));
+        const y = this.surfaceY + depth * this.pixelsPerMeter + (Math.random() - .5) * 44;
+        this.entities.fish.push(new Fish(species, x, y, fishOptions));
+      }
+    }
 
     populateBands(TREASURE_ITEMS.filter(item => item.category !== 'fossil' && belongsToRealm(item, this.currentSeaId)),
       depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2 * ecology.treasure,
@@ -401,7 +402,7 @@ export class OceanWorld {
     }
 
     // Populate Underwater Power-ups (Rare Spawns: Positive & Negative)
-    const powerupCount = 3 + Math.floor(Math.random() * 3);
+    const powerupCount = Math.random() < .35 ? 0 : 1 + Math.floor(Math.random() * 2);
     for (let p = 0; p < powerupCount; p++) {
       const pDepth = 15 + Math.random() * Math.max(20, activeMaxDepth - 25);
       const px = 60 + Math.random() * (this.worldWidth - 120);

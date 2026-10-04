@@ -37,6 +37,9 @@ export class Hazard {
   update(dt, worldWidth, hook = null) {
     const deltaSec = dt / 1000;
     this.timer += this.pulseSpeed * deltaSec;
+    if (this.marineKind && hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.abs(hook.x - this.x) > 1) {
+      this.facing = Math.sign(hook.x - this.x);
+    }
     if (updateAttack(this, dt, hook, worldWidth)) return;
     if (this.behavior.motion === 'falling') {
       this.y += 150 * deltaSec;
@@ -65,15 +68,15 @@ export class Hazard {
       this.chaseTime = chasing ? this.chaseTime + deltaSec : 0;
       if (this.chaseTime > (config.chaseDuration || 3)) { this.restTime = config.restDuration || 3; this.chaseTime = 0; }
       const pursuing = chasing && this.restTime === 0;
-      const targetX = pursuing ? hook.x : this.homeX + Math.sin(this.timer * .3) * 55;
-      const targetY = pursuing ? hook.y : this.homeY + Math.sin(this.timer * .4) * 22;
+      const targetX = pursuing ? hook.x + Math.sin(this.timer * 1.6) * 24 : this.homeX + Math.sin(this.timer * .3) * 55;
+      const targetY = pursuing ? hook.y + Math.cos(this.timer * 1.2) * 18 : this.homeY + Math.sin(this.timer * .4) * 22;
       const dx = targetX - this.x, dy = targetY - this.y;
       const length = Math.hypot(dx, dy);
       const step = Math.min(length, config.speed * (pursuing ? 1 : .25) * Math.min(deltaSec, .05));
       if (length > 0) { this.x += dx / length * step; this.y += dy / length * step; }
-      if (Math.abs(dx) > 1) this.facing = Math.sign(dx);
       this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.x));
       this.y = Math.max(this.minY ?? 0, Math.min(this.maxY ?? Infinity, this.y));
+      if (active && Math.abs(hook.x - this.x) > 1) this.facing = Math.sign(hook.x - this.x);
       return;
     }
 
@@ -165,27 +168,21 @@ export class Hazard {
 
     // A soft red halo signals danger without outlining the collision circle.
     const pulse = .5 + .5 * Math.sin(this.timer * 1.6);
-    const haloRadius = this.radius * (1.8 + pulse * .1) + 18;
+    const haloRadius = this.radius * (1.35 + pulse * .08) + 10;
+    const haloStrength = this.isColossal ? .2 : this.marineKind ? .1 : .045;
     const halo = ctx.createRadialGradient(0, 0, this.radius * .15, 0, 0, haloRadius);
-    halo.addColorStop(0, `rgba(255,55,55,${.38 + pulse * .07})`);
-    halo.addColorStop(.5, `rgba(255,55,55,${.30 + pulse * .06})`);
-    halo.addColorStop(.75, `rgba(239,68,68,${.12 + pulse * .03})`);
+    halo.addColorStop(0, `rgba(255,88,88,${haloStrength + pulse * haloStrength * .2})`);
+    halo.addColorStop(.5, `rgba(255,88,88,${haloStrength * .55})`);
+    halo.addColorStop(.75, `rgba(239,68,68,${haloStrength * .2})`);
     halo.addColorStop(1, 'rgba(239,68,68,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(-haloRadius, -haloRadius, haloRadius * 2, haloRadius * 2);
 
-    if (this.behavior.pulseHazard) {
-      const active = this.timer % 6 >= 3.5;
-      ctx.strokeStyle = active ? '#ff5252' : '#fbbf24';
-      ctx.lineWidth = active ? 5 : 2;
-      ctx.beginPath(); ctx.arc(0, 0, this.radius * (active ? 1 : .6 + this.timer % 6 / 10), 0, Math.PI * 2); ctx.stroke();
-    }
     ctx.scale(this.sizeScale, this.sizeScale);
     try {
       if (this.marineKind) {
         drawMarineThreat(ctx, this);
       } else if (this.naturalKind) {
-        if (this.behavior.expedition) ctx.scale(this.facing, 1);
         drawNaturalHazard(ctx, this.naturalKind, this.radius / this.sizeScale, this.timer);
       } else if (this.realmStyle) {
         this.renderRealmHazard(ctx);
@@ -644,5 +641,5 @@ export class Hazard {
     ctx.restore();
   }
 
-  renderAttacks(ctx, cameraY, height) { drawAttack(ctx, this, cameraY, height); }
+  renderAttacks(ctx, cameraY = 0, height = 2000) { drawAttack(ctx, this, cameraY, height); }
 }

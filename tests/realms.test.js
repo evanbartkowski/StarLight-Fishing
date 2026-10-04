@@ -42,10 +42,11 @@ test('shooters fire fast horizontal projectiles and chargers keep their committe
   assert.ok(Math.hypot(shot.vx, shot.vy) >= 439, 'shots travel faster than before');
   assert.equal(shooter.intersectsHook(shot.x, shot.y, 1), true);
   assert.equal(shooter.shots.length, 0);
+  const chargerHook = { x: 350, y: 500, state: 'DESCENDING' };
   const charger = new Hazard({ ...config, attack: 'dash' }, 200, 500);
-  charger.attackCooldown = 0; charger.update(16, 800, hook);
-  hook.y = 650;
-  for (let i = 0; i < 50; i++) charger.update(16, 800, hook);
+  charger.attackCooldown = 0; charger.update(16, 800, chargerHook);
+  chargerHook.y = 650;
+  for (let i = 0; i < 50; i++) charger.update(16, 800, chargerHook);
   assert.ok(charger.x > 230); assert.equal(charger.y, 500);
 });
 
