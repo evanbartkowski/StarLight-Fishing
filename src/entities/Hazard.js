@@ -34,6 +34,9 @@ export class Hazard {
 
     this.x = x;
     this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.swimAngle = 0;
     this.timer = Math.random() * Math.PI * 2;
     this.pulseSpeed = 1.8 + Math.random() * 1.2;
     this.driftX = (Math.random() * 2 - 1) * (this.isColossal ? 0.25 : 0.45);
@@ -73,15 +76,45 @@ export class Hazard {
       this.chaseTime = chasing ? this.chaseTime + deltaSec : 0;
       if (this.chaseTime > (config.chaseDuration || 3)) { this.restTime = config.restDuration || 3; this.chaseTime = 0; }
       const pursuing = chasing && this.restTime === 0;
-      const targetX = pursuing ? hook.x + Math.sin(this.timer * 1.6) * 24 : this.homeX + Math.sin(this.timer * .3) * 55;
-      const targetY = pursuing ? hook.y + Math.cos(this.timer * 1.2) * 18 : this.homeY + Math.sin(this.timer * .4) * 22;
+
+      // Natural undulating wander vs targeted pursuit
+      const undulate = Math.sin(this.timer * 2.2);
+      const waveX = Math.cos(this.timer * 1.4) * (this.isColossal ? 45 : 30);
+      const waveY = undulate * (this.isColossal ? 26 : 18);
+
+      const targetX = pursuing ? hook.x + waveX * 0.4 : this.homeX + Math.sin(this.timer * 0.35) * 65;
+      const targetY = pursuing ? hook.y + waveY * 0.4 : this.homeY + waveY;
       const dx = targetX - this.x, dy = targetY - this.y;
-      const length = Math.hypot(dx, dy);
-      const step = Math.min(length, config.speed * (pursuing ? 1 : .25) * Math.min(deltaSec, .05));
-      if (length > 0) { this.x += dx / length * step; this.y += dy / length * step; }
+      const length = Math.hypot(dx, dy) || 1;
+
+      // Realistic hydrodynamic acceleration and fluid drag
+      const maxSpd = config.speed * (pursuing ? 1.05 : 0.32);
+      const desiredVx = (dx / length) * maxSpd;
+      const desiredVy = (dy / length) * maxSpd;
+
+      // Colossal apex predators have heavier mass and inertia; agile predators respond promptly
+      const accelFactor = this.isColossal ? (pursuing ? 3.5 : 2.0) : (pursuing ? 18.0 : 5.0);
+      this.vx += (desiredVx - this.vx) * Math.min(1, accelFactor * deltaSec);
+      this.vy += (desiredVy - this.vy) * Math.min(1, accelFactor * deltaSec);
+
+      // Add gentle aquatic drift & fin cadence
+      const sway = Math.cos(this.timer * (this.isColossal ? 1.8 : 3.0)) * (this.isColossal ? 8 : 12);
+      this.x += (this.vx + (pursuing ? sway * 0.15 : sway * 0.5)) * deltaSec;
+      this.y += (this.vy + Math.sin(this.timer * 2.4) * (this.isColossal ? 6 : 4)) * deltaSec;
+
       this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.x));
       this.y = Math.max(this.minY ?? 0, Math.min(this.maxY ?? Infinity, this.y));
-      if (active && Math.abs(hook.x - this.x) > 1) this.facing = Math.sign(hook.x - this.x);
+
+      // Facing direction: tracks active hook if present, or follows horizontal velocity
+      if (active && Math.abs(hook.x - this.x) > 1) {
+        this.facing = Math.sign(hook.x - this.x);
+      } else if (Math.abs(this.vx) > 3) {
+        this.facing = Math.sign(this.vx);
+      }
+
+      // Smooth banking angle according to vertical flow
+      const targetPitch = Math.atan2(this.vy, Math.abs(this.vx) || 1) * 0.65;
+      this.swimAngle += (targetPitch - this.swimAngle) * Math.min(1, 4.0 * deltaSec);
       return;
     }
 
@@ -227,24 +260,19 @@ export class Hazard {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // Noticeable pulsing red danger halo signalling obstacle threat
-    const pulse = .5 + .5 * Math.sin(this.timer * 2.2);
-    const haloRadius = this.radius * (1.35 + pulse * .14) + 12;
-    const haloStrength = this.isColossal ? .48 : this.marineKind ? .38 : .30;
-    const halo = ctx.createRadialGradient(0, 0, this.radius * .2, 0, 0, haloRadius);
-    halo.addColorStop(0, `rgba(255, 68, 68, ${haloStrength + pulse * 0.15})`);
-    halo.addColorStop(.45, `rgba(239, 68, 68, ${haloStrength * 0.75})`);
-    halo.addColorStop(.75, `rgba(220, 38, 38, ${haloStrength * 0.35})`);
+    // Tasteful pulsing danger glow signalling obstacle threat (organic ambient radiance, no harsh ring)
+    const pulse = 0.5 + 0.5 * Math.sin(this.timer * 2.2);
+    const haloRadius = this.radius * (1.25 + pulse * 0.12) + 8;
+    const haloStrength = this.isColossal ? 0.28 : this.marineKind ? 0.22 : 0.18;
+    const halo = ctx.createRadialGradient(0, 0, this.radius * 0.3, 0, 0, haloRadius);
+    halo.addColorStop(0, `rgba(239, 68, 68, ${haloStrength * (0.8 + pulse * 0.4)})`);
+    halo.addColorStop(0.5, `rgba(220, 38, 38, ${haloStrength * 0.45})`);
+    halo.addColorStop(0.85, `rgba(185, 28, 28, ${haloStrength * 0.15})`);
     halo.addColorStop(1, 'rgba(239, 68, 68, 0)');
     ctx.fillStyle = halo;
-    ctx.fillRect(-haloRadius, -haloRadius, haloRadius * 2, haloRadius * 2);
-
-    // Subtle crisp warning danger ring at perimeter
-    ctx.strokeStyle = `rgba(248, 113, 113, ${0.28 + pulse * 0.22})`;
-    ctx.lineWidth = 1.4;
     ctx.beginPath();
-    ctx.arc(0, 0, this.radius * (1.08 + pulse * 0.06), 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.arc(0, 0, haloRadius, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.scale(this.sizeScale, this.sizeScale);
     try {

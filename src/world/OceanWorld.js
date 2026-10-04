@@ -1001,6 +1001,11 @@ export class OceanWorld {
       this.renderUnderwaterStarlight(ctx, cameraY, screenHeight);
     }
 
+    // Mystical Water Atmospheres for Fantasy Realms (Realm 2+)
+    if (this.currentSeaId >= 2) {
+      this.renderMysticalWaters(ctx, cameraY, screenHeight);
+    }
+
     // Sea 1: Sunlit Caustics (0 - 45m)
     if (this.currentSeaId === 1) {
       this.renderCaustics(ctx, topY);
@@ -1085,6 +1090,74 @@ export class OceanWorld {
       ctx.fillStyle = `rgba(240, 253, 250, ${alpha})`;
       ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.restore();
+  }
+
+  // Mystical Water Visuals (Realm 2+)
+  renderMysticalWaters(ctx, cameraY, screenHeight) {
+    ctx.save();
+    const time = this.causticTimer;
+    const profile = REALM_PROFILES[this.currentSeaId] || REALM_PROFILES[2];
+    const colors = profile.colors || ['#38bdf8', '#c084fc', '#f43f5e'];
+
+    // 1. Ethereal mystical shimmer ribbons weaving vertically through the water column
+    ctx.globalCompositeOperation = 'lighter';
+    const ribbonCount = 5;
+    for (let r = 0; r < ribbonCount; r++) {
+      const xBase = ((r * 240 + Math.sin(time * 0.4 + r) * 60) % (this.worldWidth + 160)) - 80;
+      const col = colors[r % colors.length];
+      const alpha = 0.06 + Math.sin(time * 0.8 + r * 1.5) * 0.03;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0.02, alpha);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 14 + (r % 3) * 6;
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 18;
+
+      ctx.beginPath();
+      ctx.moveTo(xBase, -40);
+      ctx.bezierCurveTo(
+        xBase + Math.sin(time * 0.5 + r) * 70,
+        screenHeight * 0.33,
+        xBase - Math.cos(time * 0.6 + r) * 70,
+        screenHeight * 0.66,
+        xBase + Math.sin(time * 0.3 + r) * 40,
+        screenHeight + 40
+      );
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 2. Realm-specific floating mystical particulate motes (glow motes drifting naturally)
+    const moteCount = 18;
+    for (let m = 0; m < moteCount; m++) {
+      const mx = ((m * 179 + Math.sin(time * 0.6 + m * 2) * 50 + time * 12) % (this.worldWidth + 100)) - 50;
+      const my = ((m * 211 + Math.cos(time * 0.5 + m) * 35 - time * 18) % (screenHeight + 80) + screenHeight + 80) % (screenHeight + 80) - 40;
+      const mSize = 1.8 + (m % 3) * 1.2;
+      const mCol = colors[(m + 1) % colors.length];
+      const pulse = 0.35 + Math.sin(time * 2.2 + m) * 0.25;
+
+      ctx.save();
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = mCol;
+      ctx.shadowColor = mCol;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(mx, my, mSize, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Delicate ethereal halo ring around some motes
+      if (m % 3 === 0) {
+        ctx.strokeStyle = mCol;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.arc(mx, my, mSize * 2.4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     ctx.restore();
   }
 

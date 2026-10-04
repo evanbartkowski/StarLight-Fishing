@@ -2,7 +2,12 @@ export function drawMarineThreat(ctx, threat) {
   const r = threat.radius / threat.sizeScale;
   const t = threat.timer;
   ctx.save();
-  if (threat.marineKind !== 'jelly') ctx.scale(threat.facing || 1, 1);
+  if (threat.marineKind !== 'jelly') {
+    ctx.scale(threat.facing || 1, 1);
+    if (threat.swimAngle) {
+      ctx.rotate((threat.facing || 1) * threat.swimAngle);
+    }
+  }
   const body = ctx.createLinearGradient(0, -r, 0, r);
   body.addColorStop(0, threat.color);
   body.addColorStop(0.6, '#243c59');

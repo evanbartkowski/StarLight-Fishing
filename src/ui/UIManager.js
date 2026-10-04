@@ -1623,21 +1623,10 @@ export class UIManager {
       });
     });
 
-    const later = document.createElement('button');
-    later.className = 'btn btn-secondary'; later.id = 'btn-store-crate'; later.textContent = 'Keep sealed for later';
-    document.querySelector('.crate-actions')?.appendChild(later);
-    later.onclick = () => {
-      this.saveSystem.save();
-      this._currentCrateContext = null;
-      if (hook) this.openCatchSummary(hook, onContinue);
-      else this.openInventory('crates');
-    };
-
     const crackBtn = document.getElementById('btn-crack-crate');
     if (crackBtn) {
       crackBtn.onclick = () => {
         crackBtn.disabled = true;
-        later.hidden = true;
         const track = document.getElementById('gacha-reel-track');
         const iconEl = document.getElementById('crate-icon-anim');
         const descEl = document.getElementById('crate-status-desc');
