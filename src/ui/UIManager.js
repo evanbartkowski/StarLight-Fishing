@@ -23,6 +23,7 @@ import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/alman
 import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
+import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART } from './CustomVectorArt.js';
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const HUD_ICONS = {
@@ -1048,7 +1049,7 @@ export class UIManager {
       const isUnlocked = st.cost === 0 || save.data.unlockedSoundtracks.includes(st.id);
       html += `
         <div class="radio-station-card ${isActive ? 'radio-station-active' : ''}" data-station="${st.id}" data-cost="${st.cost}" data-unlocked="${isUnlocked}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px; background:${isActive ? 'rgba(56,189,248,0.18)' : 'rgba(15,23,42,0.6)'}; border:1px solid ${isActive ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; cursor:pointer; transition:all 0.2s ease;">
-          <span style="font-size:1.8rem;">${st.icon}</span>
+          <span class="radio-art-icon">${RADIO_ART[st.id] || st.icon}</span>
           <div style="flex:1;">
             <h4 style="margin:0 0 3px 0; color:#f8fafc; font-size:0.95rem;">${st.name} ${isActive ? '<span style="color:#38bdf8; font-size:0.75rem;">● ON AIR</span>' : ''}</h4>
             <p style="margin:0; font-size:0.78rem; color:#94a3b8;">${st.desc}</p>
@@ -1056,7 +1057,6 @@ export class UIManager {
           <button class="btn ${isActive ? 'btn-primary' : isUnlocked ? 'btn-secondary' : 'btn-outline'} btn-sm">
             ${isActive ? 'Playing' : isUnlocked ? 'Tune In' : `💎 ${st.cost} Gems`}
           </button>
-          <button class="btn ${isActive ? 'btn-primary' : 'btn-secondary'} btn-sm">${isActive ? 'Playing' : 'Tune In'}</button>
         </div>
       `;
     });
@@ -1167,7 +1167,7 @@ export class UIManager {
       itemsHtml += `
         <div class="shop-card ${isMax ? 'shop-card-max' : ''} ${!meetsLevel ? 'shop-card-locked' : ''}">
           <div class="shop-card-header">
-            <span class="shop-icon">${upg.icon}</span>
+            <span class="shop-icon">${SHOP_ART[upg.id] || upg.icon}</span>
             <div class="shop-info">
               <h3>${upg.name}</h3>
               <p class="shop-desc">${upg.description}</p>
@@ -2365,12 +2365,14 @@ export class UIManager {
       currentAlmanacZone = zoneKey;
       const isAberrations = zoneKey === 'aberrations';
 
-      const zonePills = [...FANTASY_SEAS.map(sea => ({ id: `sea_${sea.id}`, name: sea.name, icon: sea.icon })), { id: 'aberrations', name: 'Aberrations', icon: '☣️' }];
+      const zonePills = [...FANTASY_SEAS.map(sea => ({ id: `sea_${sea.id}`, name: sea.name, icon: REALM_ART[sea.id] || sea.icon })), { id: 'aberrations', name: 'Aberrations', icon: '☣️' }];
 
       let navHtml = '<div class="almanac-zone-pills">';
       zonePills.forEach((z) => {
         const activeClass = z.id === zoneKey ? 'active' : '';
-        navHtml += `<button class="almanac-pill-btn ${activeClass}" data-zone="${z.id}">${z.icon} ${z.name}</button>`;
+        const isArt = typeof z.icon === 'string' && z.icon.includes('<svg');
+        const iconHtml = isArt ? `<span class="almanac-pill-art">${z.icon}</span>` : `${z.icon} `;
+        navHtml += `<button class="almanac-pill-btn ${activeClass}" data-zone="${z.id}">${iconHtml}${z.name}</button>`;
       });
       navHtml += '</div>';
 
@@ -2458,6 +2460,8 @@ export class UIManager {
       // Zone Bestiary
       const zoneData = ZONE_ALMANAC_DATA[zoneKey] || ZONE_ALMANAC_DATA.sea_1;
       const progress = getZoneProgress(zoneKey, save);
+      const zoneNum = parseInt(zoneKey.replace('sea_', ''), 10) || 1;
+      const zoneArtwork = REALM_ART[zoneNum] || zoneData.icon;
 
       let perkStatusHtml = '';
       if (progress.perkUnlocked) {
@@ -2473,8 +2477,8 @@ export class UIManager {
           ${navHtml}
           <div class="almanac-header-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; padding: 16px 20px; border-radius: 8px; margin-bottom: 18px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
-              <div style="display: flex; gap: 12px; align-items: center;">
-                <span style="font-size: 2.2rem;">${zoneData.icon}</span>
+              <div style="display: flex; gap: 14px; align-items: center;">
+                <span class="almanac-header-art">${zoneArtwork}</span>
                 <div>
                   <h3 style="color: #f8fafc; margin: 0 0 4px 0; font-size: 1.25rem;">${zoneData.name} Almanac</h3>
                   <p style="color: #94a3b8; font-size: 0.88rem; margin: 0; max-width: 520px;">${zoneData.description}</p>
@@ -2583,7 +2587,7 @@ export class UIManager {
           desc: 'Reconstructed jaw of the supreme apex predator of the Cenozoic oceans.',
           pieces: skeletons.megalodonJaw || 0,
           reward: '3 gems + $1,000 achievement',
-          icon: '🦈',
+          icon: FOSSIL_ART.megalodonJaw,
         },
         {
           id: 'dunkleosteus',
@@ -2591,7 +2595,7 @@ export class UIManager {
           desc: 'Armored dermal plates of a 360-million-year-old Devonian super-carnivore.',
           pieces: skeletons.dunkleosteus || 0,
           reward: '3 gems + $1,000 achievement',
-          icon: '🛡️',
+          icon: FOSSIL_ART.dunkleosteus,
         },
         {
           id: 'plesiosaur',
@@ -2599,14 +2603,14 @@ export class UIManager {
           desc: 'Full articulated serpentine neck and paddle skeleton of a Jurassic sea voyager.',
           pieces: skeletons.plesiosaur || 0,
           reward: '3 gems + $1,000 achievement',
-          icon: '🦕',
+          icon: FOSSIL_ART.plesiosaur,
         },
       ];
 
       let html = `
         <div class="skeletons-container">
 <div class="museum-intro"><p class="eyebrow">FRAGMENTS OF A LOST OCEAN</p><h3>Fossil Workshop</h3><p>Complete each set to earn 3 gems and unlock a museum centerpiece.</p></div>
-          <p class="skeleton-header-tip">🦴 Collect ancient bone fragments from deep fossil silt and idle seabed drift pots to assemble museum skeleton exhibits!</p>
+          <p class="skeleton-header-tip"><span class="journal-tab-icon-svg" style="display:inline-block; width:18px; height:18px; vertical-align:middle; margin-right:4px;">${FOSSIL_ART.boneFragment}</span> Collect ancient bone fragments from deep fossil silt and idle seabed drift pots to assemble museum skeleton exhibits!</p>
           <div class="skeletons-grid">
       `;
 
@@ -2617,7 +2621,7 @@ export class UIManager {
         html += `
           <div class="skeleton-card ${isComplete ? 'skeleton-complete' : ''}">
             <div class="skeleton-header">
-              <span class="skeleton-icon">${sk.icon}</span>
+              <span class="skeleton-icon" style="width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;">${sk.icon}</span>
               <div>
                 <h4>${sk.name}</h4>
                 <p class="skeleton-desc">${sk.desc}</p>
@@ -2626,10 +2630,10 @@ export class UIManager {
 
             <div class="skeleton-progress-row">
               <div class="bone-slots">
-                <span class="bone-slot ${sk.pieces >= 1 ? 'bone-active' : ''}">🦴</span>
-                <span class="bone-slot ${sk.pieces >= 2 ? 'bone-active' : ''}">🦴</span>
-                <span class="bone-slot ${sk.pieces >= 3 ? 'bone-active' : ''}">🦴</span>
-                <span class="bone-slot ${sk.pieces >= 4 ? 'bone-active' : ''}">🦴</span>
+                <span class="bone-slot ${sk.pieces >= 1 ? 'bone-active' : ''}">${FOSSIL_ART.boneFragment}</span>
+                <span class="bone-slot ${sk.pieces >= 2 ? 'bone-active' : ''}">${FOSSIL_ART.boneFragment}</span>
+                <span class="bone-slot ${sk.pieces >= 3 ? 'bone-active' : ''}">${FOSSIL_ART.boneFragment}</span>
+                <span class="bone-slot ${sk.pieces >= 4 ? 'bone-active' : ''}">${FOSSIL_ART.boneFragment}</span>
               </div>
               <span class="skeleton-count">${sk.pieces} / 4 Pieces</span>
             </div>
@@ -2639,7 +2643,7 @@ export class UIManager {
             </div>
 
             <div class="skeleton-status-tag">
-              ${isComplete ? '🏛️ Fully Assembled Museum Centerpiece' : `Bonus Completion: ${sk.reward}`}
+              ${isComplete ? '<span class="status-complete-badge">Fully Assembled Museum Centerpiece</span>' : `Bonus Completion: ${sk.reward}`}
             </div>
           </div>
         `;
@@ -2656,12 +2660,12 @@ export class UIManager {
       if (trapCount <= 0) {
         return `
           <div class="traps-panel empty-trap-box" style="text-align:center; padding: 40px 20px;">
-            <span style="font-size: 3.5rem;">🪤</span>
+            <span style="font-size: 3.5rem; display:inline-block; width:64px; height:64px; margin-bottom:10px;">${MISC_ART.trapPot}</span>
             <h3 style="margin: 14px 0 8px 0; color: #f8fafc; font-size: 1.25rem;">No Seabed Drift Pots Deployed</h3>
             <p style="color: #94a3b8; font-size: 0.92rem; max-width: 440px; margin: 0 auto 24px auto; line-height: 1.6;">
               Seabed drift pots passively catch coastal crabs, lobsters, pearl oysters, and prehistoric fossil bone fragments over time. Purchase your first pot in the Tackle Shop to begin idle harvesting!
             </p>
-            <button class="btn btn-primary" id="btn-traps-go-shop">🛒 Visit Tackle Shop to Buy Traps</button>
+            <button class="btn btn-primary" id="btn-traps-go-shop">Visit Tackle Shop to Buy Traps</button>
           </div>
         `;
       }
@@ -2673,7 +2677,7 @@ export class UIManager {
       if (items.length === 0) {
         itemsHtml += `
           <div class="empty-trap-box">
-            <span style="font-size: 2.5rem;">🌊</span>
+            <span style="font-size: 2.5rem; display:inline-block; width:52px; height:52px; margin-bottom:8px;">${MISC_ART.trapPot}</span>
             <p>Your seabed pots are actively soaking in coastal waters!</p>
             <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 2 minutes even while in other tabs.</p>
           </div>
@@ -2715,7 +2719,7 @@ export class UIManager {
 
           <div class="traps-footer">
             <button class="btn btn-primary" id="btn-harvest-modal" ${items.length === 0 ? 'disabled' : ''}>
-              🧺 Harvest All Traps (${items.length} Items)
+              <span class="btn-icon-svg" style="display:inline-block; width:20px; height:20px; vertical-align:middle; margin-right:6px;">${MISC_ART.harvestBasket}</span>Harvest All Traps (${items.length} Items)
             </button>
           </div>
         </div>
@@ -2728,7 +2732,7 @@ export class UIManager {
         const unlocked = save.hasPet(pet.id), aboard = save.isPetEquipped(pet.id);
         return `<article class="crew-card ${unlocked ? '' : 'crew-locked'}">
           <div class="crew-card-top"><span>${pet.species}</span><span>${unlocked ? aboard ? 'Aboard' : 'Resting' : 'Undiscovered'}</span></div>
-          <div class="crew-portrait">${pet.icon}</div><h3>${pet.name}</h3>
+          <div class="crew-art-portrait">${CREW_ART[pet.id] || pet.icon}</div><h3>${pet.name}</h3>
           <p>${pet.lore}</p><p class="crew-perk">${unlocked ? pet.perk : pet.unlockHint}</p>
           ${unlocked ? `<button class="btn btn-secondary" data-equip-pet="${pet.id}" aria-pressed="${aboard}">${aboard ? 'Let rest ashore' : 'Bring aboard'}</button>` : ''}
         </article>`;
@@ -2744,10 +2748,10 @@ export class UIManager {
         <!-- 2 Primary Menus -->
         <div class="primary-menu-tabs">
           <button class="primary-tab-btn ${primaryMenu === 'journal' ? 'active' : ''}" id="primary-menu-journal">
-            📖 Field Journal & Collections
+            <span class="journal-tab-icon-svg">${MISC_ART.fieldJournalBook}</span> Field Journal & Collections
           </button>
           <button class="primary-tab-btn ${primaryMenu === 'logbook' ? 'active' : ''}" id="primary-menu-logbook">
-            🏆 Trophy Room
+            <span class="journal-tab-icon-svg">${MISC_ART.trophyCup}</span> Trophy Room
           </button>
         </div>
 
@@ -2755,14 +2759,14 @@ export class UIManager {
         <div id="view-journal" style="display: ${primaryMenu === 'journal' ? 'block' : 'none'};">
           <div class="journal-wrapper">
             <div class="journal-tabs">
-              <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog">📖 Angler's Almanac (${caughtSpeciesCount} / ${allSpecies.length})</button>
-              <button class="tab-btn ${defaultSubTab === 'scoreboard' ? 'active' : ''}" id="tab-scoreboard" style="border: 1px solid #facc15; color: #facc15; font-weight: 700;">🏆 Scoreboard</button>
-              <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;">🐠 Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
-              <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew">🐾 Vessel Crew (${unlockedPetCount} / ${Object.keys(PET_DEFINITIONS).length})</button>
-              <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics">🏺 Cabin Shelf (${restoredRelicsCount} / 5)</button>
-              <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons">🦴 Fossils</button>
-              <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps">🪤 Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
-              <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils">🏛️ Relic Museum (${fossilCount} / 5)</button>
+              <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.almanac}</span> Angler's Almanac (${caughtSpeciesCount} / ${allSpecies.length})</button>
+              <button class="tab-btn ${defaultSubTab === 'scoreboard' ? 'active' : ''}" id="tab-scoreboard" style="border: 1px solid #facc15; color: #facc15; font-weight: 700;"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.scoreboard}</span> Scoreboard</button>
+              <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.aquarium}</span> Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
+              <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.crew}</span> Vessel Crew (${unlockedPetCount} / ${Object.keys(PET_DEFINITIONS).length})</button>
+              <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.relics}</span> Cabin Shelf (${restoredRelicsCount} / 5)</button>
+              <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.fossils}</span> Fossils</button>
+              <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.traps}</span> Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
+              <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.museum}</span> Relic Museum (${fossilCount} / 5)</button>
             </div>
             <div id="journal-tab-content">
               ${defaultSubTab === 'crew' ? renderCrewTab() : defaultSubTab === 'traps' ? renderTrapsTab() : defaultSubTab === 'skeletons' ? renderSkeletonsTab() : defaultSubTab === 'relics' ? '' : defaultSubTab === 'fossils' ? '' : defaultSubTab === 'aquarium' ? '' : defaultSubTab === 'scoreboard' ? '' : renderAlmanacHtml(currentAlmanacZone)}
@@ -2777,7 +2781,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal("📜 Angler's Almanac & Field Journal", modalBody);
+    this.openModal("Angler's Almanac & Field Journal", modalBody);
 
     const journalTabBtn = document.getElementById('primary-menu-journal');
     const logbookTabBtn = document.getElementById('primary-menu-logbook');

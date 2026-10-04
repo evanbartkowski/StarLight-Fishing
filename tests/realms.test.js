@@ -17,6 +17,9 @@ const { UPGRADE_DEFINITIONS } = await import('../src/data/UpgradesData.js');
 const { Fish } = await import('../src/entities/Fish.js');
 const { Hazard } = await import('../src/entities/Hazard.js');
 const { Treasure } = await import('../src/entities/Treasure.js');
+const { worldCycle } = await import('../src/systems/WorldCycle.js');
+worldCycle.getApexSpawnMultiplier = () => 1.0;
+worldCycle.getCrateDropMultiplier = () => 1.0;
 
 function advancedSave() {
   const save = new SaveSystem();

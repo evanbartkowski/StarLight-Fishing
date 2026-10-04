@@ -3926,3 +3926,142 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .career-record { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(250,204,21,.14), rgba(250,204,21,.03)); border: 1px solid rgba(250,204,21,.3); color: #fde68a; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; }
 .career-record span { color: #cbd5e1; }
 @media (max-width: 600px) { .career-grid { grid-template-columns: repeat(3, 1fr); } .career-tile { padding: 10px 4px; } }
+
+
+/* =========================================
+   Bespoke Vector Art Components
+   ========================================= */
+.shop-icon {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.75) !important;
+  padding: 6px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.shop-icon svg,
+.custom-vector-art {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transition: transform 0.2s ease;
+}
+
+.shop-card:hover .shop-icon svg {
+  transform: scale(1.08);
+}
+
+.sea-card-icon-art {
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.sea-card-icon-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.radio-art-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.radio-art-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.journal-tab-icon-svg {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.journal-tab-icon-svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.almanac-pill-art {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.almanac-pill-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.almanac-header-art {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+.almanac-header-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.crew-art-portrait {
+  width: 80px;
+  height: 80px;
+  margin: 8px auto 14px auto;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.6);
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crew-art-portrait svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

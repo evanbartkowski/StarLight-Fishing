@@ -206,7 +206,6 @@ export class OceanWorld {
     populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 1.15 * ecology.fish,
       (species, depth) => (rarityWeight[species.rarity] || 0.01)
         * ({ common: 1 / (1 + depth / 350), uncommon: 1 / (1 + depth / 700), rare: 1 + depth / 300, epic: 1 + depth / 180, legendary: 1 + depth / 120 }[species.rarity] || 1)
-        * (['whale', 'mossback_turtle', 'octopus', 'ray'].includes(species.shape) ? 2 : 1)
         * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 * ecology.rarity : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
@@ -225,7 +224,7 @@ export class OceanWorld {
     // Special deep fish remain solitary and retain their environmental conditions.
     FISH_SPECIES.filter(species => species.isSpecialDeep && belongsToRealm(species, this.currentSeaId)).forEach(species => {
       const end = Math.min(activeMaxDepth, species.maxDepth);
-      if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= Math.min(1, (species.spawnChance ?? 0.85) * weatherApexMult)) return;
+      if (end <= species.minDepth || (species.conditions && !isConditionMet(species.conditions, environment)) || Math.random() >= (species.spawnChance ?? 0.85)) return;
       const y = this.surfaceY + (species.minDepth + Math.random() * (end - species.minDepth)) * this.pixelsPerMeter;
       this.entities.fish.push(new Fish(species, 70 + Math.random() * (this.worldWidth - 140), y, fishOptions));
     });

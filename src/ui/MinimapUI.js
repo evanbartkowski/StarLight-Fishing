@@ -6,6 +6,7 @@ import { REALM_PROFILES } from '../data/RealmContent.js';
 // Parchment/fantasy styled navigation chart, radial compass, coordinates, and fast travel
 
 import { FANTASY_SEAS, getSeaById, canUnlockSea } from '../entities/SeasData.js';
+import { REALM_ART } from './CustomVectorArt.js';
 
 const REALM_MARKERS = [
   { color: '#4e9b71', shore: '#e3c884', contour: '#b7d28a', path: 'M-30 -5 Q-29 -23 -14 -25 Q-4 -34 8 -25 Q20 -28 25 -14 Q38 -4 25 9 Q17 24 2 20 Q-13 29 -22 15 Q-36 8 -30 -5Z', detail: 'M-19 -7 Q-10 -17 1 -11 T18 -13 M-15 8 Q-4 1 8 7 T20 5' },
@@ -134,11 +135,11 @@ export class MinimapUI {
       html += `
         <div class="sea-chart-card ${isCurrent ? 'sea-card-active' : ''} ${!isUnlocked ? 'sea-card-locked' : 'sea-card-unlocked'}" data-sea-id="${sea.id}">
           <div class="sea-card-top" style="border-left: 4px solid ${sea.topColor};">
-            <span class="sea-card-icon">${sea.icon}</span>
+            <span class="sea-card-icon-art">${REALM_ART[sea.id] || sea.icon}</span>
             <div style="flex:1;">
               <div class="sea-card-title">
                 ${sea.id}. ${sea.name}
-                ${isCurrent ? '<span class="active-anchor-badge">⚓ ANCHORED</span>' : ''}
+                ${isCurrent ? '<span class="active-anchor-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:3px;"><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="21"/><line x1="5" y1="12" x2="19" y2="12"/><path d="M5 14a7 7 0 0 0 14 0"/></svg>ANCHORED</span>' : ''}
               </div>
               <div class="sea-card-subtitle">${sea.subtitle}</div>
             </div>
@@ -148,7 +149,7 @@ export class MinimapUI {
 
           <!-- Hotspots list -->
           <div class="sea-card-hotspots">
-            <div style="font-size:0.75rem; font-weight:600; color:#cbd5e1; margin-bottom:4px;">📍 Known Chart Hotspots:</div>
+            <div style="font-size:0.75rem; font-weight:600; color:#cbd5e1; margin-bottom:4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="#f43f5e" style="vertical-align:middle; margin-right:4px;"><circle cx="12" cy="9" r="4"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>Known Chart Hotspots:</div>
             <div class="hotspots-tags">
               ${sea.hotspots.map(h => `<span class="hotspot-tag" title="${h.bonus}">● ${h.name}</span>`).join('')}
             </div>
@@ -161,7 +162,7 @@ export class MinimapUI {
       if (isCurrent) {
         html += `<button class="btn btn-secondary btn-sm" disabled>Currently Fishing Here</button>`;
       } else if (isUnlocked) {
-        html += `<button class="btn btn-primary btn-sm btn-sail-sea" data-sea-id="${sea.id}">Sail to Realm ⛵</button>`;
+        html += `<button class="btn btn-primary btn-sm btn-sail-sea" data-sea-id="${sea.id}">Sail to Realm</button>`;
       } else {
         if (unlockStatus.canUnlock) {
           html += `
@@ -172,7 +173,7 @@ export class MinimapUI {
         } else {
           html += `
             <div class="gate-lock-reason" title="${unlockStatus.reason}">
-              🔒 ${unlockStatus.reason}
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle; margin-right:4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${unlockStatus.reason}
             </div>
           `;
         }
@@ -189,12 +190,12 @@ export class MinimapUI {
         </div>
 
         <div class="minimap-footer-note">
-          <span>💡 <em>Sailing to an ocean realm transitions your vessel, unlocks unique fantasy species, atmospheric music, and depth profiles.</em></span>
+          <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#facc15" stroke-width="2" style="vertical-align:middle; margin-right:5px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><em>Sailing to an ocean realm transitions your vessel, unlocks unique fantasy species, atmospheric music, and depth profiles.</em></span>
         </div>
       </div>
     `;
 
-    this.uiManager.openModal('🧭 Treasure Chart', html);
+    this.uiManager.openModal('Treasure Chart', html);
 
     document.querySelectorAll('[data-chart-realm]').forEach(marker => {
       const reveal = () => document.querySelector(`.sea-chart-card[data-sea-id="${marker.dataset.chartRealm}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -225,7 +226,9 @@ export class MinimapUI {
 
     let notice = `
       <div style="text-align:center; padding: 24px 16px;">
-        <div style="font-size: 3.2rem; margin-bottom: 12px;">🧭🔒</div>
+        <div style="margin-bottom: 12px; display:inline-block; width:64px; height:64px;">
+          <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20" stroke="#facc15" stroke-width="2"/><path d="M24 8v32M8 24h32" stroke="#eab308" stroke-width="1.5"/><circle cx="24" cy="24" r="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/><polygon points="24,18 27,24 24,30 21,24" fill="#38bdf8"/></svg>
+        </div>
         <h3 style="color:#f8fafc; margin-bottom:8px;">Chart Navigation Locked</h3>
         <p style="color:#94a3b8; font-size:0.9rem; max-width:440px; margin: 0 auto 16px auto;">
           To navigate the fantasy realms of the Seven Seas and track drifting mythic schools, you must equip proper celestial instruments.
@@ -238,11 +241,11 @@ export class MinimapUI {
             ${astrolabeLvl >= 1 ? '✓' : '✗'} <strong>Brass Astrolabe & Nautical Compass</strong> (Purchase in Tackle Shop for $${UPGRADE_DEFINITIONS.nauticalAstrolabe.tiers[1].cost.toLocaleString()})
           </div>
         </div>
-        <button class="btn btn-primary" id="btn-goto-shop-minimap">Open Tackle Shop 🛒</button>
+        <button class="btn btn-primary" id="btn-goto-shop-minimap">Open Tackle Shop</button>
       </div>
     `;
 
-    this.uiManager.openModal('🧭 Chart Navigation', notice);
+    this.uiManager.openModal('Chart Navigation', notice);
 
     document.getElementById('btn-goto-shop-minimap')?.addEventListener('click', () => {
       this.uiManager.closeModal();
