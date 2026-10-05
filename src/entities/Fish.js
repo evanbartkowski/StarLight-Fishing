@@ -705,10 +705,19 @@ export class Fish {
       'void_wyrm',
     ].includes(s.shape);
 
+    const hasOwnAppendages = isCustomTailLeviathan || [
+      'mossback_turtle', 'sea_turtle', 'nautilus', 'dolphin', 'whale',
+      'cuttlefish', 'salp', 'krill', 'copepod', 'seal', 'sea_lion', 'walrus',
+      'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
+      'puffin', 'cormorant', 'marine_iguana', 'man_o_war', 'siphonophore',
+      'flying_squid', 'velella', 'sea_butterfly', 'arrow_worm', 'tardigrade',
+      'marine_worm', 'octopus', 'squid', 'jellyfish', 'plankton'
+    ].includes(s.shape);
+
     const wiggle = Math.sin(this.wiggleTimer) * 4;
 
-    // Tail fin (custom leviathans draw their own magnificent fins/tentacles)
-    if (!isCustomTailLeviathan) {
+    // Tail fin (custom marine creatures and leviathans draw their own distinct appendages/flukes)
+    if (!hasOwnAppendages) {
       ctx.save();
       ctx.translate(-16, 0);
       ctx.rotate(wiggle * (s.shape === 'magikart' ? 0.12 : 0.08));
@@ -764,22 +773,107 @@ export class Fish {
         ctx.fill();
       }
     } else if (s.shape === 'mossback_turtle') {
-      // Old Mossback Leviathan: Giant turtle with coral reef shell
-      ctx.ellipse(0, 0, 26, 18, 0, 0, Math.PI * 2);
+      // Kelpback Turtle / Mossback Turtle: Adorable leafy sea turtle with gentle rowing flippers & sparkling eyes
+      const turtleWiggle = Math.sin(this.wiggleTimer * 2.2);
+
+      // 1. Rear flippers & tiny pointed tail
+      ctx.fillStyle = '#16a34a';
+      ctx.beginPath();
+      ctx.moveTo(-18, 0); ctx.lineTo(-24, 0); ctx.lineTo(-18, 2); ctx.closePath();
+      ctx.ellipse(-14, -10, 4, 8, -0.4 + turtleWiggle * 0.1, 0, Math.PI * 2);
+      ctx.ellipse(-14, 10, 4, 8, 0.4 - turtleWiggle * 0.1, 0, Math.PI * 2);
       ctx.fill();
+
+      // 2. Front paddle flippers (smooth rowing motion)
+      for (const side of [-1, 1]) {
+        ctx.save();
+        ctx.translate(6, side * 11);
+        ctx.rotate(side * (0.35 + turtleWiggle * 0.22));
+        ctx.beginPath();
+        ctx.ellipse(0, side * 6, 4.2, 13, side * 0.25, 0, Math.PI * 2);
+        ctx.fillStyle = '#22c55e';
+        ctx.fill();
+        ctx.strokeStyle = '#15803d';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 3. Cute rounded head extending forward
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.ellipse(22, 0, 7.5, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#15803d';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Cute big dark eye with sparkling white highlights
+      const eyeX = 23, eyeY = -2;
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeX - 0.7, eyeY - 0.7, 1.0, 0, Math.PI * 2);
+      ctx.arc(eyeX + 0.8, eyeY + 0.6, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sweet blushing cheek & smiling mouth
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.45)';
+      ctx.beginPath();
+      ctx.arc(20, 2.5, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#15803d';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.arc(25, 1, 2, 0.1, Math.PI * 0.7);
+      ctx.stroke();
+
+      // 4. Carapace Shell (Plump dome with mossy kelp fronds)
       ctx.fillStyle = '#15803d';
       ctx.beginPath();
-      ctx.arc(0, -6, 14, Math.PI, 0);
+      ctx.ellipse(0, 0, 20, 15, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#facc15';
+
+      // Shell dome countershading
+      const shellGrad = ctx.createRadialGradient(-2, -3, 3, 0, 0, 18);
+      shellGrad.addColorStop(0, '#4ade80');
+      shellGrad.addColorStop(0.5, '#22c55e');
+      shellGrad.addColorStop(1, '#15803d');
+      ctx.fillStyle = shellGrad;
       ctx.beginPath();
-      ctx.arc(8, -14, 4, 0, Math.PI * 2);
-      ctx.arc(-6, -14, 3, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, 18, 13.5, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = finColor;
+
+      // Scute markings (hexagonal plates pattern)
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.ellipse(12, 12, 10, 5, 0.4, 0, Math.PI * 2);
-      ctx.ellipse(-12, 12, 8, 4, -0.4, 0, Math.PI * 2);
+      ctx.arc(-2, 0, 6, 0, Math.PI * 2);
+      ctx.stroke();
+      for (let sc = 0; sc < 5; sc++) {
+        const scAng = (sc / 5) * Math.PI * 2 + 0.3;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(scAng) * 6 - 2, Math.sin(scAng) * 6);
+        ctx.lineTo(Math.cos(scAng) * 16 - 2, Math.sin(scAng) * 12);
+        ctx.stroke();
+      }
+
+      // 5. Swaying Kelp / Moss Fronds on shell back
+      ctx.fillStyle = '#86efac';
+      const kelpWave = Math.sin(this.wiggleTimer * 1.8) * 3;
+      ctx.beginPath();
+      ctx.moveTo(-6, -8);
+      ctx.quadraticCurveTo(-12 + kelpWave, -16, -6 + kelpWave, -18);
+      ctx.quadraticCurveTo(-2, -14, -2, -8);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(4, -7);
+      ctx.quadraticCurveTo(8 - kelpWave, -14, 12 - kelpWave, -15);
+      ctx.quadraticCurveTo(8, -10, 6, -7);
       ctx.fill();
     } else if (s.shape === 'aurora_billfish') {
       // Aurora Sailfin: Polar billfish with aurora dorsal fin

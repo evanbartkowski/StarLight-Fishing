@@ -151,10 +151,16 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.closePath();
       ctx.fill();
 
-      // Pectoral flipper & undulating caudal flukes
+      // Swept-back pectoral flipper & undulating caudal flukes
       const flukeAngle = Math.sin(t * 4) * 5;
+      ctx.fillStyle = finColor;
       ctx.beginPath();
-      ctx.moveTo(4, 4); ctx.lineTo(0, 12); ctx.lineTo(8, 7); ctx.closePath();
+      // Swept-back pectoral flipper
+      ctx.moveTo(8, 4);
+      ctx.quadraticCurveTo(4, 8, -2, 11);
+      ctx.quadraticCurveTo(1, 7, 7, 3.5);
+      ctx.closePath();
+      // Caudal flukes
       ctx.moveTo(-26, 0); ctx.lineTo(-34, -7 + flukeAngle); ctx.lineTo(-32, flukeAngle); ctx.lineTo(-34, 7 + flukeAngle); ctx.closePath();
       ctx.fill();
 
@@ -282,38 +288,70 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_turtle': {
-      // Streamlined carapace shell with paddle flippers
+      // Coral Sea Turtle: Streamlined cute carapace with rowing flippers and sweet face
+      const turtleSway = Math.sin(t * 2.5) * 0.16;
+
+      // Rear flippers & tiny tail
+      ctx.fillStyle = finColor;
       ctx.beginPath();
-      ctx.ellipse(-2, 0, 18, 13, 0, 0, Math.PI * 2);
+      ctx.moveTo(-16, 0); ctx.lineTo(-20, 0); ctx.lineTo(-16, 1.5); ctx.closePath();
+      ctx.ellipse(-12, -9, 3, 6, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(-12, 9, 3, 6, 0.3, 0, Math.PI * 2);
       ctx.fill();
 
-      // Carapace scute rim
-      ctx.strokeStyle = secondary;
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
-
       // Smooth rowing front flippers
-      const turtleSway = Math.sin(t * 2.8) * 0.22;
-      ctx.fillStyle = finColor;
       for (const side of [-1, 1]) {
         ctx.save();
         ctx.translate(6, side * 9);
-        ctx.rotate(side * (0.35 + turtleSway));
+        ctx.rotate(side * (0.32 + turtleSway));
         ctx.beginPath();
-        ctx.ellipse(0, side * 7, 3.5, 12, side * 0.2, 0, Math.PI * 2);
+        ctx.ellipse(0, side * 6, 3.5, 11, side * 0.22, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
 
-      // Head & eyes
+      // Streamlined carapace shell
       ctx.fillStyle = primary;
       ctx.beginPath();
-      ctx.arc(18, 0, 4.5, 0, Math.PI * 2);
+      ctx.ellipse(-1, 0, 18, 13, 0, 0, Math.PI * 2);
       ctx.fill();
+
+      // Carapace scute rim & honey markings
+      ctx.strokeStyle = secondary;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(-2, 0, 5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Cute head & sweet shining eyes
+      ctx.fillStyle = finColor;
+      ctx.beginPath();
+      ctx.ellipse(19, 0, 6, 4.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(19, -2, 1.2, 0, Math.PI * 2);
+      ctx.arc(20, -1.8, 2.0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(19.4, -2.4, 0.9, 0, Math.PI * 2);
+      ctx.arc(20.6, -1.2, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Rosy blush & beak smile
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.4)';
+      ctx.beginPath();
+      ctx.arc(18, 1.8, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.arc(22, 0.8, 1.5, 0.1, Math.PI * 0.7);
+      ctx.stroke();
+
       return true;
     }
 
@@ -549,38 +587,60 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'nautilus': {
-      // Planispiral shell with distinct zebra stripes and tentacle cluster
+      // Chambered Nautilus: Calm spiral shell with gentle breathing pulse and neat tentacle cluster
       ctx.beginPath();
       ctx.arc(0, 0, 16, 0, Math.PI * 2);
       ctx.fill();
 
-      // Zebra shell stripes (batched)
+      // Elegant curved shell growth septa
       ctx.strokeStyle = secondary;
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
       for (let a = 0; a < 5; a++) {
-        const ang = (a / 5) * Math.PI * 1.4 + 0.4;
-        ctx.moveTo(0, 0);
-        ctx.lineTo(Math.cos(ang) * 16, Math.sin(ang) * 16);
+        const ang = (a / 5) * Math.PI * 1.3 + 0.5;
+        const rad = 16;
+        ctx.moveTo(Math.cos(ang) * 4, Math.sin(ang) * 4);
+        ctx.quadraticCurveTo(Math.cos(ang + 0.2) * (rad * 0.6), Math.sin(ang + 0.2) * (rad * 0.6), Math.cos(ang) * rad, Math.sin(ang) * rad);
       }
       ctx.stroke();
 
-      // Hood
+      // Fleshy protective hood (leathery shield)
       ctx.fillStyle = finColor;
       ctx.beginPath();
-      ctx.arc(10, -4, 8, -Math.PI * 0.4, Math.PI * 0.4);
+      ctx.arc(8, -4, 9, -Math.PI * 0.35, Math.PI * 0.35);
+      ctx.fill();
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Calm, prominent nautilus eye
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(10, 2, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(10.5, 1.6, 0.7, 0, Math.PI * 2);
       ctx.fill();
 
-      // Waving tentacles (batched)
+      // Calm, compact tentacle bundle with very gentle, soothing pulse
+      const calmWave = Math.sin(t * 1.2) * 0.6;
       ctx.strokeStyle = finColor;
-      ctx.lineWidth = 1.3;
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = 'round';
       ctx.beginPath();
       for (let i = 0; i < 4; i++) {
-        const tentWave = Math.sin(t * 3 + i) * 3;
-        ctx.moveTo(14, 2 + i * 2);
-        ctx.lineTo(24, 2 + i * 2 + tentWave);
+        const yOff = 1 + i * 1.8;
+        ctx.moveTo(14, yOff);
+        ctx.quadraticCurveTo(19, yOff + calmWave * 0.5, 22, yOff + calmWave);
       }
       ctx.stroke();
+
+      // Small peaceful siphon jet bubble
+      ctx.fillStyle = 'rgba(224, 242, 254, 0.6)';
+      ctx.beginPath();
+      ctx.arc(12, 9, 1.2, 0, Math.PI * 2);
+      ctx.fill();
       return true;
     }
 
@@ -973,58 +1033,124 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'whale': {
-      // Streamlined massive body with throat grooves and undulating flukes
-      ctx.beginPath();
-      ctx.moveTo(-32, 0);
-      ctx.quadraticCurveTo(-10, -16, 16, -14);
-      ctx.quadraticCurveTo(34, -10, 38, 0);
-      ctx.quadraticCurveTo(34, 12, 14, 14);
-      ctx.quadraticCurveTo(-10, 14, -32, 0);
-      ctx.closePath();
-      ctx.fill();
-
-      // Ventral throat grooves (batched)
-      ctx.strokeStyle = secondary;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      for (let vp = -4; vp <= 4; vp += 4) {
-        ctx.moveTo(10, 5 + vp);
-        ctx.quadraticCurveTo(24, 7 + vp, 32, 2 + vp * 0.5);
-      }
-      ctx.stroke();
-
-      // Undulating caudal fluke
+      // Sunlit Humpback Whale: Cute gentle giant with smiling rostrum, friendly gleaming eyes & graceful flippers
       const flukeSway = Math.sin(t * 2.8) * 4;
+      const flipAngle = Math.sin(t * 2.2) * 0.12;
+
+      // 1. Undulating caudal peduncle & broad flukes
       ctx.fillStyle = finColor;
       ctx.beginPath();
-      ctx.moveTo(-32, 0);
-      ctx.lineTo(-44, -12 + flukeSway);
-      ctx.quadraticCurveTo(-38, flukeSway, -44, 12 + flukeSway);
+      ctx.moveTo(-28, 0);
+      ctx.quadraticCurveTo(-38, -2 + flukeSway * 0.5, -45, -13 + flukeSway);
+      ctx.quadraticCurveTo(-41, -2 + flukeSway, -37, flukeSway);
+      ctx.quadraticCurveTo(-41, 2 + flukeSway, -45, 13 + flukeSway);
+      ctx.quadraticCurveTo(-38, 2 + flukeSway * 0.5, -28, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // 2. Plump rounded whale body
+      ctx.beginPath();
+      ctx.moveTo(38, -1);
+      ctx.quadraticCurveTo(34, -11, 16, -14);
+      ctx.quadraticCurveTo(-10, -15, -30, 0);
+      ctx.quadraticCurveTo(-10, 13, 14, 13);
+      ctx.quadraticCurveTo(32, 10, 38, -1);
+      ctx.closePath();
+      ctx.fillStyle = primary;
+      ctx.fill();
+
+      // 3. Cute rounded knobby bumps (humpback tubercles) along snout
+      ctx.fillStyle = finColor;
+      for (const tx of [24, 29, 34]) {
+        ctx.beginPath();
+        ctx.arc(tx, -8 + (38 - tx) * 0.2, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 4. Soft cream countershading underbelly with gentle throat pleats
+      ctx.beginPath();
+      ctx.moveTo(34, 1);
+      ctx.quadraticCurveTo(24, 8, 8, 8.5);
+      ctx.quadraticCurveTo(-8, 7.5, -24, 1);
+      ctx.quadraticCurveTo(-10, 13, 14, 13);
+      ctx.quadraticCurveTo(32, 10, 38, -1);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(254, 243, 199, 0.85)';
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(202, 138, 4, 0.4)';
+      ctx.lineWidth = 1.2;
+      for (let vp = -3; vp <= 3; vp += 3) {
+        ctx.beginPath();
+        ctx.moveTo(8, 7 + vp * 0.6);
+        ctx.quadraticCurveTo(22, 7.5 + vp * 0.4, 32, 2 + vp * 0.4);
+        ctx.stroke();
+      }
+
+      // 5. Small cute curved dorsal fin
+      ctx.fillStyle = finColor;
+      ctx.beginPath();
+      ctx.moveTo(-6, -14);
+      ctx.quadraticCurveTo(-2, -21, 5, -14);
       ctx.closePath();
       ctx.fill();
 
-      // Dorsal fin & paddle flipper
-      ctx.beginPath();
-      ctx.moveTo(-6, -15); ctx.quadraticCurveTo(-2, -23, 6, -14); ctx.closePath();
-      ctx.fill();
-      const flipAngle = Math.sin(t * 2.4) * 0.15;
+      // 6. Graceful long wing-like pectoral flipper (sweeping backward)
       ctx.save();
-      ctx.translate(14, 8);
-      ctx.rotate(flipAngle);
+      ctx.translate(10, 6);
+      ctx.rotate(-0.15 + flipAngle);
       ctx.beginPath();
-      ctx.ellipse(0, 8, 4, 14, 0.35, 0, Math.PI * 2);
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-6, 8, -15, 14);
+      ctx.quadraticCurveTo(-17, 14.5, -15.5, 12);
+      ctx.quadraticCurveTo(-8, 6, -1, 1);
+      ctx.closePath();
+      ctx.fillStyle = finColor;
       ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.0;
+      ctx.stroke();
       ctx.restore();
 
-      // Eye
-      ctx.fillStyle = '#ffffff';
+      // 7. Sweet smiling mouth
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1.3;
       ctx.beginPath();
-      ctx.arc(28, -4, 2.4, 0, Math.PI * 2);
+      ctx.moveTo(36, 1);
+      ctx.quadraticCurveTo(28, 4.5, 23, 1.5);
+      ctx.stroke();
+
+      // 8. Soft rosy blush
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.42)';
+      ctx.beginPath();
+      ctx.arc(22, 2, 2.6, 0, Math.PI * 2);
       ctx.fill();
+
+      // 9. Big shining anime whale eye
+      const wEyeX = 26, wEyeY = -3.5;
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(28.5, -4, 1.3, 0, Math.PI * 2);
+      ctx.arc(wEyeX, wEyeY, 2.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(wEyeX - 0.8, wEyeY - 0.8, 1.1, 0, Math.PI * 2);
+      ctx.arc(wEyeX + 0.8, wEyeY + 0.7, 0.55, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 10. Whimsical gentle blowhole water puff
+      const puffPulse = Math.sin(t * 3.2);
+      if (puffPulse > 0.2) {
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.7)';
+        ctx.beginPath();
+        ctx.arc(10, -18 - puffPulse * 2.5, 1.6 + puffPulse * 0.8, 0, Math.PI * 2);
+        ctx.arc(13, -21 - puffPulse * 3.5, 1.2 + puffPulse * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       return true;
     }
 

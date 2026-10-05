@@ -17,14 +17,15 @@ export function drawMarinePet(ctx, kind, time = 0) {
     // Smooth undulation of tail relative to head
     ctx.rotate(swimWave * 0.06);
 
-    // 1. Pectoral flipper on chest (underbelly side, white with thin dark outline)
+    // 1. Pectoral flipper on chest (sleek swept-back paddle flipper)
     ctx.save();
-    ctx.translate(-2, 10);
-    ctx.rotate(0.35 + swimWave * 0.12);
+    ctx.translate(10, 6.5);
+    ctx.rotate(-0.15 + swimWave * 0.08);
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(8, 14, 13, 17);
-    ctx.quadraticCurveTo(8, 14, 4, 3);
+    ctx.quadraticCurveTo(-3, 6, -9, 8.5);
+    ctx.quadraticCurveTo(-11, 8.8, -10.5, 7.5);
+    ctx.quadraticCurveTo(-6, 4.5, -1, 1);
     ctx.closePath();
     ctx.fillStyle = '#ffffff';
     ctx.fill();
@@ -74,14 +75,6 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.quadraticCurveTo(18, 9, 30, 4);
     ctx.closePath();
     ctx.fillStyle = 'rgba(241, 245, 249, 0.42)';
-    ctx.fill();
-    ctx.restore();
-
-    // 4. Subtle melon forehead sheen / highlight
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(23, -6, 7, 2.5, -0.3, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
     ctx.fill();
     ctx.restore();
 
@@ -137,14 +130,15 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.save();
     ctx.rotate(swimWave * 0.05);
 
-    // 1. Pectoral fin (lower body)
+    // 1. Pectoral fin (sleek classic shark fin sweeping backward)
     ctx.save();
-    ctx.translate(0, 8);
-    ctx.rotate(0.32 + swimWave * 0.1);
+    ctx.translate(6, 7);
+    ctx.rotate(-0.12 + swimWave * 0.08);
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(10, 14, 16, 16);
-    ctx.quadraticCurveTo(10, 12, 3, 2);
+    ctx.quadraticCurveTo(-5, 6, -14, 11);
+    ctx.quadraticCurveTo(-16, 11.2, -14, 8.8);
+    ctx.quadraticCurveTo(-7, 4.8, -2, 1);
     ctx.closePath();
     ctx.fillStyle = '#477aa8';
     ctx.fill();
