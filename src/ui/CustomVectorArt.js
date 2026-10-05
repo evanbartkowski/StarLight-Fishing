@@ -966,47 +966,224 @@ export const MISC_ART = {
   `),
 
   sellAll: svgWrap(`
-    <!-- Gilded coin pouch with overflowing gold coins and emerald accents -->
-    <path d="M14 17c0-6 4-9 10-9s10 3 10 9l-2 18a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4l-2-18z" fill="#059669" stroke="#064e3b" stroke-width="1.5"/>
-    <path d="M12 17h24" stroke="#facc15" stroke-width="2.5" stroke-linecap="round"/>
-    <ellipse cx="24" cy="17" rx="8" ry="3.5" fill="#d97706" stroke="#b45309" stroke-width="1"/>
-    <!-- Stack of shining gold doubloons -->
-    <ellipse cx="24" cy="28" rx="8" ry="5" fill="#facc15" stroke="#b45309" stroke-width="1.2"/>
-    <ellipse cx="24" cy="26" rx="8" ry="5" fill="#fde047" stroke="#ca8a04" stroke-width="1.2"/>
-    <text x="24" y="29.5" font-size="8.5" font-weight="900" fill="#713f12" text-anchor="middle" font-family="sans-serif">$</text>
-    <!-- Sparkling light glints -->
-    <path d="M28 20l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#ffffff"/>
-    <circle cx="18" cy="27" r="1.2" fill="#ffffff"/>
+    <defs>
+      <linearGradient id="sellPouchGrad" x1="0" y1="10" x2="0" y2="44" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#ef4444"/>
+        <stop offset="50%" stop-color="#dc2626"/>
+        <stop offset="100%" stop-color="#991b1b"/>
+      </linearGradient>
+      <linearGradient id="goldCoinGrad" x1="16" y1="20" x2="32" y2="36" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#fef08a"/>
+        <stop offset="60%" stop-color="#facc15"/>
+        <stop offset="100%" stop-color="#ca8a04"/>
+      </linearGradient>
+    </defs>
+    <!-- Red Pouch Body -->
+    <path d="M13 18C13 12 18 8 24 8s11 4 11 10l-2 18a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4L13 18z" fill="url(#sellPouchGrad)" stroke="#7f1d1d" stroke-width="1.8"/>
+    <!-- Gold Cinch Rope & Bow -->
+    <ellipse cx="24" cy="18" rx="8" ry="3" fill="#eab308" stroke="#a16207" stroke-width="1.2"/>
+    <path d="M21 19c-3 2-5 5-4 8M27 19c3 2 5 5 4 8" stroke="#fde047" stroke-width="1.8" stroke-linecap="round"/>
+    <!-- Large Radiant Center Gold Coin -->
+    <circle cx="24" cy="30" r="8" fill="url(#goldCoinGrad)" stroke="#854d0e" stroke-width="1.4"/>
+    <circle cx="24" cy="30" r="6" fill="none" stroke="#fef08a" stroke-width="0.8" stroke-dasharray="2 1"/>
+    <text x="24" y="33.5" font-size="9" font-weight="900" fill="#713f12" text-anchor="middle" font-family="sans-serif">$</text>
+    <!-- Crisp Sparkle -->
+    <polygon points="32,14 33.5,17 36.5,17 34,19 35,22 32,20 29,22 30,19 27.5,17 30.5,17" fill="#ffffff"/>
   `),
 
   keepAll: svgWrap(`
-    <!-- Reinforced marine treasure vault chest with gilded iron bands -->
-    <path d="M8 18h32v4H8z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
-    <rect x="9" y="22" width="30" height="17" rx="2" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
-    <!-- Gilded corner brackets and vertical bands -->
-    <rect x="13" y="18" width="4" height="21" fill="#facc15"/>
-    <rect x="31" y="18" width="4" height="21" fill="#facc15"/>
-    <!-- Reinforced gold master lock latch -->
-    <rect x="21" y="22" width="6" height="8" rx="1.5" fill="#fef08a" stroke="#ca8a04" stroke-width="1.2"/>
-    <circle cx="24" cy="25.5" r="1.3" fill="#854d0e"/>
-    <path d="M24 27v1.8" stroke="#854d0e" stroke-width="1"/>
-    <!-- Keeper chevron downward glow -->
-    <path d="M21 11l3 3 3-3" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-    <path d="M24 6v8" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+    <defs>
+      <linearGradient id="keepChestGrad" x1="0" y1="16" x2="0" y2="42" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#0284c7"/>
+        <stop offset="100%" stop-color="#0369a1"/>
+      </linearGradient>
+    </defs>
+    <!-- Vault Chest Body -->
+    <rect x="8" y="20" width="32" height="19" rx="3" fill="url(#keepChestGrad)" stroke="#082f49" stroke-width="1.8"/>
+    <!-- Chest Lid Bevel -->
+    <path d="M7 20h34l-2-6a3 3 0 0 0-3-2H12a3 3 0 0 0-3 2l-2 6z" fill="#0ea5e9" stroke="#082f49" stroke-width="1.5"/>
+    <!-- Gilded Corner Brackets and Central Bands -->
+    <rect x="13" y="12" width="4.5" height="27" fill="#facc15" stroke="#a16207" stroke-width="0.8"/>
+    <rect x="30.5" y="12" width="4.5" height="27" fill="#facc15" stroke="#a16207" stroke-width="0.8"/>
+    <!-- Front Keyhole Lock -->
+    <rect x="21" y="22" width="6" height="8" rx="1.5" fill="#fef08a" stroke="#854d0e" stroke-width="1.2"/>
+    <circle cx="24" cy="25" r="1.3" fill="#713f12"/>
+    <path d="M24 26.3v1.8" stroke="#713f12" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- Keeper Arrow (Deposit Into Chest) -->
+    <path d="M24 5v7M20 9l4 4 4-4" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   `),
 
   viewInventory: svgWrap(`
-    <!-- Nautical Captain's Tackle Bag & Field Rucksack -->
-    <path d="M12 16c0-4 3-7 12-7s12 3 12 7l-2 23a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3l-2-23z" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
-    <!-- Top flap leather finish with brass buckles -->
-    <path d="M11 16c0 3 4 5 13 5s13-2 13-5v-1c0-2-3-4-13-4s-13 2-13 4v1z" fill="#475569" stroke="#1e293b" stroke-width="1"/>
-    <rect x="14" y="24" width="20" height="12" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
-    <!-- Compass rose emblem on pocket -->
-    <circle cx="24" cy="30" r="3.5" fill="none" stroke="#facc15" stroke-width="1"/>
-    <polygon points="24,27.5 25.5,30 24,32.5 22.5,30" fill="#facc15"/>
-    <!-- Straps & buckles -->
-    <rect x="16" y="16" width="3" height="7" fill="#ca8a04"/>
-    <rect x="29" y="16" width="3" height="7" fill="#ca8a04"/>
+    <defs>
+      <linearGradient id="invPackGrad" x1="0" y1="12" x2="0" y2="42" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#475569"/>
+        <stop offset="100%" stop-color="#1e293b"/>
+      </linearGradient>
+    </defs>
+    <!-- Satchel Body -->
+    <rect x="9" y="14" width="30" height="25" rx="4" fill="url(#invPackGrad)" stroke="#0f172a" stroke-width="1.8"/>
+    <!-- Leather Flap -->
+    <path d="M8 15h32l-2 11a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3L8 15z" fill="#334155" stroke="#0f172a" stroke-width="1.5"/>
+    <!-- Top Carry Handle -->
+    <path d="M19 14V9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v5" stroke="#ca8a04" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <!-- Leather Straps & Brass Buckles -->
+    <rect x="15" y="14" width="3.5" height="18" fill="#a16207" stroke="#713f12" stroke-width="0.8"/>
+    <rect x="29.5" y="14" width="3.5" height="18" fill="#a16207" stroke="#713f12" stroke-width="0.8"/>
+    <rect x="14.5" y="24" width="4.5" height="5" rx="1" fill="#fef08a" stroke="#854d0e" stroke-width="1"/>
+    <rect x="29" y="24" width="4.5" height="5" rx="1" fill="#fef08a" stroke="#854d0e" stroke-width="1"/>
+    <!-- Nautical Compass Rosette -->
+    <circle cx="24" cy="32" r="3.5" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
+    <polygon points="24,29.5 25.5,32 24,34.5 22.5,32" fill="#38bdf8"/>
   `),
 };
+
+/**
+ * 8. SETTINGS & CAREER DASHBOARD ART
+ */
+export const SETTINGS_ART = {
+  headerCog: svgWrap(`
+    <circle cx="24" cy="24" r="14" fill="#0369a1" stroke="#38bdf8" stroke-width="2"/>
+    <circle cx="24" cy="24" r="6" fill="#0f172a" stroke="#7dd3fc" stroke-width="1.5"/>
+    <path d="M24 4v6M24 38v6M4 24h6M38 24h6M10 10l4.5 4.5M33.5 33.5l4.5 4.5M10 38l4.5-4.5M33.5 14.5l4.5-4.5" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+  `),
+
+  cloudSave: svgWrap(`
+    <path d="M12 32h24a8 8 0 0 0 1-16 12 12 0 0 0-23-4A9 9 0 0 0 12 32z" fill="#0284c7" stroke="#38bdf8" stroke-width="1.8"/>
+    <!-- Center check / up-arrow -->
+    <path d="M24 20v8M20 24l4-4 4 4" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  `),
+
+  angler: svgWrap(`
+    <!-- Angler Hat & Coat Profile -->
+    <ellipse cx="24" cy="20" rx="12" ry="5" fill="#eab308" stroke="#a16207" stroke-width="1.5"/>
+    <path d="M16 20c0-6 3.5-10 8-10s8 4 8 10" fill="#facc15" stroke="#a16207" stroke-width="1.5"/>
+    <path d="M13 28c0-4 5-6 11-6s11 2 11 6v8a3 3 0 0 1-3 3H16a3 3 0 0 1-3-3v-8z" fill="#0369a1" stroke="#082f49" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="4" fill="#fed7aa"/>
+  `),
+
+  trophyRecords: svgWrap(`
+    <path d="M15 12h18v11a9 9 0 0 1-18 0V12z" fill="#eab308" stroke="#ca8a04" stroke-width="1.5"/>
+    <path d="M15 15H10a4 4 0 0 0 4 4h1M33 15h5a4 4 0 0 1-4 4h-1" stroke="#ca8a04" stroke-width="1.5" fill="none"/>
+    <rect x="18" y="32" width="12" height="6" rx="1.5" fill="#a16207" stroke="#713f12" stroke-width="1"/>
+    <path d="M22 23v9M26 23v9" stroke="#ca8a04" stroke-width="2"/>
+    <polygon points="24,15 25.5,18 28.5,18 26,20 27,23 24,21 21,23 22,20 19.5,18 22.5,18" fill="#ffffff"/>
+  `),
+
+  preferences: svgWrap(`
+    <circle cx="24" cy="24" r="16" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/>
+    <!-- Compass Crosshairs -->
+    <path d="M24 10v28M10 24h28" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.4"/>
+    <!-- Golden Hook in center -->
+    <path d="M24 14v10a4 4 0 0 0 8 0v-3" stroke="#facc15" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    <polygon points="32,21 34,23 30,23" fill="#facc15"/>
+  `),
+
+  audio: svgWrap(`
+    <path d="M12 18h6l8-6v24l-8-6h-6a2 2 0 0 1-2-2V20a2 2 0 0 1 2-2z" fill="#0284c7" stroke="#38bdf8" stroke-width="1.6"/>
+    <!-- Sound waves -->
+    <path d="M30 18a6 6 0 0 1 0 12M34 14a11 11 0 0 1 0 20" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" fill="none"/>
+  `),
+
+  danger: svgWrap(`
+    <path d="M24 8l16 28H8L24 8z" fill="#b91c1c" stroke="#ef4444" stroke-width="2"/>
+    <circle cx="24" cy="30" r="1.8" fill="#ffffff"/>
+    <path d="M24 18v8" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  `),
+
+  level: svgWrap(`
+    <polygon points="24,6 30,12 30,22 24,28 18,22 18,12" fill="#0284c7" stroke="#38bdf8" stroke-width="1.5"/>
+    <polygon points="24,20 30,26 30,36 24,42 18,36 18,26" fill="#0369a1" stroke="#38bdf8" stroke-width="1.5"/>
+    <polygon points="24,11 25.5,14 29,14 26,16 27,19 24,17 21,19 22,16 19,14 22.5,14" fill="#fde047"/>
+  `),
+
+  fishCount: svgWrap(`
+    <path d="M34 24c0-7-9-12-18-10 6 3 8 7 8 10s-2 7-8 10c9 2 18-3 18-10z" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5"/>
+    <!-- Tail fin -->
+    <polygon points="12,24 6,17 6,31" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
+    <!-- Eye & Gill -->
+    <circle cx="28" cy="22" r="1.8" fill="#0f172a"/>
+    <circle cx="28.5" cy="21.5" r="0.6" fill="#ffffff"/>
+    <path d="M23 20c1 2 1 6 0 8" stroke="#bae6fd" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  `),
+
+  depth: svgWrap(`
+    <circle cx="24" cy="24" r="15" fill="#0f172a" stroke="#06b6d4" stroke-width="2"/>
+    <circle cx="24" cy="24" r="11" fill="#082f49"/>
+    <!-- Depth dial graduation marks -->
+    <path d="M24 15v3M33 24h-3M15 24h3M24 33v-3" stroke="#67e8f9" stroke-width="1.5"/>
+    <!-- Needle indicating deep reading -->
+    <path d="M24 24l6 6" stroke="#f43f5e" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="24" cy="24" r="2.5" fill="#facc15"/>
+  `),
+
+  gold: svgWrap(`
+    <!-- Gilded stack of coins -->
+    <ellipse cx="20" cy="30" rx="9" ry="4" fill="#ca8a04" stroke="#a16207" stroke-width="1"/>
+    <ellipse cx="20" cy="27" rx="9" ry="4" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
+    <ellipse cx="28" cy="24" rx="9" ry="4" fill="#ca8a04" stroke="#a16207" stroke-width="1"/>
+    <ellipse cx="28" cy="21" rx="9" ry="4" fill="#fde047" stroke="#ca8a04" stroke-width="1"/>
+    <text x="28" y="24" font-size="6" font-weight="900" fill="#713f12" text-anchor="middle">$</text>
+    <polygon points="34,12 35.5,14 38,14 36,16 37,18.5 34,17 31,18.5 32,16 30,14 32.5,14" fill="#ffffff"/>
+  `),
+
+  species: svgWrap(`
+    <rect x="11" y="10" width="26" height="30" rx="3" fill="#047857" stroke="#065f46" stroke-width="1.5"/>
+    <path d="M11 10h5v30h-5z" fill="#064e3b"/>
+    <!-- Page edges -->
+    <rect x="18" y="14" width="16" height="22" rx="1" fill="#fef3c7" stroke="#d97706" stroke-width="0.8"/>
+    <!-- Little fish icon on open page -->
+    <path d="M23 25c3-2 6-1 7 0-1 1-4 2-7 0z" fill="#0284c7"/>
+    <polygon points="30,25 32,23 32,27" fill="#0284c7"/>
+    <!-- Silk bookmark -->
+    <path d="M28 10v12l-2-2-2 2V10" fill="#ef4444"/>
+  `),
+
+  fossil: svgWrap(`
+    <!-- Nautilus spiral fossil -->
+    <ellipse cx="24" cy="24" rx="15" ry="14" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+    <path d="M24 12c6 0 11 5 11 11s-4 9-9 9-7-3-7-7 2-5 5-5 3 1 3 3" fill="none" stroke="#fef3c7" stroke-width="2.2" stroke-linecap="round"/>
+    <!-- Ribbing ridges -->
+    <path d="M24 12l2 4M31 16l-3 3M35 23l-4 1M31 30l-3-2M24 32v-4" stroke="#fde68a" stroke-width="1" stroke-linecap="round"/>
+  `),
+
+  goldCrown: svgWrap(`
+    <!-- Radiant Imperial Gold Crown -->
+    <path d="M10 32l3-18 6 9 5-11 5 11 6-9 3 18H10z" fill="#facc15" stroke="#ca8a04" stroke-width="1.6"/>
+    <rect x="9" y="32" width="30" height="5" rx="1.5" fill="#eab308" stroke="#a16207" stroke-width="1"/>
+    <!-- Gem insets -->
+    <circle cx="13" cy="14" r="1.6" fill="#ef4444"/>
+    <circle cx="24" cy="12" r="2.2" fill="#3b82f6"/>
+    <circle cx="35" cy="14" r="1.6" fill="#10b981"/>
+    <circle cx="24" cy="34.5" r="1.3" fill="#ffffff"/>
+  `),
+
+  silverCrown: svgWrap(`
+    <!-- Shimmering Fine Silver Crown -->
+    <path d="M10 32l3-18 6 9 5-11 5 11 6-9 3 18H10z" fill="#cbd5e1" stroke="#64748b" stroke-width="1.6"/>
+    <rect x="9" y="32" width="30" height="5" rx="1.5" fill="#94a3b8" stroke="#475569" stroke-width="1"/>
+    <!-- Sapphire insets -->
+    <circle cx="13" cy="14" r="1.6" fill="#38bdf8"/>
+    <circle cx="24" cy="12" r="2.2" fill="#818cf8"/>
+    <circle cx="35" cy="14" r="1.6" fill="#38bdf8"/>
+    <circle cx="24" cy="34.5" r="1.3" fill="#ffffff"/>
+  `),
+
+  mythicTitan: svgWrap(`
+    <!-- Cosmic Mythic Titan 8-pointed star -->
+    <polygon points="24,5 27,17 39,17 29,24 33,36 24,28 15,36 19,24 9,17 21,17" fill="#a855f7" stroke="#c084fc" stroke-width="1.6"/>
+    <polygon points="24,11 26,19 34,19 27,24 30,31 24,26 18,31 21,24 14,19 22,19" fill="#f43f5e"/>
+    <circle cx="24" cy="22" r="3.5" fill="#ffffff"/>
+  `),
+
+  biggestCatch: svgWrap(`
+    <circle cx="24" cy="24" r="16" fill="#854d0e" stroke="#ca8a04" stroke-width="2"/>
+    <circle cx="24" cy="24" r="13" fill="#a16207"/>
+    <!-- Gilded trophy cup -->
+    <path d="M18 16h12v7a6 6 0 0 1-12 0v-7z" fill="#fde047" stroke="#ca8a04" stroke-width="1.2"/>
+    <path d="M18 18h-3a2 2 0 0 0 2 2h1M30 18h3a2 2 0 0 1-2 2h-1" stroke="#ca8a04" stroke-width="1.2" fill="none"/>
+    <rect x="20" y="27" width="8" height="4" rx="1" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
+    <path d="M24 23v4" stroke="#ca8a04" stroke-width="1.5"/>
+  `),
+};
+
 

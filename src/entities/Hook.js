@@ -230,21 +230,37 @@ export class Hook {
       }
     } else {
       this.shields = Math.max(0, this.shields - shieldCost);
-      // Heavy impacts break two shields or always dislodge a fish.
+      // Heavy impacts break two shields or knock off 1 or 2 fish if unshielded
       if (this.state === 'REELING' && this.caughtItems.length > 0) {
         const fishIndexes = this.caughtItems.map((item, index) => item.speciesId && !item.isTreasure && !item.isRelic ? index : -1).filter(index => index >= 0);
         if (fishIndexes.length && Math.random() < (shieldCost >= 2 ? 1 : .5)) {
-          const lostIdx = fishIndexes[Math.floor(Math.random() * fishIndexes.length)];
-          const lostFish = this.caughtItems.splice(lostIdx, 1)[0];
-          if (lostFish) {
-            lostFish.state = 'SWIMMING';
-            lostFish.hook = null;
-            lostFish.evasionCooldown = 2;
+          const isHeavy = Boolean(hazard.isColossal || shieldCost >= 2);
+          const dropTarget = isHeavy ? (Math.random() < 0.5 ? 2 : 1) : 1;
+          const dropCount = Math.min(dropTarget, fishIndexes.length);
+          const droppedFish = [];
+
+          for (let d = 0; d < dropCount; d++) {
+            const currentFishIndexes = this.caughtItems.map((item, index) => item.speciesId && !item.isTreasure && !item.isRelic ? index : -1).filter(index => index >= 0);
+            if (!currentFishIndexes.length) break;
+            const lostIdx = currentFishIndexes[Math.floor(Math.random() * currentFishIndexes.length)];
+            const lost = this.caughtItems.splice(lostIdx, 1)[0];
+            if (lost) {
+              lost.state = 'SWIMMING';
+              lost.hook = null;
+              lost.evasionCooldown = 2;
+              droppedFish.push(lost);
+            }
+          }
+
+          if (droppedFish.length > 0) {
             soundManager.playFishEscape();
             if (particles) {
-              particles.addFloatingText(`💥 ${lostFish.name} slipped off the line!`, this.x, this.y - 35, '#ef4444', 17);
-              particles.emitSplash(this.x, this.y, 22, 1.2);
-              particles.addTrauma(0.35);
+              const msg = droppedFish.length === 1
+                ? `💥 ${droppedFish[0].name} slipped off the line!`
+                : `💥 Colossal impact dislodged ${droppedFish.length} fish!`;
+              particles.addFloatingText(msg, this.x, this.y - 35, '#ef4444', 17);
+              particles.emitSplash(this.x, this.y, 24, 1.3);
+              particles.addTrauma(0.4);
             }
             // Re-tether remaining items cleanly along the line
             this.caughtItems.forEach((item, idx) => {

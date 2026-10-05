@@ -2,30 +2,19 @@
 // Faithfully matches user-provided pixel art references with animated swimming sway
 
 const DOLPHIN_PIXELS = [
-  '.......######......',
-  '......#LLBBBB#.....',
-  '.....#LLBB#WBB####.',
-  '....#LLBBB##BBBBBB#',
-  '....#LBBBBBBBB####.',
-  '...#LLBBBBBBB#.....',
-  '..#LLBBBBBB##......',
-  '.#LLBBBBBB#........',
-  '.#LBBCCCC#.........',
-  '#LLBBCCCC..........',
-  '#BBBBBDCCC.........',
-  '#DBBBDDCC..........',
-  '#DBBB#DC...........',
-  '#DBBB#DD...........',
-  '#DDBB#.............',
-  '#DDDB#.............',
-  '#DDDDD#............',
-  '.#DDDD#............',
-  '.#DDDDD###.........',
-  '..##DDDDD#.........',
-  '....#DDDDD#........',
-  '....#DD###.........',
-  '....##D#...........',
-  '......#............',
+  '..........####............',
+  '.........#LLLB#...........',
+  '........#LLLLBB#..........',
+  '..###...#LLLLBBB######....',
+  '.#DDD###LLLLBBBBBBBBBB#...',
+  '#DDDDD#LLLLBBBB#WBBBBBB###',
+  '.#DDDDD#LLLBBB##BBBBBBBBBB',
+  '..##DDD#BBBBBBBBBBBBBB###.',
+  '...#DDD#BBBCCCCBBBBBB#....',
+  '..#DDDD#BBBCCCCBBBDD#.....',
+  '.#DDDDD#DDBBBCCBDDDD#.....',
+  '#DDDD##.##DDDDDDDDD#......',
+  '..###.....#########.......',
 ];
 
 const DOLPHIN_PALETTE = {
@@ -68,24 +57,24 @@ export function drawMarinePet(ctx, kind, time = 0) {
 
   ctx.save();
   if (isDolphin) {
-    const pxSize = 2.1;
-    const cols = 19;
-    const rows = 24;
+    const pxSize = 2.0;
+    const cols = 26;
+    const rows = 13;
     const ox = -(cols * pxSize) / 2;
     const oy = -(rows * pxSize) / 2;
 
     for (let r = 0; r < rows; r++) {
       const line = DOLPHIN_PIXELS[r];
-      // Swimming sway affects lower body and tail flukes
-      const swayFactor = r >= 14 ? (r - 14) / 10 : 0;
-      const sway = Math.sin(time * 5 + r * 0.2) * 2.5 * swayFactor;
-
       for (let c = 0; c < line.length; c++) {
         const char = line[c];
         const color = DOLPHIN_PALETTE[char];
         if (color) {
+          // Flowing horizontal swimming wave from snout to flukes
+          const wavePhase = time * 5.5 + c * 0.28;
+          const tailInfluence = c < 15 ? (15 - c) / 15 : 0;
+          const waveY = Math.sin(wavePhase) * (tailInfluence * 2.8 + 0.35);
           ctx.fillStyle = color;
-          ctx.fillRect(ox + c * pxSize + sway, oy + r * pxSize, pxSize, pxSize);
+          ctx.fillRect(ox + c * pxSize, oy + r * pxSize + waveY, pxSize, pxSize);
         }
       }
     }

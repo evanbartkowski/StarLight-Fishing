@@ -23,7 +23,8 @@ import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/alman
 import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
-import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART } from './CustomVectorArt.js';
+import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART } from './CustomVectorArt.js';
+
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const HUD_ICONS = {
@@ -4487,28 +4488,45 @@ export class UIManager {
 
     const modalBody = `
       <div class="settings-wrapper">
-        <div class="settings-section"><h3>Captain Save</h3><p id="cloud-save-status">${escapeScoreboardText(accountManager.isGuest() ? 'Guest progress is saved on this browser.' : accountManager.cloudStatus)}</p><button class="btn btn-secondary" id="btn-cloud-save" ${accountManager.cloudSession ? '' : 'disabled'}>Save to cloud now</button><p class="customize-note">For an older local account, sign in once on the original laptop to migrate your progress.</p></div>
-        <div class="settings-section"><h3>Your Angler</h3><p>Choose your colors and headwear.</p><button class="btn btn-primary" id="btn-customize-angler">Customize Appearance</button></div>
-        <div class="settings-section career-section">
-          <h3>🎮 Career Records</h3>
-          <div class="career-grid">
-            ${[
-              ['🎣', 'Angler Level', `Lv. ${this.saveSystem.data.level}`],
-              ['🐟', 'Fish Caught', stats.totalFishCaught.toLocaleString()],
-              ['🧭', 'Max Depth', `${stats.maxDepthReached}m`],
-              ['💰', 'Gold Earned', `$${stats.totalGoldEarned.toLocaleString()}`],
-              ['📖', 'Species Found', `${stats.uniqueSpeciesCaught} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`],
-              ['🦴', 'Fossils', `${stats.totalFossilsCollected} / ${TREASURE_ITEMS.filter(item => item.category === 'fossil').length}`],
-              ['👑', 'Gold Crowns', stats.goldCrowns || 0],
-              ['🥈', 'Silver Crowns', stats.silverCrowns || 0],
-              ['🌟', 'Mythic Titans', stats.mythicsCaught || 0],
-            ].map(([icon, label, value]) => `<div class="career-tile"><span class="career-icon">${icon}</span><strong>${value}</strong><small>${label}</small></div>`).join('')}
-          </div>
-          <div class="career-record">🏆 Biggest Catch: <strong>${escapeScoreboardText(stats.biggestCatchName || 'None yet')}</strong> <span>${stats.biggestCatchCm} cm · ${stats.heaviestCatchKg} kg</span></div>
+        <div class="settings-section">
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.cloudSave}</span> Captain Save</h3>
+          <p id="cloud-save-status">${escapeScoreboardText(accountManager.isGuest() ? 'Guest progress is saved on this browser.' : accountManager.cloudStatus)}</p>
+          <button class="btn btn-secondary" id="btn-cloud-save" ${accountManager.cloudSession ? '' : 'disabled'}>Save to cloud now</button>
+          <p class="customize-note">For an older local account, sign in once on the original laptop to migrate your progress.</p>
         </div>
 
         <div class="settings-section">
-          <h3>🎣 Fishing Preferences</h3>
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.angler}</span> Your Angler</h3>
+          <p>Choose your colors, coat style, and headwear.</p>
+          <button class="btn btn-primary" id="btn-customize-angler">Customize Appearance</button>
+        </div>
+
+        <div class="settings-section career-section">
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.trophyRecords}</span> Career Records</h3>
+          <div class="career-grid">
+            ${[
+              [SETTINGS_ART.level, 'Angler Level', `Lv. ${this.saveSystem.data.level}`],
+              [SETTINGS_ART.fishCount, 'Fish Caught', stats.totalFishCaught.toLocaleString()],
+              [SETTINGS_ART.depth, 'Max Depth', `${stats.maxDepthReached}m`],
+              [SETTINGS_ART.gold, 'Gold Earned', `$${stats.totalGoldEarned.toLocaleString()}`],
+              [SETTINGS_ART.species, 'Species Found', `${stats.uniqueSpeciesCaught} / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`],
+              [SETTINGS_ART.fossil, 'Fossils', `${stats.totalFossilsCollected} / ${TREASURE_ITEMS.filter(item => item.category === 'fossil').length}`],
+              [SETTINGS_ART.goldCrown, 'Gold Crowns', stats.goldCrowns || 0],
+              [SETTINGS_ART.silverCrown, 'Silver Crowns', stats.silverCrowns || 0],
+              [SETTINGS_ART.mythicTitan, 'Mythic Titans', stats.mythicsCaught || 0],
+            ].map(([iconArt, label, value]) => `<div class="career-tile"><span class="career-icon">${iconArt}</span><strong>${value}</strong><small>${label}</small></div>`).join('')}
+          </div>
+          <div class="career-record">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="career-icon" style="width:20px;height:20px;display:inline-flex;">${SETTINGS_ART.biggestCatch}</span>
+              <span>Biggest Catch: <strong>${escapeScoreboardText(stats.biggestCatchName || 'None yet')}</strong></span>
+            </div>
+            <span>${stats.biggestCatchCm} cm · ${stats.heaviestCatchKg} kg</span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.preferences}</span> Fishing Preferences</h3>
           <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
             <label for="setting-always-ask" style="font-size: 0.95rem; color: #cbd5e1; cursor: pointer;">
               Always ask on catch (show Keep / Sell modal):
@@ -4518,7 +4536,7 @@ export class UIManager {
         </div>
 
         <div class="settings-section">
-          <h3>🔊 Audio Controls</h3>
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.audio}</span> Audio Controls</h3>
           <div class="setting-item">
             <label for="music-vol">Music Volume:</label>
             <input type="range" id="music-vol" min="0" max="1" step="0.05" value="${settings.musicVolume}">
@@ -4530,14 +4548,14 @@ export class UIManager {
         </div>
 
         <div class="settings-section">
-          <h3>⚠️ Save Data Management</h3>
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.danger}</span> Save Data Management</h3>
           <p class="settings-danger-warning">Resetting progress will permanently erase your currency, level, upgrades, journal, fossils, and achievements.</p>
           <button class="btn btn-danger" id="btn-trigger-reset">Reset All Game Progress</button>
         </div>
       </div>
     `;
 
-    this.openModal('⚙️ Settings & Career Records', modalBody);
+    this.openModal('Settings & Career Records', modalBody);
 
     document.getElementById('btn-customize-angler')?.addEventListener('click', () => this.openAppearance());
     document.getElementById('btn-cloud-save')?.addEventListener('click', async () => {
@@ -4604,43 +4622,55 @@ export class UIManager {
     this.activeModal = 'tutorial';
     const modalBody = `
       <div class="tutorial-wrapper">
+        <div class="tutorial-banner">
+          <p>Welcome to Starlight Fishing! Here is your quick-start handbook to mastering the ocean depths, catching exotic species, and avoiding hazards.</p>
+        </div>
+
         <div class="tutorial-step">
           <div class="step-num">1</div>
           <div class="step-text">
-            <h4>Aiming & Casting</h4>
-            <p>Aim into the waters with ease! Click or touch and drag backwards to adjust your cast trajectory arc, then release to launch your line.</p>
+            <h4>Aiming & Casting Arc</h4>
+            <p>Click, tap, or drag backwards from your vessel to adjust your launch trajectory arc. Release to cast your hook! Aim for <strong>luminous hotspots</strong> and surface ripples for rare fish clusters.</p>
           </div>
         </div>
 
         <div class="tutorial-step">
           <div class="step-num">2</div>
           <div class="step-text">
-            <h4>Atmospheric World Cycle & Weather</h4>
-            <p>The ocean transitions naturally through <strong>Dawn, Day, Golden Sunset, and Biolum Night</strong>. Rare mythic titans only emerge during specific sky and weather conditions!</p>
+            <h4>Steering & Dodging Hazards</h4>
+            <p>As your hook sinks, steer smoothly left and right using your mouse, touch drag, or arrow keys. Maneuver past jagged rocks and prowling predators. <strong>Pulsing red auras</strong> warn of danger!</p>
           </div>
         </div>
 
         <div class="tutorial-step">
           <div class="step-num">3</div>
           <div class="step-text">
-            <h4>Relaxed, Forgiving Reel Rhythm</h4>
-            <p>When hauling in rare legends, a calming rhythmic wave pulse guides your reel. Reeling during the gentle <strong>Lull</strong> retrieves faster. Line never breaks!</p>
+            <h4>Reeling & Armor Shields</h4>
+            <p>Reeling starts automatically when your creel is full or at max line depth. <strong>Armor Shields</strong> absorb impacts. If your shields are depleted, colossal obstacles can knock <strong>1 or 2 fish</strong> off your line!</p>
           </div>
         </div>
 
         <div class="tutorial-step">
           <div class="step-num">4</div>
           <div class="step-text">
-            <h4>Idle Drift Pots & Longlines</h4>
-            <p>Set seabed traps that passively gather coastal crabs, oysters, pearls, and prehistoric bone fragments while you relax or keep the game in a side tab!</p>
+            <h4>Relaxed Rhythm & Calming Lulls</h4>
+            <p>When hauling in rare and legendary titans, a rhythmic tension wave guides your retrieval. Reeling during the gentle <strong>Lull</strong> retrieves faster and smoother. Lines are unbreakable!</p>
           </div>
         </div>
 
         <div class="tutorial-step">
           <div class="step-num">5</div>
           <div class="step-text">
-            <h4>Size Records & Crown Badges</h4>
-            <p>Discover <strong>👑 Gold Crowns (Giant)</strong> and <strong>🥈 Silver Crowns (Mini)</strong> for huge coin bonuses and illustrated Field Log bragging rights!</p>
+            <h4>Port Upgrades & Crate Vault</h4>
+            <p>Cash in your haul at the Starlight Shop to upgrade <strong>Line Depth, Hook Capacity, and Reel Speed</strong>. Salvaged mystery crates are stored in your Crate Vault for bonus gems, skins, and loot.</p>
+          </div>
+        </div>
+
+        <div class="tutorial-step">
+          <div class="step-num">6</div>
+          <div class="step-text">
+            <h4>Realms & Boat Companions</h4>
+            <p>Voyage across <strong>7 distinct fantasy ocean realms</strong> to complete your Field Journal. Equip beloved companions like <strong>Gracie the Dolphin</strong> and <strong>Irene the Shark</strong> to swim and dive with you!</p>
           </div>
         </div>
 
@@ -4650,7 +4680,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal("🎣 Starlight Angler's Field Guide", modalBody);
+    this.openModal("Starlight Angler's Field Guide", modalBody);
 
     document.getElementById('btn-tutorial-ready').addEventListener('click', () => {
       this.closeModal();
