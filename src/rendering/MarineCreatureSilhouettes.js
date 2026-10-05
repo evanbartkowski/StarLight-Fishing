@@ -256,34 +256,144 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'walrus': {
-      // Heavy rotund body with prominent white ivory tusks and whiskered snout
-      ctx.beginPath();
-      ctx.ellipse(-4, 0, 24, 15, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Shoal Tusked Walrus: Massive rotund blubber body, neck rolls, rear flippers, whiskered mystacial pad & thick curved ivory tusks
+      const wSwim = Math.sin(t * 2.2) * 2.5;
+      const flipperWave = Math.sin(t * 2.0) * 0.18;
 
-      // Massive head & whiskered muzzle
-      ctx.beginPath();
-      ctx.arc(16, -2, 9, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Long ivory tusks
-      ctx.fillStyle = '#f8fafc';
-      ctx.beginPath();
-      ctx.moveTo(19, 3); ctx.lineTo(21, 15); ctx.lineTo(17, 3); ctx.closePath();
-      ctx.moveTo(22, 3); ctx.lineTo(24, 15); ctx.lineTo(20, 3); ctx.closePath();
-      ctx.fill();
-
-      // Heavy flippers
+      // 1. Rear hind flippers (tucked together paddling)
       ctx.fillStyle = finColor;
       ctx.beginPath();
-      ctx.ellipse(4, 9, 5, 10, 0.3, 0, Math.PI * 2);
+      ctx.moveTo(-24, -2);
+      ctx.quadraticCurveTo(-34, -7 + wSwim, -39, -9 + wSwim);
+      ctx.quadraticCurveTo(-36, -3 + wSwim, -39, 1 + wSwim);
+      ctx.quadraticCurveTo(-34, 4 + wSwim, -24, 3);
+      ctx.closePath();
       ctx.fill();
 
-      // Eyes
+      ctx.beginPath();
+      ctx.moveTo(-22, 1);
+      ctx.quadraticCurveTo(-32, 2 + wSwim * 0.8, -37, 7 + wSwim * 0.8);
+      ctx.quadraticCurveTo(-33, 8 + wSwim * 0.8, -35, 12 + wSwim * 0.8);
+      ctx.quadraticCurveTo(-30, 9 + wSwim * 0.8, -22, 5);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. Heavy rotund blubber torso with arched back and thick neck
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.moveTo(14, -7);
+      ctx.quadraticCurveTo(8, -17, -10, -15);
+      ctx.quadraticCurveTo(-26, -11, -26, 2);
+      ctx.quadraticCurveTo(-24, 14, -8, 16);
+      ctx.quadraticCurveTo(8, 17, 18, 9);
+      ctx.quadraticCurveTo(24, 5, 22, -3);
+      ctx.quadraticCurveTo(19, -8, 14, -7);
+      ctx.closePath();
+      ctx.fill();
+
+      // 3. Thick blubber neck rolls & shoulder creases
+      ctx.strokeStyle = secondary;
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(10, -13);
+      ctx.quadraticCurveTo(6, -4, 9, 7);
+      ctx.moveTo(3, -14);
+      ctx.quadraticCurveTo(-1, -3, 2, 9);
+      ctx.stroke();
+
+      // 4. Broad muscular front pectoral flipper (sweeping down and back)
+      ctx.save();
+      ctx.translate(6, 6);
+      ctx.rotate(0.35 + flipperWave);
+      ctx.fillStyle = finColor;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-4, 12, -7, 17);
+      ctx.quadraticCurveTo(-1, 16, 5, 11);
+      ctx.quadraticCurveTo(7, 6, 2, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // 5. Heavy jowled head & dome
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.arc(17, -2, 9.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 6. Prominent whiskered mystacial muzzle pad
+      ctx.fillStyle = secondary;
+      ctx.beginPath();
+      ctx.ellipse(22, 2.5, 6.5, 5.5, 0.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Leathery dark nose
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(19, -4, 1.4, 0, Math.PI * 2);
+      ctx.ellipse(25.5, -0.5, 2.2, 1.6, -0.1, 0, Math.PI * 2);
       ctx.fill();
+
+      // Whisker pits / vibrissae dots on the muzzle pad
+      ctx.fillStyle = '#1e293b';
+      for (const [mx, my] of [[20, 1], [22.5, 1.5], [25, 2], [19.5, 3.5], [22, 4], [24.5, 4.5], [21, 6]]) {
+        ctx.beginPath();
+        ctx.arc(mx, my, 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Bristling stiff white whiskers
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(23, 2); ctx.lineTo(29, 3);
+      ctx.moveTo(24, 3.5); ctx.lineTo(30, 5.5);
+      ctx.moveTo(22, 5); ctx.lineTo(28, 7.5);
+      ctx.moveTo(20, 5.5); ctx.lineTo(24, 9);
+      ctx.stroke();
+
+      // 7. Iconic thick, curved ivory tusks with realistic taper & inner shadow
+      // Far tusk
+      ctx.fillStyle = '#f1f5f9';
+      ctx.beginPath();
+      ctx.moveTo(22, 4);
+      ctx.quadraticCurveTo(24, 11, 23, 19);
+      ctx.quadraticCurveTo(20.5, 12, 19.5, 4.5);
+      ctx.closePath();
+      ctx.fill();
+      // Near tusk (slightly longer and in foreground)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(24.5, 4);
+      ctx.quadraticCurveTo(27, 12, 26, 21);
+      ctx.quadraticCurveTo(23, 13, 22, 4.5);
+      ctx.closePath();
+      ctx.fill();
+      // Tusk tip shine & groove
+      ctx.strokeStyle = 'rgba(203, 213, 225, 0.7)';
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      ctx.moveTo(24, 6);
+      ctx.quadraticCurveTo(25.5, 13, 25.2, 19.5);
+      ctx.stroke();
+
+      // 8. Expressive walrus eye with brow crease
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(17.5, -4, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(18, -4.5, 0.65, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Brow fold
+      ctx.strokeStyle = secondary;
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.arc(17, -5.5, 2.5, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+
       return true;
     }
 

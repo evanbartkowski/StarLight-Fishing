@@ -352,15 +352,17 @@ export class OceanWorld {
     // Populate Interactive Realm Flora
     const floraConfig = FLORA_TYPES[this.currentSeaId] || FLORA_TYPES[1];
     // Jittered patches across the entire realm, with open water between clusters.
-    const floraStart = this.currentSeaId === 1 ? Math.max(floraConfig.minDepth, 35) : Math.min(floraConfig.minDepth, 20);
-    const bandStep = this.currentSeaId === 1 ? 85 : 110;
+    // In Realm 1 and 2, flora is sparse and spread out, keeping clear of the surface layer (>= 48m).
+    const isStarterRealm = this.currentSeaId <= 2;
+    const floraStart = isStarterRealm ? Math.max(floraConfig.minDepth, 48) : Math.min(floraConfig.minDepth, 20);
+    const bandStep = isStarterRealm ? 80 : 110;
     for (let band = floraStart; band < activeMaxDepth - 8; band += bandStep) {
       const end = Math.min(band + bandStep, activeMaxDepth - 8);
       const depthM = band + Math.random() * (end - band);
       const clusterX = 45 + Math.random() * Math.max(1, this.worldWidth - 90);
       const groupRoll = Math.random();
-      const count = this.currentSeaId === 1
-        ? (Math.random() < 0.7 ? 1 : 2)
+      const count = isStarterRealm
+        ? (Math.random() < 0.8 ? 1 : 2)
         : (groupRoll < .48 ? 1 : groupRoll < .76 ? 2 : groupRoll < .91 ? 3 : groupRoll < .98 ? 4 : 5);
       const groupAngle = Math.random() * Math.PI * 2;
       for (let f = 0; f < count; f++) {
@@ -1247,11 +1249,11 @@ export class OceanWorld {
     const time = this.causticTimer || 0;
     const w = this.worldWidth;
     
-    // Depth clusters: spaced across the 0-45m zone (surfaceY to surfaceY + 675px)
-    const clusterCount = 12;
+    // Depth clusters: spaced well below the surface, sparse and spread out (38m+ depth)
+    const clusterCount = 6;
     for (let c = 0; c < clusterCount; c++) {
-      const worldX = ((c * 233 + 70) % (w - 120)) + 60;
-      const worldY = this.surfaceY + 80 + (c * 65) % 600;
+      const worldX = ((c * 311 + 90) % (w - 120)) + 60;
+      const worldY = this.surfaceY + 570 + (c * 140) % 700;
       const screenY = worldY - cameraY;
       if (screenY < -120 || screenY > screenHeight + 120) continue;
 
@@ -1352,11 +1354,11 @@ export class OceanWorld {
     const time = this.causticTimer || 0;
     const w = this.worldWidth;
     
-    // Depth clusters in Realm 2: 45m - 105m zone (surfaceY + 675px to surfaceY + 1600px)
-    const clusterCount = 14;
+    // Depth clusters in Realm 2: sparse and spread out, well below the surface (50m+ depth)
+    const clusterCount = 7;
     for (let c = 0; c < clusterCount; c++) {
-      const worldX = ((c * 247 + 90) % (w - 140)) + 70;
-      const worldY = this.surfaceY + 700 + (c * 75) % 950;
+      const worldX = ((c * 320 + 90) % (w - 140)) + 70;
+      const worldY = this.surfaceY + 750 + (c * 160) % 1050;
       const screenY = worldY - cameraY;
       if (screenY < -130 || screenY > screenHeight + 130) continue;
 
