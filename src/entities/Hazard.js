@@ -159,16 +159,106 @@ export class Hazard {
         ctx.lineTo(x + 9, r * 0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
       }
     } else if (this.realmStyle === 'ruins') {
-      // Rotating gear teeth, hanging chains, and broken arches.
-      if (this.variant === 1) ctx.rotate(this.timer * 0.3);
-      ctx.beginPath();
-      for (let i = 0; i < 24; i++) {
-        const angle = i * Math.PI / 12;
-        const length = i % 2 ? r * 0.65 : r;
-        ctx.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+      // Sunken Atlantis: Fluted Marble Pillars, Poseidon's Trident Spires & Clockwork Astrolabes
+      const ruinsVariant = (this.variant || 0) % 3;
+      if (ruinsVariant === 0) {
+        // Fluted Corinthian/Ionic Marble Column & Capital with verdigris moss and gold veins
+        ctx.save();
+        // Capital / Abacus
+        ctx.fillStyle = '#e2e8f0'; ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.4;
+        ctx.fillRect(-r * 0.7, -r * 0.9, r * 1.4, r * 0.28);
+        ctx.strokeRect(-r * 0.7, -r * 0.9, r * 1.4, r * 0.28);
+        // Volute scrolls on capital
+        ctx.fillStyle = '#cbd5e1';
+        ctx.beginPath(); ctx.arc(-r * 0.55, -r * 0.76, r * 0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(r * 0.55, -r * 0.76, r * 0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Fluted Shaft
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(-r * 0.45, -r * 0.62, r * 0.9, r * 1.25);
+        ctx.strokeRect(-r * 0.45, -r * 0.62, r * 0.9, r * 1.25);
+        // Fluting lines
+        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.2;
+        for (let fl = -2; fl <= 2; fl++) {
+          ctx.beginPath();
+          ctx.moveTo(fl * r * 0.16, -r * 0.6);
+          ctx.lineTo(fl * r * 0.16, r * 0.6);
+          ctx.stroke();
+        }
+        // Base plinth
+        ctx.fillStyle = '#cbd5e1'; ctx.strokeStyle = '#64748b';
+        ctx.fillRect(-r * 0.65, r * 0.63, r * 1.3, r * 0.28);
+        ctx.strokeRect(-r * 0.65, r * 0.63, r * 1.3, r * 0.28);
+        // Verdigris sea moss overlay & gold crack
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(-r * 0.2, r * 0.15, r * 0.22, r * 0.35, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(-r * 0.1, -r * 0.4); ctx.lineTo(r * 0.15, -r * 0.1); ctx.lineTo(-r * 0.05, r * 0.3); ctx.stroke();
+        ctx.restore();
+      } else if (ruinsVariant === 1) {
+        // Sunken Poseidon Trident Spire & Relic Dais
+        ctx.save();
+        // Central shaft & base dais
+        ctx.fillStyle = '#d97706'; ctx.strokeStyle = '#78350f'; ctx.lineWidth = 1.5;
+        ctx.fillRect(-r * 0.12, -r * 0.4, r * 0.24, r * 1.1);
+        ctx.strokeRect(-r * 0.12, -r * 0.4, r * 0.24, r * 1.1);
+        // Stepped dais base
+        ctx.fillStyle = '#1e293b'; ctx.strokeStyle = '#059669'; ctx.lineWidth = 1.2;
+        ctx.fillRect(-r * 0.6, r * 0.65, r * 1.2, r * 0.25);
+        ctx.strokeRect(-r * 0.6, r * 0.65, r * 1.2, r * 0.25);
+        // Crossbar & prongs
+        ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        // Crossbar
+        ctx.rect(-r * 0.6, -r * 0.42, r * 1.2, r * 0.18);
+        // Left prong
+        ctx.moveTo(-r * 0.55, -r * 0.42);
+        ctx.quadraticCurveTo(-r * 0.7, -r * 0.75, -r * 0.45, -r * 0.95);
+        ctx.lineTo(-r * 0.35, -r * 0.75);
+        ctx.quadraticCurveTo(-r * 0.45, -r * 0.55, -r * 0.38, -r * 0.42);
+        // Central spearhead
+        ctx.moveTo(-r * 0.15, -r * 0.42);
+        ctx.lineTo(0, -r);
+        ctx.lineTo(r * 0.15, -r * 0.42);
+        // Right prong
+        ctx.moveTo(r * 0.38, -r * 0.42);
+        ctx.quadraticCurveTo(r * 0.45, -r * 0.55, r * 0.35, -r * 0.75);
+        ctx.lineTo(r * 0.45, -r * 0.95);
+        ctx.quadraticCurveTo(r * 0.7, -r * 0.75, r * 0.55, -r * 0.42);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        // Glowing Aquamarine Gem in trident heart
+        const gemGrad = ctx.createRadialGradient(0, -r * 0.32, 0, 0, -r * 0.32, r * 0.22);
+        gemGrad.addColorStop(0, '#ffffff'); gemGrad.addColorStop(0.5, '#2dd4bf'); gemGrad.addColorStop(1, '#0f766e');
+        ctx.fillStyle = gemGrad;
+        ctx.beginPath(); ctx.arc(0, -r * 0.32, r * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else {
+        // Sunken Clockwork Astrolabe & Gilded Gate
+        ctx.save();
+        ctx.rotate(this.timer * 0.25);
+        // Outer astrolabe ring with ornate gear teeth
+        ctx.strokeStyle = '#d97706'; ctx.fillStyle = '#0f172a'; ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let i = 0; i < 24; i++) {
+          const angle = i * Math.PI / 12;
+          const rad = i % 2 ? r * 0.8 : r;
+          ctx.lineTo(Math.cos(angle) * rad, Math.sin(angle) * rad);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Inner bronze ring
+        ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.55, 0, Math.PI * 2); ctx.stroke();
+        // 4 Atlantean cardinal spokes
+        for (let sp = 0; sp < 4; sp++) {
+          const spAngle = sp * Math.PI / 2;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(spAngle) * r * 0.78, Math.sin(spAngle) * r * 0.78); ctx.stroke();
+        }
+        // Glowing verdigris core
+        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(0, 0, r * 0.22, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
       }
-      ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#064e3b'; ctx.fillRect(-r * 0.22, -r * 0.35, r * 0.44, r * 0.85);
     } else if (this.realmStyle === 'crystal') {
       // Astral Shimmersea cosmic crystalline hazard with glowing core, facets & starbursts
       const shards = 4 + (this.variant % 3);
@@ -238,17 +328,90 @@ export class Hazard {
         ctx.beginPath(); ctx.arc(x, y, r * (0.18 + 0.03 * Math.sin(this.timer + i)), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 8, y + r * 0.3, x - 4, y + r * 0.5); ctx.stroke();
       }
+    } else if (this.realmStyle === 'cloud') {
+      // Whispering Aether Sea: Floating Sky-Island, Wind Vortex & Celestial Obelisk
+      const aetherVar = (this.variant || 0) % 3;
+      if (aetherVar === 0) {
+        // Floating Sky-Island with luminous cloudroot tendrils
+        ctx.save();
+        // Hanging root tendrils
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.65)'; ctx.lineWidth = 1.4;
+        for (let t = -3; t <= 3; t++) {
+          ctx.beginPath();
+          ctx.moveTo(t * r * 0.2, r * 0.1);
+          ctx.quadraticCurveTo(t * r * 0.25 + Math.sin(this.timer * 2 + t) * 6, r * 0.5, t * r * 0.15, r * 0.85);
+          ctx.stroke();
+        }
+        // Floating island aerolith rock
+        ctx.fillStyle = '#4c1d95'; ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.8, -r * 0.1);
+        ctx.quadraticCurveTo(-r * 0.4, -r * 0.35, 0, -r * 0.3);
+        ctx.quadraticCurveTo(r * 0.4, -r * 0.35, r * 0.8, -r * 0.1);
+        ctx.lineTo(r * 0.5, r * 0.35);
+        ctx.quadraticCurveTo(0, r * 0.7, -r * 0.5, r * 0.35);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Mossy cloudtop cap
+        ctx.fillStyle = '#7dd3fc';
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.15, r * 0.72, r * 0.18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Orbiting floating crystal pebble
+        const orbX = Math.cos(this.timer * 1.4) * r * 0.95;
+        const orbY = Math.sin(this.timer * 1.4) * r * 0.4 - r * 0.1;
+        ctx.fillStyle = '#f0abfc';
+        ctx.beginPath(); ctx.arc(orbX, orbY, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else if (aetherVar === 1) {
+        // Celestial Wind Vortex & Spiral Rift
+        ctx.save();
+        ctx.rotate(this.timer * 0.7);
+        for (let arm = 0; arm < 3; arm++) {
+          ctx.save();
+          ctx.rotate(arm * (Math.PI * 2 / 3));
+          const armGrad = ctx.createLinearGradient(0, 0, r, 0);
+          armGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+          armGrad.addColorStop(0.5, arm === 0 ? 'rgba(192, 132, 252, 0.7)' : arm === 1 ? 'rgba(125, 211, 252, 0.7)' : 'rgba(244, 114, 182, 0.7)');
+          armGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+          ctx.strokeStyle = armGrad; ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(r * 0.45, -r * 0.35, r * 0.85, 0);
+          ctx.stroke();
+          ctx.restore();
+        }
+        // Glowing core
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(0, 0, r * 0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else {
+        // Sky Storm Obelisk wreathed in electric wisps
+        ctx.save();
+        ctx.fillStyle = '#312e81'; ctx.strokeStyle = '#818cf8'; ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.95);
+        ctx.lineTo(r * 0.32, -r * 0.2);
+        ctx.lineTo(r * 0.22, r * 0.85);
+        ctx.lineTo(-r * 0.22, r * 0.85);
+        ctx.lineTo(-r * 0.32, -r * 0.2);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        // Gilded runic band
+        ctx.fillStyle = '#facc15'; ctx.fillRect(-r * 0.26, -r * 0.05, r * 0.52, r * 0.12);
+        // Floating cloud puffs
+        ctx.fillStyle = 'rgba(240, 171, 252, 0.4)';
+        ctx.beginPath();
+        ctx.arc(-r * 0.35, r * 0.2 + Math.sin(this.timer * 2) * 3, r * 0.22, 0, Math.PI * 2);
+        ctx.arc(r * 0.35, r * 0.15 + Math.cos(this.timer * 2) * 3, r * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     } else {
-      // Aether cyclones and void fractures have different moving silhouettes.
+      // Void fractures have moving silhouettes
       for (let i = 0; i < 5; i++) {
         ctx.beginPath();
         const y = (i - 2) * r * 0.32;
-        if (this.realmStyle === 'cloud') {
-          ctx.ellipse(Math.sin(this.timer + i) * 4, y, r * (0.2 + i * 0.13), r * 0.17, 0, 0, Math.PI * 2);
-        } else {
-          ctx.moveTo(-r * 0.7, y); ctx.lineTo(-r * 0.2, y - 9);
-          ctx.lineTo(r * 0.2, y + 9); ctx.lineTo(r * 0.7, y - 4);
-        }
+        ctx.moveTo(-r * 0.7, y); ctx.lineTo(-r * 0.2, y - 9);
+        ctx.lineTo(r * 0.2, y + 9); ctx.lineTo(r * 0.7, y - 4);
         ctx.stroke();
       }
     }

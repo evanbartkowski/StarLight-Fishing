@@ -1614,21 +1614,10 @@ export class UIManager {
       });
     });
 
-    const later = document.createElement('button');
-    later.className = 'btn btn-secondary'; later.id = 'btn-store-crate'; later.textContent = 'Keep sealed for later';
-    document.querySelector('.crate-actions')?.appendChild(later);
-    later.onclick = () => {
-      this.saveSystem.save();
-      this._currentCrateContext = null;
-      if (hook) this.openCatchSummary(hook, onContinue);
-      else this.openInventory('crates');
-    };
-
     const crackBtn = document.getElementById('btn-crack-crate');
     if (crackBtn) {
       crackBtn.onclick = () => {
         crackBtn.disabled = true;
-        later.hidden = true;
         const track = document.getElementById('gacha-reel-track');
         const iconEl = document.getElementById('crate-icon-anim');
         const descEl = document.getElementById('crate-status-desc');
@@ -3391,7 +3380,7 @@ export class UIManager {
             <div class="slot-name">${shinyTag} ${crownTag} ${item.name}</div>
             <div class="slot-sub">${isFish ? `${item.size}cm • ${item.weight}kg` : isRelic ? `Relic (${item.era || 'Ancient'})` : 'Specimen'}</div>
           </div>
-          <button class="btn btn-sm btn-outline btn-remove-inhabitant" data-id="${item.instanceId}" title="Return back to tackle box">↩️</button>
+          <button class="btn btn-sm btn-outline btn-remove-inhabitant" data-id="${item.instanceId}" title="Return specimen back to tackle box" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-color:#38bdf8;color:#e0f2fe;font-weight:600;font-size:0.75rem;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg><span>Return</span></button>
         </div>
       `;
     });
@@ -3908,8 +3897,8 @@ export class UIManager {
         itemsGridHtml += `
           <div class="inventory-card rarity-border-${item.rarity} ${isLocked ? 'item-locked-border' : ''}">
             <div class="inv-card-header">
-              <div class="inv-card-icon" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
-                ${item.icon || (isRelic ? '🏺' : isFossil ? '🦴' : '🐟')}
+              <div class="inv-card-icon ${isFish ? 'inv-card-icon-canvas' : ''}" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
+                ${isFish ? `<canvas id="inv-fish-canvas-${item.instanceId}" width="64" height="48" class="inv-specimen-canvas" aria-label="${item.name}"></canvas>` : (item.icon || (isRelic ? '🏺' : isFossil ? '🦴' : '🐟'))}
               </div>
               <div class="inv-card-title-col">
                 <div class="inv-card-name">${item.name}</div>
@@ -3937,7 +3926,7 @@ export class UIManager {
               <button class="btn btn-sm btn-outline btn-inspect-item" data-id="${item.instanceId}" title="Inspect details, lore, and records">🔍 Inspect</button>
 
               ${inTank ? `
-                <button class="btn btn-sm btn-secondary btn-tank-remove" data-id="${item.instanceId}" title="Remove from personal aquarium back to tackle box">↩️ Remove</button>
+                <button class="btn btn-sm btn-secondary btn-tank-remove" data-id="${item.instanceId}" title="Remove from personal aquarium back to tackle box"><svg viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;margin-right:3px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Return</button>
               ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
                 ${hasAq ? `
                   <button class="btn btn-sm btn-outline btn-tank-add" data-id="${item.instanceId}" ${tankCount >= aqCap ? 'disabled title="Aquarium is at max capacity"' : 'title="Place in personal aquarium"'}>🐠 To Tank</button>
@@ -4012,6 +4001,23 @@ export class UIManager {
     `;
 
     this.openModal("🎒 Inventory", modalBody);
+
+    // Render authentic specimen fish images on inventory cards
+    filteredItems.forEach((item) => {
+      if (item.type === 'fish' || item.species) {
+        const canvas = document.getElementById(`inv-fish-canvas-${item.instanceId}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const fish = specimen(item, canvas.width / 2, canvas.height / 2);
+        if (fish) {
+          fish.scale = 1.05;
+          fish.direction = 1;
+          fish.render(ctx, 0);
+        }
+      }
+    });
 
     if (filter === 'crates') {
       const body = document.getElementById('modal-content');
@@ -4204,7 +4210,7 @@ export class UIManager {
             <button class="btn btn-secondary" id="btn-inspect-toggle-lock">${isLocked ? '🔓 Unlock Item' : '🔒 Lock Item'}</button>
 
             ${inTank ? `
-              <button class="btn btn-warning" id="btn-inspect-tank">↩️ Remove from Aquarium</button>
+              <button class="btn btn-warning" id="btn-inspect-tank"><svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Return from Aquarium</button>
             ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
               ${hasAq ? `
                 <button class="btn btn-primary" id="btn-inspect-tank" ${tankFull ? 'disabled title="Aquarium is full"' : ''}>🐠 Move to Aquarium</button>
@@ -4321,8 +4327,7 @@ export class UIManager {
           <div class="milestone-info">
             <div class="milestone-title-row">
               <h4>${ach.name}</h4>
-              <span class="milestone-bounty">+$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
-              <span class="milestone-bounty">+$${ach.reward.toLocaleString()}</span>
+              <span class="milestone-bounty">🪙 +$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
             </div>
             <p class="milestone-desc">${ach.description}</p>
             <div class="milestone-bar-container">
@@ -4361,8 +4366,7 @@ export class UIManager {
           <div class="ach-details">
             <div class="ach-title-row">
               <h4>${ach.name}</h4>
-              <span class="ach-reward">+$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
-              <span class="ach-reward">+$${ach.reward.toLocaleString()}</span>
+              <span class="ach-reward">🪙 +$${ach.reward.toLocaleString()} · 💎 ${achievementGems(ach)}</span>
             </div>
             <p class="ach-desc">${ach.description}</p>
             <div class="ach-prog-bar">

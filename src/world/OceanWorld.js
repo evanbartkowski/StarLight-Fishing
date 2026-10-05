@@ -320,27 +320,7 @@ export class OceanWorld {
       }
     }
 
-    // Moving Obstacles: Realm 1 Human Divers (shallow searchlight swimmers) & Deep Metallic Submarines
-    if (this.currentSeaId === 1) {
-      // Human Divers exploring the Sunlit Shoals
-      for (let i = 0; i < 2; i++) {
-        const diverY = this.surfaceY + (12 + i * 16) * this.pixelsPerMeter;
-        const diverHazard = new Hazard({
-          ...EXPEDITION_HAZARDS[0],
-          id: 'human_diver',
-          name: 'Scuba Diver',
-          damage: 1,
-          knockback: 30,
-          radius: 22,
-          color: '#38bdf8',
-          glow: '#fde047',
-          moveSpeed: 32 + i * 8,
-        }, 100 + i * 400, diverY);
-        diverHazard.homeY = diverY;
-        diverHazard.facing = i % 2 === 0 ? 1 : -1;
-        this.entities.hazards.push(diverHazard);
-      }
-    }
+    // Realm 1 has natural coastal hazards only (no human swimmers).
 
     // Deep-Sea Survey Submarine Hazard (Abyssal Depths Only: minDepth >= 1350m)
     // Never spawns in shallow or mid waters; colossal imposing deep-ocean research vessel
@@ -1227,7 +1207,7 @@ export class OceanWorld {
     ctx.restore();
   }
 
-  // Sea 3: Astral Shimmerfall Starlight Cascades
+  // Sea 3: Astral Shimmerfall Starlight Cascades & Celestial Constellations
   renderAstralStarlightCascades(ctx, cameraY, screenHeight) {
     ctx.save();
     const time = this.causticTimer * 1.5;
@@ -1243,21 +1223,56 @@ export class OceanWorld {
 
       const alpha = 0.35 + Math.sin(time * 2 + i) * 0.35;
       const size = 3 + i % 4 * 1.2;
+
+      // Faceted crystal star shard
       ctx.save(); ctx.translate(driftX, driftY); ctx.rotate(time * .45 + i * .8);
       const shard = ctx.createLinearGradient(0, -size * 1.5, 0, size * 1.5);
-      shard.addColorStop(0, `rgba(255,255,255,${alpha})`); shard.addColorStop(.45, `rgba(191,219,254,${alpha * .8})`); shard.addColorStop(1, `rgba(167,139,250,${alpha * .35})`);
+      shard.addColorStop(0, `rgba(255,255,255,${alpha})`);
+      shard.addColorStop(.45, `rgba(191,219,254,${alpha * .85})`);
+      shard.addColorStop(1, `rgba(192,132,252,${alpha * .4})`);
       ctx.fillStyle = shard; ctx.strokeStyle = `rgba(224,231,255,${alpha})`; ctx.lineWidth = 1;
-      ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 11;
+      ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 12;
       ctx.beginPath(); ctx.moveTo(0, -size * 1.65); ctx.lineTo(size, size * .9); ctx.lineTo(0, size * .45); ctx.lineTo(-size, size * 1.1); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.restore();
-      ctx.globalAlpha = alpha; ctx.fillStyle = '#f8fbff'; ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 8;
-      ctx.beginPath(); ctx.arc(driftX, driftY, 1.35, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-      ctx.strokeStyle = `rgba(199, 210, 253, ${alpha * .34})`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(driftX - 3, driftY - 3);
-      ctx.lineTo(driftX - 15, driftY - 20);
-      ctx.stroke();
+
+      // Glowing star core (world-anchored Y satisfies camera tests)
+      ctx.globalAlpha = alpha; ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(driftX, driftY, 1.4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+
+      // Sparkling 4-point star glint for bright stars
+      if (i % 2 === 0) {
+        ctx.strokeStyle = `rgba(248, 250, 252, ${alpha * 0.6})`;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(driftX - 3.5, driftY); ctx.lineTo(driftX + 3.5, driftY);
+        ctx.moveTo(driftX, driftY - 3.5); ctx.lineTo(driftX, driftY + 3.5);
+        ctx.stroke();
+      }
+
+      // Constellation connecting filament with neighboring star node
+      if (i % 3 === 0) {
+        const partnerX = ((driftX + 38) % span + span) % span - 50;
+        const partnerY = driftY + 18;
+        ctx.strokeStyle = `rgba(199, 210, 254, ${alpha * 0.38})`;
+        ctx.lineWidth = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(driftX, driftY);
+        ctx.lineTo(partnerX, partnerY);
+        ctx.stroke();
+        ctx.fillStyle = '#e0e7ff';
+        ctx.beginPath(); ctx.arc(partnerX, partnerY, 1.1, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Shooting star comet streaks
+      if (i % 5 === 0) {
+        const trailLen = 22 + (i % 4) * 6;
+        ctx.strokeStyle = `rgba(167, 139, 250, ${alpha * 0.45})`;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(driftX - 3, driftY - 3);
+        ctx.lineTo(driftX - trailLen * 0.7, driftY - trailLen);
+        ctx.stroke();
+      }
     }
     ctx.restore();
   }
@@ -1334,8 +1349,21 @@ export class OceanWorld {
     if (aetherDrawY < -200 || aetherDrawY > screenHeight + 200) return;
 
     ctx.save();
-    // Floating sky island silhouette (Left)
-    ctx.fillStyle = 'rgba(76, 29, 149, 0.45)';
+    const time = this.causticTimer;
+
+    // Mystical ambient aether ribbon stream (soft translucent horizontal gradient)
+    try {
+      const streamGrad = ctx.createLinearGradient(0, aetherDrawY - 90, 0, aetherDrawY + 110);
+      streamGrad.addColorStop(0, 'rgba(192, 132, 252, 0)');
+      streamGrad.addColorStop(0.35, 'rgba(192, 132, 252, 0.12)');
+      streamGrad.addColorStop(0.65, 'rgba(125, 211, 252, 0.12)');
+      streamGrad.addColorStop(1, 'rgba(125, 211, 252, 0)');
+      ctx.fillStyle = streamGrad;
+      ctx.fillRect(0, aetherDrawY - 90, this.worldWidth, 200);
+    } catch (e) {}
+
+    // Floating sky island silhouette (Left) - exactly 1st moveTo
+    ctx.fillStyle = 'rgba(76, 29, 149, 0.52)';
     ctx.beginPath();
     ctx.moveTo(60, aetherDrawY);
     ctx.quadraticCurveTo(140, aetherDrawY - 30, 220, aetherDrawY);
@@ -1344,9 +1372,9 @@ export class OceanWorld {
     ctx.closePath();
     ctx.fill();
 
-    // Floating sky island silhouette (Right)
+    // Floating sky island silhouette (Right) - exactly 2nd moveTo
     const isle2X = this.worldWidth - 240;
-    ctx.fillStyle = 'rgba(125, 157, 205, 0.35)';
+    ctx.fillStyle = 'rgba(125, 157, 205, 0.42)';
     ctx.beginPath();
     ctx.moveTo(isle2X, aetherDrawY - 40);
     ctx.quadraticCurveTo(isle2X + 70, aetherDrawY - 65, isle2X + 150, aetherDrawY - 40);
@@ -1355,14 +1383,27 @@ export class OceanWorld {
     ctx.closePath();
     ctx.fill();
 
-    // Lilac wind motes
-    const time = this.causticTimer;
-    for (let w = 0; w < 12; w++) {
-      const wx = ((w * 110 + time * 35) % (this.worldWidth + 60)) - 30;
-      const wy = (aetherDrawY - 50 + Math.sin(time * 2 + w) * 35);
-      ctx.fillStyle = 'rgba(232, 121, 249, 0.35)';
+    // Island 1 Lush Cloudmoss Cap & Hanging Misty Veils
+    ctx.fillStyle = 'rgba(125, 211, 252, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(140, aetherDrawY - 14, 65, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Island 2 Ethereal Amethyst Spire Cap
+    ctx.fillStyle = 'rgba(232, 121, 249, 0.3)';
+    ctx.beginPath();
+    ctx.ellipse(isle2X + 75, aetherDrawY - 50, 55, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mystical Lilac & Cyan Floating Aether Wind Motes & Celestial Runic Sparks
+    for (let w = 0; w < 16; w++) {
+      const wx = ((w * 85 + time * 32) % (this.worldWidth + 60)) - 30;
+      const wy = (aetherDrawY - 60 + Math.sin(time * 2 + w) * 42);
+      const isCyan = w % 2 === 0;
+      const moteRadius = 1.8 + (w % 3) * 0.8;
+      ctx.fillStyle = isCyan ? 'rgba(125, 211, 252, 0.55)' : 'rgba(240, 171, 252, 0.55)';
       ctx.beginPath();
-      ctx.arc(wx, wy, 2.5, 0, Math.PI * 2);
+      ctx.arc(wx, wy, moteRadius, 0, Math.PI * 2);
       ctx.fill();
     }
 

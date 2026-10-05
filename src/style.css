@@ -1348,17 +1348,31 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   vertical-align: middle;
-  margin-right: 6px;
+  margin-right: 8px;
   flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transition: transform 0.15s ease;
 }
 
 .summary-btn-art svg {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.summary-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  font-weight: 700;
+}
+
+.summary-actions .btn:hover .summary-btn-art {
+  transform: scale(1.12);
 }
 
 .empty-catch {
@@ -3964,12 +3978,29 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .btn-inv-open-crate { grid-column: 1 / -1; }
 .shiny-tag { color: #e9d5ff; background: #7c3aed33; border-color: #a78bfa; }
 .quest-ready { border-color: #5eead4 !important; box-shadow: 0 0 14px #2dd4bf80, inset 0 0 9px #2dd4bf25; }
-.crate-unboxing-panel { padding: 4px 0 !important; }
+.crate-unboxing-panel { padding: 6px 0 !important; text-align: center; }
 .crate-unboxing-panel #crate-display-stage { width: 94px !important; height: 74px !important; margin: 5px auto !important; background: radial-gradient(circle, #38bdf822, transparent 70%) !important; }
 .crate-unboxing-panel #crate-status-desc { font-size: .8rem !important; margin: 6px auto !important; }
-.crate-unboxing-panel .gacha-reel-container { height: 112px; margin: 8px 0; }
+.crate-unboxing-panel .gacha-reel-container { height: 112px; margin: 12px auto !important; width: 100%; max-width: 480px; box-sizing: border-box; }
 .crate-actions { position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 10px 0; background: #101e30; border-radius: 12px; }
 .crate-actions #btn-crack-crate { background: #67e8f9 !important; border-color: #22d3ee !important; color: #082f49 !important; }
+
+/* Real fish specimen rendering on inventory cards */
+.inv-card-icon-canvas {
+  width: 64px;
+  height: 48px;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%);
+  border-radius: 8px;
+}
+.inv-specimen-canvas {
+  width: 64px;
+  height: 48px;
+  display: block;
+}
 .crate-preview { margin-top: 8px; text-align: left; border-top: 1px solid #334155; }
 .crate-preview summary { padding: 12px; cursor: pointer; color: #c4e9f4; font-weight: 600; }
 .crate-rewards { margin: 0; padding: 10px; }
