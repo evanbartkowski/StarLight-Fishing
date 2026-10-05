@@ -158,7 +158,6 @@ export class TrapSystem {
 
   renderBuoys(ctx, boatX, surfaceY, cameraY) {
     if (cameraY > surfaceY + 100) return;
-    if (this.saveSystem?.data?.settings?.hideSeabedTraps) return;
 
     const trapCount = this.getTrapCount();
     if (trapCount <= 0) return;
@@ -174,99 +173,53 @@ export class TrapSystem {
       const waveBob = Math.sin(b.bobTimer) * 4;
       const by = surfaceY - cameraY + waveBob;
 
-      // Braided polypropylene haul line descending into the benthic zone
-      ctx.strokeStyle = isFull ? 'rgba(45, 212, 191, 0.85)' : 'rgba(254, 240, 138, 0.65)';
-      ctx.lineWidth = isFull ? 2 : 1.5;
-      ctx.setLineDash([4, 3]);
+      // Tether rope extending downward
+      ctx.strokeStyle = isFull ? 'rgba(45, 212, 191, 0.7)' : 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = isFull ? 1.6 : 1.2;
       ctx.beginPath();
       ctx.moveTo(bx, by);
-      ctx.lineTo(bx + Math.sin(b.bobTimer * 0.5) * 5, by + 46);
+      ctx.lineTo(bx + Math.sin(b.bobTimer * 0.5) * 6, by + 50);
       ctx.stroke();
-      ctx.setLineDash([]);
 
-      // Subtle underwater sunken cage silhouette hanging on line
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.4)';
-      ctx.strokeStyle = isFull ? 'rgba(45, 212, 191, 0.5)' : 'rgba(148, 163, 184, 0.35)';
-      ctx.lineWidth = 1.2;
-      const cageY = by + 34;
-      ctx.fillRect(bx - 7, cageY, 14, 11);
-      ctx.strokeRect(bx - 7, cageY, 14, 11);
-
-      // Buoy Body (Commercial marine conical float with dual-tone molded hull)
+      // Buoy Body (Bright Orange / Yellow coastal marker with full quest-like biolum radiance)
       if (isFull) {
         ctx.shadowColor = '#2dd4bf';
-        ctx.shadowBlur = 14 + Math.sin(b.bobTimer * 4) * 6;
+        ctx.shadowBlur = 14 + Math.sin(b.bobTimer * 4) * 5;
       }
-      const buoyPrimary = i === 0 ? '#ea580c' : i === 1 ? '#eab308' : '#0284c7';
-      const buoySecondary = i === 0 ? '#9a3412' : i === 1 ? '#ca8a04' : '#0369a1';
-
-      // Lower conical taper
-      ctx.fillStyle = buoySecondary;
+      ctx.fillStyle = i === 0 ? '#ea580c' : i === 1 ? '#eab308' : '#0284c7';
       ctx.beginPath();
-      ctx.moveTo(bx - 9, by);
-      ctx.lineTo(bx, by + 10);
-      ctx.lineTo(bx + 9, by);
-      ctx.closePath();
+      ctx.ellipse(bx, by - 4, 10, 13, 0, 0, Math.PI * 2);
       ctx.fill();
-
-      // Upper rounded float body
-      ctx.fillStyle = buoyPrimary;
-      ctx.beginPath();
-      ctx.ellipse(bx, by - 4, 11, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-
       if (isFull) {
         ctx.shadowBlur = 0;
-        // Shimmering bioluminescent signal pulse
+        // Shimmering outer beacon ring
         ctx.strokeStyle = `rgba(45, 212, 191, ${0.45 + 0.35 * Math.sin(b.bobTimer * 4)})`;
         ctx.lineWidth = 2.2;
         ctx.beginPath();
-        ctx.arc(bx, by - 4, 17 + Math.sin(b.bobTimer * 3) * 3, 0, Math.PI * 2);
+        ctx.arc(bx, by - 4, 16 + Math.sin(b.bobTimer * 3) * 2.5, 0, Math.PI * 2);
         ctx.stroke();
       }
 
-      // High-visibility retro-reflective collar stripe
+      // White stripe
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect ? ctx.roundRect(bx - 10, by - 6, 20, 5, 2) : ctx.rect(bx - 10, by - 6, 20, 5);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      ctx.fillRect(bx - 10, by - 6, 20, 4);
 
-      // Slender fiberglass spar antenna
+      // Flag antenna
       ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(bx, by - 15);
-      ctx.lineTo(bx, by - 28);
+      ctx.moveTo(bx, by - 16);
+      ctx.lineTo(bx, by - 26);
       ctx.stroke();
 
-      // Solar LED dome beacon light
-      const beaconColor = isFull ? '#2dd4bf' : storedCount > 0 ? '#22c55e' : '#f59e0b';
-      ctx.fillStyle = beaconColor;
-      ctx.shadowColor = beaconColor;
-      ctx.shadowBlur = 8;
+      // Tiny flag
+      ctx.fillStyle = isFull ? '#2dd4bf' : storedCount > 0 ? '#22c55e' : '#ef4444';
       ctx.beginPath();
-      ctx.arc(bx, by - 28, 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // High-vis triangular marine pennant flag
-      ctx.fillStyle = beaconColor;
-      ctx.beginPath();
-      ctx.moveTo(bx, by - 28);
-      ctx.lineTo(bx + 9, by - 23);
+      ctx.moveTo(bx, by - 26);
+      ctx.lineTo(bx + 8, by - 22);
       ctx.lineTo(bx, by - 18);
       ctx.closePath();
       ctx.fill();
-
-      // Trap index numeral on buoy body for clarity
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 9px Outfit, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(i + 1), bx, by + 1);
     }
     ctx.restore();
   }

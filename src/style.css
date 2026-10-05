@@ -15,6 +15,34 @@ html, body {
   background-color: #030712;
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #f8fafc;
+  scrollbar-color: #0284c7 rgba(15, 23, 42, 0.7);
+  scrollbar-width: thin;
+}
+
+/* Oceanic custom scrollbars across all game containers, modals, and lists */
+* {
+  scrollbar-color: #0284c7 rgba(15, 23, 42, 0.7);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.75);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  border-radius: 999px;
+  border: 2px solid rgba(15, 23, 42, 0.75);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
 }
 
 #game-canvas {
@@ -4357,9 +4385,9 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .cloud-mist-backdrop {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.96) 50%, rgba(224, 242, 254, 0.94) 100%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.96) 0%, rgba(240, 249, 255, 0.92) 55%, rgba(224, 242, 254, 0.88) 100%);
   opacity: 0;
-  transition: opacity 0.42s ease-in-out;
+  transition: opacity 0.65s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 .realm-cloud-transition.phase-in .cloud-mist-backdrop {
@@ -4368,7 +4396,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 
 .realm-cloud-transition.phase-out .cloud-mist-backdrop {
   opacity: 0;
-  transition: opacity 0.58s ease-in;
+  transition: opacity 0.85s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .cloud-layer {
@@ -4388,7 +4416,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 
 .cloud-layer-left {
   transform: translateX(-105%);
-  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .realm-cloud-transition.phase-in .cloud-layer-left {
@@ -4396,14 +4424,14 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 
 .realm-cloud-transition.phase-out .cloud-layer-left {
-  transform: translateX(-125%) scale(1.1);
+  transform: translateX(-120%) scale(1.08);
   opacity: 0;
-  transition: transform 0.62s cubic-bezier(0.4, 0, 1, 1), opacity 0.55s ease-in;
+  transition: transform 0.88s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.78s ease-out;
 }
 
 .cloud-layer-right {
   transform: translateX(105%);
-  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .realm-cloud-transition.phase-in .cloud-layer-right {
@@ -4411,9 +4439,9 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 
 .realm-cloud-transition.phase-out .cloud-layer-right {
-  transform: translateX(125%) scale(1.1);
+  transform: translateX(120%) scale(1.08);
   opacity: 0;
-  transition: transform 0.62s cubic-bezier(0.4, 0, 1, 1), opacity 0.55s ease-in;
+  transition: transform 0.88s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.78s ease-out;
 }
 
 .cloud-puffs-cluster {
@@ -4429,10 +4457,10 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   position: absolute;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f5f9 55%, #e2e8f0 85%, #cbd5e1 100%);
-  filter: drop-shadow(0 15px 30px rgba(15, 23, 42, 0.15)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.9));
-  transform: scale(0.25);
+  filter: drop-shadow(0 15px 30px rgba(15, 23, 42, 0.12)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.95));
+  transform: scale(0.2);
   opacity: 0;
-  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s ease-out;
+  transition: transform 0.68s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease-out;
 }
 
 .realm-cloud-transition.phase-in .cloud-puff {
@@ -4441,9 +4469,9 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 
 .realm-cloud-transition.phase-out .cloud-puff {
-  transform: scale(1.4);
+  transform: scale(1.3);
   opacity: 0;
-  transition: transform 0.58s cubic-bezier(0.4, 0, 1, 1), opacity 0.5s ease-in;
+  transition: transform 0.88s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.75s ease-out;
 }
 
 .puff-1 { width: 55vw; height: 55vw; top: -12vw; left: 8vw; }

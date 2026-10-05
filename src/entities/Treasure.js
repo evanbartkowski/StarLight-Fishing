@@ -126,24 +126,24 @@ export class Treasure {
       ctx.fillRect(-hw, -hh, hw * 2, hh * 2);
 
       // Darker Wood/Metal Grain Borders
-      ctx.strokeStyle = rank >= 4 ? '#c084fc' : rank === 3 ? '#fbbf24' : '#27272a';
+      ctx.strokeStyle = rank === 8 ? '#e879f9' : rank === 7 ? '#2dd4bf' : rank === 6 ? '#f97316' : rank === 5 ? '#38bdf8' : rank === 4 ? '#c084fc' : rank === 3 ? '#fbbf24' : '#27272a';
       ctx.lineWidth = 2.5;
       ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
 
       // Vertical Straps
-      ctx.fillStyle = rank === 5 ? '#38bdf8' : rank >= 3 ? '#f59e0b' : '#475569';
+      ctx.fillStyle = rank === 8 ? '#c084fc' : rank === 7 ? '#14b8a6' : rank === 6 ? '#ea580c' : rank === 5 ? '#38bdf8' : rank >= 3 ? '#f59e0b' : '#475569';
       ctx.fillRect(-hw + 5, -hh, 4, hh * 2);
       ctx.fillRect(hw - 9, -hh, 4, hh * 2);
 
       // Center Keyhole / Lock Latch
-      ctx.fillStyle = rank === 5 ? '#f43f5e' : rank >= 3 ? '#facc15' : '#cbd5e1';
+      ctx.fillStyle = rank === 8 ? '#38bdf8' : rank === 7 ? '#fef08a' : rank === 6 ? '#fbbf24' : rank === 5 ? '#f43f5e' : rank >= 3 ? '#facc15' : '#cbd5e1';
       ctx.fillRect(-4, -5, 8, 10);
       ctx.fillStyle = '#000000';
       ctx.fillRect(-1.5, -2, 3, 4);
 
       // Rank Glow Emblem on top
       if (rank >= 4) {
-        ctx.fillStyle = rank === 5 ? '#67e8f9' : '#c084fc';
+        ctx.fillStyle = rank === 8 ? '#e879f9' : rank === 7 ? '#2dd4bf' : rank === 6 ? '#f97316' : rank === 5 ? '#67e8f9' : '#c084fc';
         ctx.shadowColor = ctx.fillStyle;
         ctx.shadowBlur = 10;
         ctx.beginPath();

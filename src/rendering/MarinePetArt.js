@@ -42,14 +42,18 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.quadraticCurveTo(20, -10, 6, -10);
     ctx.quadraticCurveTo(0, -18, -2, -22);
     ctx.quadraticCurveTo(-2, -14, -8, -9);
-    const tailY = tailFlukeWave * 4.5;
-    ctx.quadraticCurveTo(-24, -8 + tailY * 0.5, -36, -3 + tailY);
-    ctx.quadraticCurveTo(-40, -10 + tailY, -46, -11 + tailY);
-    ctx.quadraticCurveTo(-41, -2 + tailY, -39, 0 + tailY);
-    ctx.quadraticCurveTo(-41, 6 + tailY, -45, 9 + tailY);
-    ctx.quadraticCurveTo(-38, 5 + tailY, -34, 3 + tailY);
-    ctx.quadraticCurveTo(-18, 9, 4, 10);
-    ctx.quadraticCurveTo(20, 8, 30, 4);
+    const tailY = tailFlukeWave * 3.8;
+    // Upper back tapering into tail stock (peduncle)
+    ctx.quadraticCurveTo(-22, -8 + tailY * 0.4, -34, -2 + tailY);
+    // Upper fluke wing
+    ctx.quadraticCurveTo(-38, -9 + tailY, -45, -11 + tailY);
+    ctx.quadraticCurveTo(-41, -2 + tailY, -38, 0 + tailY);
+    // Lower fluke wing
+    ctx.quadraticCurveTo(-41, 2 + tailY, -45, 9 + tailY);
+    ctx.quadraticCurveTo(-38, 6 + tailY, -34, 2 + tailY);
+    // Sleek lower belly contour: smooth gentle taper from peduncle to chest
+    ctx.quadraticCurveTo(-20, 6 + tailY * 0.3, 0, 9);
+    ctx.quadraticCurveTo(18, 9, 30, 4);
     ctx.closePath();
 
     // Rich dual-tone oceanic gradient
@@ -64,10 +68,10 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(28, 4);
-    ctx.quadraticCurveTo(18, 7, 2, 8);
-    ctx.quadraticCurveTo(-16, 7, -30, 2 + tailY * 0.7);
-    ctx.quadraticCurveTo(-18, 9, 4, 10);
-    ctx.quadraticCurveTo(20, 8, 30, 4);
+    ctx.quadraticCurveTo(18, 7, 2, 7.5);
+    ctx.quadraticCurveTo(-14, 6, -28, 1.5 + tailY * 0.5);
+    ctx.quadraticCurveTo(-20, 6 + tailY * 0.3, 0, 9);
+    ctx.quadraticCurveTo(18, 9, 30, 4);
     ctx.closePath();
     ctx.fillStyle = 'rgba(241, 245, 249, 0.42)';
     ctx.fill();
@@ -90,8 +94,8 @@ export function drawMarinePet(ctx, kind, time = 0) {
 
     // 6. Fluke median notch detail
     ctx.beginPath();
-    ctx.moveTo(-36, 0 + tailY);
-    ctx.lineTo(-40, 0 + tailY);
+    ctx.moveTo(-35, 0 + tailY);
+    ctx.lineTo(-38, 0 + tailY);
     ctx.strokeStyle = '#222831';
     ctx.lineWidth = 1.3;
     ctx.stroke();
@@ -135,12 +139,12 @@ export function drawMarinePet(ctx, kind, time = 0) {
 
     // 1. Pectoral fin (lower body)
     ctx.save();
-    ctx.translate(0, 9);
+    ctx.translate(0, 8);
     ctx.rotate(0.32 + swimWave * 0.1);
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(10, 15, 16, 17);
-    ctx.quadraticCurveTo(10, 13, 3, 2);
+    ctx.quadraticCurveTo(10, 14, 16, 16);
+    ctx.quadraticCurveTo(10, 12, 3, 2);
     ctx.closePath();
     ctx.fillStyle = '#477aa8';
     ctx.fill();
@@ -152,7 +156,7 @@ export function drawMarinePet(ctx, kind, time = 0) {
 
     // 2. Main Shark Body
     // Snout at (+38, 0), Dorsal fin at (-2, -23), Tail at (-40, tailY)
-    const tailY = tailFlukeWave * 4.2;
+    const tailY = tailFlukeWave * 3.8;
     ctx.beginPath();
     // Snout tip
     ctx.moveTo(40, 1);
@@ -164,18 +168,18 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.quadraticCurveTo(2, -18, 0, -23);
     // Trailing dorsal fin edge
     ctx.quadraticCurveTo(-1, -16, -7, -9);
-    // Back towards tail stock
-    ctx.quadraticCurveTo(-22, -7 + tailY * 0.5, -36, -2 + tailY);
+    // Back towards tail stock (peduncle)
+    ctx.quadraticCurveTo(-20, -7 + tailY * 0.4, -34, -2 + tailY);
     // Heterocercal shark tail: tall upper lobe
-    ctx.quadraticCurveTo(-42, -11 + tailY, -48, -13 + tailY);
-    ctx.quadraticCurveTo(-43, -3 + tailY, -40, 0 + tailY);
+    ctx.quadraticCurveTo(-41, -10 + tailY, -47, -12 + tailY);
+    ctx.quadraticCurveTo(-42, -2 + tailY, -38, 0 + tailY);
     // Lower tail lobe
-    ctx.quadraticCurveTo(-42, 6 + tailY, -46, 8 + tailY);
-    ctx.quadraticCurveTo(-38, 4 + tailY, -34, 3 + tailY);
-    // Belly curve towards chest
-    ctx.quadraticCurveTo(-16, 9, 6, 10);
+    ctx.quadraticCurveTo(-41, 5 + tailY, -44, 8 + tailY);
+    ctx.quadraticCurveTo(-37, 4 + tailY, -33, 2 + tailY);
+    // Smooth streamlined belly contour without sudden bulge
+    ctx.quadraticCurveTo(-18, 7 + tailY * 0.3, 4, 9);
     // Throat to jaw
-    ctx.quadraticCurveTo(24, 8, 34, 3);
+    ctx.quadraticCurveTo(22, 7.5, 34, 3);
     ctx.closePath();
 
     // Blue-grey shark body gradient
@@ -190,10 +194,10 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(33, 2);
-    ctx.quadraticCurveTo(20, 6, 4, 7);
-    ctx.quadraticCurveTo(-16, 6, -30, 2 + tailY * 0.6);
-    ctx.quadraticCurveTo(-16, 9, 6, 10);
-    ctx.quadraticCurveTo(24, 8, 34, 3);
+    ctx.quadraticCurveTo(20, 5.5, 4, 6.5);
+    ctx.quadraticCurveTo(-14, 5.5, -28, 1.5 + tailY * 0.5);
+    ctx.quadraticCurveTo(-18, 7 + tailY * 0.3, 4, 9);
+    ctx.quadraticCurveTo(22, 7.5, 34, 3);
     ctx.closePath();
     ctx.fillStyle = 'rgba(248, 250, 252, 0.88)';
     ctx.fill();

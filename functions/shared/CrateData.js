@@ -92,6 +92,60 @@ export const CRATE_RANKS = [
     badChance: 0.10,
     superGoodChance: 0.58,
   },
+  {
+    id: 'crate_magma',
+    name: 'Volcanic Magma Core Safe',
+    rank: 6,
+    rankName: 'Obsidian Safe',
+    rarity: 'mythic',
+    minDepth: 520,
+    maxDepth: 900,
+    radius: 30,
+    color: '#450a0a',
+    bandColor: '#f97316',
+    lockColor: '#fbbf24',
+    glow: '#ea580c',
+    icon: '🌋',
+    desc: 'Forged within active deep-sea hydrothermal calderas. Emits intense volcanic heat and pressurized steam, harboring fiery gemstones and magma-forged relics.',
+    badChance: 0.08,
+    superGoodChance: 0.65,
+  },
+  {
+    id: 'crate_atlantis',
+    name: 'Sunken Atlantean Vault',
+    rank: 7,
+    rankName: 'Atlantean Vault',
+    rarity: 'ancient',
+    minDepth: 800,
+    maxDepth: 1350,
+    radius: 32,
+    color: '#0f766e',
+    bandColor: '#2dd4bf',
+    lockColor: '#fef08a',
+    glow: '#14b8a6',
+    icon: '🏛️',
+    desc: 'A sacred high-tech reliquary from the lost civilization of Atlantis. Engraved with glowing ancient glyphs and sealed with pure hydrodynamic energy.',
+    badChance: 0.06,
+    superGoodChance: 0.72,
+  },
+  {
+    id: 'crate_void',
+    name: 'Chrono-Void Starlight Matrix',
+    rank: 8,
+    rankName: 'Eldritch Void Matrix',
+    rarity: 'god',
+    minDepth: 1100,
+    maxDepth: 2200,
+    radius: 34,
+    color: '#18042b',
+    bandColor: '#e879f9',
+    lockColor: '#38bdf8',
+    glow: '#c084fc',
+    icon: '🌌',
+    desc: 'An otherworldly tesseract cube dredged from the deepest cosmic abysses of space and time. Warps reality around its hull with unimaginable celestial fortunes.',
+    badChance: 0.04,
+    superGoodChance: 0.80,
+  },
 ];
 
 // Rich, rank-segregated loot tables with diverse themes per oceanic depth
@@ -828,14 +882,419 @@ export const CRATE_LOOT_TABLES = {
       },
     ],
   },
+
+  // RANK 6: Volcanic Magma Core Safe (Caldera Trench / Submarine Volcanoes)
+  6: {
+    superBad: [
+      {
+        id: 'sulfur_scorch',
+        name: 'Scorched Volcanic Ash & Sulfur',
+        icon: '💨',
+        type: 'trash',
+        grade: 'super_bad',
+        coins: 250,
+        xp: 180,
+        headline: 'Choking black volcanic pumice and ash!',
+        flavor: 'A gust of suffocating sulfur dust blew out of the heat vents, leaving scorched rock.',
+      },
+      {
+        id: 'melted_tackle',
+        name: 'Scalded Titanium Swivel',
+        icon: '🔥',
+        type: 'hazard',
+        grade: 'super_bad',
+        coins: -400,
+        xp: 200,
+        headline: 'Hydrothermal heat scalded your tackle!',
+        flavor: 'Superheated vent water slagged $400 worth of spare lines before cooling.',
+      },
+      {
+        id: 'obsidian_shard',
+        name: 'Razor Obsidian Core Fragment',
+        icon: '🪨',
+        type: 'trash',
+        grade: 'super_bad',
+        coins: 300,
+        xp: 220,
+        headline: 'Just a razor-sharp chunk of black volcanic glass!',
+        flavor: 'Very shiny and sharp, but not quite the buried riches you dreamed of.',
+      },
+    ],
+    fair: [
+      {
+        id: 'pyroclastic_ruby',
+        name: 'Pyroclastic Fire Ruby Gem',
+        icon: '💎',
+        type: 'fair',
+        grade: 'fair',
+        coins: 11000,
+        xp: 1100,
+        headline: 'A blazing crimson caldera ruby!',
+        flavor: 'Faceted under tectonic pressure at 1200 degrees Celsius deep beneath the seabed.',
+      },
+      {
+        id: 'molten_gold_ingot',
+        name: 'Molten Basalt Gold Ingot',
+        icon: '🧈',
+        type: 'fair',
+        grade: 'fair',
+        coins: 13500,
+        xp: 1300,
+        headline: 'Smelted naturally in submarine magma chambers!',
+        flavor: 'A dense nugget of natural gold crystallized inside volcanic basalt.',
+      },
+      {
+        id: 'volcanic_geode',
+        name: 'Hydrothermal Amethyst Geode',
+        icon: '🔮',
+        type: 'fair',
+        grade: 'fair',
+        coins: 15000,
+        xp: 1400,
+        headline: 'A glittering violet geode from deep vents!',
+        flavor: 'Filled with luminous purple quartz clusters that hum warmly to the touch.',
+      },
+      {
+        id: 'magma_dunkleosteus_bone',
+        name: 'Armored Dunkleosteus Head Plate',
+        icon: '🦴',
+        type: 'fossil_cache',
+        grade: 'fair',
+        coins: 14000,
+        xp: 1350,
+        bonusSkeleton: { target: 'dunkleosteus', name: 'Armored Dunkleosteus Plate' },
+        headline: '🏛️ MUSEUM FIND! +1 Dunkleosteus Armor Plate!',
+        flavor: 'Thick prehistoric bone plating preserved in hardened volcanic ash.',
+      },
+    ],
+    superGood: [
+      {
+        id: 'caldera_sun_gem',
+        name: 'Eternal Caldera Solar Core Gem',
+        icon: '🔥',
+        type: 'jackpot',
+        grade: 'super_good',
+        coins: 38000,
+        xp: 4800,
+        headline: '🔥 TITANIC VOLCANIC JACKPOT! Caldera Solar Core!',
+        flavor: 'A blazing jewel radiating immense geothermal energy, burning with ancient inner fire!',
+      },
+      {
+        id: 'abyssal_inferno_relic',
+        name: 'Gilded Forge Surtur Crown',
+        icon: '👑',
+        type: 'gem',
+        grade: 'super_good',
+        coins: 44000,
+        xp: 5200,
+        headline: '👑 ANCIENT FORGE RELIC! Gilded Surtur Crown!',
+        flavor: 'An indestructible wrought-gold coronal forged in the belly of an ocean trench volcano.',
+      },
+      {
+        id: 'magma_bobber_crate',
+        name: 'Volcanic Magma Flame Bobber',
+        icon: '🏮',
+        type: 'cosmetic',
+        grade: 'super_good',
+        coins: 22000,
+        xp: 3600,
+        bonusBobber: { id: 'bobber_magma_flame', name: 'Magma Flame Bobber' },
+        headline: '🎁 UNLOCKED EXCLUSIVE GEAR! Magma Flame Bobber!',
+        flavor: 'Enchanted with dancing volcanic embers that illuminate dark depths as you fish!',
+      },
+      {
+        id: 'titan_apex_bone_cache',
+        name: 'Primordial Apex Bone Cache',
+        icon: '🏛️',
+        type: 'fossil_cache',
+        grade: 'super_good',
+        coins: 26000,
+        xp: 3900,
+        bonusSkeleton: { target: 'megalodonJaw', name: 'Primal Apex Jaw Bone' },
+        headline: '🏛️ APEX MUSEUM TROVE! +1 Skeleton Bone Piece!',
+        flavor: 'A pristine fossil tooth from a titan prehistoric leviathan.',
+      },
+    ],
+  },
+
+  // RANK 7: Sunken Atlantean Vault (Sunken Empire / Drowned Monoliths)
+  7: {
+    superBad: [
+      {
+        id: 'corroded_aquastone',
+        name: 'Depleted Hydro-Power Core',
+        icon: '🔋',
+        type: 'trash',
+        grade: 'super_bad',
+        coins: 400,
+        xp: 240,
+        headline: 'An Atlantean power cell that drained ten thousand years ago.',
+        flavor: 'Faintly glows for two seconds, then clicks dead into dull turquoise glass.',
+      },
+      {
+        id: 'trident_splinter',
+        name: 'Shattered Bronze Trident Prong',
+        icon: '🔱',
+        type: 'trash',
+        grade: 'super_bad',
+        coins: 450,
+        xp: 280,
+        headline: 'A cracked trident barb from an ancient guard skirmish.',
+        flavor: 'Covered in oxidized sea verdigris and calcified barnacles.',
+      },
+      {
+        id: 'siren_echo_shell',
+        name: 'Bewitching Siren Trick Shell',
+        icon: '🐚',
+        type: 'hazard',
+        grade: 'super_bad',
+        coins: -500,
+        xp: 260,
+        headline: 'A resonant siren shell chimed on your deck!',
+        flavor: 'Its hypnotic ringing caused $500 in silver coins to slip through your deck grating!',
+      },
+    ],
+    fair: [
+      {
+        id: 'orichalcum_bar',
+        name: 'Gilded Orichalcum Sovereign Bar',
+        icon: '🪙',
+        type: 'fair',
+        grade: 'fair',
+        coins: 18000,
+        xp: 1700,
+        headline: 'Pure legendary Orichalcum ingots from Atlantis!',
+        flavor: 'An alloy that never tarnishes in salt water, warm and heavy in your hands.',
+      },
+      {
+        id: 'poseidon_chrysolite',
+        name: 'Poseidon Tears Chrysolite',
+        icon: '💎',
+        type: 'fair',
+        grade: 'fair',
+        coins: 22000,
+        xp: 2000,
+        headline: 'Flawless oceanic jewel pulsing with tidal magic!',
+        flavor: 'Shimmers with swirling ocean wave patterns trapped within solid stone.',
+      },
+      {
+        id: 'atlantean_hologram_core',
+        name: 'High Council Archive Hologram Crystal',
+        icon: '🔮',
+        type: 'fair',
+        grade: 'fair',
+        coins: 25000,
+        xp: 2200,
+        headline: 'Ancient archives recording forgotten ocean secrets!',
+        flavor: 'Beams projected geometric star charts across your cabin walls.',
+      },
+      {
+        id: 'ancient_mosasaur_tooth',
+        name: 'Fossilized Mosasaur Dread Fang',
+        icon: '🦴',
+        type: 'fossil_cache',
+        grade: 'fair',
+        coins: 21000,
+        xp: 1900,
+        bonusSkeleton: { target: 'mosasaur', name: 'Colossal Mosasaur Fang' },
+        headline: '🏛️ MUSEUM FIND! +1 Mosasaur Bone Piece!',
+        flavor: 'A serrated six-inch predator fang preserved in turquoise limestone.',
+      },
+    ],
+    superGood: [
+      {
+        id: 'trident_of_rulers',
+        name: 'Imperial Sovereign Trident of Atlantis',
+        icon: '🔱',
+        type: 'jackpot',
+        grade: 'super_good',
+        coins: 58000,
+        xp: 6500,
+        headline: '🔱 MYTHOLOGICAL MEGA JACKPOT! Imperial Sovereign Trident!',
+        flavor: 'The supreme royal emblem of the lost sunken empire, crackling with pure hydrodynamic majesty!',
+      },
+      {
+        id: 'eye_of_oceanus',
+        name: 'The Eternal Eye of Oceanus Pearl',
+        icon: '🌊',
+        type: 'gem',
+        grade: 'super_good',
+        coins: 65000,
+        xp: 7500,
+        headline: '🌊 DIVINE OCEANIC MIRACLE! Eye of Oceanus Pearl!',
+        flavor: 'A colossal luminescent pearl whose radiance can calm entire oceanic typhoons.',
+      },
+      {
+        id: 'atlantean_crystal_bobber',
+        name: 'Atlantean Aquastone Crystal Bobber',
+        icon: '💎',
+        type: 'cosmetic',
+        grade: 'super_good',
+        coins: 34000,
+        xp: 4800,
+        bonusBobber: { id: 'bobber_atlantean_crystal', name: 'Atlantean Crystal Bobber' },
+        headline: '🎁 UNLOCKED MYTHIC GEAR! Atlantean Crystal Bobber!',
+        flavor: 'Carved from pure aquastone crystal, humming with sacred hydrodynamic balance.',
+      },
+      {
+        id: 'emperor_fossil_reliquary',
+        name: 'Emperor Marine Fossil Trove',
+        icon: '🏛️',
+        type: 'fossil_cache',
+        grade: 'super_good',
+        coins: 38000,
+        xp: 5000,
+        bonusSkeleton: { target: 'plesiosaur', name: 'Emperor Marine Fossil Piece' },
+        headline: '🏛️ EMPEROR MUSEUM TROVE! +1 Skeleton Bone Piece!',
+        flavor: 'Unblemished museum-grade prehistoric fossils dredged from royal sunken vaults.',
+      },
+    ],
+  },
+
+  // RANK 8: Chrono-Void Starlight Matrix (Cosmic Trench / Event Horizon)
+  8: {
+    superBad: [
+      {
+        id: 'entropy_fissure',
+        name: 'Chrono-Temporal Entropy Fissure',
+        icon: '⏳',
+        type: 'trash',
+        grade: 'super_bad',
+        coins: 800,
+        xp: 350,
+        headline: 'Reality trembled! Left behind an ornate brass clock frozen at midnight.',
+        flavor: 'The seconds hand runs backwards twice a day, then stops entirely.',
+      },
+      {
+        id: 'void_residue',
+        name: 'Shimmering Dark Matter Blob',
+        icon: '🕳️',
+        type: 'trash',
+        grade: 'super_bad',
+        coins: 900,
+        xp: 400,
+        headline: 'A blob of dark matter that evaporated into purple mist.',
+        flavor: 'Left a faintly glowing smudge on your wooden deck before dissolving into the air.',
+      },
+      {
+        id: 'gravity_whirl',
+        name: 'Micro Gravitational Singularity',
+        icon: '🌀',
+        type: 'hazard',
+        grade: 'super_bad',
+        coins: -800,
+        xp: 380,
+        headline: 'A gravitational burst tugged $800 of spare lures into the void!',
+        flavor: 'A miniature black hole burped, swallowing assorted tackle before imploding safely.',
+      },
+    ],
+    fair: [
+      {
+        id: 'singularity_core',
+        name: 'Pulsing Singularity Energy Core',
+        icon: '🌌',
+        type: 'fair',
+        grade: 'fair',
+        coins: 30000,
+        xp: 2800,
+        headline: 'A harnessed celestial dynamo humming in harmonic frequencies!',
+        flavor: 'A stable gravity sphere glowing with swirling purples and deep starry blacks.',
+      },
+      {
+        id: 'astral_nebula_prism',
+        name: 'Prismatic Hyper-Spatial Nebula Prism',
+        icon: '🔮',
+        type: 'fair',
+        grade: 'fair',
+        coins: 36000,
+        xp: 3200,
+        headline: 'Distorts light into kaleidoscopic rainbow auroras!',
+        flavor: 'Looking through it reveals constellations from distant unknown galaxies.',
+      },
+      {
+        id: 'chrono_hourglass',
+        name: 'Timeless Star-Hourglass of Eternity',
+        icon: '⏳',
+        type: 'fair',
+        grade: 'fair',
+        coins: 42000,
+        xp: 3600,
+        headline: 'Filled with golden stardust that flows upward against gravity!',
+        flavor: 'Crafted from unbreakable cosmic quartz by stellar navigators.',
+      },
+      {
+        id: 'cosmic_titan_fossil',
+        name: 'Prehistoric Void Leviathan Vertebra',
+        icon: '🦴',
+        type: 'fossil_cache',
+        grade: 'fair',
+        coins: 35000,
+        xp: 3100,
+        bonusSkeleton: { target: 'megalodonJaw', name: 'Void Leviathan Vertebra' },
+        headline: '🏛️ MUSEUM FIND! +1 Prehistoric Bone Piece!',
+        flavor: 'Fossilized vertebrae of an impossible titan that once swam in primordial starlight.',
+      },
+    ],
+    superGood: [
+      {
+        id: 'cosmic_tesseract_jackpot',
+        name: 'The Infinite Omniversal Tesseract Matrix',
+        icon: '🌌',
+        type: 'jackpot',
+        grade: 'super_good',
+        coins: 95000,
+        xp: 10000,
+        headline: '🌌 TRANSCENDENT VOID MEGA JACKPOT! Infinite Tesseract Matrix!',
+        flavor: 'An impossible four-dimensional cube folded from pure celestial gold and nebular energy!',
+      },
+      {
+        id: 'void_supernova_gem',
+        name: 'Primordial Supernova Core Diamond',
+        icon: '⭐',
+        type: 'gem',
+        grade: 'super_good',
+        coins: 110000,
+        xp: 12500,
+        headline: '⭐ ASTRAL GOD DISCOVERY! Primordial Supernova Core Diamond!',
+        flavor: 'A cosmic diamond crystallized in the heart of an ancient dying sun across the universe.',
+      },
+      {
+        id: 'hyperdrive_bobber',
+        name: 'Hyper-Dimensional Void Tesseract Bobber',
+        icon: '🌠',
+        type: 'cosmetic',
+        grade: 'super_good',
+        coins: 55000,
+        xp: 7000,
+        bonusBobber: { id: 'bobber_hyperdrive_void', name: 'Hyper-Dimensional Void Bobber' },
+        headline: '🎁 UNLOCKED GOD-TIER GEAR! Hyper-Dimensional Bobber!',
+        flavor: 'Bends local reality around your fishing line, creating ripples in space-time!',
+      },
+      {
+        id: 'divine_omega_bone_trove',
+        name: 'Mythic Primordial Apex Bone Reliquary',
+        icon: '🏛️',
+        type: 'fossil_cache',
+        grade: 'super_good',
+        coins: 60000,
+        xp: 8000,
+        bonusSkeleton: { target: 'dunkleosteus', name: 'Primordial Omega Bone Relic' },
+        headline: '🏛️ OMEGA MUSEUM TROVE! +1 Skeleton Bone Piece!',
+        flavor: 'The pinnacle fossil artifact of the ancient seas, revered by archaeologists worldwide.',
+      },
+    ],
+  },
 };
 
 export const CRATE_GEM_PRICES = {
-  1: 2,  // Driftwood Crate: 2 Gems
-  2: 5,  // Ironbound Strongbox: 5 Gems
-  3: 10, // Corsair's Chest: 10 Gems
-  4: 20, // Abyssal Leviathan Coffer: 20 Gems
-  5: 40, // Mythic Celestial Reliquary: 40 Gems
+  1: 2,   // Driftwood Crate: 2 Gems
+  2: 5,   // Ironbound Strongbox: 5 Gems
+  3: 10,  // Corsair's Chest: 10 Gems
+  4: 20,  // Abyssal Leviathan Coffer: 20 Gems
+  5: 40,  // Mythic Celestial Reliquary: 40 Gems
+  6: 65,  // Volcanic Magma Core Safe: 65 Gems
+  7: 95,  // Sunken Atlantean Vault: 95 Gems
+  8: 140, // Chrono-Void Starlight Matrix: 140 Gems
 };
 
 export const DIVINE_CRATE_LOOT = { id: 'divine_starlight', name: 'Divine Starlight Pearl', icon: '✦', type: 'jackpot', grade: 'super_good', rarity: 'god', coins: 50000, xp: 5000, headline: 'A one-in-a-thousand discovery!', flavor: 'A pearl holding the first light of the ocean.' };
@@ -848,12 +1307,13 @@ for (const tables of Object.values(CRATE_LOOT_TABLES)) {
 
 /**
  * Rolls loot for a crate rank.
- * @param {number} crateRank - 1 to 5
+ * @param {number} crateRank - 1 to 8
  * @param {object|null} saveSystem - Optional save system for skeleton / pity tracking
  * @returns {object} Loot reward packet
  */
 export function rollCrateLoot(crateRank, saveSystem = null) {
-  const rank = Math.min(5, Math.max(1, parseInt(crateRank, 10) || 1));
+  const maxRank = CRATE_RANKS[CRATE_RANKS.length - 1].rank;
+  const rank = Math.min(maxRank, Math.max(1, parseInt(crateRank, 10) || 1));
   const rankConfig = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
   const tables = CRATE_LOOT_TABLES[rank] || CRATE_LOOT_TABLES[1];
 
@@ -935,7 +1395,8 @@ export function rollCrateLoot(crateRank, saveSystem = null) {
 }
 
 export function getCrateDropPreview(crateRank, saveSystem = null) {
-  const rank = Math.min(5, Math.max(1, parseInt(crateRank, 10) || 1));
+  const maxRank = CRATE_RANKS[CRATE_RANKS.length - 1].rank;
+  const rank = Math.min(maxRank, Math.max(1, parseInt(crateRank, 10) || 1));
   const rankConfig = CRATE_RANKS.find((r) => r.rank === rank) || CRATE_RANKS[0];
   const tables = CRATE_LOOT_TABLES[rank] || CRATE_LOOT_TABLES[1];
   const guaranteed = (saveSystem?.data?.cratePityCount || 0) >= 9;
