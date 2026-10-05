@@ -28,7 +28,7 @@ const NATIVE_ROSTERS = {
 
 const SALVAGE_IDS = new Set(['driftwood_branch', 'kelp_strand', 'rusty_can', 'mangrove_roots', 'glowing_moss', 'sunken_artifact', 'phosphor_crystal', 'sunken_anchor', 'abyssal_vent', 'lava_geode', 'obsidian_rock']);
 const VOLCANIC_IDS = new Set(['obsidian_pike', 'magma_ray', 'fire_conch', 'cinder_coelacanth']);
-const VALUE_BY_RARITY = { common: 1, uncommon: 2, rare: 5, epic: 12, legendary: 30 };
+export const VALUE_BY_RARITY = { common: 1, uncommon: 2, rare: 5, epic: 12, legendary: 42 };
 export const isSalvageSpecies = species => SALVAGE_IDS.has(species.id);
 
 export function buildRealmFish(originals) {

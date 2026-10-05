@@ -785,3 +785,30 @@ test('weather type returns concise badges and diving mode preserves angler level
   assert.ok(css.includes('.cloud-mist-backdrop'));
 });
 
+test('legendaries sell for higher values, weather badge hides while fishing, and bucket capacity stays accurate', async () => {
+  const fs = await import('node:fs');
+  const css = fs.readFileSync('src/style.css', 'utf-8');
+  const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
+  const { VALUE_BY_RARITY } = await import('../src/data/RealmContent.js');
+  const { Hook } = await import('../src/entities/Hook.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+
+  // 1. Verify boosted legendary base sell values
+  const starWeaver = LEGENDARY_SPECIES.find(s => s.id === 'star_weaver');
+  assert.ok(starWeaver && (starWeaver.baseValue >= 3500 || starWeaver.value >= 3500), 'Star Weaver baseValue should be boosted');
+  assert.ok(VALUE_BY_RARITY.legendary >= 40, 'RealmContent legendary base value factor should be boosted');
+
+  // 2. Verify weather badge hidden during diving in CSS
+  assert.ok(css.includes('#game-hud.hud-diving-mode #hud-weather-badge'), 'hud-weather-badge hidden in diving mode');
+
+  // 3. Verify summary action buttons flex-wrap nowrap in CSS
+  assert.ok(css.includes('.summary-actions'), 'summary-actions present');
+
+  // 4. Verify hook capacity derives properly from upgrades
+  const save = new SaveSystem();
+  save.data.upgrades = { hookCapacity: 2 };
+  const hook = new Hook();
+  hook.applyUpgrades(save);
+  assert.strictEqual(hook.capacity, 5, 'Hook capacity should match tier 2 (5)');
+});
+

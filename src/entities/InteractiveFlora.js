@@ -70,12 +70,106 @@ export class InteractiveFlora {
     ctx.strokeStyle = this.stalkColor;
 
     if (this.kind === 'crystal') {
-      ctx.fillStyle = this.color; ctx.strokeStyle = this.tipColor; ctx.lineWidth = 1.5;
-      for (let i = -1; i <= 1; i++) {
-        const x = i * 15, h = r * (i === 0 ? 1.4 : .9);
-        ctx.beginPath(); ctx.moveTo(x - 7, r * .6); ctx.lineTo(x - 9 + sway * .2, -h * .55);
-        ctx.lineTo(x + sway * .2, -h); ctx.lineTo(x + 9 + sway * .2, -h * .55);
-        ctx.lineTo(x + 7, r * .6); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // Astral Shimmerfall: Luminous crystalline stardust flora with multifaceted jewel fronds,
+      // glowing celestial spore buds, and radiant starlight tendrils.
+      for (let i = -2; i <= 2; i++) {
+        const offset = i * 11;
+        const stemHeight = r * (1.35 - Math.abs(i) * 0.22);
+        const branchSway = sway * (0.45 + (2 - Math.abs(i)) * 0.18);
+        const tipX = offset + branchSway;
+        const tipY = -stemHeight;
+
+        // Faceted crystal stem
+        const stalkGrad = ctx.createLinearGradient(offset, r * 0.8, tipX, tipY);
+        stalkGrad.addColorStop(0, '#312e81');
+        stalkGrad.addColorStop(0.5, '#4f46e5');
+        stalkGrad.addColorStop(1, '#818cf8');
+        ctx.strokeStyle = stalkGrad;
+        ctx.lineWidth = 3.2 - Math.abs(i) * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(offset * 0.7, r * 0.8);
+        ctx.quadraticCurveTo(offset + branchSway * 0.4, 0, tipX, tipY);
+        ctx.stroke();
+
+        // Crystal leaves along stalk
+        const leafCount = 3;
+        for (let l = 1; l <= leafCount; l++) {
+          const t = l / (leafCount + 0.5);
+          const lx = (offset * 0.7) * (1 - t) + tipX * t;
+          const ly = (r * 0.8) * (1 - t) + tipY * t;
+          const leafSide = (i + l) % 2 === 0 ? 1 : -1;
+          const leafSize = 9 - l * 1.5;
+
+          ctx.save();
+          ctx.translate(lx, ly);
+          ctx.rotate(leafSide * 0.55 + branchSway * 0.03);
+          const leafGrad = ctx.createLinearGradient(-leafSize, 0, leafSize, 0);
+          leafGrad.addColorStop(0, 'rgba(167, 139, 250, 0.9)');
+          leafGrad.addColorStop(0.5, 'rgba(192, 132, 252, 0.95)');
+          leafGrad.addColorStop(1, 'rgba(224, 231, 255, 0.9)');
+          ctx.fillStyle = leafGrad;
+          ctx.strokeStyle = '#c7d2fe';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(leafSide * leafSize * 0.6, -leafSize);
+          ctx.lineTo(leafSide * leafSize * 1.3, -leafSize * 0.4);
+          ctx.lineTo(leafSide * leafSize * 0.7, leafSize * 0.3);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Glowing terminal celestial crystal blossom / stardust prism
+        ctx.save();
+        ctx.translate(tipX, tipY);
+        const pulse = 1 + Math.sin(this.timer * 2 + i) * 0.18;
+        ctx.scale(pulse, pulse);
+
+        // Soft outer glow halo
+        ctx.shadowColor = '#a78bfa';
+        ctx.shadowBlur = 14;
+
+        // Diamond-faceted crystal tip
+        const crystalGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, 10);
+        crystalGrad.addColorStop(0, '#ffffff');
+        crystalGrad.addColorStop(0.4, '#c7d2fe');
+        crystalGrad.addColorStop(0.8, '#818cf8');
+        crystalGrad.addColorStop(1, '#4338ca');
+        ctx.fillStyle = crystalGrad;
+        ctx.strokeStyle = '#e0e7ff';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(0, -9);
+        ctx.lineTo(5.5, -1);
+        ctx.lineTo(0, 7);
+        ctx.lineTo(-5.5, -1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner sparkle glint
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-1, -3, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // Floating stardust pollen motes drifting around the crystal bloom
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#c084fc';
+      ctx.fillStyle = '#f8fafc';
+      for (let m = 0; m < 5; m++) {
+        const angle = (m / 5) * Math.PI * 2 + this.timer * 0.7;
+        const dist = 18 + Math.sin(this.timer * 1.5 + m) * 9;
+        const mx = Math.cos(angle) * dist + sway * 0.3;
+        const my = -r * 0.7 + Math.sin(angle) * (dist * 0.7);
+        ctx.beginPath();
+        ctx.arc(mx, my, 1.3, 0, Math.PI * 2);
+        ctx.fill();
       }
     } else if (this.kind === 'tendril') {
       ctx.strokeStyle = this.color; ctx.lineWidth = 5;

@@ -830,15 +830,20 @@ export class UIManager {
     if (timeTextEl) timeTextEl.textContent = worldCycle.getTimeLabel();
     if (weatherTextEl) weatherTextEl.textContent = worldCycle.getWeatherLabel();
 
-    // Update weather type badge next to the bucket in the top GUI
+    // Update weather type badge next to the bucket in the top GUI: only show when up on the boat
     const weatherBadgeEl = document.getElementById('hud-weather-badge');
     if (weatherBadgeEl) {
-      const wt = worldCycle.getWeatherType ? worldCycle.getWeatherType() : { icon: '✨', label: 'Clear' };
-      const iconEl = document.getElementById('hud-weather-badge-icon');
-      const typeEl = document.getElementById('hud-weather-badge-type');
-      if (iconEl) iconEl.textContent = wt.icon;
-      if (typeEl) typeEl.textContent = wt.label;
-      weatherBadgeEl.title = `Atmosphere: ${wt.label}`;
+      if (isDiving) {
+        weatherBadgeEl.style.display = 'none';
+      } else {
+        weatherBadgeEl.style.display = 'inline-flex';
+        const wt = worldCycle.getWeatherType ? worldCycle.getWeatherType() : { icon: '✨', label: 'Clear' };
+        const iconEl = document.getElementById('hud-weather-badge-icon');
+        const typeEl = document.getElementById('hud-weather-badge-type');
+        if (iconEl) iconEl.textContent = wt.icon;
+        if (typeEl) typeEl.textContent = wt.label;
+        weatherBadgeEl.title = `Atmosphere: ${wt.label}`;
+      }
     }
 
     // Update audio rain state based on weather
@@ -900,20 +905,28 @@ export class UIManager {
 
     const capEl = document.getElementById('hud-capacity');
     const capAmt = document.getElementById('capacity-amount');
+
+    // Authoritative maximum capacity based on save system upgrade level
+    const capLvl = this.saveSystem.getUpgradeLevel('hookCapacity') || 0;
+    const capTier = UPGRADE_DEFINITIONS.hookCapacity?.tiers?.[capLvl] || { capacity: 3 };
+    const maxCapacity = (hook?.capacity || capTier.capacity || 3) + (hook?.capacityBoost || 0);
+
+    // Accurate current count of items held in bucket (on the line)
+    const holdingCount = hook?.caughtItems ? hook.caughtItems.length : 0;
+
+    if (capAmt) {
+      capAmt.textContent = `${holdingCount} / ${maxCapacity}`;
+    }
+    if (capEl) {
+      capEl.classList.toggle('capacity-full', holdingCount >= maxCapacity);
+    }
+
     if (!hook || gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
-      if (capAmt) capAmt.textContent = `0 / ${hook ? hook.capacity : 3}`;
       const depthContainer = document.getElementById('hud-depth-container');
       if (depthContainer) depthContainer.style.display = 'none';
       const shieldEl = document.getElementById('hud-shields');
       if (shieldEl) shieldEl.style.display = 'none';
     } else {
-      if (capAmt) capAmt.textContent = `${hook.caughtItems.length} / ${hook.capacity}`;
-      if (hook.caughtItems.length >= hook.capacity) {
-        capEl?.classList.add('capacity-full');
-      } else {
-        capEl?.classList.remove('capacity-full');
-      }
-
       const depthContainer = document.getElementById('hud-depth-container');
       if (depthContainer) depthContainer.style.display = 'flex';
       const depthM = Math.min(hook.depthMeters, hook.maxDepthMeters);
@@ -1519,7 +1532,7 @@ export class UIManager {
             <strong class="total-cash" id="summary-total-cash">+$${remainingGold.toLocaleString()}</strong>
           </div>
           <div class="summary-actions">
-            ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Crack Open Crates (${unboxedCrates.length})</button>` : ''}
+            ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Open Crates</button>` : ''}
             ${hasUnrestoredRelic ? `<button class="btn btn-warning" id="btn-restore-relic"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${JOURNAL_TAB_ART.relics}</span> Restoration Desk</button>` : ''}
             <button class="btn btn-primary" id="btn-keep-all-catches"><span class="summary-btn-art">${MISC_ART.keepAll}</span> Keep All</button>
             <button class="btn btn-buy" id="btn-sell-all-catches"><span class="summary-btn-art">${MISC_ART.sellAll}</span> Sell All</button>

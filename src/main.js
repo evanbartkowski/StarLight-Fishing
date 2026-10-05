@@ -226,6 +226,13 @@ uiManager.onModalClosed = () => {
 };
 
 minimapUI.onSailToSea = (sea) => {
+  gameState = 'SURFACE_IDLE';
+  const preservedCatches = Array.isArray(hook.caughtItems) ? [...hook.caughtItems] : [];
+  hook.applyUpgrades(save);
+  hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
+  if (preservedCatches.length > 0) {
+    hook.caughtItems = preservedCatches;
+  }
   oceanWorld.populateWorld(save);
   soundManager.setSeaTrack(sea.id);
   uiManager.updateHUD(hook, gameState);

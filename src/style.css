@@ -651,6 +651,12 @@ html, body {
   display: none !important;
 }
 
+#game-hud.hud-diving-mode #hud-weather-badge {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 .hud-center {
   flex-direction: row;
   align-items: center;
@@ -1378,8 +1384,8 @@ html, body {
 .summary-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .summary-btn-art {
@@ -1405,8 +1411,11 @@ html, body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 18px;
+  padding: 8px 14px;
   font-weight: 700;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  flex-shrink: 0;
 }
 
 .summary-actions .btn:hover .summary-btn-art {

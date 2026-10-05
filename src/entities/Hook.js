@@ -226,8 +226,7 @@ export class Hook {
     if (this.shields >= shieldCost) {
       this.shields -= shieldCost;
       if (particles) {
-        const dmgText = shieldCost > 1 ? `-${shieldCost} SHIELDS DEFLECTED!` : 'SHIELD DEFLECTED!';
-        particles.addFloatingText(`${dmgText} (${this.shields} left)`, this.x, this.y - 20, '#38bdf8', 15);
+        particles.addFloatingText(`SHIELD DEFLECTED! (${this.shields} left)`, this.x, this.y - 20, '#38bdf8', 15);
       }
     } else {
       this.shields = Math.max(0, this.shields - shieldCost);

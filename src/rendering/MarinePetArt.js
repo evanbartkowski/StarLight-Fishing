@@ -1,41 +1,15 @@
 // Illustrated Art rendering for Marine Companion Pets (Dolphin & Shark)
 // Faithfully matches user-provided reference illustrations with natural swimming sway
 
-const SHARK_PIXELS = [
-  '........DBBBB...........',
-  '.........DBBBBB.........',
-  '..........DBBBBBBBB....',
-  '..........DBBBBBBBBBB..',
-  'BBB.....BBBBBBBBBBBBBBB.',
-  '.BBB..DBBBBBBBBBBBBBBBBB',
-  '..BBDDBBBBDBDBBBBBBBBBBB',
-  '..BBBBBBDBDBDB#BBBBBBB..',
-  '..BD.DDDBBBBBBBBBBBBBB..',
-  '..BD....DDDBBBBRRBBB...',
-  '..D........BBBBBBBDD....',
-  '...........BBB...DDD....',
-  '...........BB.....DD....',
-  '...........B.......D....',
-];
-
-const SHARK_PALETTE = {
-  '#': '#0f172a', // Cute black eye
-  'R': '#ef4444', // Cute red blush cheek / mouth
-  'B': '#5587c1', // Gentle oceanic blue body
-  'D': '#3b73ab', // Darker blue fin & shading
-  'W': '#ffffff', // Subtle white highlight
-  '.': null,
-};
-
 export function drawMarinePet(ctx, kind, time = 0) {
   const isDolphin = kind === 'dolphin';
 
   ctx.save();
   if (isDolphin) {
-    // Gracie the Bottlenose Dolphin matching user's reference illustration:
+    // Gracie the Bottlenose Dolphin:
     // Sleek periwinkle-blue body (#6583be), gentle bottle snout, rounded melon forehead,
-    // graceful falcate dorsal fin, white chest/pectoral flipper with clean dark outline,
-    // cute dark eye, and fluked tail with fluid undulating swimming motion.
+    // graceful falcate dorsal fin, white chest/pectoral flipper, soft belly countershading,
+    // cute dark eye with glossy glint, soft blush, and fluked tail with fluid swimming motion.
     const swimWave = Math.sin(time * 5.0);
     const tailFlukeWave = Math.sin(time * 5.0 - 0.7);
 
@@ -61,56 +35,60 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.restore();
 
     // 2. Main Dolphin Body (#6583be)
-    // Snout at (+36, 0), Melon at (+28, -6), Dorsal fin at (-4, -18), Tail stock at (-36, +1), Flukes at (-46, +1)
     ctx.beginPath();
-    // Start at bottom of beak / mouth
     ctx.moveTo(34, 3);
-    // Tip of snout
     ctx.lineTo(40, 2);
-    // Upper beak into melon curve
     ctx.quadraticCurveTo(36, -2, 30, -5);
-    // Melon into back
     ctx.quadraticCurveTo(20, -10, 6, -10);
-    // Leading edge of falcate dorsal fin
     ctx.quadraticCurveTo(0, -18, -2, -22);
-    // Trailing curved edge of dorsal fin back to spine
     ctx.quadraticCurveTo(-2, -14, -8, -9);
-    // Dorsal spine towards tail stock with swimming flex
     const tailY = tailFlukeWave * 4.5;
     ctx.quadraticCurveTo(-24, -8 + tailY * 0.5, -36, -3 + tailY);
-    // Upper fluke tip
     ctx.quadraticCurveTo(-40, -10 + tailY, -46, -11 + tailY);
-    // Fluke inner curve / notch
     ctx.quadraticCurveTo(-41, -2 + tailY, -39, 0 + tailY);
-    // Lower fluke tip
     ctx.quadraticCurveTo(-41, 6 + tailY, -45, 9 + tailY);
-    // Lower fluke return to ventral tail stock
     ctx.quadraticCurveTo(-38, 5 + tailY, -34, 3 + tailY);
-    // Underbelly towards chest
     ctx.quadraticCurveTo(-18, 9, 4, 10);
-    // Ventral throat towards jaw
     ctx.quadraticCurveTo(20, 8, 30, 4);
     ctx.closePath();
 
-    ctx.fillStyle = '#6583be';
-    ctx.fill();
-
-    // Subtle natural dorsal shading / highlight
+    // Rich dual-tone oceanic gradient
     const bodyGrad = ctx.createLinearGradient(0, -22, 0, 10);
-    bodyGrad.addColorStop(0, '#7594d2');
-    bodyGrad.addColorStop(0.7, '#6583be');
+    bodyGrad.addColorStop(0, '#7c9be0');
+    bodyGrad.addColorStop(0.65, '#6583be');
     bodyGrad.addColorStop(1, '#5370ab');
     ctx.fillStyle = bodyGrad;
     ctx.fill();
 
-    // 3. Crisp outline matching clean cartoon line-art
+    // 3. Soft lighter belly countershading
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(28, 4);
+    ctx.quadraticCurveTo(18, 7, 2, 8);
+    ctx.quadraticCurveTo(-16, 7, -30, 2 + tailY * 0.7);
+    ctx.quadraticCurveTo(-18, 9, 4, 10);
+    ctx.quadraticCurveTo(20, 8, 30, 4);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(241, 245, 249, 0.42)';
+    ctx.fill();
+    ctx.restore();
+
+    // 4. Subtle melon forehead sheen / highlight
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(23, -6, 7, 2.5, -0.3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+    ctx.fill();
+    ctx.restore();
+
+    // 5. Crisp outline matching clean cartoon line-art
     ctx.strokeStyle = '#222831';
     ctx.lineWidth = 1.8;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.stroke();
 
-    // 4. Subtle fluke median line detail
+    // 6. Fluke median notch detail
     ctx.beginPath();
     ctx.moveTo(-36, 0 + tailY);
     ctx.lineTo(-40, 0 + tailY);
@@ -118,13 +96,23 @@ export function drawMarinePet(ctx, kind, time = 0) {
     ctx.lineWidth = 1.3;
     ctx.stroke();
 
-    // 5. Cute dark eye (small round pupil placed naturally behind melon)
+    // 7. Sweet pink cheek blush
     ctx.beginPath();
-    ctx.arc(20, -1, 1.8, 0, Math.PI * 2);
-    ctx.fillStyle = '#1e232a';
+    ctx.arc(23, 2.5, 2.8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(251, 113, 133, 0.38)';
     ctx.fill();
 
-    // 6. Subtle gentle mouth slit
+    // 8. Cute dark eye with lively white sparkle
+    ctx.beginPath();
+    ctx.arc(20, -1, 1.9, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(19.3, -1.6, 0.8, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // 9. Gentle mouth curve
     ctx.beginPath();
     ctx.moveTo(34, 2);
     ctx.lineTo(29, 3);
@@ -134,28 +122,141 @@ export function drawMarinePet(ctx, kind, time = 0) {
 
     ctx.restore();
   } else {
-    // Shark Companion
-    const pxSize = 2.0;
-    const cols = 24;
-    const rows = 14;
-    const ox = -(cols * pxSize) / 2;
-    const oy = -(rows * pxSize) / 2;
+    // Irene the Friendly Reef Shark:
+    // Sleek oceanic slate-blue body (#5587c1), classic upright dorsal fin,
+    // crisp lighter belly, triangular pectoral fin, 3 neat gill slits,
+    // friendly smiling eye with white sparkle, soft cheek blush, cute white tooth,
+    // and heterocercal tail with natural fluid swimming sway.
+    const swimWave = Math.sin(time * 5.2);
+    const tailFlukeWave = Math.sin(time * 5.2 - 0.7);
 
-    for (let r = 0; r < rows; r++) {
-      const line = SHARK_PIXELS[r];
-      for (let c = 0; c < line.length; c++) {
-        const char = line[c];
-        const color = SHARK_PALETTE[char];
-        if (color) {
-          // Trailing tail fin (left columns 0..6) sways gently
-          const swayFactor = c <= 6 ? (7 - c) / 7 : 0;
-          const sway = Math.sin(time * 6 + c * 0.3) * 2.2 * swayFactor;
+    ctx.save();
+    ctx.rotate(swimWave * 0.05);
 
-          ctx.fillStyle = color;
-          ctx.fillRect(ox + c * pxSize, oy + r * pxSize + sway, pxSize, pxSize);
-        }
-      }
+    // 1. Pectoral fin (lower body)
+    ctx.save();
+    ctx.translate(0, 9);
+    ctx.rotate(0.32 + swimWave * 0.1);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(10, 15, 16, 17);
+    ctx.quadraticCurveTo(10, 13, 3, 2);
+    ctx.closePath();
+    ctx.fillStyle = '#477aa8';
+    ctx.fill();
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.restore();
+
+    // 2. Main Shark Body
+    // Snout at (+38, 0), Dorsal fin at (-2, -23), Tail at (-40, tailY)
+    const tailY = tailFlukeWave * 4.2;
+    ctx.beginPath();
+    // Snout tip
+    ctx.moveTo(40, 1);
+    // Upper snout curve
+    ctx.quadraticCurveTo(34, -4, 24, -6);
+    // Forehead into back
+    ctx.quadraticCurveTo(12, -9, 4, -9);
+    // Upright triangular dorsal fin
+    ctx.quadraticCurveTo(2, -18, 0, -23);
+    // Trailing dorsal fin edge
+    ctx.quadraticCurveTo(-1, -16, -7, -9);
+    // Back towards tail stock
+    ctx.quadraticCurveTo(-22, -7 + tailY * 0.5, -36, -2 + tailY);
+    // Heterocercal shark tail: tall upper lobe
+    ctx.quadraticCurveTo(-42, -11 + tailY, -48, -13 + tailY);
+    ctx.quadraticCurveTo(-43, -3 + tailY, -40, 0 + tailY);
+    // Lower tail lobe
+    ctx.quadraticCurveTo(-42, 6 + tailY, -46, 8 + tailY);
+    ctx.quadraticCurveTo(-38, 4 + tailY, -34, 3 + tailY);
+    // Belly curve towards chest
+    ctx.quadraticCurveTo(-16, 9, 6, 10);
+    // Throat to jaw
+    ctx.quadraticCurveTo(24, 8, 34, 3);
+    ctx.closePath();
+
+    // Blue-grey shark body gradient
+    const sharkGrad = ctx.createLinearGradient(0, -23, 0, 10);
+    sharkGrad.addColorStop(0, '#6093cd');
+    sharkGrad.addColorStop(0.6, '#5587c1');
+    sharkGrad.addColorStop(1, '#3f6fa3');
+    ctx.fillStyle = sharkGrad;
+    ctx.fill();
+
+    // 3. Crisp white underbelly countershading
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(33, 2);
+    ctx.quadraticCurveTo(20, 6, 4, 7);
+    ctx.quadraticCurveTo(-16, 6, -30, 2 + tailY * 0.6);
+    ctx.quadraticCurveTo(-16, 9, 6, 10);
+    ctx.quadraticCurveTo(24, 8, 34, 3);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(248, 250, 252, 0.88)';
+    ctx.fill();
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+
+    // 4. Main body outline
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.8;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // 5. Three iconic vertical shark gill slits
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.2;
+    for (let g = 0; g < 3; g++) {
+      const gx = 6 - g * 3.5;
+      ctx.beginPath();
+      ctx.moveTo(gx, 0);
+      ctx.quadraticCurveTo(gx - 0.8, 3, gx, 6);
+      ctx.stroke();
     }
+
+    // 6. Cute rosy blush cheek
+    ctx.beginPath();
+    ctx.arc(22, 2, 2.8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+    ctx.fill();
+
+    // 7. Friendly shark eye with white shine
+    ctx.beginPath();
+    ctx.arc(22, -2, 2.1, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(21.3, -2.7, 0.9, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+
+    // 8. Cheerful smile with tiny cute white tooth
+    ctx.beginPath();
+    ctx.moveTo(34, 1.5);
+    ctx.quadraticCurveTo(28, 4, 25, 2);
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+
+    // Small sharp cute tooth
+    ctx.beginPath();
+    ctx.moveTo(29, 2.5);
+    ctx.lineTo(27.5, 4.8);
+    ctx.lineTo(26, 2.5);
+    ctx.closePath();
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    ctx.restore();
   }
   ctx.restore();
 }
