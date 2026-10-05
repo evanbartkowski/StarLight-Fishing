@@ -1216,3 +1216,226 @@ export const INV_FILTER_ART = {
   `),
 };
 
+/**
+ * 10. SUNKEN DREDGED TREASURES ART
+ * Bespoke vector illustrations for dredged salvage and sunken artifacts shown in the catch card summary
+ */
+export const DREDGED_TREASURE_ART = {
+  // Iridescent Pearl Shell / Oyster with radiant pearl
+  shell: svgWrap(`
+    <path d="M10 32C8 20 18 10 24 10s16 10 14 22c-3 4-8 6-14 6s-11-2-14-6z" fill="#fed7aa" stroke="#ea580c" stroke-width="1.6"/>
+    <path d="M14 30C15 18 20 13 24 12c4 1 9 6 10 18" stroke="#fdba74" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+    <path d="M18 31c1-9 3-14 6-15 3 1 5 6 6 15" stroke="#fed7aa" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    <path d="M24 12v19" stroke="#fed7aa" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- Mother-of-pearl iridescent lower bed -->
+    <ellipse cx="24" cy="30" rx="10" ry="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1.2"/>
+    <!-- Glowing lustrous pearl -->
+    <circle cx="24" cy="28" r="4.8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.1"/>
+    <circle cx="25.5" cy="26.5" r="1.5" fill="#f8fafc"/>
+  `),
+
+  // Drift Message in a Bottle with cork and rolled parchment
+  bottle: svgWrap(`
+    <!-- Glass bottle body -->
+    <path d="M19 14h10l2 6v18a4 4 0 0 1-4 4H21a4 4 0 0 1-4-4V20l2-6z" fill="#34d399" fill-opacity="0.82" stroke="#059669" stroke-width="1.6"/>
+    <!-- Bottle neck and lip -->
+    <rect x="21" y="7" width="6" height="7" fill="#6ee7b7" stroke="#059669" stroke-width="1.4"/>
+    <!-- Natural cork stopper -->
+    <rect x="20.5" y="4" width="7" height="4" rx="1" fill="#b45309" stroke="#78350f" stroke-width="1.1"/>
+    <!-- Rolled parchment scroll inside -->
+    <rect x="21" y="21" width="6" height="15" rx="2" fill="#fef3c7" stroke="#ca8a04" stroke-width="1"/>
+    <!-- Red wax seal ribbon on parchment -->
+    <rect x="20" y="27" width="8" height="3" rx="0.5" fill="#ef4444"/>
+    <!-- Glass reflection highlight -->
+    <path d="M28 20v16" stroke="#ffffff" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.6"/>
+  `),
+
+  // Sunken Coin Bag / Leather Pouch stuffed with gold coins
+  coin_bag: svgWrap(`
+    <!-- Leather drawstring pouch -->
+    <path d="M14 20c-4 8-1 18 10 18s14-10 10-18c-2-2-4-4-5-7h-10c-1 3-3 5-5 7z" fill="#ca8a04" stroke="#854d0e" stroke-width="1.6"/>
+    <!-- Pouch neck cinch tie -->
+    <rect x="18" y="14" width="12" height="3.5" rx="1.5" fill="#92400e" stroke="#78350f" stroke-width="1"/>
+    <!-- Gold coin overflowing from top -->
+    <circle cx="24" cy="12" r="3.5" fill="#fde047" stroke="#ca8a04" stroke-width="1"/>
+    <circle cx="20" cy="13" r="2.8" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
+    <!-- Embossed coin emblem / dollar sign on belly -->
+    <circle cx="24" cy="27" r="5" fill="#eab308" stroke="#a16207" stroke-width="1"/>
+    <path d="M24 23.5v7M22.5 25h3a1 1 0 0 1 0 2h-3a1 1 0 0 0 0 2h3.5" stroke="#78350f" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  `),
+
+  // Sunken Pirate Chest / Sea Chest with brass bands
+  pirate_chest: svgWrap(`
+    <!-- Oak chest main body -->
+    <rect x="8" y="18" width="32" height="20" rx="3" fill="#78350f" stroke="#451a03" stroke-width="1.6"/>
+    <!-- Domed chest lid -->
+    <path d="M8 19c0-6 7-10 16-10s16 4 16 10H8z" fill="#92400e" stroke="#451a03" stroke-width="1.6"/>
+    <!-- Gilded brass bands -->
+    <rect x="13" y="9" width="4" height="29" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
+    <rect x="31" y="9" width="4" height="29" fill="#facc15" stroke="#ca8a04" stroke-width="1"/>
+    <!-- Brass rim strip -->
+    <rect x="8" y="18" width="32" height="3" fill="#fde047"/>
+    <!-- Brass keyhole lockplate -->
+    <rect x="21" y="21" width="6" height="7" rx="1" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1.3" fill="#451a03"/>
+    <path d="M24 25.5v1.8" stroke="#451a03" stroke-width="1.1"/>
+  `),
+
+  // Luminous Black Pearl / Giant Pearl in golden clamshell
+  giant_pearl: svgWrap(`
+    <!-- Deep sea golden bivalve shell -->
+    <path d="M8 32C6 19 18 9 24 9s18 10 16 23c-4 4-9 6-16 6s-12-2-16-6z" fill="#0369a1" stroke="#0284c7" stroke-width="1.5"/>
+    <path d="M12 31c3-11 7-16 12-17 5 1 9 6 12 17" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+    <!-- Pearl bed -->
+    <ellipse cx="24" cy="29" rx="12" ry="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.3"/>
+    <!-- Radiant deep twilight pearl -->
+    <circle cx="24" cy="24" r="7.5" fill="#38bdf8" stroke="#e0f2fe" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="5.5" fill="#0284c7"/>
+    <circle cx="26.5" cy="21.5" r="2.2" fill="#ffffff"/>
+    <circle cx="22" cy="25" r="1" fill="#bae6fd"/>
+  `),
+
+  // Heart of the Ocean Sapphire / Diamond Gemstone
+  ocean_heart: svgWrap(`
+    <!-- Brilliant faceted sapphire heart / teardrop -->
+    <path d="M24 7L38 18L24 41L10 18L24 7Z" fill="#2563eb" stroke="#60a5fa" stroke-width="1.8"/>
+    <!-- Facet planes -->
+    <polygon points="24,7 31,18 24,24 17,18" fill="#93c5fd"/>
+    <polygon points="24,24 31,18 38,18 24,41" fill="#1d4ed8"/>
+    <polygon points="24,24 17,18 10,18 24,41" fill="#1e40af"/>
+    <polygon points="24,7 17,18 10,18" fill="#60a5fa"/>
+    <polygon points="24,7 31,18 38,18" fill="#bfdbfe"/>
+    <!-- Brilliant white center glint -->
+    <polygon points="24,15 26,18 24,21 22,18" fill="#ffffff"/>
+    <circle cx="24" cy="18" r="1.5" fill="#ffffff"/>
+  `),
+
+  // Sunken Anchor with seaweed
+  anchor: svgWrap(`
+    <!-- Heavy iron nautical anchor -->
+    <circle cx="24" cy="11" r="4" fill="none" stroke="#64748b" stroke-width="2.2"/>
+    <circle cx="24" cy="11" r="1.8" fill="#0f172a"/>
+    <path d="M24 15v22M15 19h18" stroke="#475569" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M10 29c2 9 8 13 14 13s12-4 14-13" stroke="#64748b" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <polygon points="10,29 7,33 13,33" fill="#94a3b8"/>
+    <polygon points="38,29 35,33 41,33" fill="#94a3b8"/>
+    <!-- Seaweed wrapping shank -->
+    <path d="M22 23c4 1 5 4 2 6s-2 5 2 6" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  `),
+
+  // Luminous Crystal / Geode
+  crystal: svgWrap(`
+    <!-- Glowing deep-sea crystal cluster -->
+    <polygon points="24,6 30,16 28,38 20,38 18,16" fill="#a855f7" stroke="#c084fc" stroke-width="1.6"/>
+    <polygon points="24,6 28,16 24,38 20,38 18,16" fill="#d8b4fe"/>
+    <polygon points="14,19 19,25 17,38 10,38 9,25" fill="#7e22ce" stroke="#a855f7" stroke-width="1.4"/>
+    <polygon points="34,18 39,26 37,38 30,38 29,26" fill="#9333ea" stroke="#c084fc" stroke-width="1.4"/>
+    <polygon points="24,10 26,16 24,20 22,16" fill="#ffffff"/>
+  `),
+
+  // Sunken Antique Amphora Urn
+  amphora: svgWrap(`
+    <!-- Greco-Roman clay amphora vase -->
+    <path d="M18 10h12l-2 7c5 4 7 11 4 17-2 5-6 6-8 6s-6-1-8-6c-3-6-1-13 4-17l-2-7z" fill="#d97706" stroke="#78350f" stroke-width="1.6"/>
+    <ellipse cx="24" cy="10" rx="6" ry="2" fill="#b45309" stroke="#78350f" stroke-width="1.2"/>
+    <!-- Looped twin ceramic handles -->
+    <path d="M16 15c-5 2-6 8-3 12s5 2 5-1M32 15c5 2 6 8 3 12s-5 2-5-1" stroke="#92400e" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <path d="M19 24h10M18 29h12" stroke="#fde68a" stroke-width="1.2" stroke-opacity="0.6"/>
+  `),
+
+  // Weathered Driftwood branch with barnacles
+  driftwood: svgWrap(`
+    <!-- Weathered gnarled driftwood branch -->
+    <path d="M8 32c8-8 14-6 22-14s8-8 12-7l-2 4c-5 0-9 4-15 10s-9 6-17 11z" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
+    <path d="M16 26c4-4 8-3 11-6" stroke="#92400e" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- Small barnacles -->
+    <circle cx="14" cy="27" r="2" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/>
+    <circle cx="22" cy="21" r="2" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/>
+    <circle cx="29" cy="16" r="1.6" fill="#e2e8f0" stroke="#64748b" stroke-width="0.8"/>
+  `),
+
+  // Corroded Nautical Tin Can
+  rusty_can: svgWrap(`
+    <!-- Corroded vintage tin can -->
+    <rect x="14" y="14" width="20" height="22" rx="3" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/>
+    <ellipse cx="24" cy="14" rx="10" ry="3.5" fill="#cbd5e1" stroke="#475569" stroke-width="1.2"/>
+    <ellipse cx="24" cy="36" rx="10" ry="3.5" fill="#64748b" stroke="#475569" stroke-width="1.2"/>
+    <!-- Rust patches -->
+    <path d="M16 18c3 2 4 6 2 9s-3 3-1 6" stroke="#ea580c" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="28" cy="24" r="2.5" fill="#c2410c"/>
+  `),
+
+  // Royal Relic / Gilded Sunken Scepter or Crown Artifact
+  royal_artifact: svgWrap(`
+    <!-- Gilded Imperial Sun Crown / Diadem -->
+    <path d="M10 32l4-16 5 7 5-11 5 11 5-7 4 16H10z" fill="#facc15" stroke="#a16207" stroke-width="1.6"/>
+    <rect x="9" y="32" width="30" height="5" rx="1.5" fill="#ca8a04" stroke="#78350f" stroke-width="1.2"/>
+    <!-- Inset rubies and emeralds -->
+    <circle cx="14" cy="34.5" r="1.5" fill="#ef4444"/>
+    <circle cx="24" cy="34.5" r="1.8" fill="#10b981"/>
+    <circle cx="34" cy="34.5" r="1.5" fill="#3b82f6"/>
+    <!-- Tip pearls -->
+    <circle cx="14" cy="16" r="2" fill="#ffffff" stroke="#ca8a04" stroke-width="1"/>
+    <circle cx="24" cy="12" r="2.5" fill="#fef08a" stroke="#ca8a04" stroke-width="1"/>
+    <circle cx="34" cy="16" r="2" fill="#ffffff" stroke="#ca8a04" stroke-width="1"/>
+  `),
+
+  // Generic Gilded Sunken Treasure Chest
+  generic_treasure: svgWrap(`
+    <rect x="9" y="17" width="30" height="21" rx="3" fill="#b45309" stroke="#78350f" stroke-width="1.6"/>
+    <path d="M9 18c0-5 6-9 15-9s15 4 15 9H9z" fill="#d97706" stroke="#78350f" stroke-width="1.6"/>
+    <rect x="14" y="9" width="4" height="29" fill="#fde047" stroke="#ca8a04" stroke-width="1"/>
+    <rect x="30" y="9" width="4" height="29" fill="#fde047" stroke="#ca8a04" stroke-width="1"/>
+    <circle cx="24" cy="25" r="3" fill="#facc15" stroke="#78350f" stroke-width="1.2"/>
+    <circle cx="24" cy="25" r="1" fill="#451a03"/>
+  `),
+};
+
+/**
+ * Returns matching bespoke vector artwork for any dredged treasure or salvage item
+ */
+export function getTreasureArt(item) {
+  if (!item) return DREDGED_TREASURE_ART.generic_treasure;
+  const id = String(item.id || '').toLowerCase();
+  const name = String(item.name || '').toLowerCase();
+
+  if (item.isBottle || id.includes('bottle') || name.includes('bottle') || name.includes('message')) {
+    return DREDGED_TREASURE_ART.bottle;
+  }
+  if (id === 'shell' || name.includes('shell') || name.includes('cameo') || name.includes('comb')) {
+    return DREDGED_TREASURE_ART.shell;
+  }
+  if (id === 'coin_bag' || name.includes('coin') || name.includes('purse') || name.includes('pouch') || name.includes('spool')) {
+    return DREDGED_TREASURE_ART.coin_bag;
+  }
+  if (id === 'pirate_chest' || name.includes('pirate') || name.includes('sea chest')) {
+    return DREDGED_TREASURE_ART.pirate_chest;
+  }
+  if (id === 'giant_pearl' || name.includes('pearl') || name.includes('black pearl')) {
+    return DREDGED_TREASURE_ART.giant_pearl;
+  }
+  if (id === 'ocean_heart' || name.includes('heart') || name.includes('diamond') || name.includes('sapphire') || name.includes('tear')) {
+    return DREDGED_TREASURE_ART.ocean_heart;
+  }
+  if (id.includes('anchor') || name.includes('anchor')) {
+    return DREDGED_TREASURE_ART.anchor;
+  }
+  if (id.includes('crystal') || id.includes('geode') || name.includes('crystal') || name.includes('opal') || name.includes('prism') || name.includes('shard')) {
+    return DREDGED_TREASURE_ART.crystal;
+  }
+  if (id.includes('amphora') || id.includes('artifact') || name.includes('amphora') || name.includes('chalice') || name.includes('goblet') || name.includes('crucible')) {
+    return DREDGED_TREASURE_ART.amphora;
+  }
+  if (id.includes('driftwood') || id.includes('branch') || name.includes('driftwood') || name.includes('wood') || name.includes('log')) {
+    return DREDGED_TREASURE_ART.driftwood;
+  }
+  if (id.includes('can') || name.includes('can') || name.includes('tin') || name.includes('scrap')) {
+    return DREDGED_TREASURE_ART.rusty_can;
+  }
+  if (name.includes('crown') || name.includes('diadem') || name.includes('tiara') || name.includes('scepter') || name.includes('relic') || name.includes('signet') || name.includes('key')) {
+    return DREDGED_TREASURE_ART.royal_artifact;
+  }
+  return DREDGED_TREASURE_ART.generic_treasure;
+}
+
+

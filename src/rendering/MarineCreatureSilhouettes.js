@@ -498,83 +498,40 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_snake': {
-      // Banded Sea Snake: Smooth serpentine sinuous body, distinct alternating bands, paddle tail & sleek head
-      const segCount = 14;
-      const points = [];
-      const waveFreq = 2.2;
-      const waveAmp = 4.8;
-
-      // Calculate smooth spine coordinates from head (+24) to tail (-24)
-      for (let i = 0; i <= segCount; i++) {
-        const u = i / segCount;
-        const px = 24 - u * 48;
-        const py = Math.sin(t * waveFreq - u * 3.5) * (waveAmp * (0.4 + u * 0.7));
-        points.push({ x: px, y: py });
-      }
-
-      // 1. Draw alternating banded body segments
+      // Flattened paddle tail with sinusoidal undulating body
+      ctx.lineWidth = 5;
       ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      for (let i = 0; i < segCount; i++) {
-        const p1 = points[i];
-        const p2 = points[i + 1];
-        ctx.strokeStyle = (i % 2 === 0) ? primary : (secondary || '#0f172a');
-        ctx.lineWidth = i < 2 ? 5.5 : (i > segCount - 3 ? 4.5 : 6);
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
-      }
-
-      // 2. Vertically flattened paddle tail for propulsion
-      const tailPt = points[segCount];
-      const prevTailPt = points[segCount - 1];
-      const tailAngle = Math.atan2(tailPt.y - prevTailPt.y, tailPt.x - prevTailPt.x);
-      ctx.save();
-      ctx.translate(tailPt.x, tailPt.y);
-      ctx.rotate(tailAngle);
-      ctx.fillStyle = finColor || secondary;
+      ctx.strokeStyle = primary;
       ctx.beginPath();
-      ctx.ellipse(-3, 0, 7, 4.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      ctx.moveTo(22, 0);
+      for (let s = 1; s <= 4; s++) {
+        const sx = 22 - s * 11;
+        const sy = Math.sin(t * 3.8 - s * 0.8) * 8;
+        ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
 
-      // 3. Smooth rounded snake head
-      const headPt = points[0];
-      const nextHeadPt = points[1];
-      const headAngle = Math.atan2(headPt.y - nextHeadPt.y, headPt.x - nextHeadPt.x);
-      ctx.save();
-      ctx.translate(headPt.x, headPt.y);
-      ctx.rotate(headAngle);
+      // Banded pattern rings (batched)
+      ctx.strokeStyle = secondary;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      for (let b = 1; b <= 3; b += 2) {
+        const bx = 22 - b * 11;
+        const by = Math.sin(t * 3.8 - b * 0.8) * 8;
+        ctx.moveTo(bx - 3, by);
+        ctx.lineTo(bx + 3, by);
+      }
+      ctx.stroke();
+
+      // Head & eye
       ctx.fillStyle = primary;
       ctx.beginPath();
-      ctx.ellipse(2, 0, 5.5, 3.8, 0, 0, Math.PI * 2);
+      ctx.arc(23, 0, 3.5, 0, Math.PI * 2);
       ctx.fill();
-
-      // Sleek reptilian eye
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(2, -1.8, 1.2, 0, Math.PI * 2);
+      ctx.arc(24, -1, 1, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(2.3, -2.1, 0.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Subtle occasional tongue flick
-      if (Math.sin(t * 3.5) > 0.6) {
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(7, 0);
-        ctx.lineTo(10, 0);
-        ctx.lineTo(12, -1.2);
-        ctx.moveTo(10, 0);
-        ctx.lineTo(12, 1.2);
-        ctx.stroke();
-      }
-      ctx.restore();
-
       return true;
     }
 
@@ -619,89 +576,38 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_otter': {
-      // Pacific Sea Otter: Long sleek swimming body, countershaded creamy chest/face, rounded teddy ears, whiskers, paws & rudder tail
-      const otterTail = Math.sin(t * 2.5) * 3.5;
-
-      // 1. Sleek, flexible elongated torso
-      ctx.fillStyle = primary || '#573318';
+      // Sleek fur body with rounded teddy head, paws, and flattened rudder tail
       ctx.beginPath();
-      ctx.ellipse(0, 0, 22, 9.5, -0.05, 0, Math.PI * 2);
+      ctx.ellipse(-2, 0, 20, 10, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 2. Thick, tapered muscular rudder tail (swaying smoothly)
-      ctx.fillStyle = primary || '#573318';
+      // Round head with cute muzzle
       ctx.beginPath();
-      ctx.moveTo(-18, -3);
-      ctx.quadraticCurveTo(-27, otterTail * 0.6 - 1, -34, otterTail);
-      ctx.quadraticCurveTo(-26, otterTail * 0.6 + 4, -18, 4);
+      ctx.arc(16, -2, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flattened rudder tail
+      const otterTail = Math.sin(t * 3.5) * 5;
+      ctx.fillStyle = finColor;
+      ctx.beginPath();
+      ctx.moveTo(-18, 0);
+      ctx.quadraticCurveTo(-26, otterTail * 0.5, -30, otterTail);
+      ctx.quadraticCurveTo(-26, otterTail + 4, -18, 2);
       ctx.closePath();
       ctx.fill();
 
-      // 3. Trailing broad webbed hind flipper feet
-      ctx.fillStyle = finColor || '#3d2311';
+      // Webbed feet & paws
       ctx.beginPath();
-      ctx.ellipse(-14, 5, 4, 7, 0.55, 0, Math.PI * 2);
+      ctx.ellipse(-10, 6, 3.5, 6, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(8, 5, 3, 5, 0.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4. Creamy/buff countershading along throat, chest & belly (classic sea otter fur)
-      ctx.fillStyle = secondary || '#e2c799';
-      ctx.beginPath();
-      ctx.ellipse(6, 1.5, 12, 6, -0.1, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 5. Cute paddling front paws (tucked neatly at chest)
-      ctx.fillStyle = finColor || '#3d2311';
-      ctx.beginPath();
-      ctx.ellipse(9, 5, 3.2, 4.8, 0.35, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 6. Rounded teddy head & lighter whiskered muzzle
-      ctx.fillStyle = primary || '#573318';
-      ctx.beginPath();
-      ctx.arc(17, -2.5, 7.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Creamy face & muzzle pad
-      ctx.fillStyle = secondary || '#e2c799';
-      ctx.beginPath();
-      ctx.ellipse(20.5, -1.5, 5.5, 4.2, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Small rounded teddy ears with inner ear detail
-      ctx.fillStyle = primary || '#573318';
-      ctx.beginPath();
-      ctx.arc(14, -9, 2.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fca5a5';
-      ctx.beginPath();
-      ctx.arc(14, -9, 1.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Boopable dark nose pad
+      // Eye & nose
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.ellipse(25.5, -2, 2.0, 1.4, 0, 0, Math.PI * 2);
+      ctx.arc(17, -4, 1.2, 0, Math.PI * 2);
+      ctx.arc(21, -1, 1.2, 0, Math.PI * 2);
       ctx.fill();
-
-      // Big sweet dark eyes with gleaming white catchlight
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.arc(18, -4.5, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(17.5, -5.1, 0.7, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Adorable fine white whiskers (vibrissae)
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(23, -1); ctx.lineTo(29, -2.5);
-      ctx.moveTo(23, 0); ctx.lineTo(29, 0.5);
-      ctx.moveTo(22, 1); ctx.lineTo(28, 3);
-      ctx.stroke();
-
       return true;
     }
 
@@ -1012,51 +918,23 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_butterfly': {
-      // Sunlit Sea Angel / Sea Butterfly: Ethereal translucent body, glowing visceral heart & gentle slow wing flutter
-      ctx.save();
-      ctx.globalAlpha *= 0.88;
-
-      // 1. Sleek translucent torpedo/bell body
-      ctx.fillStyle = primary || '#e0f2fe';
+      // Thecosome pteropod with delicate shell and flapping wing-like parapodia
       ctx.beginPath();
-      ctx.moveTo(14, 0);
-      ctx.quadraticCurveTo(6, -6, -6, -5);
-      ctx.quadraticCurveTo(-16, 0, -6, 5);
-      ctx.quadraticCurveTo(6, 6, 14, 0);
-      ctx.closePath();
+      ctx.arc(-4, 0, 8, 0, Math.PI * 2);
       ctx.fill();
 
-      // 2. Glowing warm visceral nucleus (signature sea angel heart)
-      ctx.fillStyle = '#f43f5e';
-      ctx.beginPath();
-      ctx.ellipse(-1, 0, 3.2, 2.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 3. Delicate rounded head with sensory tentacles
-      ctx.fillStyle = finColor || '#bae6fd';
-      ctx.beginPath();
-      ctx.arc(12, 0, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = finColor || '#7dd3fc';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(14, -1.5); ctx.lineTo(18, -3.5);
-      ctx.moveTo(14, 1.5); ctx.lineTo(18, 3.5);
-      ctx.stroke();
-
-      // 4. Slow, graceful fluttering parapodia wings (reduced flapping frequency and subtle amplitude)
-      const wingFlap = Math.sin(t * 2.2) * 0.16;
+      // Flapping wing-like parapodia
+      const wingFlap = Math.sin(t * 5.5) * 0.35;
       ctx.fillStyle = finColor;
       for (const side of [-1, 1]) {
         ctx.save();
-        ctx.translate(3, side * 3);
-        ctx.rotate(side * (0.32 + wingFlap));
+        ctx.translate(2, side * 3);
+        ctx.rotate(side * wingFlap);
         ctx.beginPath();
-        ctx.ellipse(0, side * 8, 3.8, 8.5, side * 0.22, 0, Math.PI * 2);
+        ctx.ellipse(0, side * 9, 4, 10, side * 0.3, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
       }
-      ctx.restore();
       return true;
     }
 

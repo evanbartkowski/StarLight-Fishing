@@ -24,7 +24,7 @@ import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/alman
 import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
-import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART } from './CustomVectorArt.js';
+import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 
 
@@ -1553,6 +1553,8 @@ export class UIManager {
           iconHtml = `<div class="catch-item-art-icon">${FOSSIL_ART.boneFragment || JOURNAL_TAB_ART.fossils}</div>`;
         } else if (isRelic) {
           iconHtml = `<div class="catch-item-art-icon">${JOURNAL_TAB_ART.relics}</div>`;
+        } else if (isTreasure) {
+          iconHtml = `<div class="catch-item-art-icon">${getTreasureArt(item)}</div>`;
         } else {
           iconHtml = `<div class="catch-item-art-icon">${SHOP_ART.personalAquarium || JOURNAL_TAB_ART.almanac}</div>`;
         }

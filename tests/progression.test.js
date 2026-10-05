@@ -81,7 +81,7 @@ test('trait boundaries, readable names and depth rewards are deterministic', () 
 });
 
 test('depth thresholds use realm depth and gates span levels 10 through 50', () => {
-  assert.deepEqual(FANTASY_SEAS.map(sea => sea.gates.reqLevel), [10, 17, 23, 30, 37, 43, 50]);
+  assert.deepEqual(FANTASY_SEAS.map(sea => sea.gates.reqLevel), [10, 12, 20, 30, 37, 42, 50]);
   assert.equal(getDepthSubZone(149, 1000).id, 'sunlit');
   assert.equal(getDepthSubZone(150, 1000).id, 'twilight');
   assert.equal(getDepthSubZone(400, 1000).id, 'midnight');

@@ -43,7 +43,16 @@ export async function premiumPurchase(ui, input) {
         save.mutateAtomically(() => {
           save.data.gems -= cost;
           save.setUpgradeLevel(input.key, currentLvl + 1);
+          if (input.key === 'seabedTraps' && save.data.traps) {
+            save.data.traps.count = nextTier.trapCount || 1;
+            save.data.traps.maxStorage = nextTier.maxStorage || 12;
+          }
         });
+        if (input.key === 'maritimeRadio' && currentLvl === 0) {
+          const captainName = accountManager.getCurrentUser() || 'A new captain';
+          ui.chatManager?.sendBroadcast('[Fleet Radio]', `${captainName} has acquired a radio and joined the frequency!`);
+          ui.showAccountChat?.();
+        }
         ui.onUpgradePurchased?.();
         ui.showToast(`Purchased ${upgDef.name} Level ${currentLvl + 1}!`);
         return true;

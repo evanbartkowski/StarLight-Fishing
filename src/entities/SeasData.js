@@ -236,8 +236,9 @@ export function getDepthSubZone(depth, maxDepth = 600) {
 
 // Preserve the free starter realm and already purchased unlocks.
 const baselineFees = [0, 3000, 17500, 35000, 70000, 140000, 1000000];
+const realmReqLevels = [10, 12, 20, 30, 37, 42, 50];
 FANTASY_SEAS.forEach((sea, index) => {
-  sea.gates.reqLevel = Math.round(10 + index * 40 / (FANTASY_SEAS.length - 1));
+  sea.gates.reqLevel = realmReqLevels[index] ?? Math.round(10 + index * 40 / (FANTASY_SEAS.length - 1));
   sea.gates.unlockFee = baselineFees[index] * (index < 3 ? 2 : index >= 4 ? 3 : 1);
 });
 

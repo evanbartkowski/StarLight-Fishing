@@ -294,7 +294,7 @@ export class OceanWorld {
 
     populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && !hazard.expedition && belongsToRealm(hazard, this.currentSeaId)),
       depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards,
-      hazard => hazard.isColossal ? 0.6 : (this.currentSeaId === 1 && hazard.naturalKind === 'plant' ? 0.5 : 1),
+      hazard => hazard.isColossal ? 0.6 : (this.currentSeaId === 1 && hazard.naturalKind === 'plant' ? 0.25 : 1),
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     populateBands(EXPEDITION_HAZARDS.filter(h => !h.expedition && h.seas.includes(this.currentSeaId)),
       depth => .06 + .15 * depthProgress(depth), () => 1,
@@ -1219,13 +1219,17 @@ export class OceanWorld {
       ctx.restore();
     }
 
-    // 2. Realm-specific floating mystical particulate motes (glow motes drifting naturally)
-    const moteCount = 18;
-    for (let m = 0; m < moteCount; m++) {
-      const mx = ((m * 179 + Math.sin(time * 0.6 + m * 2) * 50 + time * 12) % (this.worldWidth + 100)) - 50;
-      const my = ((m * 211 + Math.cos(time * 0.5 + m) * 35 - time * 18) % (screenHeight + 80) + screenHeight + 80) % (screenHeight + 80) - 40;
-      const mSize = 1.8 + (m % 3) * 1.2;
-      const mCol = colors[(m + 1) % colors.length];
+    // 2. Realm-specific floating mystical particulate motes (glow motes drifting naturally with the background)
+    const moteSpacing = 64;
+    const driftY = time * 14;
+    const firstMote = Math.floor((cameraY - this.surfaceY - driftY - 40) / moteSpacing);
+    const lastMote = Math.floor((cameraY + screenHeight - this.surfaceY - driftY + 40) / moteSpacing);
+    for (let m = firstMote; m <= lastMote; m++) {
+      const mx = (((m * 179 + Math.sin(time * 0.6 + m * 2) * 50 + time * 12) % (this.worldWidth + 100) + (this.worldWidth + 100)) % (this.worldWidth + 100)) - 50;
+      const my = this.surfaceY + m * moteSpacing + driftY - cameraY + Math.cos(time * 0.5 + m) * 15;
+      if (my < Math.max(0, this.surfaceY - cameraY) - 30 || my > screenHeight + 30) continue;
+      const mSize = 1.8 + (Math.abs(m) % 3) * 1.2;
+      const mCol = colors[(Math.abs(m) + 1) % colors.length];
       const pulse = 0.35 + Math.sin(time * 2.2 + m) * 0.25;
 
       ctx.save();
@@ -1244,7 +1248,7 @@ export class OceanWorld {
       ctx.fill();
 
       // Delicate ethereal halo ring around some motes
-      if (m % 3 === 0) {
+      if (Math.abs(m) % 3 === 0) {
         ctx.strokeStyle = mCol;
         ctx.lineWidth = 0.8;
         ctx.beginPath();
@@ -1288,11 +1292,11 @@ export class OceanWorld {
     const time = this.causticTimer || 0;
     const w = this.worldWidth;
     
-    // Depth clusters: spaced well below the surface, sparse and spread out (38m+ depth)
-    const clusterCount = 6;
+    // Depth clusters: spaced well below the surface, sparse and spread out (55m+ depth)
+    const clusterCount = 4;
     for (let c = 0; c < clusterCount; c++) {
-      const worldX = ((c * 311 + 90) % (w - 120)) + 60;
-      const worldY = this.surfaceY + 570 + (c * 140) % 700;
+      const worldX = ((c * 420 + 130) % (w - 140)) + 70;
+      const worldY = this.surfaceY + 820 + (c * 240) % 900;
       const screenY = worldY - cameraY;
       if (screenY < -120 || screenY > screenHeight + 120) continue;
 

@@ -749,8 +749,7 @@ export class Fish {
     ctx.beginPath();
 
     if (drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer)) {
-      ctx.restore();
-      return;
+      // Specialized marine creature silhouette rendered
     } else if (s.name === 'Giant Cave Salamander') {
       ctx.ellipse(0, 0, 28, 9, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = finColor; ctx.lineWidth = 4;
