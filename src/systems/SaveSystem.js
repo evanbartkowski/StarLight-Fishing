@@ -815,15 +815,19 @@ export class SaveSystem {
     const isCrate = !!item.isCrate || item.category === 'crate';
     const isRelic = !!item.isRelic;
     const isFossil = item.category === 'fossil';
-    const isTreasure = (item.isTreasure || item.category === 'treasure') && !isCrate;
+    const isBottle = !!item.isBottle || item.id === 'bottle' || item.category === 'bottle';
+    const isTreasure = (item.isTreasure || item.category === 'treasure') && !isCrate && !isBottle;
 
     let type = 'fish';
     if (isRelic) type = 'relic';
+    else if (isBottle) type = 'bottle';
     else if (isFossil || isTreasure || isCrate) type = 'trinket';
 
     return {
       instanceId,
       isCrate,
+      isBottle,
+      bottleMessage: item.bottleMessage || null,
       category: item.category,
       crateRank: item.crateRank || 1,
       rewardMultiplier: item.rewardMultiplier || 1,
@@ -836,9 +840,9 @@ export class SaveSystem {
       rarity: item.rarity || 'common',
       size: item.size || 0,
       weight: item.weight || 0,
-      value: item.value || 0,
-      sellValue: item.sellValue || item.value || 0,
-      icon: isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '💎' : (item.isMythic ? '🌟' : '🐟'),
+      value: isBottle ? 0 : (item.value || 0),
+      sellValue: isBottle ? 0 : (item.sellValue || item.value || 0),
+      icon: isBottle ? '🍾' : (isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '💎' : (item.isMythic ? '🌟' : '🐟')),
       primaryColor: item.primaryColor || item.species?.primaryColor || '#38bdf8',
       finColor: item.finColor || item.species?.finColor || '#0284c7',
       scaleFactor: item.scaleFactor || item.scale || 1.0,
@@ -915,9 +919,9 @@ export class SaveSystem {
     if (item.isLocked) return null;
     if (this.isItemInAquarium(instanceId)) return null;
 
-    const gold = Math.max(1, Math.round(item.value * multiplier));
+    const gold = item.value > 0 ? Math.max(1, Math.round(item.value * multiplier)) : 0;
     this.removeItemFromInventory(instanceId);
-    this.addCoins(gold);
+    if (gold > 0) this.addCoins(gold);
     return { item, gold };
   }
 

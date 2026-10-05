@@ -40,7 +40,7 @@ export async function premiumPurchase(ui, input) {
 
     // 2. Soundtrack purchase with Gems
     if (input.kind === 'soundtrack') {
-      const cost = input.cost || 15;
+      const cost = input.cost !== undefined ? input.cost : 15;
       if (save.getGemBalance() < cost) throw new Error(`You need ${cost} Gems for this soundtrack.`);
       save.mutateAtomically(() => {
         save.data.gems -= cost;

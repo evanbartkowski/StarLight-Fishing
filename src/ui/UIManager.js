@@ -1,3 +1,4 @@
+import { getRandomBottleMessage } from '../data/DriftMessages.js';
 import { getRealmDepthZone as getDepthSubZone } from '../data/RealmDepths.js';
 import { crateArtwork, crateRewardGallery } from './CratePresentation.js';
 import { displaySpeciesName } from '../systems/CatchTraits.js';
@@ -1207,7 +1208,7 @@ export class UIManager {
       { id: 'zen_meditation', name: 'Soundtrack: Abyssal Meditation', desc: 'Tranquil harmonic chimes from the deep ocean trenches', icon: '🧘', cost: 4 },
       { id: 'tropical_solitude', name: 'Soundtrack: Tropical Warmth', desc: 'Bright island percussion and warm offshore breeze', icon: '🌴', cost: 3 },
       { id: 'ocean_waves', name: 'Soundtrack: Rhythmic Swell', desc: 'Lapping coastal waves and gentle seafoam whispers', icon: '🌊', cost: 3 },
-      { id: 'midnight_current', name: 'Soundtrack: Midnight Current', desc: 'Dreamy night-tide synths drifting over dark water', icon: '🌙', cost: 3 },
+      { id: 'midnight_current', name: 'Soundtrack: Midnight Current', desc: 'Dreamy night-tide synths drifting over dark water', icon: '🌙', cost: 15 },
     ];
 
     let html = `
@@ -1253,7 +1254,7 @@ export class UIManager {
             this.showToast(`💎 Need ${cost} Gems to unlock this track. You have ${save.getGemBalance()} Gems.`);
             return;
           }
-          if (await premiumPurchase(this, { kind: 'soundtrack', track: stId })) {
+          if (await premiumPurchase(this, { kind: 'soundtrack', track: stId, cost })) {
             soundManager.startRadioStation(stId);
             this.openRadio();
           }
@@ -1270,16 +1271,29 @@ export class UIManager {
     this.activeModal = 'bottleMessage';
     soundManager.playBottlePickup();
 
-    const isHaiku = message.type === 'haiku';
-    const isLore = message.type === 'lore';
+    const categoryMap = {
+      nostalgic: { label: 'Nostalgic Memory', color: '#f472b6', icon: '🌅' },
+      funny: { label: 'Humorous Note', color: '#fbbf24', icon: '😄' },
+      dumb: { label: 'Silly Drift Note', color: '#a3e635', icon: '🤪' },
+      life: { label: 'Thought on Life', color: '#38bdf8', icon: '🌊' },
+      useful: { label: 'Useful Angler Secret', color: '#34d399', icon: '💡' },
+      lore: { label: 'Ancient Sea Legend Clue', color: '#38bdf8', icon: '📜' },
+      haiku: { label: "Sailor's Drifting Haiku", color: '#a78bfa', icon: '🪶' },
+    };
 
-    const formattedText = (message.text || '').replace(/\n/g, '<br>');
+    const catKey = message?.category || message?.type;
+    const catInfo = categoryMap[catKey] || { label: 'Message from the Sea', color: '#fbbf24', icon: '✉️' };
+    const title = message?.title || catInfo.label;
+    const formattedText = (message?.text || '').replace(/\n/g, '<br>');
 
     this.openModal('📜 Message from the Sea', `
       <div style="text-align:center; padding:15px 10px;">
         <div style="font-size:2.8rem; margin-bottom:8px;">🍾</div>
-        <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:${isLore ? '#38bdf8' : isHaiku ? '#a78bfa' : '#fbbf24'}; margin-bottom:12px;">
-          ${isLore ? 'Ancient Sea Legend Clue' : isHaiku ? "Sailor's Drifting Haiku" : "Bottle Post Note"}
+        <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:${catInfo.color}; margin-bottom:4px;">
+          ${catInfo.icon} ${title}
+        </div>
+        <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:12px;">
+          Category: ${catInfo.label}
         </div>
         <div style="font-family:serif; font-size:1.15rem; font-style:italic; line-height:1.7; color:#fef3c7; background:rgba(0,0,0,0.3); padding:16px 20px; border-radius:10px; border:1px solid rgba(251,191,36,0.25); margin-bottom:18px;">
           ${formattedText}
@@ -1507,6 +1521,8 @@ export class UIManager {
                 ${
                   isCrate
                     ? `<span>Rank ${item.crateRank || 1} Mystery Loot Crate • ${item.unboxed ? `Loot: <strong>${item.loot?.name || 'Claimed'}</strong>` : 'Crack open to claim loot!'}</span>`
+                    : item.isBottle || item.id === 'bottle'
+                    ? `<span>Drift Message in a Bottle • Uncork to read secret note!</span>`
                     : !isTreasure && !isRelic
                     ? `<span><strong>${item.size} cm</strong></span> <span>${item.weight} kg</span> ${item.crown ? `<span>• Size Record</span>` : ''}`
                     : isRelic
@@ -1526,17 +1542,26 @@ export class UIManager {
                         ? (item.loot.coins >= 0 ? `+$${item.loot.coins.toLocaleString()}` : `-$${Math.abs(item.loot.coins)}`)
                         : 'Claimed')
                       : 'Unopened')
+                    : item.isBottle || item.id === 'bottle'
+                    ? '$0'
                     : `+$${itemVal.toLocaleString()}`
                 }
               </div>
               ${!isCrate && instId ? `
                 <div class="catch-item-actions-row" id="catch-actions-${instId}">
+                  ${item.isBottle || item.id === 'bottle' ? `
+                    <button class="btn btn-sm btn-primary btn-catch-read-bottle" data-id="${instId}" style="background:#06b6d4; border-color:#0891b2; color:#fff;" title="Uncork and read message">
+                      🍾 Read Message
+                    </button>
+                  ` : ''}
                   <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" title="Keep safe in tackle box">
                     <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.inventory}</span> Keep
                   </button>
-                  <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-val="${itemVal}" title="Sell immediately for gold">
-                    <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sell Now
-                  </button>
+                  ${!(item.isBottle || item.id === 'bottle') ? `
+                    <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-val="${itemVal}" title="Sell immediately for gold">
+                      <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sell Now
+                    </button>
+                  ` : ''}
                 </div>
               ` : ''}
             </div>
@@ -1548,6 +1573,7 @@ export class UIManager {
     listHtml += '</div>';
 
     const unboxedCrates = hook.caughtItems.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed);
+    const hasBottles = hook.caughtItems.some(i => i.isBottle || i.id === 'bottle');
     let remainingGold = subtotal;
     const summaryCapLvl = this.saveSystem.getUpgradeLevel('hookCapacity') || 0;
     const summaryCapTier = UPGRADE_DEFINITIONS.hookCapacity?.tiers?.[summaryCapLvl] || { capacity: 3 };
@@ -1584,6 +1610,7 @@ export class UIManager {
             <strong class="total-cash" id="summary-total-cash">+$${remainingGold.toLocaleString()}</strong>
           </div>
           <div class="summary-actions">
+            ${hasBottles ? `<button class="btn btn-warning" id="btn-read-dive-bottles" style="background:#06b6d4; color:#ffffff; font-weight:800; border-color:#0891b2;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">🍾</span> Read Message</button>` : ''}
             ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Open Crates</button>` : ''}
             ${hasUnrestoredRelic ? `<button class="btn btn-warning" id="btn-restore-relic"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${JOURNAL_TAB_ART.relics}</span> Restoration Desk</button>` : ''}
             <button class="btn btn-primary" id="btn-keep-all-catches"><span class="summary-btn-art">${MISC_ART.keepAll}</span> Keep All</button>
@@ -1636,6 +1663,23 @@ export class UIManager {
         this.openCratesModal(unboxedCrates, hook, onContinue);
       });
     }
+
+    document.querySelectorAll('.btn-catch-read-bottle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const instId = e.currentTarget.dataset.id;
+        const caught = hook.caughtItems.find(i => (i.instanceId === instId || i._instanceId === instId || i.id === 'bottle'));
+        const msg = caught?.bottleMessage || getRandomBottleMessage();
+        this.showBottleMessage(msg);
+      });
+    });
+
+    document.getElementById('btn-read-dive-bottles')?.addEventListener('click', () => {
+      const bottle = hook.caughtItems.find(i => i.isBottle || i.id === 'bottle');
+      if (bottle) {
+        const msg = bottle.bottleMessage || getRandomBottleMessage();
+        this.showBottleMessage(msg);
+      }
+    });
 
     // Individual Keep
     document.querySelectorAll('.btn-catch-keep').forEach(btn => {
@@ -4407,6 +4451,7 @@ export class UIManager {
           </div>
 
           <div class="inspect-actions-row">
+            ${item.isBottle || item.id === 'bottle' ? '<button class="btn btn-primary" id="btn-inspect-open-bottle" style="background:#06b6d4; border-color:#0891b2; color:#fff;">🍾 Read Message in Bottle</button>' : ''}
             ${(item.isCrate || item.category === 'crate') && !item.unboxed ? '<button class="btn btn-primary" id="btn-inspect-open-crate">Open Mystery Crate</button>' : ''}
             <button class="btn btn-secondary" id="btn-inspect-toggle-lock">${isLocked ? '🔓 Unlock Item' : '🔒 Lock Item'}</button>
 
@@ -4430,6 +4475,11 @@ export class UIManager {
     `;
 
     this.openModal(`🔍 Inspecting Catch: ${item.name}`, modalBody);
+
+    document.getElementById('btn-inspect-open-bottle')?.addEventListener('click', () => {
+      const msg = item.bottleMessage || getRandomBottleMessage();
+      this.showBottleMessage(msg);
+    });
 
     document.getElementById('btn-inspect-open-crate')?.addEventListener('click', () => this.openCratesModal([item], null, null));
 

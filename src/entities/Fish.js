@@ -762,6 +762,315 @@ export class Fish {
       ctx.fillStyle = this.mutation ? primary : rainbow;
       ctx.ellipse(0, 0, 29, 13, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fef3c7'; ctx.beginPath(); ctx.moveTo(23, -4); ctx.lineTo(50, -7); ctx.lineTo(23, 1); ctx.closePath(); ctx.fill();
+    } else if (s.name === 'Sunken Poseidon Emperor') {
+      // Ancient mythological ocean titan: Greek royal mantle, trident crown, laurel leaf scales & sea-god beard
+      const titanWave = Math.sin(this.wiggleTimer * 2.8) * 3;
+      ctx.fillStyle = primary || '#0284c7';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 26, 17, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Golden Poseidon Trident Crown fin (Dorsal)
+      ctx.fillStyle = '#f59e0b';
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-4, -15);
+      ctx.lineTo(-2, -32 + titanWave * 0.4);
+      ctx.lineTo(2, -32 + titanWave * 0.4);
+      ctx.lineTo(4, -15);
+      ctx.moveTo(-3, -20);
+      ctx.quadraticCurveTo(-14, -22, -12, -30 + titanWave * 0.3);
+      ctx.lineTo(-9, -29 + titanWave * 0.3);
+      ctx.quadraticCurveTo(-10, -18, -3, -16);
+      ctx.moveTo(3, -20);
+      ctx.quadraticCurveTo(14, -22, 12, -30 + titanWave * 0.3);
+      ctx.lineTo(9, -29 + titanWave * 0.3);
+      ctx.quadraticCurveTo(10, -18, 3, -16);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Flowing mythical Sea-God beard fin (Ventral)
+      ctx.fillStyle = 'rgba(254, 240, 138, 0.85)';
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(12, 6);
+      ctx.quadraticCurveTo(10 + titanWave, 24, 4 + titanWave * 1.5, 30);
+      ctx.quadraticCurveTo(2, 22, 6, 12);
+      ctx.quadraticCurveTo(0 + titanWave * 0.5, 26, -4 + titanWave, 28);
+      ctx.quadraticCurveTo(-4, 18, -2, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Classical Greek meander motif flank line
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      for (let m = -14; m <= 8; m += 7) {
+        ctx.moveTo(m, -2);
+        ctx.lineTo(m + 3, -2);
+        ctx.lineTo(m + 3, 2);
+        ctx.lineTo(m + 6, 2);
+      }
+      ctx.stroke();
+
+      // Golden laurel wreath scales along back
+      ctx.fillStyle = '#fbbf24';
+      for (let l = -12; l <= 10; l += 6) {
+        ctx.beginPath();
+        ctx.ellipse(l, -8, 2.5, 1.3, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Stern Olympian golden eye
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(14, -4, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(14.8, -4, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(14.2, -4.8, 1, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.name === 'Atlantean Mer-Knight Fish') {
+      // Mythological Corinthian Hoplite warrior fish with helmet crest, Aspis shield & bronze trident spear
+      const hopliteWiggle = Math.sin(this.wiggleTimer * 4) * 2;
+      ctx.fillStyle = primary || '#0d9488';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 26, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bronze Corinthian Helmet on head
+      ctx.fillStyle = '#d97706';
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(10, -9);
+      ctx.quadraticCurveTo(24, -10, 26, 0);
+      ctx.lineTo(16, 7);
+      ctx.quadraticCurveTo(10, 4, 10, -9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Flowing red horsehair crest (Plume) on helmet
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.moveTo(12, -9);
+      ctx.quadraticCurveTo(18, -26 + hopliteWiggle, 26, -22 + hopliteWiggle);
+      ctx.quadraticCurveTo(22, -14, 24, -8);
+      ctx.quadraticCurveTo(17, -12, 12, -9);
+      ctx.closePath();
+      ctx.fill();
+
+      // Bronze Trident-Spear rostrum extending forward
+      ctx.strokeStyle = '#f59e0b';
+      ctx.fillStyle = '#f59e0b';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(25, 0);
+      ctx.lineTo(46, -1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(42, -5); ctx.lineTo(47, -5); ctx.lineTo(44, -1);
+      ctx.moveTo(42, 3); ctx.lineTo(47, 3); ctx.lineTo(44, -1);
+      ctx.moveTo(43, -1); ctx.lineTo(49, -1);
+      ctx.stroke();
+
+      // Golden Aspis hoplite shield emblem on flank
+      ctx.fillStyle = '#f59e0b';
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(-2, 0, 8.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-5, 4);
+      ctx.lineTo(-2, -4);
+      ctx.lineTo(1, 4);
+      ctx.stroke();
+
+      // Fierce warrior eye under helmet brow
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(19, -2, 2.8, 1.8, -0.15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(19.8, -2, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.name === 'Atlantean Oracle') {
+      // Mythological Pythian Oracle: Sacred laurel halo, glowing third eye & prophetic ribbons
+      const oraclePulse = Math.sin(this.wiggleTimer * 2.5);
+      ctx.fillStyle = primary || '#0284c7';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 22, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sacred golden laurel wreath halo encircling the oracle
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(0, 0, 26 + oraclePulse * 1.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#fbbf24';
+      for (let leaf = 0; leaf < 8; leaf++) {
+        const la = (leaf / 8) * Math.PI * 2 + this.wiggleTimer * 0.2;
+        const lx = Math.cos(la) * (26 + oraclePulse * 1.5);
+        const ly = Math.sin(la) * (26 + oraclePulse * 1.5);
+        ctx.beginPath();
+        ctx.ellipse(lx, ly, 3.5, 1.8, la, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Prophetic temple ribbon tails
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.85)';
+      ctx.lineWidth = 1.8;
+      for (let r = -1; r <= 1; r++) {
+        const rWave = Math.sin(this.wiggleTimer * 3 + r) * 5;
+        ctx.beginPath();
+        ctx.moveTo(-18, r * 5);
+        ctx.quadraticCurveTo(-30, r * 9 + rWave, -42, r * 6 + rWave * 1.4);
+        ctx.stroke();
+      }
+
+      // Glowing mystical Third Eye of Prophecy on forehead
+      ctx.fillStyle = '#fde047';
+      ctx.shadowColor = '#facc15';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(6, -8, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#6d28d9';
+      ctx.beginPath();
+      ctx.arc(6, -8, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Serene all-knowing main eye
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(12, -2, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1e1b4b';
+      ctx.beginPath();
+      ctx.arc(12.5, -2, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(12, -2.7, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.name === 'Corinthian Seahorse') {
+      // Mythological Hippocamp: Horse-crested head, arched neck, Corinthian column ridges & coiled tail
+      const mareWiggle = Math.sin(this.wiggleTimer * 3);
+      ctx.fillStyle = primary || '#059669';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 10, 18, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Horse head with muzzle
+      ctx.beginPath();
+      ctx.moveTo(3, -12);
+      ctx.quadraticCurveTo(12, -18, 16, -14);
+      ctx.lineTo(15, -9);
+      ctx.quadraticCurveTo(8, -8, 4, -4);
+      ctx.closePath();
+      ctx.fill();
+
+      // Corinthian fluted column ridges along spine
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 1.8;
+      for (let col = -10; col <= 10; col += 4) {
+        ctx.beginPath();
+        ctx.moveTo(-4, col);
+        ctx.lineTo(4, col - 2);
+        ctx.stroke();
+      }
+
+      // Golden horsehair crested mane
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.moveTo(2, -14);
+      ctx.quadraticCurveTo(-6, -24 + mareWiggle, -2, -26 + mareWiggle);
+      ctx.quadraticCurveTo(4, -20, 5, -12);
+      ctx.closePath();
+      ctx.fill();
+
+      // Bridle
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(14, -13); ctx.lineTo(7, -8);
+      ctx.stroke();
+
+      // Coiled golden finned tail
+      ctx.strokeStyle = finColor || '#34d399';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(-2, 14);
+      ctx.quadraticCurveTo(-8 + mareWiggle * 2, 24, -14, 20);
+      ctx.quadraticCurveTo(-18, 14, -10, 10);
+      ctx.stroke();
+
+      // Alert mythical equine eye
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(10, -13, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(10.5, -13, 1.1, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (s.name === 'Poseidon Crested Swordfish') {
+      // Ancient mythological royal swordfish: Golden three-pronged Trident rostrum & Olympian fin crest
+      const swordWiggle = Math.sin(this.wiggleTimer * 3.5) * 3;
+      ctx.fillStyle = primary || '#0284c7';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 32, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flaring Olympian crested dorsal fin
+      ctx.fillStyle = '#f59e0b';
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-14, -6);
+      ctx.quadraticCurveTo(0, -28 + swordWiggle, 16, -6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Three-pronged golden Trident rostrum
+      ctx.strokeStyle = '#fbbf24';
+      ctx.fillStyle = '#fbbf24';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(28, 0);
+      ctx.lineTo(52, -1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(48, -5); ctx.lineTo(53, -5); ctx.lineTo(50, -1);
+      ctx.moveTo(48, 3); ctx.lineTo(53, 3); ctx.lineTo(50, -1);
+      ctx.stroke();
+
+      // Royal eye
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(18, -2, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(18.5, -2, 1.5, 0, Math.PI * 2);
+      ctx.fill();
     } else if (s.shape === 'star_ribbon') {
       // Abyssal Star-Weaver: Celestial translucent ribbon eel
       ctx.ellipse(0, 0, 36, 7, 0, 0, Math.PI * 2);

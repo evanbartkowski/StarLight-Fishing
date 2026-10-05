@@ -79,15 +79,15 @@ export class ShipsCat {
 
   getDeckPosition(vessel) {
     if (vessel >= 4) {
-      return { x: -53, y: -28 }; // on rear observation deck of Mythic Celestial Ketch
+      return { x: -50, y: -23 }; // seated snugly on rear observation deck of Mythic Ketch (deck surface at y=-18)
     } else if (vessel === 3) {
-      return { x: -49, y: -24 }; // on quarterdeck of Grand Schooner
+      return { x: -44, y: -15 }; // seated on aft deck of Grand Schooner (deck at y=-10)
     } else if (vessel === 2) {
-      return { x: -44, y: -18 }; // on aft bench of Expedition Trawler
+      return { x: -40, y: -15 }; // seated on aft deck of Expedition Trawler (deck at y=-10)
     } else if (vessel === 1) {
-      return { x: -38, y: -14 }; // on seat cushion of Coastal Dory
+      return { x: -36, y: -13 }; // seated on seat bench of Coastal Dory
     }
-    return { x: -32, y: -12 }; // on pine bench of Weathered Dinghy
+    return { x: -30, y: -12 }; // on pine bench of Weathered Dinghy
   }
 
   render(ctx, vessel) {

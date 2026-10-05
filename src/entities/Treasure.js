@@ -1,4 +1,5 @@
 import { RARITY_CONFIG } from '../data/FishData.js';
+import { getRandomBottleMessage } from '../data/DriftMessages.js';
 
 function drawRealmArtifact(ctx, item, time) {
   const name = (item.name || '').toLowerCase();
@@ -24,6 +25,40 @@ function drawRealmArtifact(ctx, item, time) {
     ctx.fillStyle = '#ded2ae'; ctx.beginPath(); ctx.moveTo(0, -20); ctx.quadraticCurveTo(16, -7, 14, 7); ctx.lineTo(6, 18); ctx.lineTo(-6, 18); ctx.lineTo(-14, 7); ctx.quadraticCurveTo(-16, -7, 0, -20); ctx.fill(); ctx.stroke();
     ctx.strokeStyle = '#8c8068'; ctx.lineWidth = 1.3;
     for (let rib = -8; rib <= 8; rib += 4) { ctx.beginPath(); ctx.moveTo(-10, rib); ctx.lineTo(10, rib); ctx.stroke(); }
+  } else if (/bottle|message/.test(name)) {
+    // Elegant vintage glass bottle with cork and rolled parchment inside
+    ctx.fillStyle = item.color || '#34d399';
+    ctx.globalAlpha *= 0.82;
+    ctx.beginPath();
+    ctx.ellipse(0, 3, 8, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Bottle neck & lip
+    ctx.fillRect(-3, -16, 6, 8);
+    ctx.strokeRect(-3, -16, 6, 8);
+
+    // Cork stopper
+    ctx.fillStyle = '#b45309';
+    ctx.globalAlpha = 1.0;
+    ctx.fillRect(-3.5, -20, 7, 5);
+
+    // Rolled parchment scroll inside
+    ctx.fillStyle = '#fef3c7';
+    ctx.beginPath();
+    ctx.ellipse(0, 3, 3.5, 9, 0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Red wax ribbon seal on scroll
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(-2, 1, 4, 3);
+
+    // Glass shine highlight
+    ctx.strokeStyle = '#ffffffbb';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(3, 3, 9, -Math.PI * 0.45, 0.05);
+    ctx.stroke();
   } else if (/pearl|heart|amber|opal|prism|tear|shard|crystal|gem/.test(name)) {
     ctx.beginPath(); ctx.moveTo(0, -21); ctx.lineTo(17, -8); ctx.lineTo(12, 11); ctx.lineTo(0, 20); ctx.lineTo(-13, 9); ctx.lineTo(-17, -8); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#ffffff77'; ctx.beginPath(); ctx.moveTo(0, -17); ctx.lineTo(6, -7); ctx.lineTo(0, 10); ctx.lineTo(-9, -7); ctx.closePath(); ctx.fill();
@@ -42,6 +77,7 @@ export class Treasure {
     this.isTreasure = true;
     this.category = itemConfig.category || 'treasure';
     this.isCrate = !!itemConfig.isCrate || itemConfig.category === 'crate';
+    this.isBottle = !!itemConfig.isBottle || itemConfig.id === 'bottle';
     this.crateRank = itemConfig.crateRank || 1;
     this.itemConfig = itemConfig;
     this.zone = itemConfig.zone;
@@ -51,7 +87,8 @@ export class Treasure {
     this.rarity = itemConfig.rarity;
     this.rarityColor = RARITY_CONFIG[itemConfig.rarity]?.color || '#ffffff';
     this.rarityGlow = RARITY_CONFIG[itemConfig.rarity]?.glow || '#fde68a';
-    this.value = itemConfig.value;
+    this.value = this.isBottle ? 0 : itemConfig.value;
+    this.bottleMessage = this.isBottle ? (itemConfig.bottleMessage || getRandomBottleMessage()) : null;
     this.lore = itemConfig.lore;
 
     this.x = x;

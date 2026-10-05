@@ -261,14 +261,15 @@ export class OceanWorld {
       const schoolSize = 10 + Math.floor(Math.random() * 7);
       for (let member = 0; member < schoolSize; member++) {
         const x = Math.max(70, Math.min(this.worldWidth - 70, centerX + (member - (schoolSize - 1) / 2) * 9));
-        const y = this.surfaceY + depth * this.pixelsPerMeter + (Math.random() - .5) * 44;
+        const memberDepth = Math.max(0, Math.min(Math.min(activeMaxDepth, 3000), depth + ((Math.random() - .5) * 44) / this.pixelsPerMeter));
+        const y = this.surfaceY + memberDepth * this.pixelsPerMeter;
         this.entities.fish.push(new Fish(species, x, y, fishOptions));
       }
     }
 
     populateBands(TREASURE_ITEMS.filter(item => item.category !== 'fossil' && belongsToRealm(item, this.currentSeaId)),
       depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2 * ecology.treasure,
-      item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : item.isCrate ? .3 * worldCycle.getCrateDropMultiplier() : 1),
+      item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : item.isCrate ? .3 * worldCycle.getCrateDropMultiplier() : (item.id === 'bottle' ? 0.09 : 1)),
       (item, x, y) => this.entities.treasures.push(new Treasure(item, x, y)));
 
     // Fossils have an independent rare roll and cannot crowd ordinary salvage.
