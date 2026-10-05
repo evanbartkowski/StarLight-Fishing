@@ -46,19 +46,40 @@ export class GemShop {
     for (const token of cosmetics) {
       if (typeof token !== 'string') continue;
       const [kind, key, value] = token.split(':');
-      if (kind !== 'angler' && kind !== 'aquarium') continue;
-      const target = kind === 'angler' ? this.save.data.ownedAppearance : (this.save.data.aquarium.ownedStyles ||= []);
-      const id = `${key}:${value}`;
-      if (!target.includes(id)) target.push(id);
+      if (kind === 'angler') {
+        const id = `${key}:${value}`;
+        if (!this.save.data.ownedAppearance.includes(id)) this.save.data.ownedAppearance.push(id);
+      } else if (kind === 'aquarium') {
+        const target = (this.save.data.aquarium.ownedStyles ||= []);
+        const id = `${key}:${value}`;
+        if (!target.includes(id)) target.push(id);
+      } else if (kind === 'boatTrinket') {
+        const trinketId = key;
+        const target = (this.save.data.ownedBoatTrinkets ||= ['none']);
+        if (!target.includes(trinketId)) target.push(trinketId);
+      } else if (kind === 'boatSkin') {
+        const skinId = key;
+        const target = (this.save.data.ownedBoatSkins ||= ['default']);
+        if (!target.includes(skinId)) target.push(skinId);
+      }
     }
   }
 
   async purchase(kind, values, apply) {
     if (this.busy) return false;
-    const items = Object.entries(values).map(([key, value]) => ({
-      id: `${kind}:${key}:${value}`,
-      cost: kind === 'angler' ? this.save.getAppearanceCost({ ...this.save.data.appearance, [key]: value }) : this.save.getAquariumStyleCost(key, value),
-    })).filter(item => item.cost > 0);
+    let items = [];
+    if (kind === 'boatTrinket') {
+      const cost = this.save.getBoatTrinketCost(values) || 0;
+      if (cost > 0) items.push({ id: `boatTrinket:${values}`, cost });
+    } else if (kind === 'boatSkin') {
+      const cost = this.save.getBoatSkinCost(values) || 0;
+      if (cost > 0) items.push({ id: `boatSkin:${values}`, cost });
+    } else {
+      items = Object.entries(values).map(([key, value]) => ({
+        id: `${kind}:${key}:${value}`,
+        cost: kind === 'angler' ? this.save.getAppearanceCost({ ...this.save.data.appearance, [key]: value }) : this.save.getAquariumStyleCost(key, value),
+      })).filter(item => item.cost > 0);
+    }
     const cost = items.reduce((sum, item) => sum + item.cost, 0);
     if (this.save.data.gems >= cost) return apply();
     if (!this.ready || !this.matchesUser()) { this.ui.showToast('Connect your captain account to use purchased gems.'); return false; }

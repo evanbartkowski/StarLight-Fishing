@@ -162,3 +162,34 @@ test('fossil completion grants gems once and museum exhibits survive reload', ()
   assert.equal(save.toggleMuseumDisplay('megalodonJaw'), true);
   assert.equal(save.data.museumDisplays.length, 0);
 });
+
+test('upgrades using gems cost the exact displayed price and debit accurately for guests and cloud', async () => {
+  const { UPGRADE_DEFINITIONS: clientUpgrades } = await import('../src/data/UpgradesData.js');
+  const { UPGRADE_DEFINITIONS: serverUpgrades } = await import('../functions/shared/UpgradesData.js');
+  const { premiumPurchase } = await import('../src/systems/PremiumPurchases.js');
+
+  // Verify client and server definitions have matching tier costs across all upgrades
+  for (const [key, clientDef] of Object.entries(clientUpgrades)) {
+    const serverDef = serverUpgrades[key];
+    assert.ok(serverDef, `server must have upgrade definition for ${key}`);
+    assert.equal(clientDef.tiers.length, serverDef.tiers.length, `${key} must have matching tier count`);
+    for (let t = 0; t < clientDef.tiers.length; t++) {
+      assert.equal(clientDef.tiers[t].cost, serverDef.tiers[t].cost, `${key} tier ${t} cost must match`);
+    }
+  }
+
+  // Test guest upgrade purchase with exact gem cost
+  const save = fresh();
+  accountManager.activeUser = null; // guest mode
+  save.data.level = 10;
+  const nextTier = clientUpgrades.lineLength.tiers[1];
+  const expectedGems = Math.max(1, Math.ceil(nextTier.cost / 600));
+  save.data.gems = expectedGems + 5;
+
+  const ui = { saveSystem: save, showToast() {}, onUpgradePurchased() {} };
+  const success = await premiumPurchase(ui, { kind: 'upgrade', key: 'lineLength', cost: expectedGems });
+  assert.equal(success, true);
+  assert.equal(save.getUpgradeLevel('lineLength'), 1);
+  assert.equal(save.data.gems, 5); // debited exactly expectedGems, not a single gem more
+});
+

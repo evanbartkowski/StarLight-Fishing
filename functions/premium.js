@@ -39,15 +39,16 @@ export async function purchasePremium(db, uid, input, fieldValue) {
       if (input.key === 'personalAquarium') Object.assign(state.aquarium, { isUnlocked: true, tier: level + 1, maxCapacity: tier.capacity });
       if (input.key === 'seabedTraps') Object.assign(state.traps, { count: tier.trapCount || 1, maxStorage: tier.maxStorage || 12 });
     } else if (input.kind === 'soundtrack') {
-      const prices = /** @type {Record<string, number>} */ ({ peaceful_lagoon: 3, zen_meditation: 4, tropical_solitude: 3, ocean_waves: 3 });
+      const prices = /** @type {Record<string, number>} */ ({ peaceful_lagoon: 3, zen_meditation: 4, tropical_solitude: 3, ocean_waves: 3, midnight_current: 15 });
       if (!Object.hasOwn(prices, input.track)) throw new Error('invalid-argument');
       state.unlockedSoundtracks ||= ['harbor_breeze', 'rainy_lighthouse', 'deep_blue'];
       cost = state.unlockedSoundtracks.includes(input.track) ? 0 : prices[input.track];
       if (cost) state.unlockedSoundtracks.push(input.track);
     } else if (input.kind === 'boatSkin') {
-      if (!['coral', 'indigo', 'gold'].includes(input.skin)) throw new Error('invalid-argument');
+      const skinPrices = /** @type {Record<string, number>} */ ({ coral: 15, indigo: 20, emerald: 25, gold: 40 });
+      if (!Object.hasOwn(skinPrices, input.skin)) throw new Error('invalid-argument');
       state.boatSkins ||= [];
-      cost = state.boatSkins.includes(input.skin) ? 0 : 5;
+      cost = state.boatSkins.includes(input.skin) ? 0 : skinPrices[input.skin];
       if (cost) state.boatSkins.push(input.skin);
       state.boatSkin = input.skin;
     } else throw new Error('invalid-argument');

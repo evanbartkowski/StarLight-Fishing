@@ -2,7 +2,7 @@ export const UPGRADE_DEFINITIONS = {
   lineLength: {
     id: 'lineLength',
     name: 'Fishing Line Length',
-    icon: '🧵',
+    icon: '🪢',
     description: 'Extends your fishing line to reach deeper oceanic seas and mythical zones.',
     tiers: [
       { level: 0, cost: 0, depth: 60, reqLevel: 0, label: '60m (Sea 1: Sunlit Shoals)' },
@@ -23,7 +23,7 @@ export const UPGRADE_DEFINITIONS = {
   hookCapacity: {
     id: 'hookCapacity',
     name: 'Tackle Capacity',
-    icon: '🪣',
+    icon: '🧺',
     description: 'Allows your line to hold more fish, treasures, and fossils on a single cast.',
     tiers: [
       { level: 0, cost: 0, capacity: 3, reqLevel: 0, label: '3 Catches' },
@@ -44,7 +44,7 @@ export const UPGRADE_DEFINITIONS = {
   reelPower: {
     id: 'reelPower',
     name: 'Reel Winch & Motor',
-    icon: '⚙️',
+    icon: '⚡',
     description: 'Hauls the fishing line back to the boat faster with higher mechanical torque.',
     tiers: [
       { level: 0, cost: 0, multiplier: 1.0, reqLevel: 0, label: 'Manual Hand-Crank (1.0x)' },
@@ -64,25 +64,25 @@ export const UPGRADE_DEFINITIONS = {
   highTensionLine: {
     id: 'highTensionLine',
     name: 'Reinforced Braided Line',
-    icon: '🧵',
-    description: 'Reduces enemy-impact knockback by 5% per tier, up to 40%.',
+    icon: '🧬',
+    description: 'Increases line snap threshold and widens sweet spot retrieval windows.',
     tiers: [
-      { level: 0, cost: 0, threshold: 100, sweetSpotMult: 1.0, reqLevel: 0, label: 'Mono-Filament (0% knockback resistance)' },
-      { level: 1, cost: 180, threshold: 115, sweetSpotMult: 1.10, reqLevel: 2, label: 'Dual-Core Nylon (5% knockback resistance)' },
-      { level: 2, cost: 450, threshold: 132, sweetSpotMult: 1.20, reqLevel: 4, label: 'Braided Spectra (10% knockback resistance)' },
-      { level: 3, cost: 1150, threshold: 152, sweetSpotMult: 1.32, reqLevel: 6, label: 'Fluorocarbon Weave (15% knockback resistance)' },
-      { level: 4, cost: 2900, threshold: 175, sweetSpotMult: 1.45, reqLevel: 9, label: 'Kevlar Infused (20% knockback resistance)' },
-      { level: 5, cost: 7000, threshold: 202, sweetSpotMult: 1.60, reqLevel: 13, label: 'Carbon Nanotube (25% knockback resistance)' },
-      { level: 6, cost: 17000, threshold: 235, sweetSpotMult: 1.78, reqLevel: 17, label: 'Titanium Filament (30% knockback resistance)' },
-      { level: 7, cost: 40000, threshold: 275, sweetSpotMult: 2.00, reqLevel: 22, label: 'Eldritch Silkline (35% knockback resistance)' },
-      { level: 8, cost: 95000, threshold: 325, sweetSpotMult: 2.25, reqLevel: 28, label: 'Cosmic Chrono-Tether (40% knockback resistance)' },
+      { level: 0, cost: 0, threshold: 100, sweetSpotMult: 1.0, reqLevel: 0, label: 'Mono-Filament (100 Strain)' },
+      { level: 1, cost: 180, threshold: 115, sweetSpotMult: 1.10, reqLevel: 2, label: 'Dual-Core Nylon (115 Strain)' },
+      { level: 2, cost: 450, threshold: 132, sweetSpotMult: 1.20, reqLevel: 4, label: 'Braided Spectra (132 Strain)' },
+      { level: 3, cost: 1150, threshold: 152, sweetSpotMult: 1.32, reqLevel: 6, label: 'Fluorocarbon Weave (152 Strain)' },
+      { level: 4, cost: 2900, threshold: 175, sweetSpotMult: 1.45, reqLevel: 9, label: 'Kevlar Infused (175 Strain)' },
+      { level: 5, cost: 7000, threshold: 202, sweetSpotMult: 1.60, reqLevel: 13, label: 'Carbon Nanotube (202 Strain)' },
+      { level: 6, cost: 17000, threshold: 235, sweetSpotMult: 1.78, reqLevel: 17, label: 'Titanium Filament (235 Strain)' },
+      { level: 7, cost: 40000, threshold: 275, sweetSpotMult: 2.00, reqLevel: 22, label: 'Eldritch Silkline (275 Strain)' },
+      { level: 8, cost: 95000, threshold: 325, sweetSpotMult: 2.25, reqLevel: 28, label: 'Cosmic Chrono-Tether (325 Strain)' },
     ],
   },
 
   hookAgility: {
     id: 'hookAgility',
     name: 'Hook Maneuverability',
-    icon: '🧭',
+    icon: '🎯',
     description: 'Sharper steering response underwater to weave between hazards and snatch high-value fish.',
     tiers: [
       { level: 0, cost: 0, speedMult: 1.0, reqLevel: 0, label: 'Standard Lead Sinker (1.0x)' },
@@ -171,7 +171,7 @@ export const UPGRADE_DEFINITIONS = {
   fossilRadar: {
     id: 'fossilRadar',
     name: 'Paleo Fossil Scanner',
-    icon: '🦴',
+    icon: '🦖',
     description: 'Specialized geo-resonance scanner that boosts fossil discovery rates in deep seabed silt.',
     tiers: [
       { level: 0, cost: 0, fossilBonus: 1.0, reqLevel: 0, label: 'Uncalibrated (1.0x)' },
@@ -190,15 +190,15 @@ export const UPGRADE_DEFINITIONS = {
     icon: '✨',
     description: 'Gradually raises discovery of Rare, Epic, Legendary species and prized Golden Shinies.',
     tiers: [
-      { level: 0, cost: 0, rareBoost: 1.0, shinyChance: 0.0020, reqLevel: 0, label: 'Standard Bait (0.2% Shiny)' },
-      { level: 1, cost: 260, rareBoost: 1.12, shinyChance: 0.0028, reqLevel: 2, label: 'Silver Spinner (+12% Rare, 0.28% Shiny)' },
-      { level: 2, cost: 680, rareBoost: 1.28, shinyChance: 0.0038, reqLevel: 4, label: 'Glow Squid Lure (+28% Rare, 0.38% Shiny)' },
-      { level: 3, cost: 1850, rareBoost: 1.48, shinyChance: 0.0052, reqLevel: 7, label: 'Pearl Attractor (+48% Rare, 0.52% Shiny)' },
-      { level: 4, cost: 4600, rareBoost: 1.72, shinyChance: 0.0070, reqLevel: 11, label: 'Sirens Feather (+72% Rare, 0.7% Shiny)' },
-      { level: 5, cost: 11500, rareBoost: 2.02, shinyChance: 0.0092, reqLevel: 15, label: 'Gilded Minnow Lure (+102% Rare, 0.92% Shiny)' },
-      { level: 6, cost: 28000, rareBoost: 2.38, shinyChance: 0.0120, reqLevel: 20, label: 'Starlight Spinner (+138% Rare, 1.2% Shiny)' },
-      { level: 7, cost: 65000, rareBoost: 2.82, shinyChance: 0.0156, reqLevel: 26, label: 'Abyssal Angler Charm (+182% Rare, 1.6% Shiny)' },
-      { level: 8, cost: 155000, rareBoost: 3.35, shinyChance: 0.0200, reqLevel: 33, label: 'Heart of the Ocean (+235% Rare, 2% Shiny)' },
+      { level: 0, cost: 0, rareBoost: 1.0, shinyChance: 0.002, reqLevel: 0, label: 'Standard Bait (0.2% Shiny)' },
+      { level: 1, cost: 260, rareBoost: 1.12, shinyChance: 0.004, reqLevel: 2, label: 'Silver Spinner (+12% Rare, 0.4% Shiny)' },
+      { level: 2, cost: 680, rareBoost: 1.28, shinyChance: 0.006, reqLevel: 4, label: 'Glow Squid Lure (+28% Rare, 0.6% Shiny)' },
+      { level: 3, cost: 1850, rareBoost: 1.48, shinyChance: 0.008, reqLevel: 7, label: 'Pearl Attractor (+48% Rare, 0.8% Shiny)' },
+      { level: 4, cost: 4600, rareBoost: 1.72, shinyChance: 0.010, reqLevel: 11, label: 'Sirens Feather (+72% Rare, 1.0% Shiny)' },
+      { level: 5, cost: 11500, rareBoost: 2.02, shinyChance: 0.012, reqLevel: 15, label: 'Gilded Minnow Lure (+102% Rare, 1.2% Shiny)' },
+      { level: 6, cost: 28000, rareBoost: 2.38, shinyChance: 0.014, reqLevel: 20, label: 'Starlight Spinner (+138% Rare, 1.4% Shiny)' },
+      { level: 7, cost: 65000, rareBoost: 2.82, shinyChance: 0.016, reqLevel: 26, label: 'Abyssal Angler Charm (+182% Rare, 1.6% Shiny)' },
+      { level: 8, cost: 155000, rareBoost: 3.35, shinyChance: 0.020, reqLevel: 33, label: 'Heart of the Ocean (+235% Rare, 2.0% Shiny)' },
     ],
   },
 
@@ -222,7 +222,7 @@ export const UPGRADE_DEFINITIONS = {
   seabedTraps: {
     id: 'seabedTraps',
     name: 'Seabed Drift Pots',
-    icon: '🪤',
+    icon: '🦞',
     description: 'Deploy idle drift traps that passively catch coastal crabs, oysters, and prehistoric bone fragments.',
     tiers: [
       { level: 0, cost: 0, trapCount: 0, maxStorage: 0, reqLevel: 0, label: 'Not Purchased (0 Pots)' },
@@ -238,7 +238,7 @@ export const UPGRADE_DEFINITIONS = {
   personalAquarium: {
     id: 'personalAquarium',
     name: 'Personal Marine Aquarium',
-    icon: '🐠',
+    icon: '🫧',
     description: 'A luxurious glass marine tank for your vessel cabin. Houses live swimming specimens and ancient relics while generating passive visitor tips.',
     tiers: [
       { level: 0, cost: 0, capacity: 0, reqLevel: 0, label: 'Not Purchased (Locked)' },
@@ -254,7 +254,7 @@ export const UPGRADE_DEFINITIONS = {
   tackleBox: {
     id: 'tackleBox',
     name: 'Storage Tackle Box',
-    icon: '🎒',
+    icon: '🧰',
     description: 'Expands your permanent inventory storage capacity by +5 slots per upgrade up to Level 100.',
     tiers: Array.from({ length: 101 }, (_, lvl) => {
       const capacity = 15 + lvl * 5;
@@ -292,10 +292,3 @@ export const UPGRADE_DEFINITIONS = {
     ],
   },
 };
-
-// Raise introductory purchases while smoothing the final equipment tiers.
-for (const definition of Object.values(UPGRADE_DEFINITIONS)) {
-  for (const tier of definition.tiers) {
-    tier.cost = Math.round(tier.cost * (tier.level <= 2 ? 1.725 : tier.level >= 7 ? .585 : 1));
-  }
-}

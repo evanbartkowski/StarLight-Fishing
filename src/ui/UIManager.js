@@ -1428,9 +1428,25 @@ export class UIManager {
 
     document.querySelectorAll('.btn-upgrade-gem').forEach(button => {
       button.onclick = async () => {
+        const upgId = button.dataset.upgrade;
+        const currentLvl = save.getUpgradeLevel(upgId);
+        const upg = UPGRADE_DEFINITIONS[upgId];
+        const nextTier = upg?.tiers[currentLvl + 1];
+        if (!nextTier) return;
+        const gemCost = Math.max(1, Math.ceil(nextTier.cost / 600));
+
+        if (save.getGemBalance() < gemCost) {
+          this.showToast(`💎 Need ${gemCost} Gems for this upgrade. You currently have ${save.getGemBalance()} Gems.`);
+          return;
+        }
+
         button.disabled = true;
-        if (await premiumPurchase(this, { kind: 'upgrade', key: button.dataset.upgrade })) this.openShop();
-        else button.disabled = false;
+        if (await premiumPurchase(this, { kind: 'upgrade', key: upgId, cost: gemCost })) {
+          soundManager.playUpgrade();
+          this.openShop();
+        } else {
+          button.disabled = false;
+        }
       };
     });
   }
