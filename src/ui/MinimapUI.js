@@ -276,7 +276,13 @@ export class MinimapUI {
       this.uiManager.showToast(`⛵ Setting sail for ${sea.name} (${sea.subtitle})!`);
       this.uiManager.closeModal();
 
-      if (this.onSailToSea) {
+      if (this.uiManager && typeof this.uiManager.playCloudTransition === 'function') {
+        this.uiManager.playCloudTransition(() => {
+          if (this.onSailToSea) {
+            this.onSailToSea(sea);
+          }
+        });
+      } else if (this.onSailToSea) {
         this.onSailToSea(sea);
       }
     }

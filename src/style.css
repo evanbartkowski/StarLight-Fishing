@@ -540,7 +540,7 @@ html, body {
   font-weight: 600;
 }
 
-.coin-display, .capacity-display, .shield-display {
+.coin-display, .capacity-display, .shield-display, .weather-type-display {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -565,6 +565,24 @@ html, body {
 .capacity-display {
   border-color: rgba(56, 189, 248, 0.35);
   color: #e0f2fe;
+}
+
+.weather-type-display {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #bae6fd;
+  padding: 6px 10px;
+}
+
+.weather-badge-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.weather-badge-type {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #bae6fd;
 }
 
 #capacity-amount {
@@ -616,7 +634,6 @@ html, body {
    Keeps Depth, Capacity, Shields & Hints Active
    ========================================= */
 .hud-right,
-.level-display,
 .weather-display {
   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -627,11 +644,11 @@ html, body {
   transform: translateY(-16px);
 }
 
-#game-hud.hud-diving-mode .level-display,
 #game-hud.hud-diving-mode .weather-display {
   opacity: 0;
   pointer-events: none !important;
   transform: translateY(-16px);
+  display: none !important;
 }
 
 .hud-center {
@@ -3151,17 +3168,16 @@ html, body {
 .hud-left { height: 42px; align-items: center; }
 #hud-coins { box-sizing: border-box; width: auto; max-width: 160px; }
 #coin-amount { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-.hud-wallet { position: relative; flex-shrink: 0; }
-#hud-capacity { position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); visibility: hidden; pointer-events: none; }
-#game-hud.hud-diving-mode #hud-capacity { visibility: visible; }
-#capacity-amount { min-width: 6ch; font-variant-numeric: tabular-nums; }
+.hud-wallet { position: relative; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; }
+#hud-capacity { position: static; transform: none; visibility: visible; pointer-events: auto; }
+#capacity-amount { min-width: 4ch; font-variant-numeric: tabular-nums; }
 @media (max-width: 800px) {
   #hud-coins { max-width: 88px; }
   #game-hud { padding: 6px 4px; gap: 3px; }
   .hud-left { gap: 3px; }
   .hud-left .level-display { padding: 3px; }
   .hud-left .level-badge { padding: 2px 3px; font-size: 10px; letter-spacing: 0; }
-  .hud-left .coin-display { gap: 3px; padding: 4px; font-size: 11px; }
+  .hud-left .coin-display, .hud-left .capacity-display, .hud-left .weather-type-display { gap: 3px; padding: 4px 6px; font-size: 11px; }
   .hud-right { flex: 1; gap: 2px; height: 42px; }
   .hud-right .icon-btn { position: relative; flex: 1 1 0; min-width: 0; padding: 5px 0; font-size: clamp(11px, 3vw, 16px); gap: 0; }
   .hud-right .trap-badge-num { position: absolute; top: -5px; right: -2px; font-size: 9px; padding: 1px 3px; }
@@ -4316,3 +4332,116 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   height: 100%;
   display: block;
 }
+
+/* =========================================
+   Realm Sailing: Oceanic Cloud Transition
+   ========================================= */
+.realm-cloud-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: all;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cloud-mist-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.96) 50%, rgba(224, 242, 254, 0.94) 100%);
+  opacity: 0;
+  transition: opacity 0.42s ease-in-out;
+}
+
+.realm-cloud-transition.phase-in .cloud-mist-backdrop {
+  opacity: 1;
+}
+
+.realm-cloud-transition.phase-out .cloud-mist-backdrop {
+  opacity: 0;
+  transition: opacity 0.58s ease-in;
+}
+
+.cloud-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.cloud-svg-bank {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cloud-layer-left {
+  transform: translateX(-105%);
+  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.realm-cloud-transition.phase-in .cloud-layer-left {
+  transform: translateX(0);
+}
+
+.realm-cloud-transition.phase-out .cloud-layer-left {
+  transform: translateX(-125%) scale(1.1);
+  opacity: 0;
+  transition: transform 0.62s cubic-bezier(0.4, 0, 1, 1), opacity 0.55s ease-in;
+}
+
+.cloud-layer-right {
+  transform: translateX(105%);
+  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.realm-cloud-transition.phase-in .cloud-layer-right {
+  transform: translateX(0);
+}
+
+.realm-cloud-transition.phase-out .cloud-layer-right {
+  transform: translateX(125%) scale(1.1);
+  opacity: 0;
+  transition: transform 0.62s cubic-bezier(0.4, 0, 1, 1), opacity 0.55s ease-in;
+}
+
+.cloud-puffs-cluster {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cloud-puff {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f5f9 55%, #e2e8f0 85%, #cbd5e1 100%);
+  filter: drop-shadow(0 15px 30px rgba(15, 23, 42, 0.15)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.9));
+  transform: scale(0.25);
+  opacity: 0;
+  transition: transform 0.44s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s ease-out;
+}
+
+.realm-cloud-transition.phase-in .cloud-puff {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.realm-cloud-transition.phase-out .cloud-puff {
+  transform: scale(1.4);
+  opacity: 0;
+  transition: transform 0.58s cubic-bezier(0.4, 0, 1, 1), opacity 0.5s ease-in;
+}
+
+.puff-1 { width: 55vw; height: 55vw; top: -12vw; left: 8vw; }
+.puff-2 { width: 52vw; height: 52vw; bottom: -12vw; right: 10vw; }
+.puff-3 { width: 44vw; height: 44vw; top: 12vw; right: -6vw; }
+.puff-4 { width: 46vw; height: 46vw; bottom: 4vw; left: -6vw; }
+.puff-5 { width: 38vw; height: 38vw; top: 32%; left: 32%; }
+

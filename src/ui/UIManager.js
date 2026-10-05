@@ -172,6 +172,90 @@ export class UIManager {
     }, 4500);
   }
 
+  playCloudTransition(onMidpoint, onComplete) {
+    const existing = document.getElementById('realm-cloud-transition');
+    if (existing) existing.remove();
+
+    const transitionOverlay = document.createElement('div');
+    transitionOverlay.id = 'realm-cloud-transition';
+    transitionOverlay.className = 'realm-cloud-transition';
+    transitionOverlay.setAttribute('aria-hidden', 'true');
+    transitionOverlay.innerHTML = `
+      <div class="cloud-mist-backdrop"></div>
+      <div class="cloud-layer cloud-layer-left">
+        <svg class="cloud-svg-bank" viewBox="0 0 1000 700" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="cloudGradL1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="65%" stop-color="#f0f9ff"/>
+              <stop offset="100%" stop-color="#bae6fd"/>
+            </linearGradient>
+            <linearGradient id="cloudGradL2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="60%" stop-color="#e0f2fe"/>
+              <stop offset="100%" stop-color="#7dd3fc"/>
+            </linearGradient>
+          </defs>
+          <path d="M-100,750 L-100,220 Q0,100 120,170 Q240,60 390,140 Q540,40 690,160 Q840,80 960,250 L960,750 Z" fill="url(#cloudGradL2)" opacity="0.92"/>
+          <path d="M-100,750 L-100,340 Q100,220 250,310 Q400,180 570,280 Q740,160 900,320 L1050,420 L1050,750 Z" fill="url(#cloudGradL1)"/>
+        </svg>
+      </div>
+      <div class="cloud-layer cloud-layer-right">
+        <svg class="cloud-svg-bank" viewBox="0 0 1000 700" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="cloudGradR1" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="65%" stop-color="#f0f9ff"/>
+              <stop offset="100%" stop-color="#bae6fd"/>
+            </linearGradient>
+            <linearGradient id="cloudGradR2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="60%" stop-color="#e0f2fe"/>
+              <stop offset="100%" stop-color="#7dd3fc"/>
+            </linearGradient>
+          </defs>
+          <path d="M1100,750 L1100,220 Q1000,100 880,170 Q760,60 610,140 Q460,40 310,160 Q160,80 40,250 L-50,380 L-50,750 Z" fill="url(#cloudGradR2)" opacity="0.92"/>
+          <path d="M1100,750 L1100,340 Q900,220 750,310 Q600,180 430,280 Q260,160 100,320 L-50,420 L-50,750 Z" fill="url(#cloudGradR1)"/>
+        </svg>
+      </div>
+      <div class="cloud-puffs-cluster">
+        <div class="cloud-puff puff-1"></div>
+        <div class="cloud-puff puff-2"></div>
+        <div class="cloud-puff puff-3"></div>
+        <div class="cloud-puff puff-4"></div>
+        <div class="cloud-puff puff-5"></div>
+      </div>
+    `;
+
+    document.body.appendChild(transitionOverlay);
+
+    if (soundManager && typeof soundManager.playDashWhoosh === 'function') {
+      soundManager.playDashWhoosh();
+    }
+
+    // Trigger phase-in on next frame for smooth animation
+    requestAnimationFrame(() => {
+      transitionOverlay.classList.add('phase-in');
+    });
+
+    const midDuration = 480;
+    setTimeout(() => {
+      try {
+        if (typeof onMidpoint === 'function') onMidpoint();
+      } catch (err) {
+        console.error('Error in cloud transition midpoint callback:', err);
+      }
+
+      transitionOverlay.classList.remove('phase-in');
+      transitionOverlay.classList.add('phase-out');
+
+      setTimeout(() => {
+        transitionOverlay.remove();
+        if (typeof onComplete === 'function') onComplete();
+      }, 620);
+    }, midDuration);
+  }
+
   createDomElements() {
     const hud = document.createElement('div');
     hud.id = 'game-hud';
@@ -197,6 +281,10 @@ export class UIManager {
         <div class="capacity-display" id="hud-capacity">
           <span class="basket-icon">🪣</span>
           <span id="capacity-amount">0 / 3</span>
+        </div>
+        <div class="weather-type-display" id="hud-weather-badge" title="Current Weather">
+          <span class="weather-badge-icon" id="hud-weather-badge-icon">✨</span>
+          <span class="weather-badge-type" id="hud-weather-badge-type">Clear</span>
         </div>
         </div>
 
@@ -741,6 +829,17 @@ export class UIManager {
     const weatherTextEl = document.getElementById('hud-weather-text');
     if (timeTextEl) timeTextEl.textContent = worldCycle.getTimeLabel();
     if (weatherTextEl) weatherTextEl.textContent = worldCycle.getWeatherLabel();
+
+    // Update weather type badge next to the bucket in the top GUI
+    const weatherBadgeEl = document.getElementById('hud-weather-badge');
+    if (weatherBadgeEl) {
+      const wt = worldCycle.getWeatherType ? worldCycle.getWeatherType() : { icon: '✨', label: 'Clear' };
+      const iconEl = document.getElementById('hud-weather-badge-icon');
+      const typeEl = document.getElementById('hud-weather-badge-type');
+      if (iconEl) iconEl.textContent = wt.icon;
+      if (typeEl) typeEl.textContent = wt.label;
+      weatherBadgeEl.title = `Atmosphere: ${wt.label}`;
+    }
 
     // Update audio rain state based on weather
     soundManager.setWeatherAudio(worldCycle.getWeather());

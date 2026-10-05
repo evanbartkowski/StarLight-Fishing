@@ -763,3 +763,25 @@ test('teleporting fish cannot escape their underwater habitat', async () => {
   fish.executeEvasion({ x: 180, y: 700 }, null, 390);
   assert.ok(fish.y >= fish.minY && fish.y > 220);
 });
+
+test('weather type returns concise badges and diving mode preserves angler level', async () => {
+  const fs = await import('node:fs');
+  const css = fs.readFileSync('src/style.css', 'utf-8');
+
+  // Verify WorldCycle getWeatherType
+  worldCycle.weather = 'CLEAR';
+  assert.deepEqual(worldCycle.getWeatherType(), { icon: '✨', label: 'Clear' });
+  worldCycle.weather = 'RAIN';
+  assert.deepEqual(worldCycle.getWeatherType(), { icon: '🌧️', label: 'Rain' });
+  worldCycle.weather = 'FOG';
+  assert.deepEqual(worldCycle.getWeatherType(), { icon: '🌫️', label: 'Mist' });
+
+  // Verify CSS: level-display is NOT hidden during diving
+  assert.ok(!css.includes('#game-hud.hud-diving-mode .level-display'));
+  // Verify CSS: weather-display is hidden during diving
+  assert.ok(css.includes('#game-hud.hud-diving-mode .weather-display'));
+  // Verify CSS: cloud transition exists
+  assert.ok(css.includes('.realm-cloud-transition'));
+  assert.ok(css.includes('.cloud-mist-backdrop'));
+});
+

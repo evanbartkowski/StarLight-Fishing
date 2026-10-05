@@ -229,6 +229,7 @@ minimapUI.onSailToSea = (sea) => {
   oceanWorld.populateWorld(save);
   soundManager.setSeaTrack(sea.id);
   uiManager.updateHUD(hook, gameState);
+  uiManager.announceZoneEntry(sea);
 };
 
 uiManager.onManualReel = () => {

@@ -262,6 +262,16 @@ export class WorldCycle {
     }
   }
 
+  getWeatherType() {
+    const w = this.getWeather();
+    switch (w) {
+      case 'CLEAR': return { icon: '✨', label: 'Clear' };
+      case 'FOG': return { icon: '🌫️', label: 'Mist' };
+      case 'RAIN': return { icon: '🌧️', label: 'Rain' };
+      default: return { icon: '✨', label: 'Clear' };
+    }
+  }
+
   getSkyColors() {
     const event = this.getGlobalEvent();
     if (event.active && event.sky) {
