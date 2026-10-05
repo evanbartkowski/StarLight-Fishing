@@ -1326,29 +1326,36 @@ html, body {
 }
 
 .total-earnings {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 8px 16px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 3px;
+  padding: 8px 18px;
+  min-width: 140px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
-  border: 1.5px solid rgba(250, 204, 21, 0.45);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 14px rgba(250, 204, 21, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.96));
+  border: 1.5px solid rgba(250, 204, 21, 0.55);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 14px rgba(250, 204, 21, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .total-earnings span {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  line-height: 1;
 }
 
 .total-cash {
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   color: #fde047;
   font-weight: 800;
+  line-height: 1.1;
   text-shadow: 0 2px 8px rgba(234, 179, 8, 0.35);
+  font-variant-numeric: tabular-nums;
 }
 
 .summary-actions {

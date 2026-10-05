@@ -29,7 +29,7 @@ export class Hazard {
     this.isColossal = !!typeConfig.isColossal;
     // Choose a permanent size per giant so its artwork and collision bounds agree.
     this.sizeScale = typeConfig.sizeScale || (this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : obstacleScaleAt(x, y));
-    this.shieldCost = typeConfig.shieldCost || (this.isColossal && this.sizeScale >= 1.85 ? 2 : 1);
+    this.shieldCost = typeConfig.shieldCost || (this.isColossal ? (this.sizeScale >= 2.0 || (this.zone && this.zone >= 5) ? 3 : 2) : 1);
     this.radius = (typeConfig.radius || (this.isColossal ? 35 : 20)) * this.sizeScale;
 
     this.x = x;

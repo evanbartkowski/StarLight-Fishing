@@ -12,13 +12,15 @@ const names = {
 
 export const MARINE_THREATS = Object.entries(names).flatMap(([realm, roster]) => roster.map((name, i) => {
   const zone = Number(realm);
+  const isColossal = i === 2;
+  const colossalShieldCost = isColossal ? (zone >= 4 ? 3 : 2) : 1;
   return {
     id: `marine_${zone}_${i}`, name, zone, marineKind: i === 0 ? 'jelly' : i === 2 ? 'monster' : zone === 2 || zone === 7 ? 'eel' : zone === 4 || zone === 5 ? 'ray' : 'shark',
     attack: i === 1 ? 'dash' : undefined,
     minDepth: [40, 250, 900][i], maxDepth: 3000,
     radius: [22, 34, 65][i], damage: [1, 2, 3][i], knockback: [25, 50, 85][i],
     speed: [18, 245, 140][i] * (1 + (zone - 1) * .085), detectionRadius: [140, 340, 480][i] * (1 + (zone - 1) * .05), leash: [130, 600, 800][i],
-    isColossal: i === 2, color: REALM_PROFILES[zone].colors[i], glow: REALM_PROFILES[zone].colors[(i + 2) % 5],
+    isColossal, shieldCost: colossalShieldCost, color: REALM_PROFILES[zone].colors[i], glow: REALM_PROFILES[zone].colors[(i + 2) % 5],
     monsterForm: ['kraken', 'maw', 'serpent', 'kraken', 'dragon', 'maw', 'serpent'][zone - 1],
   };
 }));
@@ -48,16 +50,16 @@ specialists.forEach(([name, marineKind, minDepth, speed, detectionRadius], index
 // Late-realm apex predators have their own silhouettes and slower, readable pursuits.
 for (const zone of [4, 5, 6, 7]) {
   const palette = REALM_PROFILES[zone].colors;
-  for (const [kind, name, depth, radius, form] of [
-    ['shark', 'Megalodon', 650, 105, 'megalodon'],
-    ['plesiosaur', 'Ancient Plesiosaur', 850, 115, 'plesiosaur'],
-    ['mosasaur', 'Abyssal Mosasaur', 1100, 125, 'mosasaur'],
-    ['monster', 'Dread Kraken', 1400, 135, 'kraken'],
+  for (const [kind, name, depth, radius, form, shieldDmg] of [
+    ['shark', 'Megalodon', 650, 105, 'megalodon', 2],
+    ['plesiosaur', 'Ancient Plesiosaur', 850, 115, 'plesiosaur', 2],
+    ['mosasaur', 'Abyssal Mosasaur', 1100, 125, 'mosasaur', 3],
+    ['monster', 'Dread Kraken', 1400, 135, 'kraken', 3],
   ]) {
     MARINE_THREATS.push({
       id: `apex_${zone}_${kind}_${form}`, name: `${['', '', '', '', 'Atlantean', 'Stormbound', 'Infernal', 'Void'][zone]} ${name}`,
       zone, marineKind: kind, monsterForm: form, minDepth: depth, maxDepth: 3000,
-      radius, sizeScale: 1.45, isColossal: true, damage: 3, shieldCost: 2, knockback: 95,
+      radius, sizeScale: 1.45, isColossal: true, damage: 3, shieldCost: shieldDmg, knockback: 95,
       speed: 105 + zone * 8, detectionRadius: 470, leash: 650,
       chaseDuration: 2.5, restDuration: 4.5, color: palette[1], glow: palette[3],
     });

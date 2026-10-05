@@ -2707,6 +2707,7 @@ export class UIManager {
           <div class="empty-trap-box">
             <span style="font-size: 2.5rem; display:inline-block; width:52px; height:52px; margin-bottom:8px;">${MISC_ART.trapPot}</span>
             <p>Your seabed pots are actively soaking in coastal waters!</p>
+            <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 2 minutes even while in other tabs.</p>
             <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 4 minutes even while in other tabs.</p>
           </div>
         `;
@@ -2719,6 +2720,7 @@ export class UIManager {
               <span class="trap-item-icon">${it.icon || '🦀'}</span>
               <div class="trap-item-info">
                 <strong>${it.name}</strong>
+                <span>+$${it.value} • +${it.xp} XP</span>
                 <span>+$${resolvedValue} • +${it.xp || 10} XP</span>
               </div>
             </div>
@@ -2741,6 +2743,7 @@ export class UIManager {
             </div>
             <div class="stat-box">
               <span class="stat-label">Cycle Speed</span>
+              <span class="stat-value">2.0 mins / soak</span>
               <span class="stat-value">4.0 mins / soak</span>
             </div>
           </div>

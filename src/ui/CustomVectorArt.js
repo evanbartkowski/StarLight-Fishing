@@ -840,18 +840,15 @@ export const CREW_ART = {
   `),
 
   dolphin: svgWrap(`
-    <!-- Gracie the Dolphin cute portrait -->
-    <path d="M10 28c3-10 14-16 26-10 6 3 9 9 9 12-4 2-10 2-14-1-8 6-17 3-21-1z" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5"/>
-    <path d="M14 28c4-4 12-4 18 1-6 4-13 4-18-1z" fill="#e0f2fe"/>
-    <!-- Cute curved dorsal fin -->
-    <path d="M24 16c2-8 7-8 10-4z" fill="#0284c7"/>
-    <!-- Big sparkly eye -->
-    <ellipse cx="32" cy="22" rx="3.5" ry="4" fill="#0f172a"/>
-    <circle cx="31.5" cy="21" r="1.5" fill="#ffffff"/>
-    <circle cx="33.5" cy="23.5" r="0.8" fill="#ffffff"/>
-    <!-- Blushing pink cheek & smile -->
-    <circle cx="32" cy="27" r="3" fill="#fb7185" fill-opacity="0.6"/>
-    <path d="M36 26c2 1 5 1 8-1" stroke="#0369a1" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    <!-- Gracie the Dolphin portrait matching reference art -->
+    <path d="M8 26c4-9 14-14 26-9 6 3 9 7 9 11-4 2-10 1-14-2-8 5-17 3-21 0z" fill="#6583be" stroke="#222831" stroke-width="1.6"/>
+    <!-- Falcate dorsal fin -->
+    <path d="M22 17c2-7 7-7 9-3z" fill="#6583be" stroke="#222831" stroke-width="1.4"/>
+    <!-- Pectoral flipper (white) -->
+    <path d="M25 28c3 4 5 7 7 8-3-1-5-4-7-8z" fill="#ffffff" stroke="#222831" stroke-width="1.3"/>
+    <!-- Cute eye and mouth -->
+    <circle cx="34" cy="23" r="2.2" fill="#1e232a"/>
+    <path d="M38 27c2 0 4-1 6-2" stroke="#222831" stroke-width="1.3" stroke-linecap="round" fill="none"/>
   `),
 
   shark: svgWrap(`
@@ -966,74 +963,47 @@ export const MISC_ART = {
   `),
 
   sellAll: svgWrap(`
-    <defs>
-      <linearGradient id="sellPouchGrad" x1="0" y1="10" x2="0" y2="44" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#ef4444"/>
-        <stop offset="50%" stop-color="#dc2626"/>
-        <stop offset="100%" stop-color="#991b1b"/>
-      </linearGradient>
-      <linearGradient id="goldCoinGrad" x1="16" y1="20" x2="32" y2="36" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#fef08a"/>
-        <stop offset="60%" stop-color="#facc15"/>
-        <stop offset="100%" stop-color="#ca8a04"/>
-      </linearGradient>
-    </defs>
-    <!-- Red Pouch Body -->
-    <path d="M13 18C13 12 18 8 24 8s11 4 11 10l-2 18a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4L13 18z" fill="url(#sellPouchGrad)" stroke="#7f1d1d" stroke-width="1.8"/>
-    <!-- Gold Cinch Rope & Bow -->
-    <ellipse cx="24" cy="18" rx="8" ry="3" fill="#eab308" stroke="#a16207" stroke-width="1.2"/>
-    <path d="M21 19c-3 2-5 5-4 8M27 19c3 2 5 5 4 8" stroke="#fde047" stroke-width="1.8" stroke-linecap="round"/>
-    <!-- Large Radiant Center Gold Coin -->
-    <circle cx="24" cy="30" r="8" fill="url(#goldCoinGrad)" stroke="#854d0e" stroke-width="1.4"/>
-    <circle cx="24" cy="30" r="6" fill="none" stroke="#fef08a" stroke-width="0.8" stroke-dasharray="2 1"/>
-    <text x="24" y="33.5" font-size="9" font-weight="900" fill="#713f12" text-anchor="middle" font-family="sans-serif">$</text>
-    <!-- Crisp Sparkle -->
-    <polygon points="32,14 33.5,17 36.5,17 34,19 35,22 32,20 29,22 30,19 27.5,17 30.5,17" fill="#ffffff"/>
+    <!-- Gilded coin pouch with overflowing gold coins and emerald accents -->
+    <path d="M14 17c0-6 4-9 10-9s10 3 10 9l-2 18a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4l-2-18z" fill="#059669" stroke="#064e3b" stroke-width="1.5"/>
+    <path d="M12 17h24" stroke="#facc15" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="24" cy="17" rx="8" ry="3.5" fill="#d97706" stroke="#b45309" stroke-width="1"/>
+    <!-- Stack of shining gold doubloons -->
+    <ellipse cx="24" cy="28" rx="8" ry="5" fill="#facc15" stroke="#b45309" stroke-width="1.2"/>
+    <ellipse cx="24" cy="26" rx="8" ry="5" fill="#fde047" stroke="#ca8a04" stroke-width="1.2"/>
+    <text x="24" y="29.5" font-size="8.5" font-weight="900" fill="#713f12" text-anchor="middle" font-family="sans-serif">$</text>
+    <!-- Sparkling light glints -->
+    <path d="M28 20l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#ffffff"/>
+    <circle cx="18" cy="27" r="1.2" fill="#ffffff"/>
   `),
 
   keepAll: svgWrap(`
-    <defs>
-      <linearGradient id="keepChestGrad" x1="0" y1="16" x2="0" y2="42" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#0284c7"/>
-        <stop offset="100%" stop-color="#0369a1"/>
-      </linearGradient>
-    </defs>
-    <!-- Vault Chest Body -->
-    <rect x="8" y="20" width="32" height="19" rx="3" fill="url(#keepChestGrad)" stroke="#082f49" stroke-width="1.8"/>
-    <!-- Chest Lid Bevel -->
-    <path d="M7 20h34l-2-6a3 3 0 0 0-3-2H12a3 3 0 0 0-3 2l-2 6z" fill="#0ea5e9" stroke="#082f49" stroke-width="1.5"/>
-    <!-- Gilded Corner Brackets and Central Bands -->
-    <rect x="13" y="12" width="4.5" height="27" fill="#facc15" stroke="#a16207" stroke-width="0.8"/>
-    <rect x="30.5" y="12" width="4.5" height="27" fill="#facc15" stroke="#a16207" stroke-width="0.8"/>
-    <!-- Front Keyhole Lock -->
-    <rect x="21" y="22" width="6" height="8" rx="1.5" fill="#fef08a" stroke="#854d0e" stroke-width="1.2"/>
-    <circle cx="24" cy="25" r="1.3" fill="#713f12"/>
-    <path d="M24 26.3v1.8" stroke="#713f12" stroke-width="1.2" stroke-linecap="round"/>
-    <!-- Keeper Arrow (Deposit Into Chest) -->
-    <path d="M24 5v7M20 9l4 4 4-4" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Reinforced marine treasure vault chest with gilded iron bands -->
+    <path d="M8 18h32v4H8z" fill="#0284c7" stroke="#0369a1" stroke-width="1.2"/>
+    <rect x="9" y="22" width="30" height="17" rx="2" fill="#0369a1" stroke="#075985" stroke-width="1.5"/>
+    <!-- Gilded corner brackets and vertical bands -->
+    <rect x="13" y="18" width="4" height="21" fill="#facc15"/>
+    <rect x="31" y="18" width="4" height="21" fill="#facc15"/>
+    <!-- Reinforced gold master lock latch -->
+    <rect x="21" y="22" width="6" height="8" rx="1.5" fill="#fef08a" stroke="#ca8a04" stroke-width="1.2"/>
+    <circle cx="24" cy="25.5" r="1.3" fill="#854d0e"/>
+    <path d="M24 27v1.8" stroke="#854d0e" stroke-width="1"/>
+    <!-- Keeper chevron downward glow -->
+    <path d="M21 11l3 3 3-3" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <path d="M24 6v8" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
   `),
 
   viewInventory: svgWrap(`
-    <defs>
-      <linearGradient id="invPackGrad" x1="0" y1="12" x2="0" y2="42" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#475569"/>
-        <stop offset="100%" stop-color="#1e293b"/>
-      </linearGradient>
-    </defs>
-    <!-- Satchel Body -->
-    <rect x="9" y="14" width="30" height="25" rx="4" fill="url(#invPackGrad)" stroke="#0f172a" stroke-width="1.8"/>
-    <!-- Leather Flap -->
-    <path d="M8 15h32l-2 11a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3L8 15z" fill="#334155" stroke="#0f172a" stroke-width="1.5"/>
-    <!-- Top Carry Handle -->
-    <path d="M19 14V9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v5" stroke="#ca8a04" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-    <!-- Leather Straps & Brass Buckles -->
-    <rect x="15" y="14" width="3.5" height="18" fill="#a16207" stroke="#713f12" stroke-width="0.8"/>
-    <rect x="29.5" y="14" width="3.5" height="18" fill="#a16207" stroke="#713f12" stroke-width="0.8"/>
-    <rect x="14.5" y="24" width="4.5" height="5" rx="1" fill="#fef08a" stroke="#854d0e" stroke-width="1"/>
-    <rect x="29" y="24" width="4.5" height="5" rx="1" fill="#fef08a" stroke="#854d0e" stroke-width="1"/>
-    <!-- Nautical Compass Rosette -->
-    <circle cx="24" cy="32" r="3.5" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
-    <polygon points="24,29.5 25.5,32 24,34.5 22.5,32" fill="#38bdf8"/>
+    <!-- Nautical Captain's Tackle Bag & Field Rucksack -->
+    <path d="M12 16c0-4 3-7 12-7s12 3 12 7l-2 23a3 3 0 0 1-3 3H17a3 3 0 0 1-3-3l-2-23z" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
+    <!-- Top flap leather finish with brass buckles -->
+    <path d="M11 16c0 3 4 5 13 5s13-2 13-5v-1c0-2-3-4-13-4s-13 2-13 4v1z" fill="#475569" stroke="#1e293b" stroke-width="1"/>
+    <rect x="14" y="24" width="20" height="12" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+    <!-- Compass rose emblem on pocket -->
+    <circle cx="24" cy="30" r="3.5" fill="none" stroke="#facc15" stroke-width="1"/>
+    <polygon points="24,27.5 25.5,30 24,32.5 22.5,30" fill="#facc15"/>
+    <!-- Straps & buckles -->
+    <rect x="16" y="16" width="3" height="7" fill="#ca8a04"/>
+    <rect x="29" y="16" width="3" height="7" fill="#ca8a04"/>
   `),
 };
 
@@ -1185,5 +1155,4 @@ export const SETTINGS_ART = {
     <path d="M24 23v4" stroke="#ca8a04" stroke-width="1.5"/>
   `),
 };
-
 
