@@ -23,7 +23,7 @@ import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/alman
 import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
-import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART } from './CustomVectorArt.js';
+import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 
 
@@ -4109,13 +4109,13 @@ export class UIManager {
         <!-- Controls & Bulk Action Bar -->
         <div class="inventory-controls-bar">
           <div class="inv-tabs">
-            <button class="tab-btn ${filter === 'all' ? 'active' : ''}" data-filter="all">All (${inv.length})</button>
-            <button class="tab-btn ${filter === 'crates' ? 'active' : ''}" data-filter="crates">📦 Crates (${crateCount})</button>
-            <button class="tab-btn ${filter === 'fish' ? 'active' : ''}" data-filter="fish">🐟 Fish (${fishCount})</button>
-            <button class="tab-btn ${filter === 'relics' ? 'active' : ''}" data-filter="relics">🏺 Relics (${relicCount})</button>
-            <button class="tab-btn ${filter === 'fossils' ? 'active' : ''}" data-filter="fossils">🦴 Fossils (${fossilCount})</button>
-            <button class="tab-btn ${filter === 'aquarium' ? 'active' : ''}" data-filter="aquarium">🐠 In Tank (${tankCount})</button>
-            <button class="tab-btn ${filter === 'locked' ? 'active' : ''}" data-filter="locked">🔒 Locked (${lockedCount})</button>
+            <button class="tab-btn ${filter === 'all' ? 'active' : ''}" data-filter="all"><span class="inv-filter-art">${INV_FILTER_ART.all}</span><span class="inv-filter-txt">All</span><span class="inv-filter-pill">${inv.length}</span></button>
+            <button class="tab-btn ${filter === 'crates' ? 'active' : ''}" data-filter="crates"><span class="inv-filter-art">${INV_FILTER_ART.crates}</span><span class="inv-filter-txt">Crates</span><span class="inv-filter-pill">${crateCount}</span></button>
+            <button class="tab-btn ${filter === 'fish' ? 'active' : ''}" data-filter="fish"><span class="inv-filter-art">${INV_FILTER_ART.fish}</span><span class="inv-filter-txt">Fish</span><span class="inv-filter-pill">${fishCount}</span></button>
+            <button class="tab-btn ${filter === 'relics' ? 'active' : ''}" data-filter="relics"><span class="inv-filter-art">${INV_FILTER_ART.relics}</span><span class="inv-filter-txt">Relics</span><span class="inv-filter-pill">${relicCount}</span></button>
+            <button class="tab-btn ${filter === 'fossils' ? 'active' : ''}" data-filter="fossils"><span class="inv-filter-art">${INV_FILTER_ART.fossils}</span><span class="inv-filter-txt">Fossils</span><span class="inv-filter-pill">${fossilCount}</span></button>
+            <button class="tab-btn ${filter === 'aquarium' ? 'active' : ''}" data-filter="aquarium"><span class="inv-filter-art">${INV_FILTER_ART.aquarium}</span><span class="inv-filter-txt">In Tank</span><span class="inv-filter-pill">${tankCount}</span></button>
+            <button class="tab-btn ${filter === 'locked' ? 'active' : ''}" data-filter="locked"><span class="inv-filter-art">${INV_FILTER_ART.locked}</span><span class="inv-filter-txt">Locked</span><span class="inv-filter-pill">${lockedCount}</span></button>
           </div>
           <div class="inv-top-actions">
             <button class="btn ${sellableItems.length > 0 ? 'btn-buy' : 'btn-disabled'} btn-bulk-sell" id="btn-inv-bulk-sell" ${sellableItems.length > 0 ? '' : 'disabled'}>
@@ -4152,15 +4152,40 @@ export class UIManager {
 
     if (filter === 'crates') {
       const body = document.getElementById('modal-content');
+      const storeSection = document.createElement('div');
+      storeSection.className = 'crates-tab-store-header';
+      storeSection.innerHTML = `
+        <div class="crates-store-banner">
+          <div class="crates-banner-info">
+            <span class="crates-banner-icon">🎁</span>
+            <div>
+              <h4 style="margin:0 0 4px 0; color:#f8fafc; font-size:1.05rem;">Deepsea Mystery Supply Crates</h4>
+              <p style="margin:0; font-size:0.82rem; color:#94a3b8;">Dredge up valuable gold, high-grade tackle, rare curios, or ancient fossils!</p>
+            </div>
+          </div>
+          <div class="crates-gem-pill">
+            <span>💎 Your Gems:</span>
+            <strong style="color:#67e8f9; font-size:1.05rem;">${(this.saveSystem.data.gems || 0).toLocaleString()}</strong>
+          </div>
+        </div>
+      `;
       const shop = document.createElement('div');
       shop.className = 'crate-purchase-grid';
       CRATE_RANKS.forEach(crate => {
-        const button = document.createElement('button'); button.className = 'btn btn-secondary';
-        button.textContent = `${crate.name} · ${CRATE_GEM_PRICES[crate.rank]} Gems`;
+        const button = document.createElement('button');
+        button.className = 'btn btn-secondary crate-store-buy-btn';
+        button.innerHTML = `
+          <div class="crate-btn-icon">${crate.icon || '📦'}</div>
+          <div class="crate-btn-meta">
+            <span class="crate-btn-name">${crate.name}</span>
+            <span class="crate-btn-price">💎 ${CRATE_GEM_PRICES[crate.rank]} Gems</span>
+          </div>
+        `;
         button.onclick = async () => { button.disabled = true; if (await premiumPurchase(this, { kind: 'crate', rank: crate.rank })) this.openInventory('crates'); else button.disabled = false; };
         shop.appendChild(button);
       });
-      body?.prepend(shop);
+      storeSection.appendChild(shop);
+      body?.prepend(storeSection);
     }
     document.querySelectorAll('.btn-inv-open-crate').forEach(button => {
       button.addEventListener('click', () => {
@@ -4663,6 +4688,12 @@ export class UIManager {
             </label>
             <input type="checkbox" id="setting-always-ask" ${settings.alwaysAskOnCatch ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
           </div>
+          <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 4px;">
+            <label for="setting-hide-traps" style="font-size: 0.95rem; color: #cbd5e1; cursor: pointer;">
+              Hide Seabed Traps & Buoys View on Water:
+            </label>
+            <input type="checkbox" id="setting-hide-traps" ${settings.hideSeabedTraps ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+          </div>
         </div>
 
         <div class="settings-section">
@@ -4699,6 +4730,12 @@ export class UIManager {
       this.saveSystem.data.settings.alwaysAskOnCatch = e.target.checked;
       this.saveSystem.save();
       this.showToast(e.target.checked ? '🔔 Catch resolution popup enabled.' : '🎒 Catches will now be added directly to inventory.');
+    });
+
+    document.getElementById('setting-hide-traps')?.addEventListener('change', (e) => {
+      this.saveSystem.data.settings.hideSeabedTraps = e.target.checked;
+      this.saveSystem.save();
+      this.showToast(e.target.checked ? '👁️ Seabed traps view hidden on water.' : '👁️ Seabed traps view visible on water.');
     });
 
     document.getElementById('music-vol').addEventListener('input', (e) => {

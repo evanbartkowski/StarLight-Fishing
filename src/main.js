@@ -370,7 +370,12 @@ function handlePointerDown(e) {
     oceanWorld.setAimDirection(aimDx < 0 ? -1 : 1);
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     isMouseDown = true;
+    lastSteerMode = 'mouse';
     hook.setTargetX(mousePos.x);
+    if (gameState === 'DESCENDING' || hook.state === 'DESCENDING') {
+      hook.startReel();
+      particles.addFloatingText('REELING UP!', hook.x, hook.y - 25, '#38bdf8', 16);
+    }
   }
 }
 

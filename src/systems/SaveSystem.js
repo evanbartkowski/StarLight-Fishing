@@ -113,6 +113,7 @@ export class SaveSystem {
         isMuted: false,
         hasSeenTutorial: false,
         alwaysAskOnCatch: true,
+        hideSeabedTraps: false,
       },
     };
   }

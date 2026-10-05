@@ -1156,3 +1156,63 @@ export const SETTINGS_ART = {
   `),
 };
 
+/**
+ * 9. INVENTORY FILTER ICONS
+ */
+export const INV_FILTER_ART = {
+  all: svgWrap(`
+    <rect x="8" y="10" width="13" height="13" rx="3" fill="#38bdf8" fill-opacity="0.25" stroke="#38bdf8" stroke-width="2"/>
+    <rect x="27" y="10" width="13" height="13" rx="3" fill="#818cf8" fill-opacity="0.25" stroke="#818cf8" stroke-width="2"/>
+    <rect x="8" y="27" width="13" height="13" rx="3" fill="#34d399" fill-opacity="0.25" stroke="#34d399" stroke-width="2"/>
+    <rect x="27" y="27" width="13" height="13" rx="3" fill="#fbbf24" fill-opacity="0.25" stroke="#fbbf24" stroke-width="2"/>
+    <circle cx="14.5" cy="16.5" r="2" fill="#38bdf8"/>
+    <circle cx="33.5" cy="16.5" r="2" fill="#818cf8"/>
+    <circle cx="14.5" cy="33.5" r="2" fill="#34d399"/>
+    <circle cx="33.5" cy="33.5" r="2" fill="#fbbf24"/>
+  `),
+
+  crates: svgWrap(`
+    <path d="M7 15l17-7 17 7v19l-17 7-17-7V15z" fill="#78350f" stroke="#b45309" stroke-width="2"/>
+    <path d="M24 8v30M7 15l17 8 17-8" stroke="#d97706" stroke-width="1.6"/>
+    <rect x="21" y="21" width="6" height="7" rx="1" fill="#fde047" stroke="#ca8a04" stroke-width="1"/>
+    <circle cx="24" cy="24" r="1" fill="#78350f"/>
+  `),
+
+  fish: svgWrap(`
+    <path d="M7 24c6-8 18-9 26-2l9 6-9 6c-8 7-20 6-26-2 3-2 6-4 6-8s-3-6-6-8z" fill="#0284c7" stroke="#38bdf8" stroke-width="2"/>
+    <path d="M31 18c2 3 2 9 0 12" stroke="#bae6fd" stroke-width="1.6" stroke-linecap="round"/>
+    <polygon points="40,24 44,18 44,30" fill="#38bdf8"/>
+    <circle cx="15" cy="21" r="2.2" fill="#f8fafc"/>
+    <circle cx="14.5" cy="20.5" r="1.1" fill="#0f172a"/>
+  `),
+
+  relics: svgWrap(`
+    <path d="M16 12h16l-2 6c3 3 5 8 4 14-1 6-6 10-10 10s-9-4-10-10c-1-6 1-11 4-14l-2-6z" fill="#c2410c" stroke="#fb923c" stroke-width="2"/>
+    <ellipse cx="24" cy="12" rx="8" ry="3" fill="#ea580c" stroke="#fed7aa" stroke-width="1.2"/>
+    <path d="M14 20c-3 1-5 4-4 8 1 3 3 5 5 5M34 20c3 1 5 4 4 8-1 3-3 5-5 5" stroke="#f97316" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <circle cx="24" cy="27" r="3" fill="#fef08a"/>
+  `),
+
+  fossils: svgWrap(`
+    <circle cx="24" cy="24" r="17" fill="#451a03" stroke="#92400e" stroke-width="2"/>
+    <path d="M24 12c6.5 0 12 5 12 11.5s-4.5 10-10 10-8-3.5-8-7.5 2.5-5.5 5.5-5.5 3.5 1.5 3.5 3.5" stroke="#fde68a" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <circle cx="24" cy="24" r="2" fill="#fde68a"/>
+  `),
+
+  aquarium: svgWrap(`
+    <rect x="7" y="11" width="34" height="26" rx="5" fill="#0369a1" fill-opacity="0.3" stroke="#38bdf8" stroke-width="2"/>
+    <path d="M12 28c4-3 9-3 13 0 4 3 9 3 13 0" stroke="#7dd3fc" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M17 21c3-2 6-1 7 0-1 1-4 2-7 0z" fill="#f59e0b"/>
+    <polygon points="24,21 26,19 26,23" fill="#f59e0b"/>
+    <circle cx="15" cy="16" r="1.5" fill="#bae6fd"/>
+    <circle cx="29" cy="17" r="2" fill="#bae6fd"/>
+  `),
+
+  locked: svgWrap(`
+    <rect x="11" y="20" width="26" height="20" rx="4" fill="#d97706" stroke="#fbbf24" stroke-width="2"/>
+    <path d="M16 20v-6a8 8 0 0 1 16 0v6" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <circle cx="24" cy="29" r="2.5" fill="#451a03"/>
+    <path d="M24 31.5v3.5" stroke="#451a03" stroke-width="2" stroke-linecap="round"/>
+  `),
+};
+

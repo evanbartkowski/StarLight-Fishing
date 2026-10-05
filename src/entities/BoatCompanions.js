@@ -96,23 +96,39 @@ export class ShipsCat {
     ctx.save();
     ctx.translate(pos.x, pos.y);
 
-    // Soft teal berth makes the crew readable against dark hulls.
-    ctx.fillStyle = '#367f82'; ctx.beginPath(); ctx.ellipse(0, 6, 15, 4, 0, 0, Math.PI * 2); ctx.fill();
+    // Cozy knitted cushion berth
+    ctx.fillStyle = '#0f766e';
+    ctx.beginPath();
+    ctx.ellipse(0, 6, 17, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#2dd4bf';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
 
     // Warm cat body (calico ginger-orange curled ball)
     const purrScale = this.isPurring ? 1.0 + Math.sin(this.tailTimer * 6) * 0.05 : 1.0;
     ctx.scale(purrScale * 1.15, purrScale * 1.15);
 
-    // Shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    // Drop shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.beginPath();
-    ctx.ellipse(0, 4, 11, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 4, 12, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Body
-    ctx.fillStyle = '#ea580c'; // ginger orange
+    // Body with warm gradient
+    const catGrad = ctx.createRadialGradient(-2, -2, 2, 0, 0, 11);
+    catGrad.addColorStop(0, '#fb923c');
+    catGrad.addColorStop(0.7, '#ea580c');
+    catGrad.addColorStop(1, '#9a3412');
+    ctx.fillStyle = catGrad;
     ctx.beginPath();
     ctx.ellipse(0, 0, 10, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Calico spot
+    ctx.fillStyle = '#78350f';
+    ctx.beginPath();
+    ctx.arc(-4, -2, 3.2, 0, Math.PI * 2);
     ctx.fill();
 
     // White belly patch
@@ -127,20 +143,32 @@ export class ShipsCat {
     ctx.arc(7, -3, 5.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Ears
+    // Ears with inner pink depth
     ctx.fillStyle = '#c2410c';
     ctx.beginPath();
     ctx.moveTo(5, -7); ctx.lineTo(7, -11); ctx.lineTo(9, -6);
     ctx.closePath();
     ctx.fill();
+    ctx.fillStyle = '#fbcfe8';
+    ctx.beginPath();
+    ctx.moveTo(5.8, -7); ctx.lineTo(7, -9.8); ctx.lineTo(8.2, -6.5);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#c2410c';
     ctx.beginPath();
     ctx.moveTo(8, -6); ctx.lineTo(11, -10); ctx.lineTo(12, -5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fbcfe8';
+    ctx.beginPath();
+    ctx.moveTo(8.8, -6); ctx.lineTo(11, -8.8); ctx.lineTo(11.4, -5.5);
     ctx.closePath();
     ctx.fill();
 
     // Sleeping closed eyes (slits) or blink
     ctx.strokeStyle = '#451a03';
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.3;
     if (this.isBlinking) {
       ctx.beginPath();
       ctx.arc(8, -3, 1.2, 0, Math.PI * 2);
@@ -154,8 +182,16 @@ export class ShipsCat {
     // Little pink nose
     ctx.fillStyle = '#fda4af';
     ctx.beginPath();
-    ctx.arc(10.5, -2, 1, 0, Math.PI * 2);
+    ctx.arc(10.5, -2, 1.1, 0, Math.PI * 2);
     ctx.fill();
+
+    // Tiny white whiskers
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(10, -1); ctx.lineTo(14, -2.5);
+    ctx.moveTo(10, -0.5); ctx.lineTo(14, 0.5);
+    ctx.stroke();
 
     // Tail (swishing gently)
     const tailWag = Math.sin(this.tailTimer) * 0.4;
@@ -255,50 +291,75 @@ export class PerchingPelican {
     ctx.save();
     ctx.translate(pos.x, pos.y);
 
-    // Body (white/grey pelican)
-    ctx.fillStyle = '#f1f5f9';
+    // Body (white/grey pelican with subtle feather shading)
+    const bodyGrad = ctx.createLinearGradient(-10, -5, 10, 8);
+    bodyGrad.addColorStop(0, '#ffffff');
+    bodyGrad.addColorStop(0.7, '#f1f5f9');
+    bodyGrad.addColorStop(1, '#cbd5e1');
+    ctx.fillStyle = bodyGrad;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 10, 7, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 11, 7.5, 0.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Grey wing
+    // Grey wing with detailed primary feather tips
     ctx.scale(1.2, 1.2);
     const wingFlap = this.isFlapping ? Math.sin(this.flapTimer * 15) * 8 : 0;
+    ctx.fillStyle = '#64748b';
+    ctx.beginPath();
+    ctx.ellipse(-2, -1 - wingFlap * 0.5, 7.5, 4.5 + Math.abs(wingFlap), -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    // Wing highlight
     ctx.fillStyle = '#94a3b8';
     ctx.beginPath();
-    ctx.ellipse(-2, -1 - wingFlap * 0.5, 7, 4 + Math.abs(wingFlap), -0.2, 0, Math.PI * 2);
+    ctx.ellipse(-2, -2 - wingFlap * 0.5, 5, 2.5, -0.2, 0, Math.PI * 2);
     ctx.fill();
 
     // Head
-    ctx.fillStyle = '#f1f5f9';
+    ctx.fillStyle = '#f8fafc';
     ctx.beginPath();
-    ctx.arc(8, -6, 5, 0, Math.PI * 2);
+    ctx.arc(8, -6, 5.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Eye
+    // Expressive eye
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.arc(9, -7, 1.2, 0, Math.PI * 2);
+    ctx.arc(9, -7, 1.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(8.6, -7.4, 0.6, 0, Math.PI * 2);
     ctx.fill();
 
-    // Large yellow beak & pouch
+    // Large beak with realistic down-curved tip hook
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
     ctx.moveTo(11, -8);
-    ctx.lineTo(22, -4);
+    ctx.lineTo(23, -4);
+    ctx.quadraticCurveTo(24, -2, 22, -1);
     ctx.quadraticCurveTo(16, 2, 10, -3);
     ctx.closePath();
     ctx.fill();
 
-    // Yellow pouch
-    ctx.fillStyle = '#fbbf24';
+    // Yellow distensible pouch with shadow
+    const pouchGrad = ctx.createLinearGradient(12, -2, 16, 3);
+    pouchGrad.addColorStop(0, '#fbbf24');
+    pouchGrad.addColorStop(1, '#d97706');
+    ctx.fillStyle = pouchGrad;
     ctx.beginPath();
-    ctx.arc(14, -2, 3.5, 0, Math.PI);
+    ctx.arc(15, -2, 4, 0, Math.PI);
     ctx.fill();
 
-    // Legs clutching wood
+    // Bill ridge line
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(12, -6);
+    ctx.lineTo(22, -3);
+    ctx.stroke();
+
+    // Strong webbed feet clutching wood
     ctx.strokeStyle = '#d97706';
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(-1, 5); ctx.lineTo(-1, 9);
     ctx.moveTo(3, 5); ctx.lineTo(3, 9);

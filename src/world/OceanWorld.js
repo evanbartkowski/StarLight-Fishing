@@ -779,7 +779,18 @@ export class OceanWorld {
 
     } else if (vessel >= 2) {
       // Motor Skiff / Expedition Trawler
-      ctx.fillStyle = '#1e3a8a';
+      // Hull lower keel
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.moveTo(-b.width * 0.44, b.height * 0.65);
+      ctx.quadraticCurveTo(0, b.height * 0.95, b.width * 0.46, b.height * 0.55);
+      ctx.lineTo(b.width * 0.42, b.height * 0.72);
+      ctx.quadraticCurveTo(0, b.height * 1.02, -b.width * 0.4, b.height * 0.75);
+      ctx.closePath();
+      ctx.fill();
+
+      // Main hull
+      ctx.fillStyle = vessel >= 3 ? '#0f3a5d' : '#1e3a8a';
       ctx.beginPath();
       ctx.moveTo(-b.width * 0.52, -10);
       ctx.lineTo(-b.width * 0.44, b.height * 0.65);
@@ -788,31 +799,64 @@ export class OceanWorld {
       ctx.closePath();
       ctx.fill();
 
+      // Premium gunwale rim
       ctx.strokeStyle = '#f8fafc';
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fillRect(-20, -22, 38, 14);
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(-16, -18, 12, 8);
-      ctx.fillRect(2, -18, 12, 8);
+      // Hull plank accents & trim line
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-b.width * 0.48, 2);
+      ctx.quadraticCurveTo(0, 14, b.width * 0.49, 1);
+      ctx.stroke();
 
-      // Shade roof for tier 3
+      // Cabin house
+      ctx.fillStyle = '#f1f5f9';
+      ctx.fillRect(-22, -24, 42, 16);
+      ctx.fillStyle = '#0284c7';
+      ctx.fillRect(-22, -24, 42, 3);
+      // Windows with subtle gloss
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(-17, -19, 13, 8);
+      ctx.fillRect(2, -19, 13, 8);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.fillRect(-15, -18, 3, 6);
+      ctx.fillRect(4, -18, 3, 6);
+
+      // Shade roof & radar arch for tier 3
       if (vessel >= 3) {
-        ctx.fillStyle = 'rgba(15,23,42,0.7)';
-        ctx.fillRect(-b.width * 0.48, -30, b.width * 0.96, 10);
+        ctx.fillStyle = 'rgba(15,23,42,0.85)';
+        ctx.fillRect(-b.width * 0.48, -32, b.width * 0.96, 8);
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-b.width * 0.4, -24); ctx.lineTo(-b.width * 0.4, -32);
+        ctx.moveTo(b.width * 0.4, -24); ctx.lineTo(b.width * 0.4, -32);
+        ctx.stroke();
         // Crab pot mount points
         for (let cp = 0; cp < 3; cp++) {
           const cpX = -50 + cp * 42;
-          ctx.strokeStyle = '#64748b';
+          ctx.strokeStyle = '#cbd5e1';
           ctx.lineWidth = 2;
           ctx.strokeRect(cpX - 8, b.height * 0.1, 16, 14);
         }
       }
     } else {
       // Classic Polished Wood Rowboat / Coastal Dory
-      ctx.fillStyle = vessel === 1 ? '#78350f' : '#b45309';
+      // Under-hull shadow / keel
+      ctx.fillStyle = '#271004';
+      ctx.beginPath();
+      ctx.moveTo(-b.width * 0.42, b.height * 0.58);
+      ctx.quadraticCurveTo(0, b.height * 0.88, b.width * 0.44, b.height * 0.48);
+      ctx.lineTo(b.width * 0.42, b.height * 0.58);
+      ctx.quadraticCurveTo(0, b.height * 0.98, -b.width * 0.4, b.height * 0.68);
+      ctx.closePath();
+      ctx.fill();
+
+      // Main mahogany / oak hull body
+      ctx.fillStyle = vessel === 1 ? '#78350f' : '#9a3412';
       ctx.beginPath();
       ctx.moveTo(-b.width * 0.5, -8);
       ctx.lineTo(-b.width * 0.42, b.height * 0.6);
@@ -821,27 +865,47 @@ export class OceanWorld {
       ctx.closePath();
       ctx.fill();
 
-      ctx.strokeStyle = '#451a03';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      ctx.strokeStyle = '#fef08a';
-      ctx.lineWidth = 3;
+      // Realistic plank lapstrake lines
+      ctx.strokeStyle = '#431407';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-b.width * 0.45, 4);
-      ctx.quadraticCurveTo(0, 16, b.width * 0.45, 6);
+      ctx.moveTo(-b.width * 0.46, 0);
+      ctx.quadraticCurveTo(0, 10, b.width * 0.48, 0);
+      ctx.moveTo(-b.width * 0.44, 7);
+      ctx.quadraticCurveTo(0, 17, b.width * 0.46, 6);
       ctx.stroke();
 
-      ctx.fillStyle = '#92400e';
-      ctx.fillRect(-16, -14, 32, 6);
+      // Upper gunwale rim
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
 
-      // Tier 1: cushioned bench + twin rod holders
+      // Golden sheer strake accent line
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-b.width * 0.46, -2);
+      ctx.quadraticCurveTo(0, 5, b.width * 0.48, -2);
+      ctx.stroke();
+
+      // Wooden seat / center thwart
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(-18, -13, 36, 6);
+      // Brass oarlock mounts on edges
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(-b.width * 0.25, -10, 4, 3);
+      ctx.fillRect(b.width * 0.25, -10, 4, 3);
+
+      // Tier 1: cushioned bench + twin rod holders + bow cleat
       if (vessel >= 1) {
-        ctx.fillStyle = '#a16207';
-        ctx.fillRect(-22, -8, 44, 8);
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(-24, -8, 48, 8);
         ctx.fillStyle = '#ca8a04';
-        ctx.fillRect(-24, -12, 8, 5);
-        ctx.fillRect(16, -12, 8, 5);
+        ctx.fillRect(-26, -12, 8, 5);
+        ctx.fillRect(18, -12, 8, 5);
+        // Brass bow cleat
+        ctx.fillStyle = '#fde047';
+        ctx.fillRect(b.width * 0.45, -11, 7, 3);
       }
     }
 
