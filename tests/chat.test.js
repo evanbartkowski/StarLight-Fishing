@@ -41,3 +41,28 @@ test('radio applies remote deletions, expires idle messages and caps the newest 
   client.pruneMessages(now + 86400000);
   assert.equal(client.messages.length, 0);
 });
+
+test('sendBroadcast emits system messages with designated sender tag', async () => {
+  let sentText = '';
+  let sentSender = '';
+  const backend = {
+    subscribe: async () => () => {},
+    send: async (text, sender) => {
+      sentText = text;
+      sentSender = sender;
+    },
+  };
+  const client = new ChatManager({ isChatUnlocked: () => true });
+  client.loadBackend = async () => backend;
+  await client.connect();
+
+  const successRadio = await client.sendBroadcast('[Fleet Radio]', 'CaptainEvan has acquired a radio and joined the frequency!');
+  assert.equal(successRadio, true);
+  assert.equal(sentSender, '[Fleet Radio]');
+  assert.equal(sentText, 'CaptainEvan has acquired a radio and joined the frequency!');
+
+  const successCatch = await client.sendBroadcast('[Global]', 'CaptainEvan caught an elusive Abyssal Leviathan (240kg)!');
+  assert.equal(successCatch, true);
+  assert.equal(sentSender, '[Global]');
+  assert.equal(sentText, 'CaptainEvan caught an elusive Abyssal Leviathan (240kg)!');
+});

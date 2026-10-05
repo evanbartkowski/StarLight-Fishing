@@ -719,6 +719,13 @@ const update = (dt) => {
           if (item.species) questSystem?.dispatch({ type: 'catch_fish', fish: item });
           else if (item.isCrate || item.category === 'crate') questSystem?.dispatch({ type: 'catch_crate', item });
           else if (item.isTreasure || item.category === 'fossil') questSystem?.dispatch({ type: 'catch_treasure', item });
+          if ((item.isGodTier || item.species?.isGodTier) && !item._broadcastedGodTier) {
+            item._broadcastedGodTier = true;
+            const captainName = accountManager.getCurrentUser() || 'A captain';
+            const fishName = item.name || item.species?.name || 'God-Tier Titan';
+            const weightVal = item.weight || item.size || 100;
+            uiManager.chatManager?.sendBroadcast('[Global]', `${captainName} caught an elusive ${fishName} (${weightVal}kg)!`);
+          }
           item.inventoryRef = save.addItemToInventory(item);
           if (!item.inventoryRef) {
             ranOutOfStorage = true;

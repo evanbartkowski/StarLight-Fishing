@@ -36,6 +36,16 @@ export class ChatManager {
     finally { this.sending = false; }
   }
 
+  async sendBroadcast(sender, text) {
+    if (typeof text !== 'string' || !text.trim() || this.sending) return false;
+    this.sending = true;
+    try {
+      await (await this.loadBackend()).send(text.trim().slice(0, 180), String(sender || '[Global]').slice(0, 40));
+      return true;
+    } catch (error) { this.lastError = error.code || error.message; return false; }
+    finally { this.sending = false; }
+  }
+
   replaceMessages(messages) {
     this.messages = [];
     this.seen.clear();

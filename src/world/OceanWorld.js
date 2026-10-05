@@ -375,8 +375,8 @@ export class OceanWorld {
       }
     }
 
-    // Populate Underwater Power-ups (Rare Spawns: Positive & Negative)
-    const powerupCount = Math.random() < .35 ? 0 : 1 + Math.floor(Math.random() * 2);
+    // Populate Underwater Power-ups (Rare Spawns: significantly rarer rewards)
+    const powerupCount = Math.random() < 0.25 ? 1 : 0;
     for (let p = 0; p < powerupCount; p++) {
       const pDepth = 15 + Math.random() * Math.max(20, activeMaxDepth - 25);
       const px = 60 + Math.random() * (this.worldWidth - 120);
@@ -413,11 +413,14 @@ export class OceanWorld {
     });
 
     // Boat wave physics
+    if (!Number.isFinite(this.boat.x) || this.boat.x <= 0 || (this.worldWidth && this.boat.x >= this.worldWidth)) {
+      this.boat.x = (this.worldWidth || 1200) * 0.5;
+    }
     const waveY = this.getWaveHeight(this.boat.x, this.waveTimer);
     const waveSlope = this.getWaveSlope(this.boat.x, this.waveTimer);
-    this.boat.bobOffset = waveY;
-    this.boat.y = this.surfaceY - 14 + waveY;
-    this.boat.angle = waveSlope * 0.6;
+    this.boat.bobOffset = Number.isFinite(waveY) ? waveY : 0;
+    this.boat.y = this.surfaceY - 14 + (Number.isFinite(waveY) ? waveY : 0);
+    this.boat.angle = Number.isFinite(waveSlope) ? waveSlope * 0.6 : 0;
 
     this.updateRodTip();
 
@@ -606,20 +609,33 @@ export class OceanWorld {
   }
 
   renderBoatAndFisherman(ctx, cameraY = 0) {
-    if (cameraY > this.surfaceY + 90) return;
+    if (!Number.isFinite(cameraY)) cameraY = 0;
+    const surfaceY = Number.isFinite(this.surfaceY) ? this.surfaceY : 220;
+    if (cameraY > surfaceY + 90) return;
 
-    // Recover legacy/resize-invalid transforms before drawing the ship.
-    if (!Number.isFinite(this.boat.x) || this.boat.x < 0 || this.boat.x > this.worldWidth) this.boat.x = this.worldWidth / 2;
-    if (!Number.isFinite(this.boat.y)) this.boat.y = this.surfaceY - 14;
-    if (!Number.isFinite(this.boat.angle)) this.boat.angle = 0;
-    const drawBoatY = this.boat.y - cameraY;
+    if (!this.boat) {
+      this.boat = { x: (this.worldWidth || 1200) * 0.5, y: surfaceY - 14, width: 140, height: 40, angle: 0, bobOffset: 0, vesselLevel: 0 };
+    }
     const b = this.boat;
-    const vessel = b.vesselLevel || 0;
+    b.width = Number.isFinite(b.width) && b.width > 0 ? b.width : 140;
+    b.height = Number.isFinite(b.height) && b.height > 0 ? b.height : 40;
+    if (!Number.isFinite(b.x) || b.x <= 0 || (this.worldWidth && b.x >= this.worldWidth)) {
+      b.x = (this.worldWidth || 1200) * 0.5;
+    }
+    if (!Number.isFinite(b.y)) b.y = surfaceY - 14;
+    if (!Number.isFinite(b.angle)) b.angle = 0;
+    const drawBoatY = b.y - cameraY;
 
-    if (this.saveSystem?.isPetEquipped('shark')) this.shark.render(ctx, cameraY);
+    const vessel = Math.max(0, parseInt(this.saveSystem?.getUpgradeLevel('boatVessel') ?? b.vesselLevel ?? 0, 10));
+    b.vesselLevel = vessel;
 
-    // Render dolphin behind boat (background layer - only if unlocked)
-    if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) this.dolphin.render(ctx, cameraY);
+    try {
+      if (this.saveSystem?.isPetEquipped('shark') && this.shark) this.shark.render(ctx, cameraY);
+    } catch (e) { console.warn('Pet shark render error:', e); }
+
+    try {
+      if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) this.dolphin.render(ctx, cameraY);
+    } catch (e) { console.warn('Pet dolphin render error:', e); }
 
     ctx.save();
     ctx.translate(b.x, drawBoatY);
@@ -920,10 +936,13 @@ export class OceanWorld {
     if (skinColor) { ctx.fillStyle = skinColor; ctx.fillRect(-b.width * .3, 5, b.width * .6, 7); }
 
     // Equipped Boat Trinket
-    const equippedTrinket = this.saveSystem?.data.boatTrinket || 'none';
-    if (equippedTrinket && equippedTrinket !== 'none') {
-      drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height);
-    }
+    try {
+      const equippedTrinket = this.saveSystem?.data.boatTrinket || 'none';
+      if (equippedTrinket && equippedTrinket !== 'none') {
+        drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height);
+      }
+    } catch (e) { console.warn('Boat trinket render error:', e); }
+
     // Lantern (all vessel tiers)
     const lanternX = vessel >= 4 ? 0 : (vessel >= 2 ? 16 : 0);
     const lanternY = vessel >= 4 ? -22 : -26;
@@ -938,85 +957,94 @@ export class OceanWorld {
     }
 
     // Companions (rendered relative to boat transform - only if unlocked)
-    if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
-      this.shipsCat.render(ctx, vessel);
-      if (this.hoveredCompanion === 'angela') {
-        const catPos = this.shipsCat.getDeckPosition(vessel);
-        ctx.save();
-        ctx.translate(catPos.x - 55, catPos.y - 30);
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 1.5;
-        const text = '🐱 Angela the Cat';
-        ctx.font = 'bold 11px Outfit, sans-serif';
-        const tw = ctx.measureText(text).width;
-        ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') {
-          ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
-        } else {
-          ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+    try {
+      if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
+        this.shipsCat.render(ctx, vessel);
+        if (this.hoveredCompanion === 'angela') {
+          const catPos = this.shipsCat.getDeckPosition(vessel);
+          ctx.save();
+          ctx.translate(catPos.x - 55, catPos.y - 30);
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 1.5;
+          const text = '🐱 Angela the Cat';
+          ctx.font = 'bold 11px Outfit, sans-serif';
+          const tw = ctx.measureText(text).width;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+          } else {
+            ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+          }
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#fef3c7';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, 0, 0);
+          ctx.restore();
         }
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#fef3c7';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, 0, 0);
-        ctx.restore();
       }
-    }
-    if (this.pelican && this.saveSystem?.isPetEquipped('pelican')) {
-      this.pelican.render(ctx, vessel);
-      if (this.hoveredCompanion === 'evan') {
-        const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
-        ctx.save();
-        ctx.translate(birdPos.x + 55, birdPos.y - 32);
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 1.5;
-        const text = '🦤 Evan the Bird';
-        ctx.font = 'bold 11px Outfit, sans-serif';
-        const tw = ctx.measureText(text).width;
-        ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') {
-          ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
-        } else {
-          ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+    } catch (e) { console.warn('Cat render error:', e); }
+
+    try {
+      if (this.pelican && this.saveSystem?.isPetEquipped('pelican')) {
+        this.pelican.render(ctx, vessel);
+        if (this.hoveredCompanion === 'evan') {
+          const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
+          ctx.save();
+          ctx.translate(birdPos.x + 55, birdPos.y - 32);
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1.5;
+          const text = '🦤 Evan the Bird';
+          ctx.font = 'bold 11px Outfit, sans-serif';
+          const tw = ctx.measureText(text).width;
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+          } else {
+            ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+          }
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#e0f2fe';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(text, 0, 0);
+          ctx.restore();
         }
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#e0f2fe';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, 0, 0);
-        ctx.restore();
       }
-    }
+    } catch (e) { console.warn('Pelican render error:', e); }
 
     // 2. Fisherman (flips left or right based on aimDirection)
     ctx.save();
-    ctx.scale(this.aimDirection, 1);
+    try {
+      ctx.scale(this.aimDirection || 1, 1);
 
-    const fX = -2;
-    const fY = -12;
+      const fX = -2;
+      const fY = -12;
 
-    drawAngler(ctx, this.saveSystem?.data.appearance, fX, fY);
+      drawAngler(ctx, this.saveSystem?.data?.appearance, fX, fY);
 
-    // 3. Fishing Rod
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(fX + 16, fY - 14);
-    ctx.quadraticCurveTo(fX + 38, fY - 38, fX + 54, fY - 56);
-    ctx.stroke();
+      // 3. Fishing Rod
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(fX + 16, fY - 14);
+      ctx.quadraticCurveTo(fX + 38, fY - 38, fX + 54, fY - 56);
+      ctx.stroke();
 
-    // Rod spool
-    ctx.fillStyle = '#64748b';
-    ctx.beginPath();
-    ctx.arc(fX + 14, fY - 12, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
+      // Rod spool
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.arc(fX + 14, fY - 12, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } catch (e) {
+      console.warn('Angler render error:', e);
+    } finally {
+      ctx.restore();
+    }
     ctx.restore();
 
     // Drift items on water surface (rendered in world space, not boat-relative)

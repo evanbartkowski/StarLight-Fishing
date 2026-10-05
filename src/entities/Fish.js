@@ -1171,19 +1171,6 @@ export class Fish {
         ctx.stroke();
       }
 
-      // 5. Swaying Kelp / Moss Fronds on shell back
-      ctx.fillStyle = '#86efac';
-      const kelpWave = Math.sin(this.wiggleTimer * 1.8) * 3;
-      ctx.beginPath();
-      ctx.moveTo(-6, -8);
-      ctx.quadraticCurveTo(-12 + kelpWave, -16, -6 + kelpWave, -18);
-      ctx.quadraticCurveTo(-2, -14, -2, -8);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(4, -7);
-      ctx.quadraticCurveTo(8 - kelpWave, -14, 12 - kelpWave, -15);
-      ctx.quadraticCurveTo(8, -10, 6, -7);
-      ctx.fill();
     } else if (s.shape === 'aurora_billfish') {
       // Aurora Sailfin: Polar billfish with aurora dorsal fin
       ctx.ellipse(0, 0, 30, 10, 0, 0, Math.PI * 2);

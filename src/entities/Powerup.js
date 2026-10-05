@@ -1,9 +1,9 @@
 // Positive, collectible dive abilities with a bright pickup silhouette.
 
 export const POWERUP_TYPES = [
-  { id: 'overdrive', name: 'Reel Overdrive', hint: '2X REEL · 12 SEC', isPositive: true, color: '#38bdf8', glow: '#0284c7', icon: '⚡', duration: 12, desc: '+100% reeling speed for 12 seconds' },
-  { id: 'magnet', name: 'Magnetic Lure', hint: 'PULL FISH · 16 SEC', isPositive: true, color: '#fbbf24', glow: '#d97706', icon: '🧲', duration: 16, desc: 'Nearby fish are pulled toward the hook for 16 seconds' },
-  { id: 'capacity_boost', name: 'Basket Infusion', hint: '+3 CATCHES', isPositive: true, color: '#22c55e', glow: '#16a34a', icon: '🎒', duration: 0, desc: 'Carry 3 extra catches this dive' },
+  { id: 'overdrive', name: 'Reel Overdrive', hint: '2X REEL · 25 SEC', isPositive: true, color: '#38bdf8', glow: '#0284c7', icon: '⚡', duration: 25, desc: '+100% reeling speed for 25 seconds' },
+  { id: 'magnet', name: 'Magnetic Lure', hint: 'PULL FISH · 30 SEC', isPositive: true, color: '#fbbf24', glow: '#d97706', icon: '🧲', duration: 30, desc: 'Nearby fish are pulled toward the hook for 30 seconds' },
+  { id: 'capacity_boost', name: 'Basket Infusion', hint: '+5 CATCHES', isPositive: true, color: '#22c55e', glow: '#16a34a', icon: '🎒', duration: 0, desc: 'Carry 5 extra catches this dive' },
 ];
 
 export class Powerup {
@@ -32,7 +32,7 @@ export class Powerup {
     particles?.addFloatingText(`✨ ${this.name.toUpperCase()}: ${this.desc}`, this.x, this.y - 25, this.color, 16, this.glow);
     if (this.type === 'overdrive') hook.overdriveTimer = Math.max(hook.overdriveTimer || 0, this.duration);
     if (this.type === 'magnet') hook.magnetTimer = Math.max(hook.magnetTimer || 0, this.duration);
-    if (this.type === 'capacity_boost') hook.capacityBoost = (hook.capacityBoost || 0) + 3;
+    if (this.type === 'capacity_boost') hook.capacityBoost = (hook.capacityBoost || 0) + 5;
     return true;
   }
 

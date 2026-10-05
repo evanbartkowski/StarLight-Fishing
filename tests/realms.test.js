@@ -812,3 +812,32 @@ test('legendaries sell for higher values, weather badge hides while fishing, and
   assert.strictEqual(hook.capacity, 5, 'Hook capacity should match tier 2 (5)');
 });
 
+test('creature roster updates, powerup durations, and centered modal overlay styles', async () => {
+  const fs = await import('node:fs');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { POWERUP_TYPES } = await import('../src/entities/Powerup.js');
+
+  const realm1Names = FISH_SPECIES.filter(f => f.zone === 1).map(f => f.name);
+  const realm2Names = FISH_SPECIES.filter(f => f.zone === 2).map(f => f.name);
+
+  // 1. Spotted Harbor Seal removed, Harp Seal Pup present in Realm 2
+  assert.equal(realm1Names.includes('Spotted Harbor Seal'), false, 'Spotted Harbor Seal must be removed');
+  assert.equal(realm2Names.includes('Harp Seal Pup'), true, 'Harp Seal Pup must be in Realm 2');
+
+  // 2. Kelp Turtle renamed from Kelpback Turtle
+  assert.equal(realm1Names.includes('Kelpback Turtle'), false, 'Kelpback Turtle must be renamed');
+  assert.equal(realm1Names.includes('Kelp Turtle'), true, 'Kelp Turtle must be present in Realm 1');
+
+  // 3. Powerups last longer
+  const overdrive = POWERUP_TYPES.find(p => p.id === 'overdrive');
+  const magnet = POWERUP_TYPES.find(p => p.id === 'magnet');
+  const capacity = POWERUP_TYPES.find(p => p.id === 'capacity_boost');
+  assert.equal(overdrive.duration, 25, 'Overdrive duration should be 25s');
+  assert.equal(magnet.duration, 30, 'Magnet duration should be 30s');
+  assert.ok(capacity.desc.includes('5 extra catches'), 'Capacity boost should give 5 extra catches');
+
+  // 4. Modal overlay CSS centering
+  const css = fs.readFileSync('src/style.css', 'utf8');
+  assert.ok(css.includes('position: fixed') && css.includes('z-index: 100000'), 'Modal overlay should be fixed with high z-index');
+  assert.ok(css.includes('.chat-announcement-fleet') && css.includes('.chat-announcement-global'), 'Announcement styles should be present');
+});

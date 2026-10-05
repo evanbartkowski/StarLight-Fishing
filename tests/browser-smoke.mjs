@@ -81,6 +81,7 @@ try {
       try {
         accountManager.isGuest = () => false;
         accountManager.getCurrentUser = () => 'Chat test captain';
+        window.smokeUI.saveSystem.setUpgradeLevel('maritimeRadio', 1);
         const panel = document.getElementById('fleet-radio');
         panel.hidden = true; panel.classList.add('fleet-minimized');
         document.getElementById('fleet-content').hidden = true;

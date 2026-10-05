@@ -224,17 +224,23 @@ export class NPCSystem {
   }
 
   handleOptionChosen(option) {
-    if (!option || !this.activeEncounter) return;
-    const result = option.action(this.saveSystem);
-    if (this.soundManager) {
-      if (result.success) this.soundManager.playQuestComplete();
-      else this.soundManager.playButtonClick();
+    if (!option) return;
+    try {
+      const result = typeof option.action === 'function' ? option.action(this.saveSystem) : { success: true, message: 'Thank you, captain!' };
+      if (this.soundManager) {
+        if (result?.success) this.soundManager.playQuestComplete();
+        else this.soundManager.playButtonClick();
+      }
+      if (this.uiManager) {
+        if (result?.message) this.uiManager.showToast(result.message);
+        this.uiManager.closeModal();
+      }
+    } catch (err) {
+      console.warn('NPC option execution error:', err);
+      this.uiManager?.closeModal();
+    } finally {
+      this.activeEncounter = null;
     }
-    if (this.uiManager) {
-      this.uiManager.showToast(result.message);
-      this.uiManager.closeModal();
-    }
-    this.activeEncounter = null;
   }
 }
 

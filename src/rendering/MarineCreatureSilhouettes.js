@@ -177,38 +177,70 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'seal': {
-      // Fusiform blubber body with rounded head and rear flippers
+      // Cute Harp Seal Pup: Adorable plump snowball body, huge glossy dark puppy eyes, sweet boopable snout
+      const sealSway = Math.sin(t * 3.5) * 4;
+
+      // Soft plump blubber body
       ctx.beginPath();
-      ctx.ellipse(-2, 0, 22, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(-2, 0, 22, 13, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Head & snout
+      // Fluffy rounded head
       ctx.beginPath();
-      ctx.arc(18, -1, 7, 0, Math.PI * 2);
+      ctx.arc(17, -1, 8.5, 0, Math.PI * 2);
       ctx.fill();
 
       // Rear webbed flippers swaying
-      const sealSway = Math.sin(t * 3.5) * 4;
       ctx.fillStyle = finColor;
       ctx.beginPath();
       ctx.moveTo(-22, 0);
-      ctx.lineTo(-32, -6 + sealSway);
-      ctx.lineTo(-28, sealSway);
-      ctx.lineTo(-32, 6 + sealSway);
+      ctx.lineTo(-33, -7 + sealSway);
+      ctx.lineTo(-29, sealSway);
+      ctx.lineTo(-33, 7 + sealSway);
       ctx.closePath();
       ctx.fill();
 
-      // Front steering flipper
+      // Front cute rounded paddle flipper
       ctx.beginPath();
-      ctx.ellipse(4, 8, 4, 8, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(4, 8, 4.5, 9, 0.45, 0, Math.PI * 2);
       ctx.fill();
 
-      // Dark eyes & nose
+      // Sweet blushing cheeks
+      ctx.fillStyle = 'rgba(251, 113, 133, 0.4)';
+      ctx.beginPath();
+      ctx.arc(16, 3, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Big adorable puppy eyes with gleaming double highlights
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(21, -3, 1.5, 0, Math.PI * 2);
-      ctx.arc(24, 1, 1.2, 0, Math.PI * 2);
+      ctx.arc(19, -3.5, 2.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(18.3, -4.3, 1.0, 0, Math.PI * 2);
+      ctx.arc(19.8, -3.0, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Boopable black nose & sweet mouth
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(24, 0, 1.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.arc(23, 2, 1.5, 0, Math.PI * 0.8);
+      ctx.stroke();
+
+      // Tiny cute whiskers
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.5)';
+      ctx.lineWidth = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(22, 1); ctx.lineTo(27, -0.5);
+      ctx.moveTo(22, 2.5); ctx.lineTo(27, 3);
+      ctx.stroke();
+
       return true;
     }
 

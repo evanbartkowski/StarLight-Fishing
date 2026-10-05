@@ -150,3 +150,25 @@ test('registration starts clean while autosaves stay with the previously loaded 
     accountManager.cloudSession = null;
   }
 });
+
+test('new registered account does not have chat unlocked until purchasing maritime radio upgrade', async () => {
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { accountManager } = await import('../src/systems/AccountManager.js');
+  const save = new SaveSystem();
+
+  // Fresh save without radio
+  assert.equal(save.getUpgradeLevel('maritimeRadio'), 0);
+  assert.equal(save.isChatUnlocked(), false);
+
+  // Even if an account is registered and logged in:
+  accountManager.activeUser = { username: 'NewUser', uid: 'user-123' };
+  try {
+    assert.equal(save.isChatUnlocked(), false, 'Registered account without radio must not access fleet chat');
+
+    // After purchasing the maritimeRadio upgrade:
+    save.setUpgradeLevel('maritimeRadio', 1);
+    assert.equal(save.isChatUnlocked(), true, 'Fleet chat unlocks after purchasing maritime radio');
+  } finally {
+    accountManager.activeUser = null;
+  }
+});

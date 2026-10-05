@@ -755,7 +755,7 @@ export class SaveSystem {
   }
 
   isChatUnlocked() {
-    return (!accountManager.isGuest() && !!accountManager.getCurrentUser()) || (this.getUpgradeLevel('maritimeRadio') >= 1);
+    return this.getUpgradeLevel('maritimeRadio') >= 1;
   }
 
   recordNPCInteraction() {

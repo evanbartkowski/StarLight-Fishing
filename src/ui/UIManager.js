@@ -107,12 +107,23 @@ export class UIManager {
     manager.onMessagesChanged = messages => {
       list.replaceChildren(...messages.map(msg => {
         const row = document.createElement('p');
+        const isFleetAnnouncement = msg.sender === '[Fleet Radio]' || (typeof msg.text === 'string' && msg.text.startsWith('[Fleet Radio]'));
+        const isGlobalAnnouncement = msg.sender === '[Global]' || (typeof msg.text === 'string' && msg.text.startsWith('[Global]'));
+        const isAnnouncement = isFleetAnnouncement || isGlobalAnnouncement;
+
+        if (isFleetAnnouncement) row.className = 'chat-announcement chat-announcement-fleet';
+        else if (isGlobalAnnouncement) row.className = 'chat-announcement chat-announcement-global';
+
         const profile = document.createElement('button');
-        profile.className = 'chat-profile'; profile.textContent = msg.isSelf ? 'You' : msg.sender;
-        profile.disabled = !msg.senderId || msg.senderId === 'server';
-        profile.title = "Visit this captain's aquarium";
-        profile.onclick = () => visitAquarium(this, msg.senderId);
-        row.append(profile, document.createTextNode(`: ${msg.text}`));
+        profile.className = isAnnouncement ? 'chat-profile chat-system-badge' : 'chat-profile';
+        profile.textContent = isAnnouncement ? msg.sender : (msg.isSelf ? 'You' : msg.sender);
+        profile.disabled = isAnnouncement || !msg.senderId || msg.senderId === 'server';
+        profile.title = isAnnouncement ? 'Fleet System Broadcast' : "Visit this captain's aquarium";
+        if (!isAnnouncement) {
+          profile.onclick = () => visitAquarium(this, msg.senderId);
+        }
+        const separator = isAnnouncement ? ' ' : ': ';
+        row.append(profile, document.createTextNode(`${separator}${msg.text}`));
         const aquarium = msg.text.match(/[?&]aquarium=([\w-]{1,128})/);
         if (aquarium) {
           const visit = document.createElement('button'); visit.className = 'btn btn-secondary btn-sm'; visit.textContent = 'Visit Aquarium';
@@ -764,6 +775,7 @@ export class UIManager {
   }
 
   showAccountChat() {
+    if (!this.saveSystem?.isChatUnlocked()) return false;
     if (accountManager.isGuest() || !accountManager.getCurrentUser()) return false;
     const panel = document.getElementById('fleet-radio');
     if (!panel) return false;
@@ -1184,12 +1196,21 @@ export class UIManager {
         }
       };
       card.addEventListener('click', handleSelect);
+      card.addEventListener('pointerdown', (e) => e.stopPropagation());
+      card.addEventListener('mousedown', (e) => e.stopPropagation());
+      card.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     });
 
-    document.getElementById('btn-npc-dismiss')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.closeModal();
-    });
+    const dismissBtn = document.getElementById('btn-npc-dismiss');
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeModal();
+      });
+      dismissBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      dismissBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+    }
   }
 
   openRadio() {
@@ -1417,6 +1438,11 @@ export class UIManager {
             this.showToast(`🪤 Purchased Seabed Drift Pots! Deployed ${nextTier.trapCount} pot in coastal waters.`);
           } else if (upgId === 'personalAquarium' && currentLvl === 0) {
             this.showToast(`🐠 Unlocked Personal Marine Aquarium! Visit your Journal or Inventory to view your tank.`);
+          } else if (upgId === 'maritimeRadio' && currentLvl === 0) {
+            const captainName = accountManager.getCurrentUser() || 'A new captain';
+            this.chatManager?.sendBroadcast('[Fleet Radio]', `${captainName} has acquired a radio and joined the frequency!`);
+            this.showToast(`📻 Shortwave Transceiver Installed! Fleet Radio is now online!`);
+            this.showAccountChat();
           } else {
             this.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
           }
@@ -1442,6 +1468,11 @@ export class UIManager {
 
         button.disabled = true;
         if (await premiumPurchase(this, { kind: 'upgrade', key: upgId, cost: gemCost })) {
+          if (upgId === 'maritimeRadio' && currentLvl === 0) {
+            const captainName = accountManager.getCurrentUser() || 'A new captain';
+            this.chatManager?.sendBroadcast('[Fleet Radio]', `${captainName} has acquired a radio and joined the frequency!`);
+            this.showAccountChat();
+          }
           soundManager.playUpgrade();
           this.openShop();
         } else {
@@ -2401,7 +2432,9 @@ export class UIManager {
     this.openModal("📋 Quests", questsHtml);
 
     document.querySelectorAll('.btn-claim-quest').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+      const handleClaim = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const qId = e.currentTarget.dataset.quest;
         const claimed = this.questSystem.claimQuest(qId);
         if (claimed) {
@@ -2409,7 +2442,11 @@ export class UIManager {
           this.showToast(`🎉 Quest Claimed! ${claimed.title} (+${claimed.rewardCoins.toLocaleString()} • +${claimed.rewardXp} XP)!`);
           this.openQuestsModal();
         }
-      });
+      };
+      btn.addEventListener('click', handleClaim);
+      btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      btn.addEventListener('mousedown', (e) => e.stopPropagation());
+      btn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
     });
   }
 

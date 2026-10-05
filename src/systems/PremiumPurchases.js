@@ -48,6 +48,11 @@ export async function premiumPurchase(ui, input) {
             save.data.traps.maxStorage = nextTier.maxStorage || 12;
           }
         });
+        if (input.key === 'maritimeRadio' && currentLvl === 0) {
+          const captainName = accountManager.getCurrentUser() || 'A new captain';
+          ui.chatManager?.sendBroadcast('[Fleet Radio]', `${captainName} has acquired a radio and joined the frequency!`);
+          ui.showAccountChat?.();
+        }
         ui.onUpgradePurchased?.();
         ui.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
         return true;
