@@ -2255,19 +2255,26 @@ html, body {
   padding: 8px;
 }
 
-/* Atmospheric NPC Modal */
+/* Atmospheric NPC Modal & Quest Prompts */
 .npc-encounter-modal {
   max-width: 580px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-items: center;
+  text-align: center;
 }
 
 .npc-header-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
   padding-bottom: 14px;
+  width: 100%;
 }
 
 .npc-avatar-box {
@@ -2281,6 +2288,7 @@ html, body {
   justify-content: center;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   flex-shrink: 0;
+  margin: 0 auto;
 }
 
 .npc-avatar-emoji {
@@ -2292,28 +2300,42 @@ html, body {
   font-weight: 800;
   margin: 0 0 3px 0;
   letter-spacing: -0.01em;
+  text-align: center;
 }
 
 .npc-title {
   font-size: 0.85rem;
   color: #94a3b8;
   font-style: italic;
+  text-align: center;
 }
 
 .npc-speech-bubble {
   background: rgba(30, 41, 59, 0.75);
-  border-left: 4px solid #38bdf8;
-  border-radius: 0 12px 12px 0;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
   padding: 14px 18px;
   font-style: italic;
   color: #f1f5f9;
   line-height: 1.45;
   font-size: 0.96rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .npc-speech-bubble p {
   margin: 0;
+  text-align: center;
+}
+
+.npc-options-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .npc-options-heading {
@@ -2322,26 +2344,33 @@ html, body {
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 .npc-options-list {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 10px;
+  width: 100%;
 }
 
 .npc-option-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  text-align: left;
+  text-align: center;
   font-family: inherit;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 12px 16px;
+  padding: 14px 18px;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .npc-option-card:hover,
@@ -2358,12 +2387,37 @@ html, body {
   font-size: 0.95rem;
   color: #f8fafc;
   margin-bottom: 4px;
+  text-align: center;
 }
 
 .npc-option-desc {
   font-size: 0.82rem;
   color: #94a3b8;
   line-height: 1.35;
+  text-align: center;
+}
+
+/* Quests Noticeboard Layout */
+.quests-container {
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.quests-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.quest-card {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Logbook & Trophy Room */

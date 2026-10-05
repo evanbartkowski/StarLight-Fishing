@@ -2363,20 +2363,20 @@ export class UIManager {
     const completedTotal = this.saveSystem.data.quests?.completedCount || 0;
 
     let questsHtml = `
-      <div class="quests-container" style="padding: 6px 0;">
-        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div class="quests-container" style="padding: 6px 0; max-width: 680px; margin: 0 auto; text-align: center;">
+        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: 10px;">
           <div>
-            <h3 style="margin: 0; color: #f8fafc; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+            <h3 style="margin: 0; color: #f8fafc; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
               <span>📋</span> Harbor Noticeboard
             </h3>
-            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem;">Complete daily coastal tasks to earn gold, research XP, and bonus rewards!</p>
+            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem; text-align: center;">Complete daily coastal tasks to earn gold, research XP, and bonus rewards!</p>
           </div>
-          <div style="background: rgba(30, 41, 59, 0.8); padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; color: #fef08a; font-weight: 700; border: 1px solid rgba(254, 240, 138, 0.2);">
+          <div style="background: rgba(30, 41, 59, 0.8); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: #fef08a; font-weight: 700; border: 1px solid rgba(254, 240, 138, 0.2); margin: 0 auto;">
             ⭐ ${completedTotal} Missions Completed
           </div>
         </div>
 
-        <div class="quests-grid" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="quests-grid" style="display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%;">
     `;
 
     quests.forEach((q) => {
@@ -2384,20 +2384,20 @@ export class UIManager {
       const isComplete = q.isComplete;
 
       questsHtml += `
-        <div class="quest-card" style="background: ${isComplete ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.8)'}; border: 1px solid ${isComplete ? '#f59e0b' : 'rgba(255, 255, 255, 0.08)'}; border-radius: 10px; padding: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; transition: all 0.2s;">
-          <div style="display: flex; gap: 14px; align-items: center; flex: 1; min-width: 240px;">
-            <div style="font-size: 2.2rem; background: rgba(0, 0, 0, 0.3); width: 54px; height: 54px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <div class="quest-card" style="background: ${isComplete ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.8)'}; border: 1px solid ${isComplete ? '#f59e0b' : 'rgba(255, 255, 255, 0.08)'}; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; width: 100%; box-sizing: border-box; transition: all 0.2s;">
+          <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; width: 100%;">
+            <div style="font-size: 2.2rem; background: rgba(0, 0, 0, 0.3); width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
               ${q.icon}
             </div>
-            <div style="flex: 1;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <h4 style="margin: 0; color: #f8fafc; font-size: 1rem;">${q.title}</h4>
-                <span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-weight: 700;">${q.category}</span>
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                <h4 style="margin: 0; color: #f8fafc; font-size: 1.05rem; text-align: center;">${q.title}</h4>
+                <span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${q.category}</span>
               </div>
-              <p style="margin: 5px 0 8px 0; color: #cbd5e1; font-size: 0.88rem; line-height: 1.4;">${q.description}</p>
+              <p style="margin: 6px 0 10px 0; color: #cbd5e1; font-size: 0.88rem; line-height: 1.4; text-align: center; max-width: 520px;">${q.description}</p>
 
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="flex: 1; height: 8px; background: rgba(0, 0, 0, 0.5); border-radius: 999px; overflow: hidden; max-width: 220px;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 280px; margin: 0 auto;">
+                <div style="flex: 1; height: 8px; background: rgba(0, 0, 0, 0.5); border-radius: 999px; overflow: hidden;">
                   <div style="height: 100%; width: ${pct}%; background: ${isComplete ? '#22c55e' : '#38bdf8'}; transition: width 0.3s;"></div>
                 </div>
                 <span style="font-size: 0.82rem; color: #94a3b8; font-weight: 700;">${q.current} / ${q.target}${q.unit || ''}</span>
@@ -2405,16 +2405,16 @@ export class UIManager {
             </div>
           </div>
 
-          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-            <div style="font-size: 0.88rem; color: #fef08a; font-weight: 700;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+            <div style="font-size: 0.9rem; color: #fef08a; font-weight: 700; text-align: center;">
               +${q.rewardCoins.toLocaleString()} • +${q.rewardXp} XP
             </div>
             ${
               isComplete
-                ? `<button class="btn btn-primary btn-claim-quest" data-quest="${q.id}" style="padding: 8px 18px; font-size: 0.9rem; font-weight: 700; background: #f59e0b; border-color: #d97706; color: #1e293b;">
+                ? `<button class="btn btn-primary btn-claim-quest" data-quest="${q.id}" style="padding: 9px 24px; font-size: 0.92rem; font-weight: 700; background: #f59e0b; border-color: #d97706; color: #1e293b; margin: 0 auto;">
                     🎁 Claim Reward
                    </button>`
-                : `<button class="btn btn-disabled" disabled style="padding: 8px 16px; font-size: 0.85rem; opacity: 0.6;">In Progress (${pct}%)</button>`
+                : `<button class="btn btn-disabled" disabled style="padding: 8px 20px; font-size: 0.85rem; opacity: 0.6; margin: 0 auto;">In Progress (${pct}%)</button>`
             }
           </div>
         </div>

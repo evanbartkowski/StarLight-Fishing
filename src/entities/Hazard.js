@@ -576,15 +576,14 @@ export class Hazard {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // Noticeable danger aura with rich oceanic warning glow that smoothly fades out
+    // Danger aura: subtle rim glow that extends just slightly beyond the obstacle bounds
     const pulse = 0.5 + 0.5 * Math.sin(this.timer * 2.5);
-    const auraRadius = this.radius * (1.42 + pulse * 0.22) + 16;
-    const auraStrength = this.isColossal ? 0.55 : this.marineKind ? 0.46 : 0.40;
-    const auraGrad = ctx.createRadialGradient(0, 0, this.radius * 0.25, 0, 0, auraRadius);
-    auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.95 + pulse * 0.25)})`);
-    auraGrad.addColorStop(0.35, `rgba(239, 68, 68, ${auraStrength * 0.68})`);
-    auraGrad.addColorStop(0.65, `rgba(220, 38, 38, ${auraStrength * 0.32})`);
-    auraGrad.addColorStop(0.88, `rgba(185, 28, 28, ${auraStrength * 0.12})`);
+    const auraRadius = this.radius * (1.10 + pulse * 0.08) + 4;
+    const auraStrength = this.isColossal ? 0.48 : this.marineKind ? 0.40 : 0.35;
+    const auraGrad = ctx.createRadialGradient(0, 0, this.radius * 0.80, 0, 0, auraRadius);
+    auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.85 + pulse * 0.15)})`);
+    auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
+    auraGrad.addColorStop(0.80, `rgba(220, 38, 38, ${auraStrength * 0.22})`);
     auraGrad.addColorStop(1, 'rgba(185, 28, 28, 0)');
     ctx.fillStyle = auraGrad;
     ctx.beginPath();
