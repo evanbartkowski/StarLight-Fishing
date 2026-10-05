@@ -851,9 +851,9 @@ export class UIManager {
 
     // Update trap count in HUD (only visible if traps have been purchased!)
     if (this.trapSystem) {
-      const trapCount = this.trapSystem.getTrapCount();
-      const capacity = this.trapSystem.getMaxCapacity();
-      const trappedCount = this.trapSystem.getStoredItems().length;
+      const trapCount = this.trapSystem.getTrapCount ? this.trapSystem.getTrapCount() : 0;
+      const capacity = this.trapSystem.getStorageCapacity ? this.trapSystem.getStorageCapacity() : (this.trapSystem.getMaxCapacity ? this.trapSystem.getMaxCapacity() : 0);
+      const trappedCount = this.trapSystem.getStoredItems ? this.trapSystem.getStoredItems().length : 0;
       const isFull = capacity > 0 && trappedCount >= capacity;
       const trapBadge = document.getElementById('hud-trap-badge');
       const trapBtn = document.getElementById('btn-traps-hud');
@@ -957,14 +957,18 @@ export class UIManager {
           activeZoneName = `${realmName} • ${subZ.name}`;
         }
       }
-      document.getElementById('hud-zone').textContent = activeZoneName;
+      const zoneEl = document.getElementById('hud-zone');
+      if (zoneEl) zoneEl.textContent = activeZoneName;
 
       const shieldEl = document.getElementById('hud-shields');
-      if (hook.shields > 0) {
-        shieldEl.style.display = 'flex';
-        document.getElementById('shield-amount').textContent = hook.shields;
-      } else {
-        shieldEl.style.display = 'none';
+      if (shieldEl) {
+        if (hook.shields > 0) {
+          shieldEl.style.display = 'flex';
+          const sAmt = document.getElementById('shield-amount');
+          if (sAmt) sAmt.textContent = hook.shields;
+        } else {
+          shieldEl.style.display = 'none';
+        }
       }
     }
 
@@ -1500,6 +1504,9 @@ export class UIManager {
 
     const unboxedCrates = hook.caughtItems.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed);
     let remainingGold = subtotal;
+    const summaryCapLvl = this.saveSystem.getUpgradeLevel('hookCapacity') || 0;
+    const summaryCapTier = UPGRADE_DEFINITIONS.hookCapacity?.tiers?.[summaryCapLvl] || { capacity: 3 };
+    const summaryMaxCap = Math.max(hook?.capacity || 3, summaryCapTier.capacity || 3) + (hook?.capacityBoost || 0);
 
     const modalBody = `
       <div class="summary-container">
@@ -1515,7 +1522,7 @@ export class UIManager {
           </div>
           <div class="stat-box">
             <span class="stat-label">Line Catches</span>
-            <span class="stat-value">${hook.caughtItems.length} / ${hook.capacity}</span>
+            <span class="stat-value">${hook.caughtItems.length} / ${summaryMaxCap}</span>
           </div>
           <div class="stat-box">
             <span class="stat-label">Rod Bonus</span>

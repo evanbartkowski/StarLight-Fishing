@@ -145,13 +145,15 @@ export class WorldCycle {
 
         if (drop.y >= surfaceY) {
           // Splash ripple on water surface
-          this.surfaceRipples.push({
-            x: drop.x,
-            y: surfaceY + (Math.random() * 6 - 3),
-            radius: 2,
-            maxRadius: 10 + Math.random() * 8,
-            alpha: 0.6,
-          });
+          if (this.surfaceRipples.length < 50) {
+            this.surfaceRipples.push({
+              x: drop.x,
+              y: surfaceY + (Math.random() * 6 - 3),
+              radius: 2,
+              maxRadius: 10 + Math.random() * 8,
+              alpha: 0.6,
+            });
+          }
           this.rainDrops.splice(i, 1);
         }
       }

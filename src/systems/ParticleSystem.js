@@ -15,6 +15,7 @@ export class ParticleSystem {
   }
 
   emitBubbles(x, y, count = 3, spread = 8) {
+    if (this.bubbles.length > 200) return;
     for (let i = 0; i < count; i++) {
       this.bubbles.push({
         x: x + (Math.random() * 2 - 1) * spread,
@@ -31,6 +32,7 @@ export class ParticleSystem {
   }
 
   emitSplash(x, y, count = 20, intensity = 1.0) {
+    if (this.splashes.length > 200) return;
     for (let i = 0; i < count; i++) {
       const angle = -Math.PI / 2 + (Math.random() * 2 - 1) * 1.1;
       const speed = (2.5 + Math.random() * 5.0) * intensity;
@@ -49,6 +51,7 @@ export class ParticleSystem {
   }
 
   emitSparkles(x, y, count = 12, color = '#fef08a') {
+    if (this.sparkles.length > 250) return;
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 1.0 + Math.random() * 3.0;
@@ -68,6 +71,7 @@ export class ParticleSystem {
   }
 
   addFloatingText(text, x, y, color = '#ffffff', fontSize = 16, glowColor = null) {
+    if (this.floatingTexts.length > 35) this.floatingTexts.shift();
     this.floatingTexts.push({
       text,
       x,

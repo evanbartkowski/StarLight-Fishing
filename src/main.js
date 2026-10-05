@@ -216,12 +216,15 @@ uiManager.onUpgradePurchased = () => {
     cameraY = 0;
     gameState = 'SURFACE_IDLE';
   }
+  uiManager.updateHUD(hook, gameState);
 };
 
 uiManager.onModalClosed = () => {
   isMouseDown = false;
   if (gameState === 'AIMING') {
     gameState = 'SURFACE_IDLE';
+  } else if (gameState === 'CATCH_SUMMARY') {
+    startDive();
   }
 };
 

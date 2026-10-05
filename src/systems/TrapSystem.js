@@ -42,6 +42,10 @@ export class TrapSystem {
     return tier.maxStorage || 0;
   }
 
+  getMaxCapacity() {
+    return this.getStorageCapacity();
+  }
+
   getStoredItems() {
     return this.saveSystem.data.traps?.items || [];
   }

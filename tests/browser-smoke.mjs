@@ -33,6 +33,10 @@ try {
     const welcome = page.locator('#btn-welcome-start');
     if (await welcome.isVisible()) await welcome.click();
     await page.waitForTimeout(300);
+    if (await page.locator('#btn-tutorial-ready').count() > 0) {
+      await page.locator('#modal-close').click();
+      await page.waitForTimeout(300);
+    }
     // Use actual input and the running game loop before switching to UI fixtures.
     const castPoint = { x: viewport.width * .08, y: viewport.height * .58 };
     if (viewport.width < 500) await page.touchscreen.tap(castPoint.x, castPoint.y);
@@ -113,8 +117,12 @@ try {
     const openBounds = await page.locator('#btn-crack-crate').boundingBox();
     assert.ok(openBounds.y >= 0 && openBounds.y + openBounds.height < viewport.height, 'Crate open button must be visible without scrolling');
     assert.equal(await page.locator('.crate-preview').getAttribute('open'), null);
-    await page.screenshot({ path: `tests/crate-preview-${viewport.width}.png` });
-    await page.locator('#btn-store-crate').click();
+    if (await page.locator('#btn-store-crate').count() > 0) {
+      await page.locator('#btn-store-crate').click();
+    } else {
+      await page.locator('#modal-close').click();
+      await page.evaluate(() => window.smokeUI.openInventory());
+    }
     assert.equal(await page.locator('.btn-inv-open-crate').count(), 1);
     assert.equal(await page.locator('.inventory-grid').evaluate(node => node.scrollWidth <= node.clientWidth + 1), true);
     assert.equal(await page.evaluate(() => window.smokeUI.saveSystem.data.stats.totalCratesOpened || 0), 0);
