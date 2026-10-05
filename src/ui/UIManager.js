@@ -1627,6 +1627,7 @@ export class UIManager {
 
     document.getElementById('share-best-catch')?.addEventListener('click', () => {
       const ranked = hook.caughtItems.filter(item => item.species).sort((a, b) => b.value - a.value);
+      if (!ranked.length) return;
       openCatchCard(this, ranked[0], accountManager.getCurrentUser() || 'Guest', () => this.openCatchSummary(hook, onContinue));
     });
     const cratesBtn = document.getElementById('btn-open-crates');
@@ -1665,7 +1666,6 @@ export class UIManager {
           const totalEl = document.getElementById('summary-total-cash');
           if (totalEl) totalEl.textContent = `+$${remainingGold.toLocaleString()}`;
           this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`, { dismissOnFishing: true });
-          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`);
         }
       });
     });

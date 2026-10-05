@@ -1166,12 +1166,7 @@ export class OceanWorld {
       const alpha = 0.06 + Math.sin(time * 0.8 + r * 1.5) * 0.03;
 
       ctx.save();
-      ctx.globalAlpha = Math.max(0.02, alpha);
-      ctx.strokeStyle = col;
-      ctx.lineWidth = 14 + (r % 3) * 6;
-      ctx.shadowColor = col;
-      ctx.shadowBlur = 18;
-
+      const ribbonWidth = 14 + (r % 3) * 6;
       ctx.beginPath();
       ctx.moveTo(xBase, -40);
       ctx.bezierCurveTo(
@@ -1182,6 +1177,15 @@ export class OceanWorld {
         xBase + Math.sin(time * 0.3 + r) * 40,
         screenHeight + 40
       );
+      // Soft outer glow ribbon under lighter
+      ctx.globalAlpha = Math.max(0.015, alpha * 0.45);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = ribbonWidth * 2.2;
+      ctx.stroke();
+      // Vibrant core ribbon
+      ctx.globalAlpha = Math.max(0.02, alpha);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = ribbonWidth;
       ctx.stroke();
       ctx.restore();
     }
@@ -1196,10 +1200,16 @@ export class OceanWorld {
       const pulse = 0.35 + Math.sin(time * 2.2 + m) * 0.25;
 
       ctx.save();
+      // Outer soft glow halo
+      ctx.globalAlpha = pulse * 0.4;
+      ctx.fillStyle = mCol;
+      ctx.beginPath();
+      ctx.arc(mx, my, mSize * 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner luminous mote core
       ctx.globalAlpha = pulse;
       ctx.fillStyle = mCol;
-      ctx.shadowColor = mCol;
-      ctx.shadowBlur = 10;
       ctx.beginPath();
       ctx.arc(mx, my, mSize, 0, Math.PI * 2);
       ctx.fill();
@@ -1445,13 +1455,25 @@ export class OceanWorld {
     for (let ribbon = 0; ribbon < 6; ribbon++) {
       const x = ((ribbon * 197 + Math.sin(time * .22 + ribbon) * 70) % (this.worldWidth + 100) + this.worldWidth + 100) % (this.worldWidth + 100) - 50;
       const hue = ribbon % 2 ? '91, 141, 255' : '83, 255, 218';
-      ctx.globalAlpha = .09 + (Math.sin(time * .5 + ribbon) + 1) * .035;
-      ctx.strokeStyle = `rgba(${hue}, .8)`; ctx.lineWidth = 10 + ribbon % 3 * 5; ctx.shadowColor = `rgb(${hue})`; ctx.shadowBlur = 26;
-      ctx.beginPath(); ctx.moveTo(x, this.surfaceY - cameraY + 20);
+      const baseAlpha = .09 + (Math.sin(time * .5 + ribbon) + 1) * .035;
+      const coreWidth = 10 + ribbon % 3 * 5;
+      ctx.beginPath();
+      ctx.moveTo(x, this.surfaceY - cameraY + 20);
       ctx.bezierCurveTo(x - 80, screenHeight * .32, x + 95, screenHeight * .62, x + Math.sin(time * .3 + ribbon) * 40, screenHeight + 40);
+
+      // Outer soft glow stroke under lighter
+      ctx.globalAlpha = baseAlpha * 0.45;
+      ctx.strokeStyle = `rgba(${hue}, .5)`;
+      ctx.lineWidth = coreWidth * 2.4;
+      ctx.stroke();
+
+      // Vibrant core ribbon stroke
+      ctx.globalAlpha = baseAlpha;
+      ctx.strokeStyle = `rgba(${hue}, .85)`;
+      ctx.lineWidth = coreWidth;
       ctx.stroke();
     }
-    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
     const spacing = 48;
     const drift = time * 8;
     const first = Math.floor((cameraY - this.surfaceY - drift - 20) / spacing);
@@ -1463,15 +1485,28 @@ export class OceanWorld {
 
       const pulse = 0.4 + Math.sin(time * 3 + i) * 0.4;
       const isCyan = i % 2 === 0;
-      ctx.fillStyle = isCyan ? `rgba(56, 189, 248, ${pulse * 0.7})` : `rgba(168, 85, 247, ${pulse * 0.7})`;
-      ctx.shadowColor = isCyan ? '#38bdf8' : '#c084fc';
-      ctx.shadowBlur = 6;
+      const rad = 2.5 + Math.sin(time + i) * 1.0;
+
+      // Outer glowing halo (replaces costly Gaussian blur)
+      ctx.fillStyle = isCyan ? `rgba(56, 189, 248, ${pulse * 0.35})` : `rgba(168, 85, 247, ${pulse * 0.35})`;
       ctx.beginPath();
-      ctx.arc(px, py, 2.5 + Math.sin(time + i) * 1.0, 0, Math.PI * 2);
+      ctx.arc(px, py, rad * 2.2, 0, Math.PI * 2);
       ctx.fill();
+
+      // Radiant incandescent core
+      ctx.fillStyle = isCyan ? `rgba(224, 242, 254, ${pulse * 0.85})` : `rgba(243, 232, 255, ${pulse * 0.85})`;
+      ctx.beginPath();
+      ctx.arc(px, py, rad, 0, Math.PI * 2);
+      ctx.fill();
+
       if (i % 5 === 0) {
-        ctx.globalAlpha = .24 + pulse * .18; ctx.strokeStyle = isCyan ? '#67e8f9' : '#d8b4fe'; ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.moveTo(px, py + 5); ctx.bezierCurveTo(px - 12, py + 17, px + 12, py + 24, px + Math.sin(time + i) * 7, py + 36); ctx.stroke();
+        ctx.globalAlpha = .24 + pulse * .18;
+        ctx.strokeStyle = isCyan ? '#67e8f9' : '#d8b4fe';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(px, py + 5);
+        ctx.bezierCurveTo(px - 12, py + 17, px + 12, py + 24, px + Math.sin(time + i) * 7, py + 36);
+        ctx.stroke();
         ctx.globalAlpha = 1;
       }
     }

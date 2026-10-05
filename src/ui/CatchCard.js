@@ -15,13 +15,17 @@ export function specimen(item, x, y) {
 }
 
 export function openCatchCard(ui, item, player, onBack) {
+  if (!item) return;
   ui.activeModal = 'catch-card';
-  ui.openModal('Catch Celebration', '<canvas id="share-catch" width="800" height="480" style="width:100%;height:auto"></canvas><div class="catch-share-actions"><button class="btn btn-primary" id="copy-catch">Copy image</button><button class="btn btn-secondary" id="download-catch">Download PNG</button><button class="btn btn-secondary" id="back-catch">Back to catch</button></div>');
+  ui.openModal('Catch Card', '<canvas id="share-catch" width="800" height="480" style="width:100%;height:auto"></canvas><div class="catch-share-actions"><button class="btn btn-primary" id="copy-catch">Copy image</button><button class="btn btn-secondary" id="download-catch">Download PNG</button><button class="btn btn-secondary" id="back-catch">Back to catches</button></div>');
   const canvas = document.getElementById('share-catch');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const playerName = typeof player === 'string' ? player : (player?.username || player?.displayName || 'Guest');
   const realm = getSeaById(item.zone || item.species?.zone) || { name: 'Sunlit Shoals', topColor: '#0284c7', bottomColor: '#082f49' };
   const rarityConf = RARITY_CONFIG[item.rarity || item.species?.rarity] || { color: '#38bdf8' };
-  const rarityColor = item.isGodTier ? '#e879f9' : rarityConf.color;
+  const rarityColor = item.isGodTier ? '#e879f9' : (rarityConf?.color || '#38bdf8');
 
   // 1. Deep Oceanic Gradient with vignette
   const gradient = ctx.createLinearGradient(0, 0, 0, 480);
@@ -145,7 +149,7 @@ export function openCatchCard(ui, item, player, onBack) {
   // Subtitle: Captain & Realm Location
   ctx.fillStyle = '#94a3b8';
   ctx.font = '600 15px sans-serif';
-  ctx.fillText(`Angler: ${player}  •  Waters: ${realm.name}`, 400, 408, 720);
+  ctx.fillText(`Angler: ${playerName}  •  Waters: ${realm.name}`, 400, 408, 720);
 
   // 8. Official Website URL badge & watermark
   ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
@@ -166,7 +170,9 @@ export function openCatchCard(ui, item, player, onBack) {
 
   ctx.fillStyle = '#38bdf8';
   ctx.font = '700 11px sans-serif';
-  ctx.letterSpacing = '0.5px';
+  try {
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0.5px';
+  } catch (e) {}
   ctx.fillText('starlight-fishing.web.app', 400, webPillY + 11);
   ctx.restore();
   const blob = () => new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Could not export image.')), 'image/png'));
@@ -184,5 +190,5 @@ export function openCatchCard(ui, item, player, onBack) {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) { ui.showToast(error.message); }
   };
-  document.getElementById('back-catch').onclick = onBack;
+  document.getElementById('back-catch').onclick = onBack || (() => ui.closeModal());
 }
