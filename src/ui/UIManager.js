@@ -781,10 +781,48 @@ export class UIManager {
     return true;
   }
 
+  _getEl(id) {
+    if (!this._domCache) this._domCache = new Map();
+    let el = this._domCache.get(id);
+    if (!el || !el.isConnected) {
+      el = document.getElementById(id);
+      if (el) this._domCache.set(id, el);
+    }
+    return el;
+  }
+
+  _setText(id, val) {
+    const el = this._getEl(id);
+    if (el && el.textContent !== String(val)) el.textContent = String(val);
+    return el;
+  }
+
+  _setWidth(id, width) {
+    const el = this._getEl(id);
+    if (el && el.style.width !== width) el.style.width = width;
+    return el;
+  }
+
+  _setDisplay(id, display) {
+    const el = this._getEl(id);
+    if (el && el.style.display !== display) el.style.display = display;
+    return el;
+  }
+
+  _setHidden(id, hidden) {
+    const el = this._getEl(id);
+    if (el && el.hidden !== hidden) el.hidden = hidden;
+    return el;
+  }
+
   updateHUD(hook, gameState) {
-    this.chatManager?.connect();
-    const fleet = document.getElementById('fleet-radio');
-    if (fleet) fleet.hidden = !this.saveSystem.isChatUnlocked() || gameState !== 'SURFACE_IDLE';
+    if (this.chatManager && (!this._lastChatConnect || Date.now() - this._lastChatConnect > 5000)) {
+      this._lastChatConnect = Date.now();
+      this.chatManager.connect();
+    }
+    const fleet = this._getEl('fleet-radio');
+    const hideFleet = !this.saveSystem.isChatUnlocked() || gameState !== 'SURFACE_IDLE';
+    if (fleet && fleet.hidden !== hideFleet) fleet.hidden = hideFleet;
     const captain = accountManager.getCurrentUser();
     if (!accountManager.isGuest() && captain && fleet && !fleet.hidden && !this.activeModal && this._focusedCaptain !== captain) {
       this._focusedCaptain = captain;
@@ -796,53 +834,52 @@ export class UIManager {
       clearTimeout(this.toastTimer);
       this.toastTimer = null;
       this.toastDismissOnFishing = false;
-      document.getElementById('toast-notification')?.classList.replace('toast-visible', 'toast-hidden');
+      this._getEl('toast-notification')?.classList.replace('toast-visible', 'toast-hidden');
     }
-    const hudEl = document.getElementById('game-hud');
+    const hudEl = this._getEl('game-hud');
     if (hudEl) {
       hudEl.classList.toggle('hud-diving-mode', isDiving);
     }
 
     const event = worldCycle.getGlobalEvent();
-    const eventBanner = document.getElementById('world-event-banner');
+    const eventBanner = this._getEl('world-event-banner');
     if (eventBanner) {
-      eventBanner.hidden = !event.active;
+      if (eventBanner.hidden !== !event.active) eventBanner.hidden = !event.active;
       if (event.active) {
-        eventBanner.textContent = `${event.icon} ${event.name} · ${event.description}`;
-        eventBanner.title = `${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} remaining · Legends x${event.legendaryMultiplier} · Crates x${event.crateMultiplier}`;
+        const text = `${event.icon} ${event.name} · ${event.description}`;
+        if (eventBanner.textContent !== text) eventBanner.textContent = text;
+        const title = `${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} remaining · Legends x${event.legendaryMultiplier} · Crates x${event.crateMultiplier}`;
+        if (eventBanner.title !== title) eventBanner.title = title;
       }
     }
     const lvl = this.saveSystem.data.level;
     const currentXp = this.saveSystem.data.xp;
     const xpReq = this.saveSystem.getXpRequired(lvl);
-    document.getElementById('level-badge-num').textContent = `Lv. ${lvl}`;
-    document.getElementById('hud-xp-text').textContent = `${currentXp} / ${xpReq} XP`;
+    this._setText('level-badge-num', `Lv. ${lvl}`);
+    this._setText('hud-xp-text', `${currentXp} / ${xpReq} XP`);
     const xpPct = Math.min(100, (currentXp / xpReq) * 100);
-    document.getElementById('hud-xp-fill').style.width = `${xpPct}%`;
+    this._setWidth('hud-xp-fill', `${xpPct}%`);
 
-    document.getElementById('coin-amount').textContent = `$${this.saveSystem.data.coins.toLocaleString()}`;
-    document.getElementById('gem-amount').textContent = this.saveSystem.getGemBalance().toLocaleString();
-    document.getElementById('daily-ready').hidden = !this.saveSystem.getDailyLoginStatus().available;
+    this._setText('coin-amount', `$${this.saveSystem.data.coins.toLocaleString()}`);
+    this._setText('gem-amount', this.saveSystem.getGemBalance().toLocaleString());
+    this._setHidden('daily-ready', !this.saveSystem.getDailyLoginStatus().available);
 
     // Update atmospheric time & weather in HUD
-    const timeTextEl = document.getElementById('hud-time-text');
-    const weatherTextEl = document.getElementById('hud-weather-text');
-    if (timeTextEl) timeTextEl.textContent = worldCycle.getTimeLabel();
-    if (weatherTextEl) weatherTextEl.textContent = worldCycle.getWeatherLabel();
+    this._setText('hud-time-text', worldCycle.getTimeLabel());
+    this._setText('hud-weather-text', worldCycle.getWeatherLabel());
 
     // Update weather type badge next to the bucket in the top GUI: only show when up on the boat
-    const weatherBadgeEl = document.getElementById('hud-weather-badge');
+    const weatherBadgeEl = this._getEl('hud-weather-badge');
     if (weatherBadgeEl) {
       if (isDiving) {
-        weatherBadgeEl.style.display = 'none';
+        this._setDisplay('hud-weather-badge', 'none');
       } else {
-        weatherBadgeEl.style.display = 'inline-flex';
+        this._setDisplay('hud-weather-badge', 'inline-flex');
         const wt = worldCycle.getWeatherType ? worldCycle.getWeatherType() : { icon: '✨', label: 'Clear' };
-        const iconEl = document.getElementById('hud-weather-badge-icon');
-        const typeEl = document.getElementById('hud-weather-badge-type');
-        if (iconEl) iconEl.textContent = wt.icon;
-        if (typeEl) typeEl.textContent = wt.label;
-        weatherBadgeEl.title = `Atmosphere: ${wt.label}`;
+        this._setText('hud-weather-badge-icon', wt.icon);
+        this._setText('hud-weather-badge-type', wt.label);
+        const wTitle = `Atmosphere: ${wt.label}`;
+        if (weatherBadgeEl.title !== wTitle) weatherBadgeEl.title = wTitle;
       }
     }
 
@@ -855,37 +892,40 @@ export class UIManager {
       const capacity = this.trapSystem.getStorageCapacity ? this.trapSystem.getStorageCapacity() : (this.trapSystem.getMaxCapacity ? this.trapSystem.getMaxCapacity() : 0);
       const trappedCount = this.trapSystem.getStoredItems ? this.trapSystem.getStoredItems().length : 0;
       const isFull = capacity > 0 && trappedCount >= capacity;
-      const trapBadge = document.getElementById('hud-trap-badge');
-      const trapBtn = document.getElementById('btn-traps-hud');
+      const trapBtn = this._getEl('btn-traps-hud');
       if (trapBtn) {
         if (trapCount > 0) {
-          trapBtn.style.display = 'inline-flex';
+          this._setDisplay('btn-traps-hud', 'inline-flex');
           trapBtn.classList.toggle('quest-ready', isFull);
           trapBtn.classList.toggle('trap-full', isFull);
+          const trapBadge = this._getEl('hud-trap-badge');
           if (trapBadge) {
             if (trappedCount > 0) {
-              trapBadge.style.display = 'inline-block';
-              trapBadge.textContent = trappedCount;
+              this._setDisplay('hud-trap-badge', 'inline-block');
+              this._setText('hud-trap-badge', trappedCount);
               trapBtn.classList.add('trap-ready');
             } else {
-              trapBadge.style.display = 'none';
+              this._setDisplay('hud-trap-badge', 'none');
               trapBtn.classList.remove('trap-ready');
             }
           }
         } else {
-          trapBtn.style.display = 'none';
+          this._setDisplay('btn-traps-hud', 'none');
           trapBtn.classList.remove('quest-ready', 'trap-full');
         }
       }
     }
 
-    const questButton = document.getElementById('btn-quests');
-    const ready = !!this.questSystem?.hasUnclaimedRewards();
-    questButton?.classList.toggle('quest-ready', ready);
-    questButton?.setAttribute('aria-label', ready ? 'Quests: reward ready to claim' : 'Quests');
+    const questButton = this._getEl('btn-quests');
+    if (questButton) {
+      const ready = !!this.questSystem?.hasUnclaimedRewards();
+      questButton.classList.toggle('quest-ready', ready);
+      const qAria = ready ? 'Quests: reward ready to claim' : 'Quests';
+      if (questButton.getAttribute('aria-label') !== qAria) questButton.setAttribute('aria-label', qAria);
+    }
 
     // Update active buffs in HUD
-    const buffsContainer = document.getElementById('hud-buffs');
+    const buffsContainer = this._getEl('hud-buffs');
     if (buffsContainer) {
       let buffsHtml = '';
       if (this.saveSystem.hasActiveBuff('sirensGrace')) {
@@ -900,11 +940,12 @@ export class UIManager {
         const sec = this.saveSystem.getBuffRemainingSeconds('cartographerMark');
         buffsHtml += `<span class="hud-buff-pill" title="Secret Hotspot Active">🗺️ Survey Mark (${sec}s)</span>`;
       }
-      buffsContainer.innerHTML = buffsHtml;
+      if (buffsContainer.innerHTML !== buffsHtml) {
+        buffsContainer.innerHTML = buffsHtml;
+      }
     }
 
-    const capEl = document.getElementById('hud-capacity');
-    const capAmt = document.getElementById('capacity-amount');
+    const capEl = this._getEl('hud-capacity');
 
     // Authoritative maximum capacity based on save system upgrade level
     const capLvl = this.saveSystem.getUpgradeLevel('hookCapacity') || 0;
@@ -914,38 +955,31 @@ export class UIManager {
     // Accurate current count of items held in bucket (on the line)
     const holdingCount = hook?.caughtItems ? hook.caughtItems.length : 0;
 
-    if (capAmt) {
-      capAmt.textContent = `${holdingCount} / ${maxCapacity}`;
-    }
+    this._setText('capacity-amount', `${holdingCount} / ${maxCapacity}`);
     if (capEl) {
       capEl.classList.toggle('capacity-full', holdingCount >= maxCapacity);
     }
 
     if (!hook || gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
-      const depthContainer = document.getElementById('hud-depth-container');
-      if (depthContainer) depthContainer.style.display = 'none';
-      const shieldEl = document.getElementById('hud-shields');
-      if (shieldEl) shieldEl.style.display = 'none';
+      this._setDisplay('hud-depth-container', 'none');
+      this._setDisplay('hud-shields', 'none');
     } else {
-      const depthContainer = document.getElementById('hud-depth-container');
-      if (depthContainer) depthContainer.style.display = 'flex';
+      this._setDisplay('hud-depth-container', 'flex');
       const depthM = Math.min(hook.depthMeters, hook.maxDepthMeters);
 
-      const depthEl = document.getElementById('hud-depth');
+      const depthEl = this._getEl('hud-depth');
       if (depthEl) {
         const subZ = getDepthSubZone(depthM, this.saveSystem.getCurrentSea());
-        depthEl.textContent = `${depthM.toFixed(1)}m`;
-        depthEl.title = `Depth: ${depthM.toFixed(1)}m • ${subZ.name}`;
+        const dText = `${depthM.toFixed(1)}m`;
+        if (depthEl.textContent !== dText) depthEl.textContent = dText;
+        const dTitle = `Depth: ${depthM.toFixed(1)}m • ${subZ.name}`;
+        if (depthEl.title !== dTitle) depthEl.title = dTitle;
       }
 
       const fillPct = Math.min(100, (depthM / hook.maxDepthMeters) * 100);
-      const fillEl = document.getElementById('hud-depth-fill');
-      if (fillEl) fillEl.style.width = `${fillPct}%`;
+      this._setWidth('hud-depth-fill', `${fillPct}%`);
 
-      const reelBtn = document.getElementById('btn-manual-reel-up');
-      if (reelBtn) {
-        reelBtn.style.display = (gameState === 'DESCENDING' || hook.state === 'DESCENDING') ? 'inline-flex' : 'none';
-      }
+      this._setDisplay('btn-manual-reel-up', (gameState === 'DESCENDING' || hook.state === 'DESCENDING') ? 'inline-flex' : 'none');
 
       let activeZoneName = 'Sunken Shallows';
       let fullZoneTitle = 'Sunken Shallows';
@@ -959,67 +993,62 @@ export class UIManager {
           fullZoneTitle = `${realmName} • ${subZ?.name || az.name}`;
         }
       }
-      const zoneEl = document.getElementById('hud-zone');
+      const zoneEl = this._getEl('hud-zone');
       if (zoneEl) {
-        zoneEl.textContent = activeZoneName;
-        zoneEl.title = fullZoneTitle;
+        if (zoneEl.textContent !== activeZoneName) zoneEl.textContent = activeZoneName;
+        if (zoneEl.title !== fullZoneTitle) zoneEl.title = fullZoneTitle;
       }
 
-      const shieldEl = document.getElementById('hud-shields');
+      const shieldEl = this._getEl('hud-shields');
       if (shieldEl) {
         if (hook.shields > 0) {
-          shieldEl.style.display = 'flex';
-          const sAmt = document.getElementById('shield-amount');
-          if (sAmt) sAmt.textContent = hook.shields;
+          this._setDisplay('hud-shields', 'flex');
+          this._setText('shield-amount', hook.shields);
         } else {
-          shieldEl.style.display = 'none';
+          this._setDisplay('hud-shields', 'none');
         }
       }
     }
 
     // Line Tension & Volcanic Heat Gauges
-    const heatContainer = document.getElementById('hud-heat-container');
-
     if (hook && gameState === 'REELING') {
-      if (heatContainer) {
-        if (this.zoneManager?.activeZone?.mechanic?.heatBuildup) {
-          heatContainer.style.display = 'flex';
-          const heatPct = Math.min(100, Math.max(0, this.zoneManager.lineHeat || 0));
-          const hFill = document.getElementById('hud-heat-fill');
-          const hPct = document.getElementById('hud-heat-percent');
-          if (hFill) hFill.style.width = `${heatPct}%`;
-          if (hPct) hPct.textContent = `${Math.round(heatPct)}%`;
-        } else {
-          heatContainer.style.display = 'none';
-        }
+      if (this.zoneManager?.activeZone?.mechanic?.heatBuildup) {
+        this._setDisplay('hud-heat-container', 'flex');
+        const heatPct = Math.min(100, Math.max(0, this.zoneManager.lineHeat || 0));
+        this._setWidth('hud-heat-fill', `${heatPct}%`);
+        this._setText('hud-heat-percent', `${Math.round(heatPct)}%`);
+      } else {
+        this._setDisplay('hud-heat-container', 'none');
       }
     } else {
-        if (heatContainer) heatContainer.style.display = 'none';
+      this._setDisplay('hud-heat-container', 'none');
     }
 
     // Update Inventory Button capacity text
     const invCount = this.saveSystem.getInventory().length;
     const invCap = this.saveSystem.getInventoryCapacity();
-    const invBtn = document.getElementById('btn-inventory');
+    const invBtn = this._getEl('btn-inventory');
     if (invBtn) {
-      invBtn.title = `Inventory (${invCount} / ${invCap} slots)`;
-      const invBadge = document.getElementById('hud-inv-badge');
+      const invTitle = `Inventory (${invCount} / ${invCap} slots)`;
+      if (invBtn.title !== invTitle) invBtn.title = invTitle;
+      const invBadge = this._getEl('hud-inv-badge');
       if (invBadge) {
-        invBadge.textContent = `(${invCount}/${invCap})`;
-        invBadge.style.color = invCount >= invCap ? '#ef4444' : '#38bdf8';
+        this._setText('hud-inv-badge', `(${invCount}/${invCap})`);
+        const badgeColor = invCount >= invCap ? '#ef4444' : '#38bdf8';
+        if (invBadge.style.color !== badgeColor) invBadge.style.color = badgeColor;
       }
     }
 
     // Update Personal Aquarium Button visibility
-    const aqBtn = document.getElementById('btn-aquarium-hud');
+    const aqBtn = this._getEl('btn-aquarium-hud');
     if (aqBtn) {
       const hasAq = this.saveSystem.hasAquarium();
-      aqBtn.style.display = hasAq ? 'inline-flex' : 'none';
+      this._setDisplay('btn-aquarium-hud', hasAq ? 'inline-flex' : 'none');
       if (hasAq) {
         const aqItems = this.saveSystem.getAquariumItems?.() || [];
         const aqCap = this.saveSystem.getAquariumCapacity?.() || 5;
-        aqBtn.title = 'Aquarium';
-        aqBtn.title = `Personal Marine Aquarium (${aqItems.length} / ${aqCap} fish in tank)`;
+        const aqTitle = `Personal Marine Aquarium (${aqItems.length} / ${aqCap} fish in tank)`;
+        if (aqBtn.title !== aqTitle) aqBtn.title = aqTitle;
       }
     }
   }

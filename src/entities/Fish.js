@@ -190,10 +190,10 @@ export class Fish {
           break;
         }
         case 'hover': {
-          // Stays virtually in place, hovering with gentle subtle bobbing
-          vx = this.direction * (this.speed * 4) * deltaSec;
-          vy = Math.sin(this.wiggleTimer * 0.8) * 10 * deltaSec;
-          this.swimAngle = Math.sin(this.wiggleTimer * 0.6) * 0.04;
+          // Lively reef cruising drift with gentle undulating bobbing
+          vx = this.direction * (this.speed * 20) * deltaSec;
+          vy = Math.sin(this.wiggleTimer * 0.8) * 16 * deltaSec;
+          this.swimAngle = Math.sin(this.wiggleTimer * 0.6) * 0.12;
           break;
         }
 

@@ -46,7 +46,7 @@ export function buildRealmFish(originals) {
       const minDepth = niche === 0 ? 2 : Math.max(8, Math.round(sea.maxDepth * [0.015, 0.08, 0.22, 0.43, 0.67][niche]));
       const maxDepth = Math.min(sea.maxDepth, Math.round(minDepth + sea.maxDepth * (0.25 + (i % 3) * 0.08)));
       const length = 8 + (i % 8) * 7 + (shape === 'shark' || shape === 'whale' ? 80 : 0);
-      const movementType = ['eel', 'swordfish'].includes(shape) ? 'sine_wave' : shape === 'ray' ? 'diagonal_glide' : shape === 'seahorse' ? 'vertical_drift' : shape === 'squid' ? 'vertical_pulse' : i % 4 === 0 ? 'hover' : i % 4 === 1 ? 'erratic' : 'horizontal';
+      const movementType = ['eel', 'swordfish'].includes(shape) ? 'sine_wave' : shape === 'ray' ? 'diagonal_glide' : shape === 'seahorse' ? 'vertical_drift' : shape === 'squid' ? 'vertical_pulse' : (sea.id === 1 ? (i === 13 ? 'hover' : (i % 3 === 0 ? 'diagonal_glide' : i % 2 === 0 ? 'sine_wave' : 'horizontal')) : (i % 4 === 0 ? 'hover' : i % 4 === 1 ? 'erratic' : 'horizontal'));
       natives.push({
         id: `realm_${sea.id}_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, name, zone: sea.id, rarity,
         minDepth, maxDepth, baseValue: Math.round(profile.commonValue * VALUE_BY_RARITY[rarity] * (0.9 + (i % 5) * 0.08)),
@@ -149,7 +149,7 @@ const TREASURES = {
 };
 export const REALM_HAZARDS = FANTASY_SEAS.flatMap(sea => HAZARDS[sea.id].map((name, i) => ({
   id: `realm_${sea.id}_hazard_${i}`, name, zone: sea.id, realmStyle: REALM_PROFILES[sea.id].style, variant: i,
-  minDepth: sea.id === 1 && i === 3 ? 100 : 5 + Math.round(sea.maxDepth * i * 0.06),
+  minDepth: sea.id === 1 && i === 3 ? 100 : (sea.id === 1 && i === 0 ? 28 : 5 + Math.round(sea.maxDepth * i * 0.06)),
   maxDepth: 3000,
   damage: 1 + Math.floor((sea.id + i) / 3), knockback: 22 + sea.id * 5 + i * 4,
   radius: i === 3 ? 48 : 18 + i * 6, isColossal: i === 3,

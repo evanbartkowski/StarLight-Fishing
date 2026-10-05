@@ -293,7 +293,7 @@ export class OceanWorld {
 
     populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && !hazard.expedition && belongsToRealm(hazard, this.currentSeaId)),
       depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards,
-      hazard => hazard.isColossal ? 0.6 : 1,
+      hazard => hazard.isColossal ? 0.6 : (this.currentSeaId === 1 && hazard.naturalKind === 'plant' ? 0.5 : 1),
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     populateBands(EXPEDITION_HAZARDS.filter(h => !h.expedition && h.seas.includes(this.currentSeaId)),
       depth => .06 + .15 * depthProgress(depth), () => 1,
@@ -352,13 +352,16 @@ export class OceanWorld {
     // Populate Interactive Realm Flora
     const floraConfig = FLORA_TYPES[this.currentSeaId] || FLORA_TYPES[1];
     // Jittered patches across the entire realm, with open water between clusters.
-    const floraStart = Math.min(floraConfig.minDepth, 20);
-    for (let band = floraStart; band < activeMaxDepth - 8; band += 110) {
-      const end = Math.min(band + 110, activeMaxDepth - 8);
+    const floraStart = this.currentSeaId === 1 ? Math.max(floraConfig.minDepth, 35) : Math.min(floraConfig.minDepth, 20);
+    const bandStep = this.currentSeaId === 1 ? 85 : 110;
+    for (let band = floraStart; band < activeMaxDepth - 8; band += bandStep) {
+      const end = Math.min(band + bandStep, activeMaxDepth - 8);
       const depthM = band + Math.random() * (end - band);
       const clusterX = 45 + Math.random() * Math.max(1, this.worldWidth - 90);
       const groupRoll = Math.random();
-      const count = groupRoll < .48 ? 1 : groupRoll < .76 ? 2 : groupRoll < .91 ? 3 : groupRoll < .98 ? 4 : 5;
+      const count = this.currentSeaId === 1
+        ? (Math.random() < 0.7 ? 1 : 2)
+        : (groupRoll < .48 ? 1 : groupRoll < .76 ? 2 : groupRoll < .91 ? 3 : groupRoll < .98 ? 4 : 5);
       const groupAngle = Math.random() * Math.PI * 2;
       for (let f = 0; f < count; f++) {
         const radius = Math.sqrt(Math.random()) * 48;
@@ -1603,6 +1606,68 @@ export class OceanWorld {
     ctx.beginPath();
     ctx.arc(p2X - 35, basePillarY - 20, 22, 0, Math.PI * 2);
     ctx.stroke();
+
+    // Unique Atlantean Water Flow & Hydrodynamic Current Visuals
+    const time = this.causticTimer || 0;
+    const w = this.worldWidth;
+
+    // 1. Laminar Aqueduct Surge Streams (flowing between pillars and through arches)
+    for (let f = 0; f < 3; f++) {
+      const flowY = basePillarY - 140 + f * 55;
+      const flowAlpha = 0.28 + 0.12 * Math.sin(time * 2 + f);
+      ctx.strokeStyle = f % 2 === 0 ? `rgba(45, 212, 191, ${flowAlpha})` : `rgba(56, 189, 248, ${flowAlpha})`;
+      ctx.lineWidth = 3.5 - f * 0.5;
+      ctx.lineCap = 'round';
+
+      // Undulating current ribbon
+      ctx.beginPath();
+      ctx.moveTo(30, flowY + Math.sin(time * 2.2) * 8);
+      ctx.bezierCurveTo(
+        w * 0.3, flowY - 25 + Math.sin(time * 2.5 + f) * 12,
+        w * 0.7, flowY + 25 + Math.cos(time * 2.5 + f) * 12,
+        w - 30, flowY + Math.sin(time * 2.2 + 2) * 8
+      );
+      ctx.stroke();
+
+      // Dashed rapid current streamlines with forward drift
+      ctx.setLineDash([16, 26]);
+      ctx.lineDashOffset = -time * (60 + f * 20);
+      ctx.strokeStyle = `rgba(224, 242, 254, ${flowAlpha * 0.75})`;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // 2. Swirling Hydrodynamic Eddies / Vortices near archways and antique cogs
+    const eddyPositions = [
+      { x: 180, y: basePillarY - 80, r: 18, dir: 1 },
+      { x: p2X - 50, y: basePillarY - 45, r: 24, dir: -1 },
+      { x: w * 0.52, y: basePillarY - 120, r: 22, dir: 1 },
+    ];
+    for (const eddy of eddyPositions) {
+      ctx.save();
+      ctx.translate(eddy.x, eddy.y);
+      const eddyAngle = time * 2.2 * eddy.dir;
+      ctx.rotate(eddyAngle);
+      ctx.strokeStyle = 'rgba(94, 234, 212, 0.32)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      for (let a = 0; a < Math.PI * 2.5; a += 0.35) {
+        const rad = (a / (Math.PI * 2.5)) * eddy.r;
+        const ex = Math.cos(a) * rad;
+        const ey = Math.sin(a) * rad;
+        if (a === 0) ctx.moveTo(ex, ey);
+        else ctx.lineTo(ex, ey);
+      }
+      ctx.stroke();
+
+      // Trailing hydro-sparkle in eddy center
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.beginPath();
+      ctx.arc(Math.cos(time * 3) * 6, Math.sin(time * 3) * 6, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     ctx.restore();
   }

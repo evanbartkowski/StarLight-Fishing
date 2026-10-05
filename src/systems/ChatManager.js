@@ -44,6 +44,8 @@ export class ChatManager {
   }
 
   pruneMessages(now = Date.now()) {
+    if (this._lastPrune && now - this._lastPrune < 5000) return;
+    this._lastPrune = now;
     const kept = this.messages.filter(message => message.createdAt > now - 86400000).slice(-30);
     if (kept.length !== this.messages.length) {
       this.messages = kept;

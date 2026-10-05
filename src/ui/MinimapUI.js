@@ -273,7 +273,6 @@ export class MinimapUI {
 
     if (this.saveSystem.setCurrentSea(seaId)) {
       this.soundManager.playCast();
-      this.uiManager.showToast(`⛵ Setting sail for ${sea.name} (${sea.subtitle})!`);
       this.uiManager.closeModal();
 
       if (this.uiManager && typeof this.uiManager.playCloudTransition === 'function') {

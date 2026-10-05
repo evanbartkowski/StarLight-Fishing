@@ -56,6 +56,7 @@ export class LeaderboardManager {
       const backend = await this.loadBackend();
       const id = await withTimeout(backend.publishScore(key, score, account.cloudUid));
       this.published.set(key, { signature, id });
+      this.readCache?.clear();
       return id;
     })();
     this.inFlight.set(key, task);
@@ -72,8 +73,17 @@ export class LeaderboardManager {
       const account = this.currentAccount();
       currentId = account && this.published.get(account.username.toLowerCase())?.id;
     }
-    const backend = await this.loadBackend();
-    const entries = await withTimeout(backend.readScores(mode === 'money' ? 'money' : 'level'));
+    const sortField = mode === 'money' ? 'money' : 'level';
+    const now = Date.now();
+    let entries;
+    if (this.readCache && this.readCache.has(sortField) && (now - this.readCache.get(sortField).timestamp < 15000)) {
+      entries = this.readCache.get(sortField).entries;
+    } else {
+      const backend = await this.loadBackend();
+      entries = await withTimeout(backend.readScores(sortField));
+      if (!this.readCache) this.readCache = new Map();
+      this.readCache.set(sortField, { entries, timestamp: now });
+    }
     const account = this.currentAccount();
     return {
       entries: entries.map(entry => ({ ...entry, isCurrent: entry.id === currentId })),

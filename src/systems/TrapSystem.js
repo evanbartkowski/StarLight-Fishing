@@ -173,53 +173,20 @@ export class TrapSystem {
       const waveBob = Math.sin(b.bobTimer) * 4;
       const by = surfaceY - cameraY + waveBob;
 
-      // Tether rope extending downward
-      ctx.strokeStyle = isFull ? 'rgba(45, 212, 191, 0.7)' : 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = isFull ? 1.6 : 1.2;
-      ctx.beginPath();
-      ctx.moveTo(bx, by);
-      ctx.lineTo(bx + Math.sin(b.bobTimer * 0.5) * 6, by + 50);
-      ctx.stroke();
-
-      // Buoy Body (Bright Orange / Yellow coastal marker with full quest-like biolum radiance)
+      // Buoy Body (Clean spherical float with quest-like radiance when full, no lines or flags)
       if (isFull) {
         ctx.shadowColor = '#2dd4bf';
-        ctx.shadowBlur = 14 + Math.sin(b.bobTimer * 4) * 5;
+        ctx.shadowBlur = 12 + Math.sin(b.bobTimer * 3) * 4;
       }
       ctx.fillStyle = i === 0 ? '#ea580c' : i === 1 ? '#eab308' : '#0284c7';
       ctx.beginPath();
       ctx.ellipse(bx, by - 4, 10, 13, 0, 0, Math.PI * 2);
       ctx.fill();
-      if (isFull) {
-        ctx.shadowBlur = 0;
-        // Shimmering outer beacon ring
-        ctx.strokeStyle = `rgba(45, 212, 191, ${0.45 + 0.35 * Math.sin(b.bobTimer * 4)})`;
-        ctx.lineWidth = 2.2;
-        ctx.beginPath();
-        ctx.arc(bx, by - 4, 16 + Math.sin(b.bobTimer * 3) * 2.5, 0, Math.PI * 2);
-        ctx.stroke();
-      }
+      ctx.shadowBlur = 0;
 
-      // White stripe
+      // White reflective center band
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(bx - 10, by - 6, 20, 4);
-
-      // Flag antenna
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(bx, by - 16);
-      ctx.lineTo(bx, by - 26);
-      ctx.stroke();
-
-      // Tiny flag
-      ctx.fillStyle = isFull ? '#2dd4bf' : storedCount > 0 ? '#22c55e' : '#ef4444';
-      ctx.beginPath();
-      ctx.moveTo(bx, by - 26);
-      ctx.lineTo(bx + 8, by - 22);
-      ctx.lineTo(bx, by - 18);
-      ctx.closePath();
-      ctx.fill();
     }
     ctx.restore();
   }

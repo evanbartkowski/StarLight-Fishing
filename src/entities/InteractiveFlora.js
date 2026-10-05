@@ -2,7 +2,7 @@
 // 'slow' flora (kelp/vines/webs) cuts reel speed; 'slip' flora (spores/coral/vent weed) can shake a hooked fish loose.
 
 export const FLORA_TYPES = {
-  1: { id: 'tangled_kelp', name: 'Tangled Canopy Kelp', kind: 'kelp', color: '#15803d', stalkColor: '#166534', tipColor: '#86efac', effect: 'slow', slowFactor: 0.45, minDepth: 8, maxDepth: 3000, radius: 36 },
+  1: { id: 'tangled_kelp', name: 'Tangled Canopy Kelp', kind: 'kelp', color: '#15803d', stalkColor: '#166534', tipColor: '#86efac', effect: 'slow', slowFactor: 0.45, minDepth: 35, maxDepth: 3000, radius: 36 },
   2: { id: 'spore_flora', name: 'Bioluminescent Spore Coral', kind: 'spore', color: '#a855f7', stalkColor: '#6b21a8', tipColor: '#e879f9', effect: 'slip', slipChance: 0.35, minDepth: 25, maxDepth: 3000, radius: 32 },
   3: { id: 'astral_stardust_weed', name: 'Astral Crystal Bloom', kind: 'crystal', color: '#6366f1', stalkColor: '#3730a3', tipColor: '#c7d2fe', effect: 'slow', slowFactor: 0.4, minDepth: 40, maxDepth: 3000, radius: 38 },
   4: { id: 'grasping_coral', name: 'Atlantean Grasping Coral', kind: 'spore', color: '#10b981', stalkColor: '#065f46', tipColor: '#6ee7b7', effect: 'slip', slipChance: 0.4, minDepth: 60, maxDepth: 3000, radius: 35 },
