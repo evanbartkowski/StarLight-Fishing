@@ -96,7 +96,7 @@ try {
       save.save();
       window.smokeUI.openInventory('crates');
     });
-    assert.equal(await page.locator('.crate-purchase-grid button').count(), 5);
+    assert.equal(await page.locator('.crate-purchase-grid button').count(), 8);
     await page.locator('.crate-purchase-grid button').first().click();
     assert.equal(await page.locator('.btn-inv-open-crate').count(), 1);
     assert.equal(await page.evaluate(() => window.smokeUI.saveSystem.data.gems), 48);

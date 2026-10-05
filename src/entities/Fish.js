@@ -4,6 +4,7 @@ import { RARITY_CONFIG } from '../data/FishData.js';
 import { calculateCrown, getCrownMultiplier } from '../data/legendaries.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { rollCatchTraits, depthRewardMultiplier } from '../systems/CatchTraits.js';
+import { drawMarineCreature } from '../rendering/MarineCreatureSilhouettes.js';
 
 export class Fish {
   constructor(species, x, y, options = {}) {
@@ -738,7 +739,9 @@ export class Fish {
     ctx.fillStyle = primary;
     ctx.beginPath();
 
-    if (s.name === 'Giant Cave Salamander') {
+    if (drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer)) {
+      // Specialized marine creature silhouette rendered
+    } else if (s.name === 'Giant Cave Salamander') {
       ctx.ellipse(0, 0, 28, 9, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = finColor; ctx.lineWidth = 4;
       for (const x of [-14, 12]) for (const side of [-1, 1]) {

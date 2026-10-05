@@ -121,57 +121,294 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.lineTo(-r * 1.15, Math.sin(propAngle) * r * 0.4);
     ctx.stroke();
   } else if (kind === 'plant') {
-    ctx.fillStyle = '#526257';
-    ctx.beginPath(); ctx.ellipse(0, r * .65, r * .7, r * .22, 0, 0, Math.PI * 2); ctx.fill();
-    for (let i = -2; i <= 2; i++) {
-      const x = i * r * .22, sway = Math.sin(time * .8 + i) * r * .13;
-      const tip = -r * (.65 + .12 * (2 - Math.abs(i)));
-      ctx.strokeStyle = i % 2 ? '#287e59' : '#3b9c68'; ctx.lineWidth = r * .09;
-      ctx.beginPath(); ctx.moveTo(x, r * .6); ctx.bezierCurveTo(x - r * .2, 0, x + sway, -r * .3, x + sway, tip); ctx.stroke();
-      for (let j = 0; j < 3; j++) {
-        const y = r * .3 - j * r * .3, side = (i + j) % 2 ? 1 : -1;
-        ctx.fillStyle = j % 2 ? '#62b57a' : '#359966';
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + side * r * .5, y - r * .4, x + side * r * .38, y - r * .08); ctx.quadraticCurveTo(x + side * r * .15, y + r * .08, x, y); ctx.fill();
+    // Swaying Kelp Bed & Sunlit Seaweed Meadow with undulating fronds, air bladders, and sea spores
+    const swayBase = Math.sin(time * 1.6) * r * 0.18;
+    ctx.fillStyle = '#1e3a2b';
+    ctx.beginPath();
+    ctx.ellipse(0, r * 0.72, r * 0.8, r * 0.24, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 7 Distinct Layered Kelp Fronds with varying phase, color gradients & pneumatocysts (air bladders)
+    for (let i = -3; i <= 3; i++) {
+      const frondX = i * r * 0.22;
+      const sway = Math.sin(time * 1.8 + i * 0.85) * r * (0.22 + Math.abs(i) * 0.04);
+      const tipY = -r * (0.85 + 0.15 * (3 - Math.abs(i)));
+      const midY = -r * 0.35;
+
+      // Stem
+      ctx.strokeStyle = i % 2 === 0 ? '#166534' : '#15803d';
+      ctx.lineWidth = r * 0.1;
+      ctx.beginPath();
+      ctx.moveTo(frondX, r * 0.65);
+      ctx.quadraticCurveTo(frondX + sway * 0.4, midY, frondX + sway, tipY);
+      ctx.stroke();
+
+      // Golden-green kelp leaves with ruffled wave edges
+      for (let j = 0; j < 4; j++) {
+        const leafY = r * 0.45 - j * r * 0.32;
+        const side = (i + j) % 2 === 0 ? 1 : -1;
+        const leafSway = Math.sin(time * 2.2 + j + i) * r * 0.1;
+
+        ctx.fillStyle = j % 2 === 0 ? '#22c55e' : '#4ade80';
+        ctx.beginPath();
+        ctx.moveTo(frondX, leafY);
+        ctx.bezierCurveTo(
+          frondX + side * r * 0.35, leafY - r * 0.28,
+          frondX + side * r * 0.55 + leafSway, leafY - r * 0.08,
+          frondX + side * r * 0.2, leafY + r * 0.12
+        );
+        ctx.closePath();
+        ctx.fill();
+
+        // Pneumatocyst (golden glowing buoyant bubble bead)
+        if (j > 0 && (i + j) % 2 === 0) {
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(frondX + side * r * 0.15, leafY - r * 0.06, r * 0.055, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     }
+
+    // Gentle micro-bubbles drifting up through the kelp
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+    for (let b = 0; b < 4; b++) {
+      const bubbleTime = (time * 1.5 + b * 1.2) % 3;
+      const bY = r * 0.6 - bubbleTime * r * 0.5;
+      const bX = Math.sin(time * 2 + b * 2) * r * 0.45;
+      ctx.beginPath();
+      ctx.arc(bX, bY, 1.6 + (b % 2), 0, Math.PI * 2);
+      ctx.fill();
+    }
   } else if (kind === 'boulder') {
+    // Mossy Coastal Reef Boulder with Living Sea Anemones, Purple Coral Polyps, and Sea Urchin Clusters
     const stone = ctx.createLinearGradient(-r, -r, r, r);
-    stone.addColorStop(0, '#9aa7a5'); stone.addColorStop(.45, '#667974'); stone.addColorStop(1, '#334841');
-    ctx.fillStyle = stone; ctx.strokeStyle = '#2c403a'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-r * .9, r * .25); ctx.lineTo(-r * .72, -r * .48); ctx.lineTo(-r * .2, -r * .85); ctx.lineTo(r * .5, -r * .7); ctx.lineTo(r * .9, -.1 * r); ctx.lineTo(r * .68, r * .65); ctx.lineTo(-r * .5, r * .75); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = '#c4cec266'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-r * .65, -.35 * r); ctx.lineTo(-r * .16, -.65 * r); ctx.lineTo(r * .38, -.55 * r); ctx.stroke();
-    ctx.strokeStyle = '#30433e'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(r * .08, -.6 * r); ctx.lineTo(-r * .1, -.12 * r); ctx.lineTo(r * .25, r * .2); ctx.lineTo(r * .1, r * .55); ctx.stroke();
-    ctx.fillStyle = '#658c5b';
-    for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.ellipse((i - 2) * r * .22, r * .46 + Math.sin(i) * r * .06, r * .16, r * .09, 0, 0, Math.PI * 2); ctx.fill(); }
+    stone.addColorStop(0, '#64748b');
+    stone.addColorStop(0.4, '#475569');
+    stone.addColorStop(0.85, '#334155');
+    stone.addColorStop(1, '#1e293b');
+    ctx.fillStyle = stone;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2.5;
+
+    // Organic jagged reef rock shape
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.95, r * 0.22);
+    ctx.lineTo(-r * 0.78, -r * 0.45);
+    ctx.lineTo(-r * 0.35, -r * 0.88);
+    ctx.lineTo(r * 0.35, -r * 0.78);
+    ctx.lineTo(r * 0.92, -r * 0.15);
+    ctx.lineTo(r * 0.72, r * 0.68);
+    ctx.lineTo(-r * 0.45, r * 0.82);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Rock fissure cracks & strata shading
+    ctx.strokeStyle = '#94a3b844';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.65, -r * 0.3);
+    ctx.lineTo(-r * 0.15, -r * 0.58);
+    ctx.lineTo(r * 0.4, -r * 0.45);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.05, -r * 0.5);
+    ctx.lineTo(-r * 0.12, -r * 0.08);
+    ctx.lineTo(r * 0.28, r * 0.25);
+    ctx.stroke();
+
+    // Vibrant living coral plate on top crest
+    ctx.fillStyle = '#f43f5e'; // vivid rose shelf coral
+    ctx.beginPath();
+    ctx.ellipse(r * 0.2, -r * 0.75, r * 0.32, r * 0.14, -0.15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fb7185';
+    ctx.beginPath();
+    ctx.ellipse(r * 0.2, -r * 0.76, r * 0.25, r * 0.09, -0.15, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2 Living Sea Anemones with waving tentacles
+    for (const [ax, ay, aCol, aGlow] of [
+      [-r * 0.55, -r * 0.35, '#ec4899', '#f472b6'],
+      [r * 0.65, r * 0.15, '#a855f7', '#c084fc'],
+    ]) {
+      ctx.fillStyle = aCol;
+      ctx.beginPath();
+      ctx.arc(ax, ay, r * 0.14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Waving tentacles
+      ctx.strokeStyle = aGlow;
+      ctx.lineWidth = 1.6;
+      ctx.lineCap = 'round';
+      for (let t = 0; t < 8; t++) {
+        const ang = (t / 8) * Math.PI * 2;
+        const wave = Math.sin(time * 3 + t + ax) * r * 0.08;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax + Math.cos(ang) * (r * 0.26) + wave, ay + Math.sin(ang) * (r * 0.26) + wave);
+        ctx.stroke();
+      }
+    }
+
+    // Clinging sea moss & green algae patches
+    ctx.fillStyle = '#16a34a';
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.ellipse((i - 2.5) * r * 0.26, r * 0.48 + Math.sin(i * 1.5) * r * 0.08, r * 0.18, r * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
   } else if (kind === 'log') {
-    ctx.rotate(-.18);
-    const wood = ctx.createLinearGradient(0, -r * .35, 0, r * .4);
-    wood.addColorStop(0, '#99744d'); wood.addColorStop(.4, '#765231'); wood.addColorStop(1, '#3e3021');
-    ctx.fillStyle = wood; ctx.strokeStyle = '#3c2b1d'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-r * .8, -r * .32); ctx.lineTo(r * .72, -r * .3); ctx.quadraticCurveTo(r, 0, r * .72, r * .34); ctx.lineTo(-r * .8, r * .3); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#b18b5c'; ctx.beginPath(); ctx.ellipse(-r * .78, 0, r * .19, r * .31, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = '#74512f'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.ellipse(-r * .78, 0, r * .1, r * .2, 0, 0, Math.PI * 2); ctx.stroke();
-    for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(-r * .5, i * r * .16); ctx.quadraticCurveTo(0, i * r * .1, r * .65, i * r * .18); ctx.stroke(); }
-    ctx.strokeStyle = '#765231'; ctx.lineWidth = r * .12;
-    ctx.beginPath(); ctx.moveTo(r * .05, -r * .2); ctx.lineTo(r * .25, -r * .63); ctx.lineTo(r * .48, -r * .7); ctx.stroke();
-    ctx.fillStyle = '#5f8252'; ctx.beginPath(); ctx.ellipse(r * .3, -r * .25, r * .28, r * .08, .15, 0, Math.PI * 2); ctx.fill();
+    // Waterlogged Tree Trunk with clinging barnacles, hollow mossy knots, trailing aquatic vines
+    ctx.rotate(-0.16);
+    const wood = ctx.createLinearGradient(0, -r * 0.4, 0, r * 0.45);
+    wood.addColorStop(0, '#a16207');
+    wood.addColorStop(0.35, '#78350f');
+    wood.addColorStop(0.8, '#451a03');
+    wood.addColorStop(1, '#291004');
+    ctx.fillStyle = wood;
+    ctx.strokeStyle = '#291004';
+    ctx.lineWidth = 2.4;
+
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.88, -r * 0.35);
+    ctx.lineTo(r * 0.82, -r * 0.3);
+    ctx.quadraticCurveTo(r * 1.05, 0, r * 0.82, r * 0.36);
+    ctx.lineTo(-r * 0.88, r * 0.32);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Log end growth rings
+    ctx.fillStyle = '#ca8a04';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.86, 0, r * 0.2, r * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = '#854d0e';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.86, 0, r * 0.11, r * 0.21, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Tree bark fissures & knots
+    ctx.strokeStyle = '#5c2b09';
+    ctx.lineWidth = 1.4;
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.55, i * r * 0.18);
+      ctx.quadraticCurveTo(0, i * r * 0.1, r * 0.72, i * r * 0.2);
+      ctx.stroke();
+    }
+
+    // Branch stub with hollow dark core
+    ctx.fillStyle = '#78350f';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.08, -r * 0.22);
+    ctx.lineTo(r * 0.28, -r * 0.68);
+    ctx.lineTo(r * 0.52, -r * 0.74);
+    ctx.lineTo(r * 0.38, -r * 0.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Cluster of clinging coastal barnacles
+    ctx.fillStyle = '#f5f5f4';
+    for (let b = 0; b < 5; b++) {
+      const bx = -r * 0.3 + b * r * 0.22;
+      const by = r * 0.22 + Math.sin(b * 1.4) * r * 0.06;
+      ctx.beginPath();
+      ctx.arc(bx, by, r * 0.07, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#57534e';
+      ctx.beginPath();
+      ctx.arc(bx, by, r * 0.035, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f5f5f4';
+    }
+
+    // Flowing river-moss / green sea velvet
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.85)';
+    ctx.beginPath();
+    ctx.ellipse(r * 0.32, -r * 0.28, r * 0.32, r * 0.09, 0.12, 0, Math.PI * 2);
+    ctx.fill();
   } else {
-    ctx.rotate(.12);
-    const hull = ctx.createLinearGradient(0, -r * .2, 0, r * .6);
-    hull.addColorStop(0, '#987451'); hull.addColorStop(1, '#3c2e24');
-    ctx.fillStyle = hull; ctx.strokeStyle = '#35291f'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-r * .94, -r * .14); ctx.lineTo(-r * .45, -r * .2); ctx.lineTo(-r * .15, .02 * r); ctx.lineTo(r * .14, -r * .18); ctx.lineTo(r * .92, -r * .3); ctx.quadraticCurveTo(r * .8, r * .5, r * .3, r * .58); ctx.lineTo(-r * .55, r * .45); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = '#c49a6855'; ctx.lineWidth = 1.5;
-    for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(-r * .65, r * (.08 + i * .12)); ctx.lineTo(r * .65, r * (.02 + i * .12)); ctx.stroke(); }
-    ctx.strokeStyle = '#6b5038'; ctx.lineWidth = r * .075;
-    ctx.beginPath(); ctx.moveTo(r * .16, 0); ctx.lineTo(r * .07, -r * .83); ctx.moveTo(-r * .3, -.46 * r); ctx.lineTo(r * .45, -.52 * r); ctx.stroke();
-    ctx.fillStyle = '#bbb596'; ctx.beginPath(); ctx.moveTo(r * .1, -.75 * r); ctx.lineTo(r * .48, -.55 * r); ctx.lineTo(r * .26, -.35 * r); ctx.lineTo(r * .12, -.43 * r); ctx.closePath(); ctx.fill();
-    for (let i = 0; i < 3; i++) { ctx.fillStyle = '#1f302e'; ctx.beginPath(); ctx.arc((i - 1) * r * .35, r * .15, r * .075, 0, Math.PI * 2); ctx.fill(); }
-    ctx.fillStyle = '#c9c4ab';
-    for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc((i - 2) * r * .23, r * .4, r * .025, 0, Math.PI * 2); ctx.fill(); }
+    // Broken Coastal Wreck with shattered timber ribs, brass lantern mount, tattered sail cloth, and swaying seaweed
+    ctx.rotate(0.12);
+    const hull = ctx.createLinearGradient(0, -r * 0.25, 0, r * 0.65);
+    hull.addColorStop(0, '#78350f');
+    hull.addColorStop(0.5, '#451a03');
+    hull.addColorStop(1, '#1c1917');
+    ctx.fillStyle = hull;
+    ctx.strokeStyle = '#291004';
+    ctx.lineWidth = 2.4;
+
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.96, -r * 0.15);
+    ctx.lineTo(-r * 0.45, -r * 0.24);
+    ctx.lineTo(-r * 0.15, 0.02 * r);
+    ctx.lineTo(r * 0.14, -r * 0.2);
+    ctx.lineTo(r * 0.94, -r * 0.32);
+    ctx.quadraticCurveTo(r * 0.82, r * 0.54, r * 0.3, r * 0.62);
+    ctx.lineTo(-r * 0.58, r * 0.48);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Exposed rotting oak ribs
+    ctx.strokeStyle = '#d9770655';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.7 + i * r * 0.38, r * (0.05 + i * 0.08));
+      ctx.lineTo(-r * 0.5 + i * r * 0.38, r * 0.45);
+      ctx.stroke();
+    }
+
+    // Broken splintered mast
+    ctx.strokeStyle = '#5c2b09';
+    ctx.lineWidth = r * 0.1;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.16, 0);
+    ctx.lineTo(r * 0.06, -r * 0.88);
+    ctx.moveTo(-r * 0.32, -r * 0.48);
+    ctx.lineTo(r * 0.48, -r * 0.54);
+    ctx.stroke();
+
+    // Tattered canvas sail fragment fluttering in the ocean current
+    const flutter = Math.sin(time * 2.8) * r * 0.08;
+    ctx.fillStyle = 'rgba(241, 245, 249, 0.82)';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.08, -r * 0.82);
+    ctx.quadraticCurveTo(r * 0.35 + flutter, -r * 0.65, r * 0.52, -r * 0.58);
+    ctx.lineTo(r * 0.28, -r * 0.38);
+    ctx.lineTo(r * 0.12, -r * 0.46);
+    ctx.closePath();
+    ctx.fill();
+
+    // Barnacle encrustations along keel
+    ctx.fillStyle = '#e2e8f0';
+    for (let b = 0; b < 6; b++) {
+      ctx.beginPath();
+      ctx.arc(-r * 0.5 + b * r * 0.22, r * 0.42 + (b % 2) * 2, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Portholes with deep mysterious seawater inside
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc((i - 1) * r * 0.35, r * 0.16, r * 0.085, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ca8a04';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+    }
   }
   ctx.restore();
 }

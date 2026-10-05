@@ -2,7 +2,7 @@ import { depthWaterColor, getRealmDepthZone } from '../data/RealmDepths.js';
 import { drawDepthScenery } from '../rendering/DepthScenery.js';
 import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
-import { drawAngler } from '../data/CustomizationData.js';
+import { drawAngler, drawBoatTrinket, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
 import { belongsToRealm, REALM_PROFILES } from '../data/RealmContent.js';
@@ -910,8 +910,14 @@ export class OceanWorld {
     }
 
     // Cosmetic hull stripe follows the boat transform on every vessel tier.
-    const skinColor = { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24' }[this.saveSystem?.data.boatSkin];
+    const skinColor = BOAT_SKIN_OPTIONS[this.saveSystem?.data.boatSkin]?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[this.saveSystem?.data.boatSkin];
     if (skinColor) { ctx.fillStyle = skinColor; ctx.fillRect(-b.width * .3, 5, b.width * .6, 7); }
+
+    // Equipped Boat Trinket
+    const equippedTrinket = this.saveSystem?.data.boatTrinket || 'none';
+    if (equippedTrinket && equippedTrinket !== 'none') {
+      drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height);
+    }
     // Lantern (all vessel tiers)
     const lanternX = vessel >= 4 ? 0 : (vessel >= 2 ? 16 : 0);
     const lanternY = vessel >= 4 ? -22 : -26;
@@ -1050,14 +1056,16 @@ export class OceanWorld {
       this.renderMysticalWaters(ctx, cameraY, screenHeight);
     }
 
-    // Sea 1: Sunlit Caustics (0 - 45m)
+    // Sea 1: Sunlit Caustics & Reef Flora (0 - 45m)
     if (this.currentSeaId === 1) {
       this.renderCaustics(ctx, topY);
+      this.renderSunlitReefFlora(ctx, cameraY, screenHeight);
     }
 
-    // Sea 2: Bioluminescent Trench Plankton & Jellies (45 - 105m)
+    // Sea 2: Bioluminescent Trench Plankton & Jellies & Deep Flora (45 - 105m)
     if (this.currentSeaId === 2) {
       this.renderBioluminescentPlankton(ctx, cameraY, screenHeight);
+      this.renderBioluminescentFlora(ctx, cameraY, screenHeight);
     }
 
     // Sea 3: Astral Shimmerfall Starlight Cascades (105 - 180m)
@@ -1226,6 +1234,200 @@ export class OceanWorld {
         ctx.closePath();
         ctx.fill();
       } catch (e) {}
+    }
+    ctx.restore();
+  }
+
+  // Sea 1: Sunlit Shoals Kelp Forests, Coral Gardens & Seagrass Meadows
+  renderSunlitReefFlora(ctx, cameraY, screenHeight) {
+    ctx.save();
+    const time = this.causticTimer || 0;
+    const w = this.worldWidth;
+    
+    // Depth clusters: spaced across the 0-45m zone (surfaceY to surfaceY + 675px)
+    const clusterCount = 12;
+    for (let c = 0; c < clusterCount; c++) {
+      const worldX = ((c * 233 + 70) % (w - 120)) + 60;
+      const worldY = this.surfaceY + 80 + (c * 65) % 600;
+      const screenY = worldY - cameraY;
+      if (screenY < -120 || screenY > screenHeight + 120) continue;
+
+      ctx.save();
+      ctx.translate(worldX, screenY);
+      ctx.globalAlpha = 0.35 + (c % 3) * 0.15;
+
+      const clusterType = c % 4;
+      if (clusterType === 0) {
+        // Swaying Giant Ribbon Kelp Strand with Pneumatocysts
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        const kelpHeight = 85 + (c % 3) * 25;
+        const sway = Math.sin(time * 1.8 + c) * 16;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(sway * 0.4, -kelpHeight * 0.4, -sway * 0.6, -kelpHeight * 0.7, sway, -kelpHeight);
+        ctx.stroke();
+
+        // Blades & golden gas bladders (pneumatocysts)
+        ctx.fillStyle = '#10b981';
+        for (let b = 1; b <= 4; b++) {
+          const tBlade = b / 5;
+          const bx = sway * tBlade;
+          const by = -kelpHeight * tBlade;
+          const bladeSway = Math.sin(time * 2.2 + c + b) * 8;
+          ctx.beginPath();
+          ctx.ellipse(bx + (b % 2 ? 14 : -14), by + bladeSway, 12, 4, (b % 2 ? 0.3 : -0.3), 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pneumatocyst golden bulb
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(bx + (b % 2 ? 4 : -4), by, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#10b981';
+        }
+      } else if (clusterType === 1) {
+        // Vivid Rose & Turquoise Branching Staghorn Coral Grove
+        const coralColor = ['#fb7185', '#2dd4bf', '#fb923c', '#f43f5e'][c % 4];
+        ctx.strokeStyle = coralColor;
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        for (let branch = -2; branch <= 2; branch++) {
+          const bx = branch * 11;
+          const bHeight = 35 + Math.abs(branch) * 6;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.quadraticCurveTo(bx * 0.5, -bHeight * 0.6, bx, -bHeight);
+          ctx.stroke();
+          // Coral tips
+          ctx.fillStyle = '#fef08a';
+          ctx.beginPath();
+          ctx.arc(bx, -bHeight, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (clusterType === 2) {
+        // Emerald & Seafoam Seagrass Cluster with undulating blades
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        for (let blade = -3; blade <= 3; blade++) {
+          const bladeSway = Math.sin(time * 2 + c + blade * 0.4) * 12;
+          ctx.beginPath();
+          ctx.moveTo(blade * 5, 0);
+          ctx.quadraticCurveTo(blade * 6 + bladeSway * 0.5, -28, blade * 4 + bladeSway, -52);
+          ctx.stroke();
+        }
+      } else {
+        // Living Coral Shelf with Waving Sea Anemone Tentacles
+        ctx.fillStyle = '#c084fc';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Anemone tentacles waving atop the shelf
+        ctx.strokeStyle = '#f472b6';
+        ctx.lineWidth = 1.6;
+        for (let tent = -4; tent <= 4; tent++) {
+          const tx = tent * 4;
+          const tSway = Math.sin(time * 3 + c + tent) * 7;
+          ctx.beginPath();
+          ctx.moveTo(tx, -4);
+          ctx.quadraticCurveTo(tx + tSway * 0.6, -14, tx + tSway, -22);
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // Sea 2: Bioluminescent Trench Luminous Flora, Phosphorescent Fans & Fungi
+  renderBioluminescentFlora(ctx, cameraY, screenHeight) {
+    ctx.save();
+    const time = this.causticTimer || 0;
+    const w = this.worldWidth;
+    
+    // Depth clusters in Realm 2: 45m - 105m zone (surfaceY + 675px to surfaceY + 1600px)
+    const clusterCount = 14;
+    for (let c = 0; c < clusterCount; c++) {
+      const worldX = ((c * 247 + 90) % (w - 140)) + 70;
+      const worldY = this.surfaceY + 700 + (c * 75) % 950;
+      const screenY = worldY - cameraY;
+      if (screenY < -130 || screenY > screenHeight + 130) continue;
+
+      ctx.save();
+      ctx.translate(worldX, screenY);
+      ctx.globalAlpha = 0.42 + (c % 3) * 0.16;
+
+      const floraType = c % 3;
+      if (floraType === 0) {
+        // Glowing Neon Gorgonian Sea Fan with Pulsating Polyps
+        const fanColor = c % 2 === 0 ? '#38bdf8' : '#a855f7';
+        ctx.strokeStyle = fanColor;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        const fanSway = Math.sin(time * 1.4 + c) * 9;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(fanSway * 0.3, -22);
+        ctx.stroke();
+
+        // Branching delicate fan grid
+        ctx.lineWidth = 1.5;
+        for (let fb = -3; fb <= 3; fb++) {
+          const bx = fb * 9 + fanSway;
+          const by = -22 - 28 + Math.abs(fb) * 4;
+          ctx.beginPath();
+          ctx.moveTo(fanSway * 0.3, -22);
+          ctx.quadraticCurveTo(bx * 0.6, by + 12, bx, by);
+          ctx.stroke();
+
+          // Luminous tip node
+          ctx.fillStyle = '#67e8f9';
+          ctx.beginPath();
+          ctx.arc(bx, by, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (floraType === 1) {
+        // Phosphorescent Shelf Bracket Coral / Fungal Ledges
+        ctx.fillStyle = c % 2 ? '#34d399' : '#818cf8';
+        for (let shelf = 0; shelf < 3; shelf++) {
+          const sx = (shelf % 2 ? 1 : -1) * 12;
+          const sy = -shelf * 18;
+          ctx.beginPath();
+          ctx.ellipse(sx, sy, 18 - shelf * 2, 7, (shelf % 2 ? 0.2 : -0.2), 0, Math.PI * 2);
+          ctx.fill();
+
+          // Bioluminescent glow margin
+          ctx.strokeStyle = '#a7f3d0';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      } else {
+        // Abyssal Lantern Tendril Plants with undulating spore filaments
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round';
+        for (let tend = -2; tend <= 2; tend++) {
+          const tSway = Math.sin(time * 2.2 + c + tend * 0.7) * 14;
+          const tx = tend * 8;
+          ctx.beginPath();
+          ctx.moveTo(tx, 0);
+          ctx.bezierCurveTo(tx + tSway * 0.4, -30, tx - tSway * 0.4, -60, tx + tSway, -85);
+          ctx.stroke();
+
+          // Glowing photophore lantern bulb on tip
+          const bulbPulse = 0.5 + Math.sin(time * 3 + c + tend) * 0.5;
+          ctx.fillStyle = `rgba(165, 243, 252, ${bulbPulse * 0.8})`;
+          ctx.beginPath();
+          ctx.arc(tx + tSway, -85, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
     }
     ctx.restore();
   }

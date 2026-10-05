@@ -1,6 +1,6 @@
 import { DAILY_GEMS, DAILY_REWARDS, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
 import { CRATE_RANKS } from '../data/CrateData.js';
-import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization } from '../data/CustomizationData.js';
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization, BOAT_TRINKETS, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
 import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
@@ -34,6 +34,10 @@ export class SaveSystem {
       ownedAppearance: [],
       gemEconomyVersion: 1,
       appearance: normalizeCustomization(ANGLER_OPTIONS),
+      boatSkin: 'default',
+      ownedBoatSkins: ['default'],
+      boatTrinket: 'none',
+      ownedBoatTrinkets: ['none'],
       xp: 0,
       coins: 0,
       upgrades,
@@ -282,6 +286,10 @@ export class SaveSystem {
         gems: Number.isFinite(parsed.gems) ? Math.max(0, Math.floor(parsed.gems)) : 0,
         dailyLogin: { ...def.dailyLogin, ...(parsed.dailyLogin || {}) },
         ownedAppearance: Array.isArray(parsed.ownedAppearance) ? parsed.ownedAppearance : [],
+        boatSkin: parsed.boatSkin || 'default',
+        ownedBoatSkins: Array.isArray(parsed.ownedBoatSkins) ? parsed.ownedBoatSkins : ['default'],
+        boatTrinket: parsed.boatTrinket || 'none',
+        ownedBoatTrinkets: Array.isArray(parsed.ownedBoatTrinkets) ? parsed.ownedBoatTrinkets : ['none'],
         xp: Math.max(0, parsed.xp || 0),
         coins: Math.max(0, parsed.coins || 0),
         upgrades: { ...def.upgrades, ...(parsed.upgrades || {}) },
@@ -1071,6 +1079,72 @@ export class SaveSystem {
 
   setAppearance(key, value) {
     return this.purchaseAppearance({ ...this.data.appearance, [key]: value });
+  }
+
+  hasBoatTrinket(trinketId) {
+    if (trinketId === 'none') return true;
+    return (this.data.ownedBoatTrinkets || ['none']).includes(trinketId);
+  }
+
+  getBoatTrinket() {
+    return this.data.boatTrinket || 'none';
+  }
+
+  getBoatTrinketCost(trinketId) {
+    if (!BOAT_TRINKETS[trinketId]) return null;
+    const owned = this.data.ownedBoatTrinkets || ['none'];
+    if (trinketId === 'none' || owned.includes(trinketId)) return 0;
+    return BOAT_TRINKETS[trinketId].cost;
+  }
+
+  purchaseBoatTrinket(trinketId) {
+    const cost = this.getBoatTrinketCost(trinketId);
+    if (cost === null || this.data.gems < cost) return false;
+    this.data.ownedBoatTrinkets ||= ['none'];
+    if (!this.data.ownedBoatTrinkets.includes(trinketId)) {
+      this.data.ownedBoatTrinkets.push(trinketId);
+    }
+    this.data.gems -= cost;
+    this.data.boatTrinket = trinketId;
+    this.save();
+    return true;
+  }
+
+  setBoatTrinket(trinketId) {
+    return this.purchaseBoatTrinket(trinketId);
+  }
+
+  hasBoatSkin(skinId) {
+    if (skinId === 'default') return true;
+    return (this.data.ownedBoatSkins || ['default']).includes(skinId);
+  }
+
+  getBoatSkin() {
+    return this.data.boatSkin || 'default';
+  }
+
+  getBoatSkinCost(skinId) {
+    if (!BOAT_SKIN_OPTIONS[skinId]) return null;
+    const owned = this.data.ownedBoatSkins || ['default'];
+    if (skinId === 'default' || owned.includes(skinId)) return 0;
+    return BOAT_SKIN_OPTIONS[skinId].cost;
+  }
+
+  purchaseBoatSkin(skinId) {
+    const cost = this.getBoatSkinCost(skinId);
+    if (cost === null || this.data.gems < cost) return false;
+    this.data.ownedBoatSkins ||= ['default'];
+    if (!this.data.ownedBoatSkins.includes(skinId)) {
+      this.data.ownedBoatSkins.push(skinId);
+    }
+    this.data.gems -= cost;
+    this.data.boatSkin = skinId;
+    this.save();
+    return true;
+  }
+
+  setBoatSkin(skinId) {
+    return this.purchaseBoatSkin(skinId);
   }
 
   setAquariumDecoration(key, value) {

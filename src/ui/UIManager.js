@@ -8,7 +8,7 @@ import { DAILY_REWARDS, achievementGems } from '../data/GemEconomy.js';
 import { Fish } from '../entities/Fish.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
 import { Treasure } from '../entities/Treasure.js';
-import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization, drawAngler, drawAquariumDecor } from '../data/CustomizationData.js';
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization, drawAngler, drawAquariumDecor, BOAT_TRINKETS, BOAT_SKIN_OPTIONS, drawBoatTrinket } from '../data/CustomizationData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
 import { FISH_SPECIES, DEPTH_ZONES, RARITY_CONFIG } from '../data/FishData.js';
@@ -948,17 +948,22 @@ export class UIManager {
       }
 
       let activeZoneName = 'Sunken Shallows';
+      let fullZoneTitle = 'Sunken Shallows';
       if (this.zoneManager) {
         const az = this.zoneManager.getCurrentZone();
         if (az) {
           const currentSea = FANTASY_SEAS.find(s => s.id === this.saveSystem.getCurrentSea());
           const realmName = currentSea ? currentSea.name : az.name;
           const subZ = getDepthSubZone(depthM, this.saveSystem.getCurrentSea());
-          activeZoneName = `${realmName} • ${subZ.name}`;
+          activeZoneName = subZ?.name || realmName;
+          fullZoneTitle = `${realmName} • ${subZ?.name || az.name}`;
         }
       }
       const zoneEl = document.getElementById('hud-zone');
-      if (zoneEl) zoneEl.textContent = activeZoneName;
+      if (zoneEl) {
+        zoneEl.textContent = activeZoneName;
+        zoneEl.title = fullZoneTitle;
+      }
 
       const shieldEl = document.getElementById('hud-shields');
       if (shieldEl) {
@@ -1101,10 +1106,10 @@ export class UIManager {
     let optionsHtml = '';
     npc.options.forEach((opt, idx) => {
       optionsHtml += `
-        <div class="npc-option-card" data-idx="${idx}">
+        <button type="button" class="npc-option-card" data-idx="${idx}" aria-label="${opt.label}">
           <div class="npc-option-label">${opt.label}</div>
           <div class="npc-option-desc">${opt.desc}</div>
-        </div>
+        </button>
       `;
     });
 
@@ -1129,20 +1134,31 @@ export class UIManager {
           <div class="npc-options-list">
             ${optionsHtml}
           </div>
+          <button type="button" class="btn btn-outline npc-dismiss-btn" id="btn-npc-dismiss" style="margin-top: 14px; width: 100%;">Walk away politely</button>
         </div>
       </div>
     `;
 
     this.openModal(`✨ Atmospheric Encounter: ${npc.name}`, contentHtml);
 
-    document.querySelectorAll('.npc-option-card').forEach((card) => {
-      card.addEventListener('click', async (e) => {
-        const idx = parseInt(e.currentTarget.dataset.idx, 10);
+    const cards = document.querySelectorAll('.npc-option-card');
+    cards.forEach((card) => {
+      const handleSelect = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.currentTarget || e.target.closest('.npc-option-card');
+        const idx = parseInt(target?.dataset?.idx ?? '-1', 10);
         const chosenOpt = npc.options[idx];
         if (chosenOpt && onOptionChosen) {
           onOptionChosen(chosenOpt);
         }
-      });
+      };
+      card.addEventListener('click', handleSelect);
+    });
+
+    document.getElementById('btn-npc-dismiss')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.closeModal();
     });
   }
 
@@ -4589,7 +4605,7 @@ export class UIManager {
     this.openModal('Your Angler', `<div class="appearance-studio">
       <div class="appearance-preview-panel"><canvas id="angler-preview" width="340" height="300" aria-label="Live preview of your angler"></canvas><h3>Ready for the next cast</h3><p id="appearance-status" role="status">Choose a color or a hat to try it on.</p><div class="appearance-presets"><button class="btn btn-secondary btn-sm" data-outfit="classic">Classic</button><button class="btn btn-secondary btn-sm" data-outfit="coastal">Coastal</button><button class="btn btn-secondary btn-sm" data-outfit="sunset">Sunset</button></div></div>
       <div class="appearance-controls">${controls}<div class="appearance-actions"><button class="btn btn-secondary" id="appearance-random">Shuffle outfit</button><button class="btn btn-outline" id="appearance-reset">Reset look</button></div></div>
-      <div class="appearance-footer"><span id="appearance-price"></span><button class="btn btn-primary" id="appearance-buy">Wear this look</button><button class="btn btn-primary" id="appearance-back">Done</button></div></div>`);
+      <div class="appearance-footer"><span id="appearance-price"></span><button class="btn btn-secondary" id="appearance-goto-boat">⛵ Boat Studio</button><button class="btn btn-primary" id="appearance-buy">Wear this look</button><button class="btn btn-primary" id="appearance-back">Done</button></div></div>`);
     const preview = document.getElementById('angler-preview');
     const ctx = preview.getContext('2d');
     const redraw = () => {
@@ -4632,8 +4648,419 @@ export class UIManager {
       redraw();
       document.getElementById('appearance-status').textContent = 'Look saved! These styles are now yours to reuse.';
     });
+    document.getElementById('appearance-goto-boat')?.addEventListener('click', () => this.openBoatCustomization());
     document.getElementById('appearance-back').addEventListener('click', () => this.openSettings());
     redraw();
+  }
+
+  openBoatCustomization() {
+    this.activeModal = 'boat_customization';
+    const save = this.saveSystem;
+    const vessel = save.data.upgrades?.vessel || 0;
+    let selectedTrinket = save.data.boatTrinket || 'none';
+    let selectedSkin = save.data.boatSkin || 'default';
+    let animTimer = 0;
+    let animFrame = null;
+
+    const trinketCards = Object.values(BOAT_TRINKETS).map(t => {
+      const isEquipped = (save.data.boatTrinket || 'none') === t.id;
+      const isOwned = save.hasBoatTrinket(t.id);
+      const isSelected = selectedTrinket === t.id;
+      let badge = '';
+      if (isEquipped) badge = '<span class="boat-badge boat-badge-equipped">Equipped</span>';
+      else if (isOwned) badge = '<span class="boat-badge boat-badge-owned">Owned</span>';
+      else badge = `<span class="boat-badge boat-badge-price">💎 ${t.cost}</span>`;
+
+      return `
+        <div class="boat-custom-card ${isSelected ? 'selected' : ''}" data-boat-type="trinket" data-boat-id="${t.id}" tabindex="0" role="button">
+          <div class="boat-card-header">
+            <span class="boat-card-icon">${t.icon}</span>
+            <div class="boat-card-info">
+              <strong class="boat-card-title">${t.label}</strong>
+              ${badge}
+            </div>
+          </div>
+          <p class="boat-card-desc">${t.desc}</p>
+        </div>
+      `;
+    }).join('');
+
+    const skinCards = Object.values(BOAT_SKIN_OPTIONS).map(s => {
+      const isEquipped = (save.data.boatSkin || 'default') === s.id;
+      const isOwned = save.hasBoatSkin(s.id);
+      const isSelected = selectedSkin === s.id;
+      let badge = '';
+      if (isEquipped) badge = '<span class="boat-badge boat-badge-equipped">Equipped</span>';
+      else if (isOwned) badge = '<span class="boat-badge boat-badge-owned">Owned</span>';
+      else badge = `<span class="boat-badge boat-badge-price">💎 ${s.cost}</span>`;
+
+      const swatchHtml = s.color
+        ? `<span class="boat-color-dot" style="background:${s.color};"></span>`
+        : `<span class="boat-color-dot" style="background:#854d0e;"></span>`;
+
+      return `
+        <div class="boat-custom-card ${isSelected ? 'selected' : ''}" data-boat-type="skin" data-boat-id="${s.id}" tabindex="0" role="button">
+          <div class="boat-card-header">
+            <span class="boat-card-icon">${swatchHtml}</span>
+            <div class="boat-card-info">
+              <strong class="boat-card-title">${s.label}</strong>
+              ${badge}
+            </div>
+          </div>
+          <p class="boat-card-desc">${s.desc}</p>
+        </div>
+      `;
+    }).join('');
+
+    const modalBody = `
+      <div class="boat-customization-studio">
+        <div class="boat-preview-pane">
+          <div class="boat-canvas-wrap">
+            <canvas id="boat-studio-canvas" width="460" height="230" aria-label="Boat customization live preview"></canvas>
+          </div>
+          <div class="boat-preview-summary">
+            <div class="boat-stat-chip">
+              <span class="stat-label">Vessel Rank</span>
+              <strong class="stat-val">Tier ${vessel + 1}</strong>
+            </div>
+            <div class="boat-stat-chip">
+              <span class="stat-label">Gem Reserve</span>
+              <strong class="stat-val">💎 <span id="boat-gem-val">${save.getGemBalance()}</span></strong>
+            </div>
+          </div>
+          <p id="boat-studio-status" class="boat-studio-status">Select a deck trinket or hull accent to preview it on your ship.</p>
+        </div>
+
+        <div class="boat-selector-pane">
+          <div class="boat-tabs-bar">
+            <button type="button" class="boat-tab-btn active" data-boat-tab="trinkets">Deck Trinkets (${Object.keys(BOAT_TRINKETS).length})</button>
+            <button type="button" class="boat-tab-btn" data-boat-tab="skins">Hull Accents (${Object.keys(BOAT_SKIN_OPTIONS).length})</button>
+          </div>
+
+          <div id="boat-tab-trinkets" class="boat-tab-content active">
+            <div class="boat-cards-grid">
+              ${trinketCards}
+            </div>
+          </div>
+
+          <div id="boat-tab-skins" class="boat-tab-content">
+            <div class="boat-cards-grid">
+              ${skinCards}
+            </div>
+          </div>
+
+          <div class="boat-studio-footer">
+            <div class="boat-footer-left">
+              <span id="boat-cost-indicator" class="boat-cost-indicator">Owned · Free to equip</span>
+            </div>
+            <div class="boat-footer-actions">
+              <button class="btn btn-secondary" id="btn-boat-goto-angler">👤 Angler Look</button>
+              <button class="btn btn-primary" id="btn-boat-apply">Equip Trinket</button>
+              <button class="btn btn-outline" id="btn-boat-done">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.openModal('Custom Boat Yard ⛵', modalBody);
+
+    const canvas = document.getElementById('boat-studio-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const updateControls = () => {
+      // Update selected cards
+      document.querySelectorAll('[data-boat-type="trinket"]').forEach(card => {
+        const id = card.getAttribute('data-boat-id');
+        card.classList.toggle('selected', id === selectedTrinket);
+      });
+      document.querySelectorAll('[data-boat-type="skin"]').forEach(card => {
+        const id = card.getAttribute('data-boat-id');
+        card.classList.toggle('selected', id === selectedSkin);
+      });
+
+      const gemEl = document.getElementById('boat-gem-val');
+      if (gemEl) gemEl.textContent = save.getGemBalance();
+
+      // Check current active tab to decide action button label & cost
+      const activeTab = document.querySelector('.boat-tab-btn.active')?.getAttribute('data-boat-tab') || 'trinkets';
+      const applyBtn = document.getElementById('btn-boat-apply');
+      const costEl = document.getElementById('boat-cost-indicator');
+
+      if (activeTab === 'trinkets') {
+        const trk = BOAT_TRINKETS[selectedTrinket];
+        const isEquipped = (save.data.boatTrinket || 'none') === selectedTrinket;
+        const isOwned = save.hasBoatTrinket(selectedTrinket);
+        const cost = save.getBoatTrinketCost(selectedTrinket);
+        const canAfford = save.getGemBalance() >= cost;
+
+        if (isEquipped) {
+          if (applyBtn) { applyBtn.textContent = 'Already Equipped'; applyBtn.disabled = true; }
+          if (costEl) costEl.textContent = '✨ Currently mounted on your ship';
+        } else if (isOwned) {
+          if (applyBtn) { applyBtn.textContent = 'Equip Trinket'; applyBtn.disabled = false; }
+          if (costEl) costEl.textContent = 'Owned item · Free to mount';
+        } else {
+          if (applyBtn) {
+            applyBtn.textContent = `Unlock & Mount · 💎 ${cost}`;
+            applyBtn.disabled = !canAfford;
+          }
+          if (costEl) costEl.textContent = canAfford ? `Cost: 💎 ${cost} gems` : `Requires 💎 ${cost} gems (Need ${cost - save.getGemBalance()} more)`;
+        }
+      } else {
+        const sk = BOAT_SKIN_OPTIONS[selectedSkin];
+        const isEquipped = (save.data.boatSkin || 'default') === selectedSkin;
+        const isOwned = save.hasBoatSkin(selectedSkin);
+        const cost = save.getBoatSkinCost(selectedSkin);
+        const canAfford = save.getGemBalance() >= cost;
+
+        if (isEquipped) {
+          if (applyBtn) { applyBtn.textContent = 'Already Applied'; applyBtn.disabled = true; }
+          if (costEl) costEl.textContent = '✨ Active hull paint';
+        } else if (isOwned) {
+          if (applyBtn) { applyBtn.textContent = 'Apply Paint'; applyBtn.disabled = false; }
+          if (costEl) costEl.textContent = 'Owned paint · Free to apply';
+        } else {
+          if (applyBtn) {
+            applyBtn.textContent = `Unlock & Paint · 💎 ${cost}`;
+            applyBtn.disabled = !canAfford;
+          }
+          if (costEl) costEl.textContent = canAfford ? `Cost: 💎 ${cost} gems` : `Requires 💎 ${cost} gems (Need ${cost - save.getGemBalance()} more)`;
+        }
+      }
+    };
+
+    const renderPreview = () => {
+      if (this.activeModal !== 'boat_customization') {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        return;
+      }
+      animTimer += 0.035;
+
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Sky gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+      skyGrad.addColorStop(0, '#0c1a2e');
+      skyGrad.addColorStop(0.5, '#1e3a5f');
+      skyGrad.addColorStop(0.72, '#2563eb');
+      skyGrad.addColorStop(1, '#0284c7');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Distant stars / sparkle
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      for (let s = 0; s < 12; s++) {
+        const sx = (s * 39 + 15) % w;
+        const sy = (s * 19 + 12) % (h * 0.45);
+        ctx.fillRect(sx, sy, 1.5, 1.5);
+      }
+
+      // Moon
+      ctx.fillStyle = '#fef08a';
+      ctx.shadowColor = '#fef08a';
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(w - 60, 48, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Animated Water waves
+      const waterY = h * 0.68;
+      ctx.fillStyle = 'rgba(14, 116, 144, 0.85)';
+      ctx.beginPath();
+      ctx.moveTo(0, waterY);
+      for (let x = 0; x <= w; x += 20) {
+        const y = waterY + Math.sin(x * 0.02 + animTimer * 2) * 5;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fill();
+
+      // Boat transform with bobbing
+      const boatX = w * 0.50;
+      const bobY = waterY - 14 + Math.sin(animTimer * 2) * 4;
+      const boatAngle = Math.sin(animTimer * 1.5) * 0.04;
+
+      ctx.save();
+      ctx.translate(boatX, bobY);
+      ctx.rotate(boatAngle);
+
+      const bW = 120 + vessel * 12;
+      const bH = 34 + vessel * 3;
+
+      // Keel shadow
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.moveTo(-bW * 0.42, bH * 0.55);
+      ctx.quadraticCurveTo(0, bH * 0.88, bW * 0.44, bH * 0.48);
+      ctx.lineTo(bW * 0.42, bH * 0.58);
+      ctx.quadraticCurveTo(0, bH * 0.98, -bW * 0.4, bH * 0.68);
+      ctx.closePath();
+      ctx.fill();
+
+      // Wooden hull
+      ctx.fillStyle = vessel >= 1 ? '#78350f' : '#9a3412';
+      ctx.beginPath();
+      ctx.moveTo(-bW * 0.5, -8);
+      ctx.lineTo(-bW * 0.42, bH * 0.6);
+      ctx.quadraticCurveTo(0, bH * 0.8, bW * 0.44, bH * 0.5);
+      ctx.lineTo(bW * 0.52, -8);
+      ctx.closePath();
+      ctx.fill();
+
+      // Planking lines
+      ctx.strokeStyle = '#431407';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-bW * 0.46, 0);
+      ctx.quadraticCurveTo(0, 10, bW * 0.48, 0);
+      ctx.moveTo(-bW * 0.44, 7);
+      ctx.quadraticCurveTo(0, 17, bW * 0.46, 6);
+      ctx.stroke();
+
+      // Gunwale rim
+      ctx.strokeStyle = '#451a03';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-bW * 0.5, -8);
+      ctx.lineTo(bW * 0.52, -8);
+      ctx.stroke();
+
+      // Selected Skin Accent Line
+      const activeSkin = BOAT_SKIN_OPTIONS[selectedSkin];
+      if (activeSkin && activeSkin.color) {
+        ctx.fillStyle = activeSkin.color;
+        ctx.fillRect(-bW * 0.35, 3, bW * 0.7, 5);
+      }
+
+      // Wooden seat thwart
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(-20, -13, 40, 6);
+
+      // Angler sitting on boat
+      ctx.save();
+      ctx.translate(-2, -12);
+      ctx.scale(1.2, 1.2);
+      drawAngler(ctx, save.data.appearance || {});
+      ctx.restore();
+
+      // Selected Deck Trinket
+      if (selectedTrinket && selectedTrinket !== 'none') {
+        drawBoatTrinket(ctx, selectedTrinket, vessel, animTimer, bW, bH);
+      }
+
+      ctx.restore();
+
+      // Front wave layer
+      ctx.fillStyle = 'rgba(2, 132, 199, 0.7)';
+      ctx.beginPath();
+      ctx.moveTo(0, waterY + 6);
+      for (let x = 0; x <= w; x += 18) {
+        const y = waterY + 6 + Math.sin(x * 0.025 + animTimer * 2.5 + 1) * 4;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.closePath();
+      ctx.fill();
+
+      animFrame = requestAnimationFrame(renderPreview);
+    };
+
+    renderPreview();
+    updateControls();
+
+    // Tab switching
+    document.querySelectorAll('.boat-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.boat-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.boat-tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const tabKey = btn.getAttribute('data-boat-tab');
+        const target = document.getElementById(`boat-tab-${tabKey}`);
+        if (target) target.classList.add('active');
+        updateControls();
+      });
+    });
+
+    // Selecting Trinkets
+    document.querySelectorAll('[data-boat-type="trinket"]').forEach(card => {
+      card.addEventListener('click', () => {
+        selectedTrinket = card.getAttribute('data-boat-id');
+        const status = document.getElementById('boat-studio-status');
+        const trk = BOAT_TRINKETS[selectedTrinket];
+        if (status && trk) status.textContent = `Selected: ${trk.label} — ${trk.desc}`;
+        updateControls();
+      });
+    });
+
+    // Selecting Skins
+    document.querySelectorAll('[data-boat-type="skin"]').forEach(card => {
+      card.addEventListener('click', () => {
+        selectedSkin = card.getAttribute('data-boat-id');
+        const status = document.getElementById('boat-studio-status');
+        const sk = BOAT_SKIN_OPTIONS[selectedSkin];
+        if (status && sk) status.textContent = `Selected: ${sk.label} — ${sk.desc}`;
+        updateControls();
+      });
+    });
+
+    // Apply Button
+    const applyBtn = document.getElementById('btn-boat-apply');
+    if (applyBtn) {
+      applyBtn.addEventListener('click', async () => {
+        const activeTab = document.querySelector('.boat-tab-btn.active')?.getAttribute('data-boat-tab') || 'trinkets';
+        if (activeTab === 'trinkets') {
+          const isOwned = save.hasBoatTrinket(selectedTrinket);
+          if (isOwned) {
+            save.setBoatTrinket(selectedTrinket);
+            this.showToast(`Mounted ${BOAT_TRINKETS[selectedTrinket].label} on deck! ⛵`);
+          } else {
+            const success = await (save.gemShop ? save.gemShop.purchase('boatTrinket', selectedTrinket, () => save.purchaseBoatTrinket(selectedTrinket)) : save.purchaseBoatTrinket(selectedTrinket));
+            if (!success) {
+              this.showToast('Not enough gems to unlock trinket!');
+              return;
+            }
+            this.showToast(`Unlocked & mounted ${BOAT_TRINKETS[selectedTrinket].label}! 💎`);
+          }
+        } else {
+          const isOwned = save.hasBoatSkin(selectedSkin);
+          if (isOwned) {
+            save.setBoatSkin(selectedSkin);
+            this.showToast(`Applied ${BOAT_SKIN_OPTIONS[selectedSkin].label} hull paint! 🎨`);
+          } else {
+            const success = await (save.gemShop ? save.gemShop.purchase('boatSkin', selectedSkin, () => save.purchaseBoatSkin(selectedSkin)) : save.purchaseBoatSkin(selectedSkin));
+            if (!success) {
+              this.showToast('Not enough gems to unlock hull paint!');
+              return;
+            }
+            this.showToast(`Unlocked & applied ${BOAT_SKIN_OPTIONS[selectedSkin].label}! 💎`);
+          }
+        }
+        // Re-render modal to refresh badges & costs
+        if (this.activeModal === 'boat_customization') {
+          this.openBoatCustomization();
+        }
+      });
+    }
+
+    // Done button
+    document.getElementById('btn-boat-done')?.addEventListener('click', () => {
+      if (animFrame) cancelAnimationFrame(animFrame);
+      this.openSettings();
+    });
+
+    // Go to Angler Look button
+    document.getElementById('btn-boat-goto-angler')?.addEventListener('click', () => {
+      if (animFrame) cancelAnimationFrame(animFrame);
+      this.openAppearance();
+    });
   }
 
   openSettings() {
@@ -4651,9 +5078,12 @@ export class UIManager {
         </div>
 
         <div class="settings-section">
-          <h3><span class="settings-sec-icon">${SETTINGS_ART.angler}</span> Your Angler</h3>
-          <p>Choose your colors, coat style, and headwear.</p>
-          <button class="btn btn-primary" id="btn-customize-angler">Customize Appearance</button>
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.angler}</span> Vessel & Angler Customization</h3>
+          <p>Customize your boat hull accents & deck trinkets, or change your angler colors, coat style, and headwear.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+            <button class="btn btn-primary" id="btn-customize-boat">⛵ Customize Boat & Trinkets</button>
+            <button class="btn btn-secondary" id="btn-customize-angler">👤 Customize Angler</button>
+          </div>
         </div>
 
         <div class="settings-section career-section">
@@ -4718,6 +5148,7 @@ export class UIManager {
 
     this.openModal('Settings & Career Records', modalBody);
 
+    document.getElementById('btn-customize-boat')?.addEventListener('click', () => this.openBoatCustomization());
     document.getElementById('btn-customize-angler')?.addEventListener('click', () => this.openAppearance());
     document.getElementById('btn-cloud-save')?.addEventListener('click', async () => {
       this.saveSystem.save();
