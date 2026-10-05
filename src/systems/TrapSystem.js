@@ -4,21 +4,21 @@ import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 // Allows players to passively accumulate coastal crabs, pearls, shells, and fossil fragments
 
 export const TRAP_LOOT_TABLE = [
-  { id: 'dungeness_crab', name: 'Coastal Dungeness Crab', icon: '🦀', value: 45, xp: 30, type: 'catch' },
-  { id: 'blue_king_crab', name: 'Giant Blue King Crab', icon: '🦀', value: 130, xp: 60, type: 'catch' },
-  { id: 'spiny_lobster', name: 'Deepsea Spiny Lobster', icon: '🦞', value: 240, xp: 90, type: 'catch' },
-  { id: 'pearl_oyster', name: 'Shimmering Pearl Oyster', icon: '🦪', value: 160, xp: 55, type: 'catch' },
-  { id: 'ancient_nautilus', name: 'Ancient Spiral Shell', icon: '🐚', value: 90, xp: 40, type: 'catch' },
-  { id: 'gold_doubloon_cluster', name: 'Barnacled Coin Cluster', icon: '🪙', value: 200, xp: 50, type: 'currency' },
-  { id: 'fossil_fragment_megalodon', name: 'Megalodon Jaw Fragment', icon: '🦴', value: 450, xp: 120, type: 'skeleton', target: 'megalodonJaw' },
-  { id: 'fossil_fragment_dunkleosteus', name: 'Dunkleosteus Armor Plate', icon: '🦴', value: 500, xp: 130, type: 'skeleton', target: 'dunkleosteus' },
-  { id: 'fossil_fragment_plesiosaur', name: 'Plesiosaur Vertebra', icon: '🦴', value: 600, xp: 150, type: 'skeleton', target: 'plesiosaur' },
+  { id: 'dungeness_crab', name: 'Coastal Dungeness Crab', icon: '🦀', value: 90, xp: 30, type: 'catch' },
+  { id: 'blue_king_crab', name: 'Giant Blue King Crab', icon: '🦀', value: 260, xp: 60, type: 'catch' },
+  { id: 'spiny_lobster', name: 'Deepsea Spiny Lobster', icon: '🦞', value: 480, xp: 90, type: 'catch' },
+  { id: 'pearl_oyster', name: 'Shimmering Pearl Oyster', icon: '🦪', value: 320, xp: 55, type: 'catch' },
+  { id: 'ancient_nautilus', name: 'Ancient Spiral Shell', icon: '🐚', value: 180, xp: 40, type: 'catch' },
+  { id: 'gold_doubloon_cluster', name: 'Barnacled Coin Cluster', icon: '🪙', value: 400, xp: 50, type: 'currency' },
+  { id: 'fossil_fragment_megalodon', name: 'Megalodon Jaw Fragment', icon: '🦴', value: 900, xp: 120, type: 'skeleton', target: 'megalodonJaw' },
+  { id: 'fossil_fragment_dunkleosteus', name: 'Dunkleosteus Armor Plate', icon: '🦴', value: 1000, xp: 130, type: 'skeleton', target: 'dunkleosteus' },
+  { id: 'fossil_fragment_plesiosaur', name: 'Plesiosaur Vertebra', icon: '🦴', value: 1200, xp: 150, type: 'skeleton', target: 'plesiosaur' },
 ];
 
 export class TrapSystem {
   constructor(saveSystem) {
     this.saveSystem = saveSystem;
-    this.cycleTimeSeconds = 120; // Every 2 minutes per trap roll
+    this.cycleTimeSeconds = 240; // 4 minutes per trap roll (2x longer soak time)
     this.cycleTimer = 0;
     this.lastTickTime = Date.now();
 
@@ -118,7 +118,9 @@ export class TrapSystem {
     let skeletonPieces = 0;
 
     items.forEach((item) => {
-      totalGold += item.value;
+      const ref = TRAP_LOOT_TABLE.find(l => l.id === item.id);
+      const val = ref ? ref.value : ((item.value && item.value >= 90) ? item.value : (item.value || 45) * 2);
+      totalGold += val;
       totalXp += item.xp;
 
       if (item.type === 'skeleton' && item.target) {
@@ -156,7 +158,9 @@ export class TrapSystem {
     const trapCount = this.getTrapCount();
     if (trapCount <= 0) return;
 
+    const capacity = this.getStorageCapacity();
     const storedCount = this.getStoredItems().length;
+    const isFull = capacity > 0 && storedCount >= capacity;
 
     ctx.save();
     for (let i = 0; i < trapCount; i++) {
@@ -166,18 +170,31 @@ export class TrapSystem {
       const by = surfaceY - cameraY + waveBob;
 
       // Tether rope extending downward
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = isFull ? 'rgba(45, 212, 191, 0.7)' : 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = isFull ? 1.6 : 1.2;
       ctx.beginPath();
       ctx.moveTo(bx, by);
       ctx.lineTo(bx + Math.sin(b.bobTimer * 0.5) * 6, by + 50);
       ctx.stroke();
 
-      // Buoy Body (Bright Orange / Yellow coastal marker)
+      // Buoy Body (Bright Orange / Yellow coastal marker with full quest-like biolum radiance)
+      if (isFull) {
+        ctx.shadowColor = '#2dd4bf';
+        ctx.shadowBlur = 14 + Math.sin(b.bobTimer * 4) * 5;
+      }
       ctx.fillStyle = i === 0 ? '#ea580c' : i === 1 ? '#eab308' : '#0284c7';
       ctx.beginPath();
       ctx.ellipse(bx, by - 4, 10, 13, 0, 0, Math.PI * 2);
       ctx.fill();
+      if (isFull) {
+        ctx.shadowBlur = 0;
+        // Shimmering outer beacon ring
+        ctx.strokeStyle = `rgba(45, 212, 191, ${0.45 + 0.35 * Math.sin(b.bobTimer * 4)})`;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.arc(bx, by - 4, 16 + Math.sin(b.bobTimer * 3) * 2.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
 
       // White stripe
       ctx.fillStyle = '#ffffff';
@@ -192,7 +209,7 @@ export class TrapSystem {
       ctx.stroke();
 
       // Tiny flag
-      ctx.fillStyle = storedCount > 0 ? '#22c55e' : '#ef4444';
+      ctx.fillStyle = isFull ? '#2dd4bf' : storedCount > 0 ? '#22c55e' : '#ef4444';
       ctx.beginPath();
       ctx.moveTo(bx, by - 26);
       ctx.lineTo(bx + 8, by - 22);

@@ -197,42 +197,195 @@ export class Hazard {
         ctx.beginPath(); ctx.moveTo(-r * 0.1, -r * 0.4); ctx.lineTo(r * 0.15, -r * 0.1); ctx.lineTo(-r * 0.05, r * 0.3); ctx.stroke();
         ctx.restore();
       } else if (ruinsVariant === 1) {
-        // Sunken Poseidon Trident Spire & Relic Dais
+        // Sunken Poseidon Imperial Trident Spire
         ctx.save();
-        // Central shaft & base dais
-        ctx.fillStyle = '#d97706'; ctx.strokeStyle = '#78350f'; ctx.lineWidth = 1.5;
-        ctx.fillRect(-r * 0.12, -r * 0.4, r * 0.24, r * 1.1);
-        ctx.strokeRect(-r * 0.12, -r * 0.4, r * 0.24, r * 1.1);
-        // Stepped dais base
-        ctx.fillStyle = '#1e293b'; ctx.strokeStyle = '#059669'; ctx.lineWidth = 1.2;
-        ctx.fillRect(-r * 0.6, r * 0.65, r * 1.2, r * 0.25);
-        ctx.strokeRect(-r * 0.6, r * 0.65, r * 1.2, r * 0.25);
-        // Crossbar & prongs
-        ctx.fillStyle = '#f59e0b'; ctx.strokeStyle = '#b45309'; ctx.lineWidth = 1.5;
+
+        // 1. Ancient Atlantean Pedestal Base / Submerged Stone Plinth
+        const baseGrad = ctx.createLinearGradient(-r * 0.5, 0, r * 0.5, 0);
+        baseGrad.addColorStop(0, '#1e293b');
+        baseGrad.addColorStop(0.5, '#334155');
+        baseGrad.addColorStop(1, '#0f172a');
+        ctx.fillStyle = baseGrad;
+        ctx.strokeStyle = '#059669';
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        // Crossbar
-        ctx.rect(-r * 0.6, -r * 0.42, r * 1.2, r * 0.18);
-        // Left prong
-        ctx.moveTo(-r * 0.55, -r * 0.42);
-        ctx.quadraticCurveTo(-r * 0.7, -r * 0.75, -r * 0.45, -r * 0.95);
-        ctx.lineTo(-r * 0.35, -r * 0.75);
-        ctx.quadraticCurveTo(-r * 0.45, -r * 0.55, -r * 0.38, -r * 0.42);
-        // Central spearhead
-        ctx.moveTo(-r * 0.15, -r * 0.42);
-        ctx.lineTo(0, -r);
-        ctx.lineTo(r * 0.15, -r * 0.42);
-        // Right prong
-        ctx.moveTo(r * 0.38, -r * 0.42);
-        ctx.quadraticCurveTo(r * 0.45, -r * 0.55, r * 0.35, -r * 0.75);
-        ctx.lineTo(r * 0.45, -r * 0.95);
-        ctx.quadraticCurveTo(r * 0.7, -r * 0.75, r * 0.55, -r * 0.42);
+        ctx.moveTo(-r * 0.45, r * 0.88);
+        ctx.lineTo(r * 0.45, r * 0.88);
+        ctx.lineTo(r * 0.35, r * 0.72);
+        ctx.lineTo(-r * 0.35, r * 0.72);
         ctx.closePath();
-        ctx.fill(); ctx.stroke();
-        // Glowing Aquamarine Gem in trident heart
-        const gemGrad = ctx.createRadialGradient(0, -r * 0.32, 0, 0, -r * 0.32, r * 0.22);
-        gemGrad.addColorStop(0, '#ffffff'); gemGrad.addColorStop(0.5, '#2dd4bf'); gemGrad.addColorStop(1, '#0f766e');
+        ctx.fill();
+        ctx.stroke();
+
+        // 2. Shaft (Forged Orichalcum & Deepsea Bronze)
+        const shaftGrad = ctx.createLinearGradient(-r * 0.08, 0, r * 0.08, 0);
+        shaftGrad.addColorStop(0, '#78350f');
+        shaftGrad.addColorStop(0.25, '#d97706');
+        shaftGrad.addColorStop(0.55, '#fef08a');
+        shaftGrad.addColorStop(0.8, '#b45309');
+        shaftGrad.addColorStop(1, '#451a03');
+
+        // Shaft main pillar
+        ctx.fillStyle = shaftGrad;
+        ctx.fillRect(-r * 0.07, -r * 0.32, r * 0.14, r * 1.05);
+
+        // Shaft spiral grip / Atlantean wire wrapping
+        ctx.strokeStyle = 'rgba(254, 240, 138, 0.55)';
+        ctx.lineWidth = 1.2;
+        for (let sp = -r * 0.25; sp <= r * 0.65; sp += r * 0.12) {
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.07, sp);
+          ctx.lineTo(r * 0.07, sp + r * 0.05);
+          ctx.stroke();
+        }
+
+        // Pommel / bottom counter-spike
+        ctx.fillStyle = '#b45309';
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.09, r * 0.73);
+        ctx.lineTo(0, r * 0.82);
+        ctx.lineTo(r * 0.09, r * 0.73);
+        ctx.closePath();
+        ctx.fill();
+
+        // Collar ring below trident head
+        ctx.fillStyle = '#fde047';
+        ctx.strokeStyle = '#92400e';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.3, r * 0.11, r * 0.04, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 3. Trident Head: Left and Right Swept Tines (Curved, Barbed & Beveled)
+        const bronzeGrad = ctx.createLinearGradient(-r * 0.6, 0, r * 0.6, 0);
+        bronzeGrad.addColorStop(0, '#b45309');
+        bronzeGrad.addColorStop(0.2, '#facc15');
+        bronzeGrad.addColorStop(0.5, '#fef08a');
+        bronzeGrad.addColorStop(0.8, '#facc15');
+        bronzeGrad.addColorStop(1, '#b45309');
+
+        // Left Tine (Sculpted S-curve with barb)
+        ctx.fillStyle = bronzeGrad;
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.3;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.06, -r * 0.32);
+        ctx.bezierCurveTo(-r * 0.35, -r * 0.34, -r * 0.58, -r * 0.45, -r * 0.54, -r * 0.72);
+        ctx.lineTo(-r * 0.56, -r * 0.82);
+        ctx.lineTo(-r * 0.51, -r * 0.84); // Barb hook
+        ctx.lineTo(-r * 0.48, -r * 0.95); // Needle tip
+        ctx.lineTo(-r * 0.44, -r * 0.82);
+        ctx.bezierCurveTo(-r * 0.42, -r * 0.55, -r * 0.25, -r * 0.44, -r * 0.06, -r * 0.40);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Left Tine Ridge highlight
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.48, -r * 0.94);
+        ctx.bezierCurveTo(-r * 0.50, -r * 0.75, -r * 0.44, -r * 0.50, -r * 0.15, -r * 0.37);
+        ctx.stroke();
+
+        // Right Tine (Symmetrical mirror)
+        ctx.beginPath();
+        ctx.moveTo(r * 0.06, -r * 0.32);
+        ctx.bezierCurveTo(r * 0.35, -r * 0.34, r * 0.58, -r * 0.45, r * 0.54, -r * 0.72);
+        ctx.lineTo(r * 0.56, -r * 0.82);
+        ctx.lineTo(r * 0.51, -r * 0.84); // Barb hook
+        ctx.lineTo(r * 0.48, -r * 0.95); // Needle tip
+        ctx.lineTo(r * 0.44, -r * 0.82);
+        ctx.bezierCurveTo(r * 0.42, -r * 0.55, r * 0.25, -r * 0.44, r * 0.06, -r * 0.40);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Right Tine Ridge highlight
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(r * 0.48, -r * 0.94);
+        ctx.bezierCurveTo(r * 0.50, -r * 0.75, r * 0.44, -r * 0.50, r * 0.15, -r * 0.37);
+        ctx.stroke();
+
+        // 4. Center Primary Spearhead (Classic Atlantean Leaf Blade with Medial Spine)
+        ctx.fillStyle = bronzeGrad;
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.1, -r * 0.40);
+        ctx.lineTo(-r * 0.14, -r * 0.52);
+        ctx.lineTo(-r * 0.08, -r * 0.56); // Blade shoulder barb
+        ctx.lineTo(-r * 0.12, -r * 0.76); // Leaf curve out
+        ctx.lineTo(0, -r * 0.98); // Apex tip
+        ctx.lineTo(r * 0.12, -r * 0.76);
+        ctx.lineTo(r * 0.08, -r * 0.56);
+        ctx.lineTo(r * 0.14, -r * 0.52);
+        ctx.lineTo(r * 0.1, -r * 0.40);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Center Blade Medial Ridge Spine
+        ctx.strokeStyle = '#fef9c3';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.97);
+        ctx.lineTo(0, -r * 0.42);
+        ctx.stroke();
+
+        // 5. Verdigris Ancient Sea Patina Accents
+        ctx.fillStyle = 'rgba(20, 184, 166, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(-r * 0.22, -r * 0.42, r * 0.07, r * 0.04, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(r * 0.25, -r * 0.46, r * 0.06, r * 0.04, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(0, r * 0.1, r * 0.04, r * 0.12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 6. Glowing Heart Gem (Heart of the Ocean / Atlantean Prismatic Eye)
+        const gemPulse = 0.85 + 0.15 * Math.sin(this.timer * 3.5);
+        const gemGlow = ctx.createRadialGradient(0, -r * 0.38, 0, 0, -r * 0.38, r * 0.25);
+        gemGlow.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+        gemGlow.addColorStop(0.4, 'rgba(45, 212, 191, 0.4)');
+        gemGlow.addColorStop(1, 'rgba(45, 212, 191, 0)');
+        ctx.fillStyle = gemGlow;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.38, r * 0.25 * gemPulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Gold Gem Bezel
+        ctx.fillStyle = '#fef08a';
+        ctx.strokeStyle = '#854d0e';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.38, r * 0.11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Faceted Aquamarine Core
+        const gemGrad = ctx.createRadialGradient(-r * 0.03, -r * 0.41, 0, 0, -r * 0.38, r * 0.1);
+        gemGrad.addColorStop(0, '#ffffff');
+        gemGrad.addColorStop(0.4, '#38bdf8');
+        gemGrad.addColorStop(0.8, '#0891b2');
+        gemGrad.addColorStop(1, '#0e7490');
         ctx.fillStyle = gemGrad;
-        ctx.beginPath(); ctx.arc(0, -r * 0.32, r * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.38, r * 0.08, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Brilliant diamond sparkle
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-r * 0.025, -r * 0.405, r * 0.025, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
       } else {
         // Sunken Clockwork Astrolabe & Gilded Gate

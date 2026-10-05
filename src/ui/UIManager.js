@@ -24,6 +24,7 @@ import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART } from './CustomVectorArt.js';
+import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -747,12 +748,16 @@ export class UIManager {
     // Update trap count in HUD (only visible if traps have been purchased!)
     if (this.trapSystem) {
       const trapCount = this.trapSystem.getTrapCount();
+      const capacity = this.trapSystem.getMaxCapacity();
       const trappedCount = this.trapSystem.getStoredItems().length;
+      const isFull = capacity > 0 && trappedCount >= capacity;
       const trapBadge = document.getElementById('hud-trap-badge');
       const trapBtn = document.getElementById('btn-traps-hud');
       if (trapBtn) {
         if (trapCount > 0) {
           trapBtn.style.display = 'inline-flex';
+          trapBtn.classList.toggle('quest-ready', isFull);
+          trapBtn.classList.toggle('trap-full', isFull);
           if (trapBadge) {
             if (trappedCount > 0) {
               trapBadge.style.display = 'inline-block';
@@ -765,6 +770,7 @@ export class UIManager {
           }
         } else {
           trapBtn.style.display = 'none';
+          trapBtn.classList.remove('quest-ready', 'trap-full');
         }
       }
     }
@@ -2701,17 +2707,19 @@ export class UIManager {
           <div class="empty-trap-box">
             <span style="font-size: 2.5rem; display:inline-block; width:52px; height:52px; margin-bottom:8px;">${MISC_ART.trapPot}</span>
             <p>Your seabed pots are actively soaking in coastal waters!</p>
-            <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 2 minutes even while in other tabs.</p>
+            <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 4 minutes even while in other tabs.</p>
           </div>
         `;
       } else {
         items.forEach((it) => {
+          const lootDef = TRAP_LOOT_TABLE.find(entry => entry.id === it.id);
+          const resolvedValue = lootDef ? lootDef.value : (it.value || 0);
           itemsHtml += `
             <div class="trap-item-pill">
               <span class="trap-item-icon">${it.icon || '🦀'}</span>
               <div class="trap-item-info">
                 <strong>${it.name}</strong>
-                <span>+$${it.value} • +${it.xp} XP</span>
+                <span>+$${resolvedValue} • +${it.xp || 10} XP</span>
               </div>
             </div>
           `;
@@ -2733,7 +2741,7 @@ export class UIManager {
             </div>
             <div class="stat-box">
               <span class="stat-label">Cycle Speed</span>
-              <span class="stat-value">2.0 mins / soak</span>
+              <span class="stat-value">4.0 mins / soak</span>
             </div>
           </div>
 

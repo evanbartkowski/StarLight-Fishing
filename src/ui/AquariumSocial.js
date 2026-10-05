@@ -93,9 +93,41 @@ export async function visitAquarium(ui, host) {
       finally { ui.socialBusy = false; }
     };
   } catch (error) {
-    if (request !== ui._aquariumVisitRequest || !loading.isConnected) return;
-    loading.textContent = error.code === 'functions/not-found' ? 'This captain has not synced an aquarium yet.' : error.code === 'functions/failed-precondition' ? 'This captain has not unlocked an aquarium yet.' : 'The aquarium could not load. Please try again.';
-    ui.showToast(error.code === 'functions/unauthenticated' ? 'Sign in to a captain account to visit aquariums.' : error.code === 'functions/failed-precondition' ? 'This captain has not unlocked an aquarium yet.' : error.message);
+    if (request !== ui._aquariumVisitRequest || !loading?.isConnected) return;
+    const errCode = String(error?.code || '').toLowerCase();
+    const errMsg = String(error?.message || '').toLowerCase();
+    const isNotAvailable = errCode.includes('not-found')
+      || errCode.includes('failed-precondition')
+      || errCode.includes('unavailable')
+      || errMsg.includes('404')
+      || errMsg.includes('not found')
+      || errMsg.includes('cannot be completed')
+      || errMsg.includes('not synced')
+      || errMsg.includes('not unlocked')
+      || errMsg.includes('invalid argument');
+
+    if (isNotAvailable) {
+      ui.openModal('Aquarium Not Available', `
+        <div style="text-align: center; padding: 22px 10px;">
+          <div style="font-size: 2.4rem; margin-bottom: 8px;">🏛️</div>
+          <h3 style="color: #f8fafc; margin-bottom: 8px; font-size: 1.15rem;">Aquarium Not Available</h3>
+          <p style="color: #94a3b8; font-size: 0.9rem; max-width: 360px; margin: 0 auto 18px auto; line-height: 1.45;">
+            This captain does not currently have an aquarium on display.
+          </p>
+          <button class="btn btn-secondary" id="btn-close-visitor-aquarium">Return</button>
+        </div>
+      `);
+      document.getElementById('btn-close-visitor-aquarium')?.addEventListener('click', () => {
+        ui.closeModal();
+      });
+      ui.showToast('Aquarium not available.');
+    } else if (errCode.includes('unauthenticated')) {
+      loading.textContent = 'Sign in to a captain account to visit aquariums.';
+      ui.showToast('Sign in to a captain account to visit aquariums.');
+    } else {
+      loading.textContent = 'The aquarium could not load. Please try again.';
+      ui.showToast('The aquarium could not load. Please try again.');
+    }
   }
 }
 
