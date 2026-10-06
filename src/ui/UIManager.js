@@ -3638,6 +3638,7 @@ export class UIManager {
     const theme = save.data.aquarium?.theme || 'reef';
     const pendingTips = save.calculatePendingVisitorTips();
     const currentTier = save.getUpgradeLevel('personalAquarium') || 1;
+    const maxTipCap = save.getVisitorTipCapacity ? save.getVisitorTipCapacity() : currentTier * 750;
 
     let inhabitantsCardsHtml = '';
     items.forEach((item) => {
@@ -3678,8 +3679,8 @@ export class UIManager {
             <strong>${items.length} / ${capacity} Slots (Tier ${currentTier})</strong>
           </div>
           <div class="aq-stat-pill aq-tips-pill">
-            <span class="aq-lbl" title="Each fish earns tips by rarity. More fish and rarer catches increase earnings; stores up to one hour of tips.">Visitor Tips ($${save.getVisitorTipRate().toLocaleString()}/min):</span>
-            <strong style="color: #facc15;">🪙 $${pendingTips.toLocaleString()}</strong>
+            <span class="aq-lbl" title="Each fish earns tips by rarity. Max tip vault scales with tank upgrade tier and highest unlocked realm.">Visitor Tips ($${save.getVisitorTipRate().toLocaleString()}/min):</span>
+            <strong style="color: #facc15;">🪙 $${pendingTips.toLocaleString()} <span style="font-size:0.78rem; opacity:0.8; font-weight:normal; color:#cbd5e1;">/ Max $${maxTipCap.toLocaleString()}</span></strong>
             <button class="btn btn-sm btn-buy" id="btn-collect-tips" ${pendingTips > 0 ? '' : 'disabled'}>💰 Collect</button>
           </div>
           <div class="aq-theme-selector">

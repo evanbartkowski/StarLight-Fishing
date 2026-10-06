@@ -49,18 +49,240 @@ export function drawAquariumDecor(ctx, width, height, options, time) {
     ctx.beginPath(); ctx.ellipse((i * 73) % width, floor + 6 + (i * 13) % 29, look.substrate === 'pebbles' ? 5 : 2, 2, 0, 0, Math.PI * 2); ctx.fill();
   }
   for (let i = 0; i < 6; i++) {
-    const x = 28 + i * (width - 56) / 5;
-    if (look.decoration === 'kelp' || look.decoration === 'coral') {
-      ctx.strokeStyle = look.decoration === 'kelp' ? '#2dd4bf' : ['#fb7185', '#c084fc', '#fb923c'][i % 3];
-      ctx.lineWidth = look.decoration === 'kelp' ? 5 : 7; ctx.lineCap = 'round';
-      for (let j = -1; j <= 1; j++) {
-        ctx.beginPath(); ctx.moveTo(x, floor); ctx.quadraticCurveTo(x + j * 22, floor - 28, x + j * 17 + Math.sin(time + i) * 5, floor - 48 - (i % 3) * 12); ctx.stroke();
+    const x = 32 + i * (width - 64) / 5;
+    if (look.decoration === 'kelp') {
+      // Lush multi-frond Giant Bull Kelp forest with stipes, gas bladders (pneumatocysts) & serrated undulating blades
+      const kelpSway = Math.sin(time * 1.8 + i * 0.9) * 14;
+      const kelpGrad = ctx.createLinearGradient(x, floor, x + kelpSway, floor - 140);
+      kelpGrad.addColorStop(0, '#064e3b');
+      kelpGrad.addColorStop(0.5, '#059669');
+      kelpGrad.addColorStop(1, '#34d399');
+
+      // Main flexible stipe
+      ctx.strokeStyle = kelpGrad;
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, floor);
+      ctx.quadraticCurveTo(x + kelpSway * 0.4, floor - 50, x + kelpSway, floor - 110 - (i % 3) * 18);
+      ctx.stroke();
+
+      // Swaying ribbon blades & floating bulbs along the stalk
+      for (let f = 1; f <= 4; f++) {
+        const fy = floor - f * 24;
+        const fx = x + kelpSway * (f / 4.2);
+        const fSide = (f % 2 === 0 ? 1 : -1);
+        const bladeWave = Math.sin(time * 2.2 + f + i) * 8;
+
+        // Pneumatocyst bulb
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.arc(fx + fSide * 3, fy, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Flowing serrated blade
+        ctx.fillStyle = f % 2 === 0 ? '#10b981' : '#34d399';
+        ctx.beginPath();
+        ctx.moveTo(fx + fSide * 3, fy);
+        ctx.quadraticCurveTo(fx + fSide * 18 + bladeWave * 0.5, fy - 8, fx + fSide * 32 + bladeWave, fy - 14);
+        ctx.quadraticCurveTo(fx + fSide * 16 + bladeWave * 0.5, fy - 4, fx + fSide * 3, fy + 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (look.decoration === 'coral') {
+      // Vibrant Staghorn & Table Coral Reef Grove with waving sea anemones and glowing polyps
+      const colPalette = [
+        { main: '#f43f5e', light: '#fda4af', dark: '#9f1239' },
+        { main: '#a855f7', light: '#d8b4fe', dark: '#6b21a8' },
+        { main: '#f97316', light: '#fed7aa', dark: '#9a3412' }
+      ][i % 3];
+
+      // Branching coral structure
+      ctx.strokeStyle = colPalette.main;
+      ctx.fillStyle = colPalette.dark;
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, floor);
+      ctx.lineTo(x, floor - 32);
+      ctx.stroke();
+
+      // Branching antler prongs
+      ctx.lineWidth = 4;
+      for (const side of [-1, 1]) {
+        const bx = x + side * 14;
+        const by = floor - 54 - (i % 2) * 12;
+        ctx.beginPath();
+        ctx.moveTo(x, floor - 24);
+        ctx.quadraticCurveTo(x + side * 6, floor - 38, bx, by);
+        ctx.stroke();
+
+        // Secondary antler fork
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(x + side * 8, floor - 36);
+        ctx.lineTo(x + side * 22, by + 6);
+        ctx.stroke();
+
+        // Glowing coral polyp tips
+        ctx.fillStyle = colPalette.light;
+        ctx.beginPath();
+        ctx.arc(bx, by, 3, 0, Math.PI * 2);
+        ctx.arc(x + side * 22, by + 6, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Base sea anemone with gentle waving tentacles
+      ctx.fillStyle = colPalette.main;
+      ctx.beginPath();
+      ctx.arc(x, floor - 6, 11, Math.PI, 0);
+      ctx.fill();
+      ctx.strokeStyle = colPalette.light;
+      ctx.lineWidth = 1.8;
+      for (let t = -4; t <= 4; t++) {
+        const tx = x + t * 2.4;
+        const tWave = Math.sin(time * 2.8 + t + i) * 5;
+        ctx.beginPath();
+        ctx.moveTo(tx, floor - 10);
+        ctx.quadraticCurveTo(tx + tWave * 0.4, floor - 18, tx + tWave, floor - 25);
+        ctx.stroke();
       }
     } else if (look.decoration === 'ruins') {
-      ctx.fillStyle = '#94a3b8'; ctx.fillRect(x - 14, floor - 50, 9, 50); ctx.fillRect(x + 12, floor - 50, 9, 50); ctx.fillRect(x - 18, floor - 58, 43, 10);
+      // Classical Greco-Roman Sunken Temple Arches & Corinthian Columns with verdigris vine creepers
+      ctx.save();
+      const colW = 10;
+      const archH = 56 + (i % 2) * 14;
+      const leftX = x - 18;
+      const rightX = x + 18;
+
+      // Weathered marble column shafts with fluting
+      const marbleGrad = ctx.createLinearGradient(leftX, 0, rightX, 0);
+      marbleGrad.addColorStop(0, '#94a3b8');
+      marbleGrad.addColorStop(0.3, '#cbd5e1');
+      marbleGrad.addColorStop(0.7, '#f1f5f9');
+      marbleGrad.addColorStop(1, '#64748b');
+
+      // Left & right pillars
+      for (const px of [leftX, rightX]) {
+        ctx.fillStyle = marbleGrad;
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1.2;
+        // Plinth base
+        ctx.fillRect(px - 7, floor - 8, 14, 8);
+        ctx.strokeRect(px - 7, floor - 8, 14, 8);
+        // Column shaft
+        ctx.fillRect(px - colW * 0.5, floor - archH, colW, archH - 8);
+        ctx.strokeRect(px - colW * 0.5, floor - archH, colW, archH - 8);
+        // Column fluting lines
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px - 2, floor - archH + 2); ctx.lineTo(px - 2, floor - 10);
+        ctx.moveTo(px + 2, floor - archH + 2); ctx.lineTo(px + 2, floor - 10);
+        ctx.stroke();
+        // Capital
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(px - 8, floor - archH - 5, 16, 5);
+      }
+
+      // Rounded classical roman archway lintel connecting columns
+      ctx.fillStyle = '#e2e8f0';
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(x, floor - archH, 20, Math.PI, 0);
+      ctx.lineTo(rightX + 8, floor - archH);
+      ctx.lineTo(rightX + 8, floor - archH - 7);
+      ctx.arc(x, floor - archH - 7, 26, 0, Math.PI, true);
+      ctx.lineTo(leftX - 8, floor - archH);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Keystone carving
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(x - 3.5, floor - archH - 12, 7, 8);
+
+      // Verdigris seaweed / ivy vines clinging to the ruins
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(leftX - 3, floor);
+      ctx.quadraticCurveTo(leftX + 4, floor - archH * 0.5, leftX - 1, floor - archH);
+      ctx.quadraticCurveTo(x, floor - archH - 8, rightX + 2, floor - archH + 12);
+      ctx.stroke();
+      ctx.restore();
     } else if (look.decoration === 'crystals') {
-      ctx.fillStyle = ['#a78bfa', '#67e8f9', '#f0abfc'][i % 3];
-      ctx.beginPath(); ctx.moveTo(x - 14, floor); ctx.lineTo(x - 9, floor - 38); ctx.lineTo(x + 4, floor - 63); ctx.lineTo(x + 17, floor - 30); ctx.lineTo(x + 12, floor); ctx.closePath(); ctx.fill();
+      // Radiant Prismatic Geode Cluster with faceted quartz pillars & sparkling internal refraction
+      ctx.save();
+      const crystalColors = [
+        { gem: '#a855f7', glow: '#c084fc', highlight: '#f3e8ff' },
+        { gem: '#06b6d4', glow: '#38bdf8', highlight: '#e0f2fe' },
+        { gem: '#f43f5e', glow: '#fb7185', highlight: '#ffe4e6' },
+      ][i % 3];
+
+      // Dark basalt geode matrix pedestal
+      ctx.fillStyle = '#1c1917';
+      ctx.strokeStyle = '#44403c';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.ellipse(x, floor - 3, 24, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Cluster of 3 faceted crystals (tall center, leaning left & right)
+      const spires = [
+        { ox: -11, h: 42, w: 9, rot: -0.22 },
+        { ox: 0, h: 68, w: 12, rot: 0.05 },
+        { ox: 12, h: 36, w: 8, rot: 0.28 },
+      ];
+
+      for (const sp of spires) {
+        ctx.save();
+        ctx.translate(x + sp.ox, floor - 4);
+        ctx.rotate(sp.rot);
+
+        // Radiant crystal body gradient
+        const cGrad = ctx.createLinearGradient(-sp.w * 0.5, 0, sp.w * 0.5, 0);
+        cGrad.addColorStop(0, crystalColors.gem);
+        cGrad.addColorStop(0.5, crystalColors.highlight);
+        cGrad.addColorStop(1, crystalColors.glow);
+        ctx.fillStyle = cGrad;
+        ctx.strokeStyle = crystalColors.glow;
+        ctx.lineWidth = 1.2;
+
+        // Faceted crystal spire
+        ctx.beginPath();
+        ctx.moveTo(-sp.w * 0.5, 0);
+        ctx.lineTo(-sp.w * 0.5, -sp.h * 0.7);
+        ctx.lineTo(0, -sp.h);
+        ctx.lineTo(sp.w * 0.5, -sp.h * 0.7);
+        ctx.lineTo(sp.w * 0.5, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Sharp interior facet ridge
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -sp.h);
+        ctx.lineTo(0, 0);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // Pulsating prismatic starlight starburst glint at apex
+      const glintPulse = 0.75 + 0.25 * Math.sin(time * 3.5 + i);
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = crystalColors.glow;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(x, floor - 70, 2.5 * glintPulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
     }
   }
   ctx.fillStyle = { daylight: 'rgba(255,255,255,0.025)', moonlight: 'rgba(30,58,138,0.23)', sunset: 'rgba(251,146,60,0.16)', rose: 'rgba(236,72,153,0.13)' }[look.lighting];

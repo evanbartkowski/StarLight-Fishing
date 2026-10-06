@@ -991,29 +991,77 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'marine_worm': {
-      // Polychaete worm with sinuous segments and feathery radioles
-      ctx.lineWidth = 4;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = primary;
+      // Hydrothermal vent tube worm (Riftia pachyptila):
+      // Stately pearlescent chitinous tube sheath with a vibrant crimson plume branch,
+      // anchored in volcanic basalt with calm, steady respiration.
+      ctx.save();
+      const sway = Math.sin(t * 1.5) * 3; // Calm, steady motion with few moving parts
+
+      // 1. Tough protective mineralized tube casing
+      const tubeGrad = ctx.createLinearGradient(-15, 0, 10, 0);
+      tubeGrad.addColorStop(0, '#e2e8f0');
+      tubeGrad.addColorStop(0.5, '#f8fafc');
+      tubeGrad.addColorStop(1, '#cbd5e1');
+      ctx.fillStyle = tubeGrad;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.6;
+
       ctx.beginPath();
-      ctx.moveTo(20, 0);
-      for (let w = 1; w <= 4; w++) {
-        const wx = 20 - w * 9;
-        const wy = Math.sin(t * 4.2 - w * 0.7) * 5;
-        ctx.lineTo(wx, wy);
-      }
+      ctx.moveTo(-18, 5);
+      ctx.quadraticCurveTo(-5, 4, 8, 3 + sway * 0.3);
+      ctx.lineTo(8, -5 + sway * 0.3);
+      ctx.quadraticCurveTo(-5, -4, -18, -5);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
 
-      // Feathery radioles at crown (batched)
-      ctx.strokeStyle = secondary;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      for (let r = 0; r < 4; r++) {
-        const rAng = (r / 3) * Math.PI * 0.8 - Math.PI * 0.4;
-        ctx.moveTo(20, 0);
-        ctx.lineTo(20 + Math.cos(rAng) * 9, Math.sin(rAng) * 9);
+      // Tube growth rings (collars)
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 1.2;
+      for (let ring = -12; ring <= 2; ring += 5) {
+        ctx.beginPath();
+        ctx.ellipse(ring, 0, 1.4, 4.5, 0, 0, Math.PI * 2);
+        ctx.stroke();
       }
+
+      // Tube collar lip
+      ctx.fillStyle = '#f1f5f9';
+      ctx.beginPath();
+      ctx.ellipse(8, sway * 0.3, 2.5, 5.2, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
+
+      // 2. Vibrant crimson branchial plume (respiratory gill structure rich in hemoglobin)
+      const plumeGrad = ctx.createLinearGradient(8, 0, 24, 0);
+      plumeGrad.addColorStop(0, '#be123c');
+      plumeGrad.addColorStop(0.5, '#e11d48');
+      plumeGrad.addColorStop(1, '#fb7185');
+      ctx.fillStyle = plumeGrad;
+
+      // Crown plume petals (smooth, graceful cluster, steady breathing)
+      ctx.beginPath();
+      ctx.moveTo(8, -3 + sway * 0.3);
+      ctx.quadraticCurveTo(16, -7 + sway * 0.7, 24, -2 + sway);
+      ctx.quadraticCurveTo(18, 0 + sway * 0.5, 23, 2 + sway);
+      ctx.quadraticCurveTo(16, 6 + sway * 0.6, 8, 3 + sway * 0.3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Plume central lamellae ridges
+      ctx.strokeStyle = '#ffe4e6';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(9, sway * 0.3);
+      ctx.lineTo(21, sway * 0.8);
+      ctx.stroke();
+
+      // Soft ambient vent glow
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.35)';
+      ctx.beginPath();
+      ctx.arc(17, sway * 0.7, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
       return true;
     }
 

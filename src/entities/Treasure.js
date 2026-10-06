@@ -59,6 +59,88 @@ function drawRealmArtifact(ctx, item, time) {
     ctx.beginPath();
     ctx.arc(3, 3, 9, -Math.PI * 0.45, 0.05);
     ctx.stroke();
+  } else if (/fire opal|opal cluster/.test(name)) {
+    // Fire Opal Cluster: Dark basalt geode matrix encrusted with glowing, iridescent fiery opal crystal facets
+    ctx.save();
+    // Dark volcanic matrix rock base
+    ctx.fillStyle = '#1c1917';
+    ctx.strokeStyle = '#44403c';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-18, 12);
+    ctx.lineTo(-21, -2);
+    ctx.lineTo(-12, -14);
+    ctx.lineTo(4, -18);
+    ctx.lineTo(19, -8);
+    ctx.lineTo(22, 10);
+    ctx.lineTo(6, 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Hot magma vein fissures running through the rock
+    ctx.strokeStyle = '#ea580c';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-16, 5); ctx.lineTo(-4, 2); ctx.lineTo(12, 8);
+    ctx.moveTo(-2, -12); ctx.lineTo(5, -2);
+    ctx.stroke();
+
+    // Cluster of 4 faceted Fire Opal gem crystals
+    const crystals = [
+      { x: -7, y: -4, r: 10, rot: -0.2 },
+      { x: 7, y: -5, r: 11, rot: 0.3 },
+      { x: 0, y: 5, r: 9, rot: 0.1 },
+      { x: -11, y: 7, r: 7, rot: -0.4 },
+    ];
+
+    for (let c = 0; c < crystals.length; c++) {
+      const cr = crystals[c];
+      ctx.save();
+      ctx.translate(cr.x, cr.y);
+      ctx.rotate(cr.rot);
+
+      // Searing fire opal gem gradient (translucent orange, fiery scarlet, incandescent amber)
+      const opGrad = ctx.createRadialGradient(-cr.r * 0.3, -cr.r * 0.3, 0, 0, 0, cr.r);
+      opGrad.addColorStop(0, '#fef08a');
+      opGrad.addColorStop(0.35, '#fb923c');
+      opGrad.addColorStop(0.7, '#ef4444');
+      opGrad.addColorStop(1, '#991b1b');
+      ctx.fillStyle = opGrad;
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 1.2;
+
+      // Faceted prismatic crystal shape
+      ctx.beginPath();
+      ctx.moveTo(0, -cr.r);
+      ctx.lineTo(cr.r * 0.85, -cr.r * 0.3);
+      ctx.lineTo(cr.r * 0.6, cr.r * 0.9);
+      ctx.lineTo(-cr.r * 0.6, cr.r * 0.9);
+      ctx.lineTo(-cr.r * 0.85, -cr.r * 0.3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Iridescent flash facet (green/gold/cyan shimmering play-of-color in natural fire opals)
+      const flashPulse = 0.5 + 0.5 * Math.sin(time * 3 + c);
+      ctx.fillStyle = c % 2 === 0 ? `rgba(52, 211, 153, ${0.35 * flashPulse})` : `rgba(250, 204, 21, ${0.45 * flashPulse})`;
+      ctx.beginPath();
+      ctx.moveTo(0, -cr.r * 0.7);
+      ctx.lineTo(cr.r * 0.5, -cr.r * 0.1);
+      ctx.lineTo(0, cr.r * 0.5);
+      ctx.lineTo(-cr.r * 0.4, -cr.r * 0.1);
+      ctx.closePath();
+      ctx.fill();
+
+      // Sharp glassy surface glint
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-cr.r * 0.25, -cr.r * 0.4, 1.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+    ctx.restore();
   } else if (/pearl|heart|amber|opal|prism|tear|shard|crystal|gem/.test(name)) {
     ctx.beginPath(); ctx.moveTo(0, -21); ctx.lineTo(17, -8); ctx.lineTo(12, 11); ctx.lineTo(0, 20); ctx.lineTo(-13, 9); ctx.lineTo(-17, -8); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#ffffff77'; ctx.beginPath(); ctx.moveTo(0, -17); ctx.lineTo(6, -7); ctx.lineTo(0, 10); ctx.lineTo(-9, -7); ctx.closePath(); ctx.fill();

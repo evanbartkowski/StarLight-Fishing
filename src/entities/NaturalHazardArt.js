@@ -4,13 +4,125 @@ export function drawNaturalHazard(ctx, kind, r, time) {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.shadowBlur = 0;
   if (kind === 'stalactite') {
-    ctx.fillStyle = '#475569'; ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(-r * .5, -r); ctx.lineTo(r * .5, -r); ctx.lineTo(0, r); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Jagged Volcanic Obsidian Stalactite with faceted mineral shards & molten heat vein
+    ctx.save();
+    // Dark volcanic basalt base
+    ctx.fillStyle = '#1c1917';
+    ctx.strokeStyle = '#292524';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.55, -r);
+    ctx.lineTo(r * 0.55, -r);
+    ctx.lineTo(r * 0.35, -r * 0.25);
+    ctx.lineTo(r * 0.18, r * 0.4);
+    ctx.lineTo(0, r);
+    ctx.lineTo(-r * 0.22, r * 0.35);
+    ctx.lineTo(-r * 0.4, -r * 0.3);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Jagged obsidian cleavage planes
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.2, -r);
+    ctx.lineTo(r * 0.1, -r * 0.35);
+    ctx.lineTo(0, r);
+    ctx.lineTo(-r * 0.12, r * 0.2);
+    ctx.lineTo(-r * 0.35, -r * 0.4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Glassy obsidian reflective sheen
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.1, -r * 0.85);
+    ctx.lineTo(r * 0.28, -r * 0.3);
+    ctx.lineTo(r * 0.12, r * 0.15);
+    ctx.lineTo(r * 0.05, -r * 0.4);
+    ctx.closePath();
+    ctx.fill();
+
+    // Hot molten core fissure down the spine
+    ctx.strokeStyle = '#f97316';
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.05, -r * 0.8);
+    ctx.lineTo(r * 0.08, -r * 0.2);
+    ctx.lineTo(-r * 0.02, r * 0.5);
+    ctx.lineTo(0, r);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
   } else if (kind === 'probe') {
-    ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(0, 0, r * .7, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
-    ctx.fillStyle = '#f43f5e'; ctx.beginPath(); ctx.arc(0, 0, r * .2, 0, Math.PI * 2); ctx.fill();
+    // Advanced Deep-Sea Trench Sonar / Research Probe with spherical titanium hull, thruster cowl, solar antenna, and scanner optic
+    ctx.save();
+    // Rotating or stabilizing thruster stabilizer arms
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 2.5;
+    // 4 cardinal sensor booms with yellow warning telemetry stripes
+    for (let b = 0; b < 4; b++) {
+      const ang = b * (Math.PI / 2);
+      const bx = Math.cos(ang) * r;
+      const by = Math.sin(ang) * r;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(ang) * (r * 0.45), Math.sin(ang) * (r * 0.45));
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+
+      // Sensor node caps
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.arc(bx, by, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Outer reinforced armored titanium sphere
+    const hullGrad = ctx.createRadialGradient(-r * 0.2, -r * 0.2, 2, 0, 0, r * 0.65);
+    hullGrad.addColorStop(0, '#64748b');
+    hullGrad.addColorStop(0.7, '#334155');
+    hullGrad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = hullGrad;
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.65, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Reinforced pressure ring
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.48, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Center illuminated scanning camera / red laser optic eye
+    const pulseOptic = 0.8 + 0.2 * Math.sin(time * 4);
+    const opticGlow = ctx.createRadialGradient(0, 0, 1, 0, 0, r * 0.32 * pulseOptic);
+    opticGlow.addColorStop(0, '#ffffff');
+    opticGlow.addColorStop(0.3, '#f43f5e');
+    opticGlow.addColorStop(0.8, '#be123c');
+    opticGlow.addColorStop(1, 'rgba(190, 18, 60, 0)');
+    ctx.fillStyle = opticGlow;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.32 * pulseOptic, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Red optic lens core
+    ctx.fillStyle = '#f43f5e';
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Camera reflection glint
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-r * 0.05, -r * 0.05, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   } else if (kind === 'diver') {
     // Authentic Human Scuba Diver with swim fins, air tank, diving mask, and flashlight beam
     const light = ctx.createLinearGradient(r * .5, 0, r * 4.5, 0);

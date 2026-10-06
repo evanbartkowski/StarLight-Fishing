@@ -514,14 +514,103 @@ export class OceanWorld {
   // Atmospheric features unique to the active Sea
   renderSeaAtmosphere(ctx, sea, skyHeight, cameraY) {
     if (sea.id === 6) {
-      // Magma Caldera: Rising volcanic embers & ash
+      // Magma Caldera: Distant surface volcanoes shooting smoke and molten lava periodically
       ctx.save();
+      const t = this.waveTimer || 0;
+      const vY = this.surfaceY - cameraY; // Anchored to water surface horizon
+
+      // Volcano positions across the horizon
+      const volcanoes = [
+        { x: this.worldWidth * 0.18, w: 140, h: 65, cr: 16, eruptCycle: 0 },
+        { x: this.worldWidth * 0.58, w: 220, h: 95, cr: 26, eruptCycle: 2.2 },
+        { x: this.worldWidth * 0.88, w: 160, h: 72, cr: 18, eruptCycle: 4.4 },
+      ];
+
+      for (const v of volcanoes) {
+        // 1. Distant volcanic mountain silhouette
+        const mGrad = ctx.createLinearGradient(v.x, vY - v.h, v.x, vY);
+        mGrad.addColorStop(0, '#27272a');
+        mGrad.addColorStop(0.6, '#18181b');
+        mGrad.addColorStop(1, '#09090b');
+        ctx.fillStyle = mGrad;
+        ctx.beginPath();
+        ctx.moveTo(v.x - v.w * 0.5, vY + 4);
+        ctx.lineTo(v.x - v.cr, vY - v.h);
+        ctx.lineTo(v.x + v.cr, vY - v.h);
+        ctx.lineTo(v.x + v.w * 0.5, vY + 4);
+        ctx.closePath();
+        ctx.fill();
+
+        // Glowing molten crater rim
+        ctx.fillStyle = '#f97316';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.ellipse(v.x, vY - v.h, v.cr, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.ellipse(v.x, vY - v.h, v.cr * 0.55, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Periodic eruption state (every ~7 seconds per volcano with staggering)
+        const eruptPhase = ((t + v.eruptCycle) % 7.5);
+        const isErupting = eruptPhase < 3.2; // Erupts for 3.2 seconds every 7.5 seconds
+        const eruptPower = isErupting ? Math.sin((eruptPhase / 3.2) * Math.PI) : 0;
+
+        // Erupting lava burst fountains
+        if (eruptPower > 0.05) {
+          ctx.fillStyle = '#f97316';
+          ctx.shadowColor = '#facc15';
+          ctx.shadowBlur = 12;
+          for (let p = 0; p < 7; p++) {
+            const spread = (p - 3) * (v.cr * 0.45);
+            const burstH = eruptPower * (v.h * 0.85 + (p % 3) * 15);
+            const bx = v.x + spread + Math.sin(t * 8 + p) * 4;
+            const by = vY - v.h - burstH * (0.6 + 0.4 * Math.sin(t * 5 + p));
+            ctx.beginPath();
+            ctx.arc(bx, by, 2 + (p % 3), 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Molten lava cascades down the mountain flanks during eruption
+          ctx.strokeStyle = '#ea580c';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(v.x - v.cr * 0.4, vY - v.h);
+          ctx.lineTo(v.x - v.cr * 0.8, vY - v.h * 0.5);
+          ctx.lineTo(v.x - v.w * 0.2, vY);
+          ctx.moveTo(v.x + v.cr * 0.4, vY - v.h);
+          ctx.lineTo(v.x + v.cr * 0.7, vY - v.h * 0.4);
+          ctx.lineTo(v.x + v.w * 0.18, vY);
+          ctx.stroke();
+        }
+
+        // Billowing volcanic smoke & ash plumes
+        const smokeCount = 8;
+        for (let s = 0; s < smokeCount; s++) {
+          const sAge = ((t * 18 + s * 22) % 150);
+          const sy = vY - v.h - sAge;
+          const sx = v.x + Math.sin(t * 1.5 + s) * (12 + sAge * 0.25) + (sAge * 0.18);
+          const sRad = 10 + sAge * 0.28;
+          const sAlpha = Math.max(0, (1 - sAge / 150) * (isErupting ? 0.65 : 0.38));
+          ctx.fillStyle = isErupting && sAge < 40 ? `rgba(249, 115, 22, ${sAlpha})` : `rgba(68, 64, 60, ${sAlpha})`;
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.arc(sx, sy, sRad, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Rising ambient volcanic embers & ash
       for (let i = 0; i < 24; i++) {
         const seed = i * 47.3;
         const emberX = (seed * 19 + this.waveTimer * (15 + (i % 5) * 8)) % this.worldWidth;
         const emberY = (this.surfaceY - 20) - ((this.waveTimer * 30 + seed * 23) % (skyHeight + 40)) - cameraY;
         const alpha = 0.3 + 0.6 * Math.sin(this.waveTimer * 3 + seed);
         ctx.fillStyle = i % 2 === 0 ? `rgba(234, 88, 12, ${alpha})` : `rgba(254, 240, 138, ${alpha})`;
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 4;
         ctx.beginPath();
         ctx.arc(emberX, emberY, 2 + (i % 3), 0, Math.PI * 2);
         ctx.fill();
@@ -1811,49 +1900,28 @@ export class OceanWorld {
     ctx.restore();
   }
 
-  // Sea 6: Magma Caldera Trench Embers & Thermal Chimneys
+  // Sea 6: Magma Caldera Trench Deep Ambient Thermal Heat & Vents
   renderThermalVentBackground(ctx, cameraY, screenHeight) {
     const ventY = Math.max(this.surfaceY - cameraY + 100, screenHeight * 0.55);
     if (ventY < -250 || ventY > screenHeight + 250) return;
 
     ctx.save();
-    // Warm radial core glow
+    // Warm atmospheric thermal glow in deep water
     try {
       const glowGrad = ctx.createRadialGradient(this.worldWidth * 0.5, ventY + 60, 20, this.worldWidth * 0.5, ventY + 60, 280);
-      glowGrad.addColorStop(0, 'rgba(239, 68, 68, 0.35)');
-      glowGrad.addColorStop(0.6, 'rgba(185, 28, 28, 0.12)');
+      glowGrad.addColorStop(0, 'rgba(239, 68, 68, 0.22)');
+      glowGrad.addColorStop(0.6, 'rgba(185, 28, 28, 0.08)');
       glowGrad.addColorStop(1, 'rgba(69, 10, 10, 0)');
       ctx.fillStyle = glowGrad;
       ctx.fillRect(0, ventY - 150, this.worldWidth, 400);
     } catch (e) {}
 
-    // Volcanic Obsidian Spire
-    ctx.fillStyle = 'rgba(24, 24, 27, 0.7)';
-    ctx.beginPath();
-    ctx.moveTo(this.worldWidth * 0.5 - 60, ventY + 180);
-    ctx.lineTo(this.worldWidth * 0.5 - 12, ventY);
-    ctx.lineTo(this.worldWidth * 0.5 + 24, ventY + 25);
-    ctx.lineTo(this.worldWidth * 0.5 + 75, ventY + 180);
-    ctx.closePath();
-    ctx.fill();
-
-    // Glowing magma cracks
-    ctx.strokeStyle = '#f97316';
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = '#ef4444';
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.moveTo(this.worldWidth * 0.5 - 10, ventY + 20);
-    ctx.lineTo(this.worldWidth * 0.5 - 5, ventY + 80);
-    ctx.lineTo(this.worldWidth * 0.5 + 15, ventY + 130);
-    ctx.stroke();
-
-    // Upward floating embers
+    // Upward floating deep-sea volcanic embers & thermal plumes
     const time = this.causticTimer * 2;
     for (let e = 0; e < 16; e++) {
       const ex = this.worldWidth * 0.5 - 80 + ((e * 47 + Math.sin(time + e) * 25) % 160);
       const ey = ventY + 160 - ((e * 28 + time * 35) % 220);
-      ctx.fillStyle = 'rgba(249, 115, 22, 0.8)';
+      ctx.fillStyle = 'rgba(249, 115, 22, 0.75)';
       ctx.shadowColor = '#ef4444';
       ctx.shadowBlur = 6;
       ctx.beginPath();

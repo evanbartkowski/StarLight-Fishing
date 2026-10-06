@@ -901,3 +901,48 @@ test('Sunken Atlantis mermaids, krakens and serpents; Shimmerfall deep sirens; C
   });
 });
 
+test('Magma Caldera visuals, Fire Opal Cluster, probe redesign, and aquarium tip capacity scaling', async () => {
+  const { EXPEDITION_HAZARDS } = await import('../src/data/ExpeditionHazards.js');
+  const { Treasure } = await import('../src/entities/Treasure.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { drawNaturalHazard } = await import('../src/entities/NaturalHazardArt.js');
+  const { drawAquariumDecor } = await import('../src/data/CustomizationData.js');
+
+  // 1. Falling stalactites (orange & black triangles) must NOT spawn in Sea 6
+  const fallingInSea6 = EXPEDITION_HAZARDS.filter(h => h.naturalKind === 'stalactite' && h.seas.includes(6));
+  assert.equal(fallingInSea6.length, 0, 'No falling stalactites (orange/black triangles) in Caldera Trench');
+
+  // 2. Automated Probe & Stalactite rendering test
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => key.includes('Gradient') ? () => ({ addColorStop() {} }) : () => {},
+  });
+  assert.doesNotThrow(() => drawNaturalHazard(mockCtx, 'probe', 25, 1.5));
+  assert.doesNotThrow(() => drawNaturalHazard(mockCtx, 'stalactite', 28, 1.5));
+
+  // 3. Fire Opal Cluster bespoke rendering test
+  const fireOpalTreasure = new Treasure({ name: 'Fire Opal Cluster', realmStyle: 'lava', rarity: 'rare', color: '#fb923c', glow: '#ef4444' }, 150, 250);
+  assert.doesNotThrow(() => fireOpalTreasure.render(mockCtx, 0));
+
+  // 4. Aquarium decor rendering test (kelp, coral, ruins, crystals)
+  ['kelp', 'coral', 'ruins', 'crystals'].forEach(decor => {
+    assert.doesNotThrow(() => drawAquariumDecor(mockCtx, 760, 380, { decoration: decor }, 2.0));
+  });
+
+  // 5. Aquarium tip capacity scaling with highest unlocked realm
+  const save = new SaveSystem();
+  save.data.aquarium = { isUnlocked: true, bankedVisitorTips: 0 };
+  save.data.upgrades.personalAquarium = 1;
+
+  // With only Sea 1 unlocked:
+  save.data.unlockedSeas = [1];
+  const capSea1 = save.getVisitorTipCapacity();
+  assert.equal(capSea1, 750, 'Sea 1 capacity is base 750');
+
+  // With Sea 6 unlocked:
+  save.data.unlockedSeas = [1, 2, 3, 4, 5, 6];
+  const capSea6 = save.getVisitorTipCapacity();
+  assert.ok(capSea6 > capSea1, 'Tip capacity increases with higher unlocked realms');
+  assert.equal(capSea6, Math.round(1 * 750 * (1 + (6 - 1) * 0.5)), 'Sea 6 prestige multiplier applied');
+});
+
+

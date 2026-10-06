@@ -1209,10 +1209,19 @@ export class SaveSystem {
     return this.data.aquarium?.bankedVisitorTips || 0;
   }
 
+  getVisitorTipCapacity() {
+    const tier = Math.max(1, this.getUpgradeLevel('personalAquarium') || 1);
+    const unlocked = Array.isArray(this.data.unlockedSeas) ? this.data.unlockedSeas : [1];
+    const highestSea = Math.max(1, ...unlocked.map(s => parseInt(s, 10) || 1));
+    // Scales with both aquarium upgrade tier and highest unlocked realm
+    // Base 750 per tier, multiplied by realm prestige (+50% capacity per realm beyond Realm 1)
+    const realmMultiplier = 1 + (highestSea - 1) * 0.5;
+    return Math.round(tier * 750 * realmMultiplier);
+  }
+
   accrueVisitorTips() {
     if (!this.hasAquarium()) return;
-    const tier = Math.max(1, this.getUpgradeLevel('personalAquarium') || 1);
-    const maxTipCap = tier * 750;
+    const maxTipCap = this.getVisitorTipCapacity();
     if ((this.data.aquarium.bankedVisitorTips || 0) > maxTipCap) {
       this.data.aquarium.bankedVisitorTips = maxTipCap;
     }
@@ -1222,8 +1231,7 @@ export class SaveSystem {
     if (!this.hasAquarium() || !deltaSec || deltaSec <= 0) return;
     const ratePerMin = this.getVisitorTipRate();
     if (ratePerMin <= 0) return;
-    const tier = Math.max(1, this.getUpgradeLevel('personalAquarium') || 1);
-    const maxTipCap = tier * 750;
+    const maxTipCap = this.getVisitorTipCapacity();
 
     const current = this.data.aquarium.bankedVisitorTips || 0;
     if (current >= maxTipCap) return;

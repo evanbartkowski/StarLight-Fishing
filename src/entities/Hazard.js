@@ -167,7 +167,13 @@ export class Hazard {
       if (lavaVariant === 0) {
         // 0. Boiling Sulfur Vent: Volcanic chimney cone bubbling violently with sulfurous steam & molten sulfur crust
         ctx.save();
-        ctx.fillStyle = '#1c1917';
+        // Basalt cone gradient
+        const coneGrad = ctx.createLinearGradient(-r * 0.75, 0, r * 0.75, 0);
+        coneGrad.addColorStop(0, '#1c1917');
+        coneGrad.addColorStop(0.3, '#292524');
+        coneGrad.addColorStop(0.7, '#1c1917');
+        coneGrad.addColorStop(1, '#0c0a09');
+        ctx.fillStyle = coneGrad;
         ctx.strokeStyle = '#44403c';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -179,26 +185,50 @@ export class Hazard {
         ctx.fill();
         ctx.stroke();
 
+        // Layered rock ridges on vent cone
+        ctx.strokeStyle = '#292524';
+        ctx.lineWidth = 1.6;
+        for (let l = -2; l <= 2; l++) {
+          ctx.beginPath();
+          ctx.moveTo(l * r * 0.25 - r * 0.1, r * 0.6);
+          ctx.lineTo(l * r * 0.12, -r * 0.4);
+          ctx.stroke();
+        }
+
+        // Bubbling molten sulfur caldera lake at top
         ctx.fillStyle = '#eab308';
         ctx.shadowColor = '#facc15';
         ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.ellipse(0, -r * 0.55, r * 0.35, r * 0.12, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.56, r * 0.22, r * 0.07, 0, 0, Math.PI * 2);
+        ctx.fill();
 
+        // Magma fissures running down the basalt flank
         ctx.strokeStyle = '#f97316';
-        ctx.lineWidth = 2;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 6;
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
         ctx.moveTo(-r * 0.15, -r * 0.5); ctx.lineTo(-r * 0.25, 0); ctx.lineTo(-r * 0.4, r * 0.4);
         ctx.moveTo(r * 0.1, -r * 0.5); ctx.lineTo(r * 0.2, -r * 0.1); ctx.lineTo(r * 0.35, r * 0.35);
         ctx.stroke();
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 1;
+        ctx.stroke();
 
-        ctx.fillStyle = `rgba(250, 204, 21, ${0.7 + pulseLava * 0.3})`;
-        for (let b = 0; b < 3; b++) {
-          const by = -r * 0.65 - ((t * 40 + b * 25) % (r * 0.8));
-          const bx = Math.sin(t * 5 + b * 2) * (r * 0.18);
+        // Rising sulfur bubbles and hot cinder steam
+        ctx.fillStyle = `rgba(250, 204, 21, ${0.75 + pulseLava * 0.25})`;
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 4;
+        for (let b = 0; b < 4; b++) {
+          const by = -r * 0.65 - ((t * 40 + b * 22) % (r * 0.85));
+          const bx = Math.sin(t * 4 + b * 1.8) * (r * 0.2);
           ctx.beginPath();
-          ctx.arc(bx, by, Math.max(2, r * 0.06 - (by / (-r * 1.2)) * 2), 0, Math.PI * 2);
+          ctx.arc(bx, by, Math.max(2, r * 0.055 - (by / (-r * 1.2)) * 1.5), 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
@@ -209,8 +239,14 @@ export class Hazard {
         for (let s = 0; s < numSpikes; s++) {
           const sx = (s / (numSpikes - 1) - 0.5) * r * 1.5;
           const sh = r * (0.7 + Math.sin(s * 3.7 + 1) * 0.35);
-          ctx.fillStyle = '#0c0a09';
-          ctx.strokeStyle = '#292524';
+          
+          // Obsidian spike core
+          const spikeGrad = ctx.createLinearGradient(sx - r * 0.18, 0, sx + r * 0.18, 0);
+          spikeGrad.addColorStop(0, '#0c0a09');
+          spikeGrad.addColorStop(0.5, '#292524');
+          spikeGrad.addColorStop(1, '#1c1917');
+          ctx.fillStyle = spikeGrad;
+          ctx.strokeStyle = '#44403c';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(sx - r * 0.18, r * 0.65);
@@ -220,66 +256,98 @@ export class Hazard {
           ctx.fill();
           ctx.stroke();
 
+          // Glassy reflection facet
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.beginPath();
+          ctx.moveTo(sx - r * 0.04, -sh);
+          ctx.lineTo(sx + r * 0.08, r * 0.65);
+          ctx.lineTo(sx - r * 0.04, r * 0.65);
+          ctx.closePath();
+          ctx.fill();
+
+          // Searing lava artery up the spike spine
           ctx.strokeStyle = '#ef4444';
           ctx.shadowColor = '#f97316';
           ctx.shadowBlur = 8;
-          ctx.lineWidth = 2.2;
+          ctx.lineWidth = 2.4;
           ctx.beginPath();
           ctx.moveTo(sx - r * 0.04, -sh);
           ctx.lineTo(sx, -sh * 0.4);
           ctx.lineTo(sx - r * 0.05, r * 0.3);
           ctx.stroke();
 
+          ctx.strokeStyle = '#fef08a';
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.moveTo(sx - r * 0.04, -sh);
+          ctx.lineTo(sx, -sh * 0.4);
+          ctx.stroke();
+
+          // Molten hot tip spark
           ctx.fillStyle = '#fde047';
           ctx.beginPath();
-          ctx.arc(sx - r * 0.04, -sh, Math.max(2.5, r * 0.04), 0, Math.PI * 2);
+          ctx.arc(sx - r * 0.04, -sh, Math.max(2.5, r * 0.045), 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
       } else if (lavaVariant === 2) {
         // 2. Molten Chain Cluster: Incandescent slag boulders wrapped in red-hot glowing forged chains
         ctx.save();
+        // Fiery mantle halo
         ctx.fillStyle = '#450a0a';
         ctx.beginPath();
-        ctx.ellipse(0, 0, r * 0.65, r * 0.55, 0.2, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, r * 0.68, r * 0.58, 0.2, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#ea580c';
         ctx.shadowColor = '#f97316';
         ctx.shadowBlur = 10;
         ctx.beginPath();
-        ctx.ellipse(0, 0, r * 0.45, r * 0.38, 0.2, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, r * 0.48, r * 0.4, 0.2, 0, Math.PI * 2);
         ctx.fill();
 
+        // Hardened jagged basalt crust plates
         ctx.fillStyle = '#1c1917';
         ctx.beginPath();
-        ctx.arc(-r * 0.2, -r * 0.1, r * 0.22, 0, Math.PI * 2);
-        ctx.arc(r * 0.25, r * 0.12, r * 0.25, 0, Math.PI * 2);
-        ctx.arc(0, r * 0.25, r * 0.18, 0, Math.PI * 2);
+        ctx.arc(-r * 0.2, -r * 0.1, r * 0.24, 0, Math.PI * 2);
+        ctx.arc(r * 0.25, r * 0.12, r * 0.26, 0, Math.PI * 2);
+        ctx.arc(0, r * 0.25, r * 0.2, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = '#44403c';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
 
+        // Red-hot glowing forged iron chains
         ctx.strokeStyle = '#facc15';
         ctx.shadowColor = '#ea580c';
         ctx.shadowBlur = 8;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.2;
         ctx.beginPath();
         ctx.moveTo(-r * 0.65, -r * 0.2);
         ctx.quadraticCurveTo(0, -r * 0.4, r * 0.65, -r * 0.1);
         ctx.moveTo(-r * 0.55, r * 0.25);
         ctx.quadraticCurveTo(0, r * 0.45, r * 0.55, r * 0.2);
         ctx.stroke();
-        ctx.lineWidth = 1.5;
+
+        // Chain link links
+        ctx.lineWidth = 1.8;
         ctx.strokeStyle = '#78350f';
         for (let l = -3; l <= 3; l++) {
           ctx.beginPath();
-          ctx.arc(l * r * 0.18, -r * 0.25 + Math.abs(l) * r * 0.05, 3, 0, Math.PI * 2);
+          ctx.arc(l * r * 0.18, -r * 0.25 + Math.abs(l) * r * 0.05, 3.5, 0, Math.PI * 2);
           ctx.stroke();
         }
         ctx.restore();
       } else {
         // 3. Caldera Lava Chimney (Colossal): Massive volcanic spire with cascading liquid lava flutes
         ctx.save();
-        ctx.fillStyle = '#18181b';
+        // Colossal volcanic spire silhouette with basalt rock shading
+        const spireGrad = ctx.createLinearGradient(-r * 0.8, 0, r * 0.8, 0);
+        spireGrad.addColorStop(0, '#0c0a09');
+        spireGrad.addColorStop(0.35, '#27272a');
+        spireGrad.addColorStop(0.7, '#18181b');
+        spireGrad.addColorStop(1, '#09090b');
+        ctx.fillStyle = spireGrad;
         ctx.strokeStyle = '#3f3f46';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -291,6 +359,7 @@ export class Hazard {
         ctx.fill();
         ctx.stroke();
 
+        // Cascading incandescent liquid lava waterfall flutes
         ctx.strokeStyle = '#dc2626';
         ctx.shadowColor = '#f97316';
         ctx.shadowBlur = 14;
@@ -315,6 +384,7 @@ export class Hazard {
         ctx.lineTo(r * 0.35, r * 0.75);
         ctx.stroke();
 
+        // Boiling caldera crater mouth
         ctx.fillStyle = '#ea580c';
         ctx.beginPath();
         ctx.ellipse(0, -r * 0.7, r * 0.48, r * 0.15, 0, 0, Math.PI * 2);
@@ -324,6 +394,7 @@ export class Hazard {
         ctx.ellipse(0, -r * 0.7, r * 0.32, r * 0.09, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // Erupting magma cinders & ash motes
         ctx.fillStyle = `rgba(251, 146, 60, ${0.75 + pulseLava * 0.25})`;
         for (let e = 0; e < 5; e++) {
           const ex = Math.sin(t * 3.5 + e * 1.5) * (r * 0.6);
