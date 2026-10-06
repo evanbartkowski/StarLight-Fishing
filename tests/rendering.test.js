@@ -108,3 +108,52 @@ test('loop handles timestamp zero, repeated starts, stopping and restarting insi
     tick(80); tick(100); assert.equal(queue.size, 0);
   } finally { loop.stop(); delete globalThis.requestAnimationFrame; delete globalThis.cancelAnimationFrame; }
 });
+
+test('high tier vessels and cloud save structures render completely with finite geometry for tonyath and randomusername', async () => {
+  const { drawVesselHull, VESSEL_NAMES } = await import('../src/rendering/VesselRenderer.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+
+  assert.equal(VESSEL_NAMES.length, 9);
+  assert.equal(VESSEL_NAMES[5], 'Grand Schooner');
+  assert.equal(VESSEL_NAMES[6], 'Gilded Brigantine');
+  assert.equal(VESSEL_NAMES[7], 'Mythic Celestial Ketch');
+  assert.equal(VESSEL_NAMES[8], 'Poseidon Sovereign Galleon');
+
+  // Verify SaveSystem resolves raw number, object, string, or missing upgrade level
+  const save = new SaveSystem();
+  save.data.upgrades = { boatVessel: 5 };
+  assert.equal(save.getUpgradeLevel('boatVessel'), 5);
+
+  save.data.upgrades = { boatVessel: { level: 6 } };
+  assert.equal(save.getUpgradeLevel('boatVessel'), 6);
+
+  save.data.upgrades = { boatVessel: '7' };
+  assert.equal(save.getUpgradeLevel('boatVessel'), 7);
+
+  save.data.upgrades = {};
+  assert.equal(save.getUpgradeLevel('boatVessel'), 0);
+
+  // Verify drawVesselHull produces valid finite rendering operations for all 9 tiers
+  for (let tier = 0; tier <= 8; tier++) {
+    let ops = 0;
+    const ctx = new Proxy({ globalAlpha: 1, filter: 'none', shadowBlur: 0 }, {
+      get(target, key) {
+        if (key in target) return target[key];
+        if (String(key).startsWith('create')) return () => ({ addColorStop() {} });
+        return (...args) => {
+          ops++;
+          for (const val of args) {
+            if (typeof val === 'number') {
+              assert.ok(Number.isFinite(val), `drawVesselHull tier ${tier} generated non-finite coordinate in ${String(key)}`);
+            }
+          }
+        };
+      },
+      set(target, key, val) { target[key] = val; return true; }
+    });
+
+    drawVesselHull(ctx, tier, 140, 40, 1.25, '#fbbf24');
+    assert.ok(ops >= 25, `Tier ${tier} should perform substantial drawing operations`);
+  }
+});
+

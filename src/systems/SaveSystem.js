@@ -451,7 +451,14 @@ export class SaveSystem {
   }
 
   getUpgradeLevel(key) {
-    return this.data.upgrades[key] ?? 0;
+    const val = this.data.upgrades?.[key];
+    if (typeof val === 'number') return Number.isFinite(val) ? val : 0;
+    if (val && typeof val === 'object' && typeof val.level === 'number') return Number.isFinite(val.level) ? val.level : 0;
+    if (typeof val === 'string') {
+      const parsed = parseInt(val, 10);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
   }
 
   setUpgradeLevel(key, level) {

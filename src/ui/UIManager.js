@@ -26,6 +26,7 @@ import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
+import { drawVesselHull, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
 
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -1474,6 +1475,7 @@ export class UIManager {
             this.showAccountChat();
           }
           soundManager.playUpgrade();
+          this.onUpgradePurchased?.();
           this.openShop();
         } else {
           button.disabled = false;
@@ -4791,7 +4793,8 @@ export class UIManager {
   openBoatCustomization() {
     this.activeModal = 'boat_customization';
     const save = this.saveSystem;
-    const vessel = save.data.upgrades?.vessel || 0;
+    const vessel = Math.max(0, parseInt(save.getUpgradeLevel('boatVessel') || 0, 10));
+    const vesselName = VESSEL_NAMES[vessel] || 'Weathered Dinghy';
     let selectedTrinket = save.data.boatTrinket || 'none';
     let selectedSkin = save.data.boatSkin || 'default';
     let animTimer = 0;
@@ -4856,7 +4859,7 @@ export class UIManager {
           <div class="boat-preview-summary">
             <div class="boat-stat-chip">
               <span class="stat-label">Vessel Rank</span>
-              <strong class="stat-val">Tier ${vessel + 1}</strong>
+              <strong class="stat-val">Tier ${vessel + 1} · ${vesselName}</strong>
             </div>
             <div class="boat-stat-chip">
               <span class="stat-label">Gem Reserve</span>
@@ -5026,63 +5029,19 @@ export class UIManager {
       ctx.translate(boatX, bobY);
       ctx.rotate(boatAngle);
 
-      const bW = 120 + vessel * 12;
-      const bH = 34 + vessel * 3;
+      const bW = 140;
+      const bH = 40;
 
-      // Keel shadow
-      ctx.fillStyle = '#1c1917';
-      ctx.beginPath();
-      ctx.moveTo(-bW * 0.42, bH * 0.55);
-      ctx.quadraticCurveTo(0, bH * 0.88, bW * 0.44, bH * 0.48);
-      ctx.lineTo(bW * 0.42, bH * 0.58);
-      ctx.quadraticCurveTo(0, bH * 0.98, -bW * 0.4, bH * 0.68);
-      ctx.closePath();
-      ctx.fill();
-
-      // Wooden hull
-      ctx.fillStyle = vessel >= 1 ? '#78350f' : '#9a3412';
-      ctx.beginPath();
-      ctx.moveTo(-bW * 0.5, -8);
-      ctx.lineTo(-bW * 0.42, bH * 0.6);
-      ctx.quadraticCurveTo(0, bH * 0.8, bW * 0.44, bH * 0.5);
-      ctx.lineTo(bW * 0.52, -8);
-      ctx.closePath();
-      ctx.fill();
-
-      // Planking lines
-      ctx.strokeStyle = '#431407';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(-bW * 0.46, 0);
-      ctx.quadraticCurveTo(0, 10, bW * 0.48, 0);
-      ctx.moveTo(-bW * 0.44, 7);
-      ctx.quadraticCurveTo(0, 17, bW * 0.46, 6);
-      ctx.stroke();
-
-      // Gunwale rim
-      ctx.strokeStyle = '#451a03';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-bW * 0.5, -8);
-      ctx.lineTo(bW * 0.52, -8);
-      ctx.stroke();
-
-      // Selected Skin Accent Line
+      // Draw Vessel Hull matching current tier and previewed skin
       const activeSkin = BOAT_SKIN_OPTIONS[selectedSkin];
-      if (activeSkin && activeSkin.color) {
-        ctx.fillStyle = activeSkin.color;
-        ctx.fillRect(-bW * 0.35, 3, bW * 0.7, 5);
-      }
-
-      // Wooden seat thwart
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(-20, -13, 40, 6);
+      const previewSkinColor = activeSkin?.color || null;
+      drawVesselHull(ctx, vessel, bW, bH, animTimer, previewSkinColor);
 
       // Angler sitting on boat
       ctx.save();
       ctx.translate(-2, -12);
-      ctx.scale(1.2, 1.2);
-      drawAngler(ctx, save.data.appearance || {});
+      ctx.scale(1.15, 1.15);
+      drawAngler(ctx, save.data?.appearance || {});
       ctx.restore();
 
       // Selected Deck Trinket

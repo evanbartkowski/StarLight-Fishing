@@ -3,6 +3,7 @@ import { drawDepthScenery } from '../rendering/DepthScenery.js';
 import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { drawAngler, drawBoatTrinket, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
+import { drawVesselHull } from '../rendering/VesselRenderer.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
 import { belongsToRealm, REALM_PROFILES } from '../data/RealmContent.js';
@@ -700,7 +701,7 @@ export class OceanWorld {
   renderBoatAndFisherman(ctx, cameraY = 0) {
     if (!Number.isFinite(cameraY)) cameraY = 0;
     const surfaceY = Number.isFinite(this.surfaceY) ? this.surfaceY : 220;
-    if (cameraY > surfaceY + 90) return;
+    if (cameraY > surfaceY + 140) return;
 
     if (!this.boat) {
       this.boat = { x: (this.worldWidth || 1200) * 0.5, y: surfaceY - 14, width: 140, height: 40, angle: 0, bobOffset: 0, vesselLevel: 0 };
@@ -715,7 +716,8 @@ export class OceanWorld {
     if (!Number.isFinite(b.angle)) b.angle = 0;
     const drawBoatY = b.y - cameraY;
 
-    const vessel = Math.max(0, parseInt(this.saveSystem?.getUpgradeLevel('boatVessel') ?? b.vesselLevel ?? 0, 10));
+    const vesselNum = Number(this.saveSystem?.getUpgradeLevel?.('boatVessel') ?? b.vesselLevel ?? 0);
+    const vessel = Number.isFinite(vesselNum) ? Math.max(0, Math.floor(vesselNum)) : 0;
     b.vesselLevel = vessel;
 
     try {
@@ -727,414 +729,130 @@ export class OceanWorld {
     } catch (e) { console.warn('Pet dolphin render error:', e); }
 
     ctx.save();
-    ctx.translate(b.x, drawBoatY);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.rotate(b.angle);
+    try {
+      ctx.translate(b.x, drawBoatY);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.rotate(b.angle);
 
-    // ---- Boat Vessel Hull ----
-    if (vessel >= 4) {
-      // === GRAND SCHOONER / MYTHIC KETCH ===
-      const hw = b.width * 0.65; // wider hull
+      const skinColor = BOAT_SKIN_OPTIONS[this.saveSystem?.data?.boatSkin]?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[this.saveSystem?.data?.boatSkin] || null;
 
-      // Underwater floodlight cone beneath hull
       try {
-        const floodGrad = ctx.createRadialGradient(0, 28, 0, 0, 28, 140);
-        floodGrad.addColorStop(0, 'rgba(147,210,255,0.22)');
-        floodGrad.addColorStop(1, 'rgba(0,30,80,0)');
-        ctx.fillStyle = floodGrad;
+        drawVesselHull(ctx, vessel, b.width, b.height, this.waveTimer || 0, skinColor);
+      } catch (hullErr) {
+        console.error('Error drawing vessel hull:', hullErr);
+        ctx.fillStyle = '#78350f';
         ctx.beginPath();
-        ctx.moveTo(-40, 22);
-        ctx.lineTo(-80, 160);
-        ctx.lineTo(80, 160);
-        ctx.lineTo(40, 22);
+        ctx.moveTo(-b.width * 0.5, -8);
+        ctx.lineTo(-b.width * 0.42, b.height * 0.6);
+        ctx.quadraticCurveTo(0, b.height * 0.8, b.width * 0.44, b.height * 0.5);
+        ctx.lineTo(b.width * 0.52, -8);
         ctx.closePath();
         ctx.fill();
-      } catch(e) {}
-
-      // Dark mahogany hull
-      ctx.fillStyle = '#3b1a06';
-      ctx.beginPath();
-      ctx.moveTo(-hw, -12);
-      ctx.lineTo(-hw * 0.9, b.height * 0.7);
-      ctx.quadraticCurveTo(0, b.height * 0.95, hw * 0.92, b.height * 0.62);
-      ctx.lineTo(hw, -12);
-      ctx.closePath();
-      ctx.fill();
-
-      // Hull planks accent
-      ctx.strokeStyle = '#5c2d0a';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Brass trim
-      ctx.strokeStyle = '#b45309';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-hw * 0.94, -4);
-      ctx.quadraticCurveTo(0, 8, hw * 0.96, -2);
-      ctx.stroke();
-
-      // Wide rear deck
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(-hw * 0.55, -18, hw * 1.1, 10);
-
-      // Cabin structure
-      ctx.fillStyle = '#92400e';
-      ctx.fillRect(-28, -32, 56, 18);
-      ctx.fillStyle = '#b45309';
-      ctx.fillRect(-24, -30, 48, 4);
-
-      // Cabin windows
-      ctx.fillStyle = '#fbbf24';
-      ctx.shadowColor = '#fbbf24';
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(-12, -22, 4, 0, Math.PI * 2);
-      ctx.arc(12, -22, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Brass ship wheel on deck
-      ctx.strokeStyle = '#d97706';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(-38, -22, 9, 0, Math.PI * 2);
-      ctx.stroke();
-      for (let spoke = 0; spoke < 8; spoke++) {
-        const a = (spoke / 8) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.moveTo(-38, -22);
-        ctx.lineTo(-38 + Math.cos(a) * 9, -22 + Math.sin(a) * 9);
-        ctx.stroke();
       }
-      ctx.fillStyle = '#d97706';
-      ctx.beginPath();
-      ctx.arc(-38, -22, 3, 0, Math.PI * 2);
-      ctx.fill();
 
-      // Antique brass radio console (small box on deck)
-      ctx.fillStyle = '#b45309';
-      ctx.fillRect(34, -30, 16, 12);
-      ctx.fillStyle = '#d97706';
-      ctx.fillRect(36, -28, 3, 3);
-      ctx.fillRect(40, -28, 3, 3);
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(44, -20, 4, Math.PI, 0);
-      ctx.stroke(); // antenna arch
-
-      // Foremast
-      ctx.strokeStyle = '#5c2d0a';
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(-20, -18);
-      ctx.lineTo(-22, -105);
-      ctx.stroke();
-
-      // Mainmast
-      ctx.beginPath();
-      ctx.moveTo(18, -22);
-      ctx.lineTo(20, -130);
-      ctx.stroke();
-
-      // Fore sail (billowing)
-      const sailBillow1 = Math.sin(this.waveTimer * 1.1) * 12;
-      ctx.fillStyle = 'rgba(248, 250, 252, 0.92)';
-      ctx.beginPath();
-      ctx.moveTo(-22, -100);
-      ctx.lineTo(16, -95);
-      ctx.quadraticCurveTo(0 + sailBillow1, -60, 14, -24);
-      ctx.lineTo(-22, -28);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Main sail (billowing)
-      const sailBillow2 = Math.sin(this.waveTimer * 0.9 + 0.8) * 18;
-      ctx.fillStyle = 'rgba(241, 245, 249, 0.95)';
-      ctx.beginPath();
-      ctx.moveTo(18, -125);
-      ctx.lineTo(hw * 0.7, -118);
-      ctx.quadraticCurveTo(hw * 0.85 + sailBillow2, -70, hw * 0.65, -26);
-      ctx.lineTo(18, -28);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // Crow's nest
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(14, -132, 14, 8);
-
-      // Bowsprit spar
-      ctx.strokeStyle = '#5c2d0a';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(hw * 0.88, -14);
-      ctx.lineTo(hw + 40, -30);
-      ctx.stroke();
-
-      // Lantern on foremast
-      ctx.fillStyle = '#fbbf24';
-      ctx.shadowColor = '#fbbf24';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.arc(-22, -107, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-    } else if (vessel >= 2) {
-      // Motor Skiff / Expedition Trawler
-      // Hull lower keel
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.moveTo(-b.width * 0.44, b.height * 0.65);
-      ctx.quadraticCurveTo(0, b.height * 0.95, b.width * 0.46, b.height * 0.55);
-      ctx.lineTo(b.width * 0.42, b.height * 0.72);
-      ctx.quadraticCurveTo(0, b.height * 1.02, -b.width * 0.4, b.height * 0.75);
-      ctx.closePath();
-      ctx.fill();
-
-      // Main hull
-      ctx.fillStyle = vessel >= 3 ? '#0f3a5d' : '#1e3a8a';
-      ctx.beginPath();
-      ctx.moveTo(-b.width * 0.52, -10);
-      ctx.lineTo(-b.width * 0.44, b.height * 0.65);
-      ctx.quadraticCurveTo(0, b.height * 0.85, b.width * 0.46, b.height * 0.55);
-      ctx.lineTo(b.width * 0.54, -10);
-      ctx.closePath();
-      ctx.fill();
-
-      // Premium gunwale rim
-      ctx.strokeStyle = '#f8fafc';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      // Hull plank accents & trim line
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(-b.width * 0.48, 2);
-      ctx.quadraticCurveTo(0, 14, b.width * 0.49, 1);
-      ctx.stroke();
-
-      // Cabin house
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fillRect(-22, -24, 42, 16);
-      ctx.fillStyle = '#0284c7';
-      ctx.fillRect(-22, -24, 42, 3);
-      // Windows with subtle gloss
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(-17, -19, 13, 8);
-      ctx.fillRect(2, -19, 13, 8);
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.fillRect(-15, -18, 3, 6);
-      ctx.fillRect(4, -18, 3, 6);
-
-      // Shade roof & radar arch for tier 3
-      if (vessel >= 3) {
-        ctx.fillStyle = 'rgba(15,23,42,0.85)';
-        ctx.fillRect(-b.width * 0.48, -32, b.width * 0.96, 8);
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(-b.width * 0.4, -24); ctx.lineTo(-b.width * 0.4, -32);
-        ctx.moveTo(b.width * 0.4, -24); ctx.lineTo(b.width * 0.4, -32);
-        ctx.stroke();
-        // Crab pot mount points
-        for (let cp = 0; cp < 3; cp++) {
-          const cpX = -50 + cp * 42;
-          ctx.strokeStyle = '#cbd5e1';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(cpX - 8, b.height * 0.1, 16, 14);
+      // Equipped Boat Trinket
+      try {
+        const equippedTrinket = this.saveSystem?.data.boatTrinket || 'none';
+        if (equippedTrinket && equippedTrinket !== 'none') {
+          drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height);
         }
-      }
-    } else {
-      // Classic Polished Wood Rowboat / Coastal Dory
-      // Under-hull shadow / keel
-      ctx.fillStyle = '#271004';
-      ctx.beginPath();
-      ctx.moveTo(-b.width * 0.42, b.height * 0.58);
-      ctx.quadraticCurveTo(0, b.height * 0.88, b.width * 0.44, b.height * 0.48);
-      ctx.lineTo(b.width * 0.42, b.height * 0.58);
-      ctx.quadraticCurveTo(0, b.height * 0.98, -b.width * 0.4, b.height * 0.68);
-      ctx.closePath();
-      ctx.fill();
+      } catch (e) { console.warn('Boat trinket render error:', e); }
 
-      // Main mahogany / oak hull body
-      ctx.fillStyle = vessel === 1 ? '#78350f' : '#9a3412';
-      ctx.beginPath();
-      ctx.moveTo(-b.width * 0.5, -8);
-      ctx.lineTo(-b.width * 0.42, b.height * 0.6);
-      ctx.quadraticCurveTo(0, b.height * 0.8, b.width * 0.44, b.height * 0.5);
-      ctx.lineTo(b.width * 0.52, -8);
-      ctx.closePath();
-      ctx.fill();
-
-      // Realistic plank lapstrake lines
-      ctx.strokeStyle = '#431407';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-b.width * 0.46, 0);
-      ctx.quadraticCurveTo(0, 10, b.width * 0.48, 0);
-      ctx.moveTo(-b.width * 0.44, 7);
-      ctx.quadraticCurveTo(0, 17, b.width * 0.46, 6);
-      ctx.stroke();
-
-      // Upper gunwale rim
-      ctx.strokeStyle = '#451a03';
-      ctx.lineWidth = 3.5;
-      ctx.stroke();
-
-      // Golden sheer strake accent line
-      ctx.strokeStyle = '#fef08a';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(-b.width * 0.46, -2);
-      ctx.quadraticCurveTo(0, 5, b.width * 0.48, -2);
-      ctx.stroke();
-
-      // Wooden seat / center thwart
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(-18, -13, 36, 6);
-      // Brass oarlock mounts on edges
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(-b.width * 0.25, -10, 4, 3);
-      ctx.fillRect(b.width * 0.25, -10, 4, 3);
-
-      // Tier 1: cushioned bench + twin rod holders + bow cleat
-      if (vessel >= 1) {
-        ctx.fillStyle = '#b45309';
-        ctx.fillRect(-24, -8, 48, 8);
-        ctx.fillStyle = '#ca8a04';
-        ctx.fillRect(-26, -12, 8, 5);
-        ctx.fillRect(18, -12, 8, 5);
-        // Brass bow cleat
-        ctx.fillStyle = '#fde047';
-        ctx.fillRect(b.width * 0.45, -11, 7, 3);
-      }
-    }
-
-    // Cosmetic hull stripe follows the boat transform on every vessel tier.
-    const skinColor = BOAT_SKIN_OPTIONS[this.saveSystem?.data.boatSkin]?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[this.saveSystem?.data.boatSkin];
-    if (skinColor) { ctx.fillStyle = skinColor; ctx.fillRect(-b.width * .3, 5, b.width * .6, 7); }
-
-    // Equipped Boat Trinket
-    try {
-      const equippedTrinket = this.saveSystem?.data.boatTrinket || 'none';
-      if (equippedTrinket && equippedTrinket !== 'none') {
-        drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height);
-      }
-    } catch (e) { console.warn('Boat trinket render error:', e); }
-
-    // Lantern (all vessel tiers)
-    const lanternX = vessel >= 4 ? 0 : (vessel >= 2 ? 16 : 0);
-    const lanternY = vessel >= 4 ? -22 : -26;
-    if (vessel < 4) {
-      ctx.fillStyle = '#fbbf24';
-      ctx.shadowColor = '#fbbf24';
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(lanternX, lanternY, 4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    }
-
-    // Companions (rendered relative to boat transform - only if unlocked)
-    try {
-      if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
-        this.shipsCat.render(ctx, vessel);
-        if (this.hoveredCompanion === 'angela') {
-          const catPos = this.shipsCat.getDeckPosition(vessel);
-          ctx.save();
-          ctx.translate(catPos.x - 55, catPos.y - 30);
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-          ctx.strokeStyle = '#f59e0b';
-          ctx.lineWidth = 1.5;
-          const text = '🐱 Angela the Cat';
-          ctx.font = 'bold 11px Outfit, sans-serif';
-          const tw = ctx.measureText(text).width;
-          ctx.beginPath();
-          if (typeof ctx.roundRect === 'function') {
-            ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
-          } else {
-            ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+      // Companions (rendered relative to boat transform - only if unlocked)
+      try {
+        if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
+          this.shipsCat.render(ctx, vessel);
+          if (this.hoveredCompanion === 'angela') {
+            const catPos = this.shipsCat.getDeckPosition(vessel);
+            ctx.save();
+            ctx.translate(catPos.x - 55, catPos.y - 30);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 1.5;
+            const text = '🐱 Angela the Cat';
+            ctx.font = 'bold 11px Outfit, sans-serif';
+            const tw = ctx.measureText(text).width;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+            } else {
+              ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+            }
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#fef3c7';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 0, 0);
+            ctx.restore();
           }
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = '#fef3c7';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(text, 0, 0);
-          ctx.restore();
         }
-      }
-    } catch (e) { console.warn('Cat render error:', e); }
+      } catch (e) { console.warn('Cat render error:', e); }
 
-    try {
-      if (this.pelican && this.saveSystem?.isPetEquipped('pelican')) {
-        this.pelican.render(ctx, vessel);
-        if (this.hoveredCompanion === 'evan') {
-          const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
-          ctx.save();
-          ctx.translate(birdPos.x + 55, birdPos.y - 32);
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 1.5;
-          const text = '🦤 Evan the Bird';
-          ctx.font = 'bold 11px Outfit, sans-serif';
-          const tw = ctx.measureText(text).width;
-          ctx.beginPath();
-          if (typeof ctx.roundRect === 'function') {
-            ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
-          } else {
-            ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+      try {
+        if (this.pelican && this.saveSystem?.isPetEquipped('pelican')) {
+          this.pelican.render(ctx, vessel);
+          if (this.hoveredCompanion === 'evan') {
+            const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
+            ctx.save();
+            ctx.translate(birdPos.x + 55, birdPos.y - 32);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5;
+            const text = '🦤 Evan the Bird';
+            ctx.font = 'bold 11px Outfit, sans-serif';
+            const tw = ctx.measureText(text).width;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+            } else {
+              ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+            }
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#e0f2fe';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 0, 0);
+            ctx.restore();
           }
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = '#e0f2fe';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(text, 0, 0);
-          ctx.restore();
         }
+      } catch (e) { console.warn('Pelican render error:', e); }
+
+      // 2. Fisherman (flips left or right based on aimDirection)
+      ctx.save();
+      try {
+        ctx.scale(this.aimDirection || 1, 1);
+
+        const fX = -2;
+        const fY = -12;
+
+        drawAngler(ctx, this.saveSystem?.data?.appearance, fX, fY);
+
+        // 3. Fishing Rod
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(fX + 16, fY - 14);
+        ctx.quadraticCurveTo(fX + 38, fY - 38, fX + 54, fY - 56);
+        ctx.stroke();
+
+        // Rod spool
+        ctx.fillStyle = '#64748b';
+        ctx.beginPath();
+        ctx.arc(fX + 14, fY - 12, 4, 0, Math.PI * 2);
+        ctx.fill();
+      } catch (e) {
+        console.warn('Angler render error:', e);
+      } finally {
+        ctx.restore();
       }
-    } catch (e) { console.warn('Pelican render error:', e); }
-
-    // 2. Fisherman (flips left or right based on aimDirection)
-    ctx.save();
-    try {
-      ctx.scale(this.aimDirection || 1, 1);
-
-      const fX = -2;
-      const fY = -12;
-
-      drawAngler(ctx, this.saveSystem?.data?.appearance, fX, fY);
-
-      // 3. Fishing Rod
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(fX + 16, fY - 14);
-      ctx.quadraticCurveTo(fX + 38, fY - 38, fX + 54, fY - 56);
-      ctx.stroke();
-
-      // Rod spool
-      ctx.fillStyle = '#64748b';
-      ctx.beginPath();
-      ctx.arc(fX + 14, fY - 12, 4, 0, Math.PI * 2);
-      ctx.fill();
-    } catch (e) {
-      console.warn('Angler render error:', e);
+    } catch (renderBoatErr) {
+      console.error('Fatal boat render error:', renderBoatErr);
     } finally {
       ctx.restore();
     }
-    ctx.restore();
 
     // Drift items on water surface (rendered in world space, not boat-relative)
     if (this.driftItems && cameraY <= this.surfaceY + 50) {

@@ -16,7 +16,7 @@ export function specimen(item, x, y) {
 
 export function openCatchCard(ui, item, player, onBack) {
   ui.activeModal = 'catch-card';
-  ui.openModal('Catch Celebration', '<canvas id="share-catch" width="800" height="480" style="width:100%;height:auto"></canvas><div class="catch-share-actions"><button class="btn btn-primary" id="copy-catch">Copy image</button><button class="btn btn-secondary" id="download-catch">Download PNG</button><button class="btn btn-secondary" id="back-catch">Back to catch</button></div>');
+  ui.openModal('Catch Card', '<canvas id="share-catch" width="800" height="480" style="width:100%;height:auto"></canvas><div class="catch-share-actions"><button class="btn btn-primary" id="copy-catch">Copy image</button><button class="btn btn-secondary" id="download-catch">Download PNG</button><button class="btn btn-secondary" id="back-catch">Back to catch</button></div>');
   const canvas = document.getElementById('share-catch');
   const ctx = canvas.getContext('2d');
   const realm = getSeaById(item.zone || item.species?.zone) || { name: 'Sunlit Shoals', topColor: '#0284c7', bottomColor: '#082f49' };

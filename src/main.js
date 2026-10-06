@@ -202,20 +202,30 @@ uiManager.onAccountSwitched = () => {
   accountManager.syncCloudSave();
   syncLeaderboard();
   hook.applyUpgrades(save);
+  oceanWorld.setSaveSystem(save);
   oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
   oceanWorld.populateWorld(save);
   zoneManager.setZone(save.data.currentZone || 'sunken_shallows');
   soundManager.setSeaTrack(save.getCurrentSea());
+  cameraY = 0;
+  targetCameraY = 0;
+  gameState = 'SURFACE_IDLE';
+  hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
+  oceanWorld.updateRodTip();
+  uiManager.updateHUD(hook, gameState);
 };
 
 uiManager.onUpgradePurchased = () => {
   hook.applyUpgrades(save);
+  oceanWorld.setSaveSystem(save);
+  oceanWorld.populateWorld(save);
   if (['SURFACE_IDLE', 'AIMING'].includes(gameState)) {
-    oceanWorld.populateWorld(save);
     hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
     cameraY = 0;
+    targetCameraY = 0;
     gameState = 'SURFACE_IDLE';
   }
+  oceanWorld.updateRodTip();
   uiManager.updateHUD(hook, gameState);
 };
 
