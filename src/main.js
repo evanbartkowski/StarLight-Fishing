@@ -986,6 +986,11 @@ const render = () => {
     }
   });
 
+  // 4b. Shipwreck Haunts (Sunken Galleons & Lurking Haunt Creatures)
+  (oceanWorld.entities.shipwrecks || []).forEach((wreck) => {
+    wreck.render(ctx, cameraY);
+  });
+
   // 5. Treasures & Prehistoric Fossils
   oceanWorld.entities.treasures.forEach((treasure) => {
     if (treasure.y - cameraY > -60 && treasure.y - cameraY < screenHeight + 60) {

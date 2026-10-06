@@ -27,9 +27,11 @@ export class Hazard {
     this.color = typeConfig.color;
     this.glow = typeConfig.glow || '#ef4444';
     this.isColossal = !!typeConfig.isColossal;
+    const isCaldera = this.realmStyle === 'caldera' || this.zone === 6 || typeConfig.zone === 6 || typeConfig.realmId === 6 || (this.type && String(this.type).includes('caldera')) || (this.name && /caldera|magma|volcan|obsidian|pyroclast/i.test(this.name));
+    const calderaScale = isCaldera ? 1.65 : 1.0;
     // Choose a permanent size per giant so its artwork and collision bounds agree.
-    this.sizeScale = typeConfig.sizeScale || (this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : obstacleScaleAt(x, y));
-    this.shieldCost = typeConfig.shieldCost || (this.isColossal ? (this.sizeScale >= 2.0 || (this.zone && this.zone >= 5) ? 3 : 2) : 1);
+    this.sizeScale = (typeConfig.sizeScale || (this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : obstacleScaleAt(x, y))) * calderaScale;
+    this.shieldCost = typeConfig.shieldCost || (this.isColossal ? (this.sizeScale >= 2.0 || (this.zone && this.zone >= 5) ? 3 : 2) : (isCaldera && this.sizeScale > 1.8 ? 2 : 1));
     this.radius = (typeConfig.radius || (this.isColossal ? 35 : 20)) * this.sizeScale;
 
     this.x = x;
@@ -71,36 +73,41 @@ export class Hazard {
       const config = this.behavior;
       const active = hook && ['DESCENDING', 'REELING'].includes(hook.state);
       const distance = active ? Math.hypot(hook.x - this.x, hook.y - this.y) : Infinity;
-      const chasing = active && this.restTime === 0 && distance < config.detectionRadius
-        && Math.abs(hook.y - this.homeY) < config.leash;
+      const leashBonus = this.chaseTime > 0 ? 1.4 : 1.0;
+      const chasing = active && this.restTime === 0 && distance < (config.detectionRadius * 1.15)
+        && Math.abs(hook.y - this.homeY) < (config.leash * leashBonus);
       this.chaseTime = chasing ? this.chaseTime + deltaSec : 0;
       if (this.chaseTime > (config.chaseDuration || 3)) { this.restTime = config.restDuration || 3; this.chaseTime = 0; }
       const pursuing = chasing && this.restTime === 0;
 
       // Natural undulating wander vs targeted pursuit
       const undulate = Math.sin(this.timer * 2.2);
-      const waveX = Math.cos(this.timer * 1.4) * (this.isColossal ? 45 : 30);
-      const waveY = undulate * (this.isColossal ? 26 : 18);
+      const waveX = pursuing ? 0 : Math.cos(this.timer * 1.4) * (this.isColossal ? 45 : 30);
+      const waveY = pursuing ? 0 : undulate * (this.isColossal ? 26 : 18);
 
-      const targetX = pursuing ? hook.x + waveX * 0.4 : this.homeX + Math.sin(this.timer * 0.35) * 65;
-      const targetY = pursuing ? hook.y + waveY * 0.4 : this.homeY + waveY;
+      // Predictive tracking: intercept moving hook trajectory
+      const leadX = pursuing ? (hook.vx || 0) * 0.22 : 0;
+      const leadY = pursuing ? (hook.vy || 0) * 0.22 : 0;
+
+      const targetX = pursuing ? hook.x + leadX : this.homeX + Math.sin(this.timer * 0.35) * 65;
+      const targetY = pursuing ? hook.y + leadY : this.homeY + waveY;
       const dx = targetX - this.x, dy = targetY - this.y;
       const length = Math.hypot(dx, dy) || 1;
 
-      // Realistic hydrodynamic acceleration and fluid drag
-      const maxSpd = config.speed * (pursuing ? 1.05 : 0.32);
+      // Realistic hydrodynamic acceleration and fluid drag - boosted tracking speed
+      const maxSpd = config.speed * (pursuing ? 1.35 : 0.32);
       const desiredVx = (dx / length) * maxSpd;
       const desiredVy = (dy / length) * maxSpd;
 
-      // Colossal apex predators have heavier mass and inertia; agile predators respond promptly
-      const accelFactor = this.isColossal ? (pursuing ? 3.5 : 2.0) : (pursuing ? 18.0 : 5.0);
+      // Sharp turning response when pursuing hook
+      const accelFactor = this.isColossal ? (pursuing ? 7.5 : 2.0) : (pursuing ? 26.0 : 5.0);
       this.vx += (desiredVx - this.vx) * Math.min(1, accelFactor * deltaSec);
       this.vy += (desiredVy - this.vy) * Math.min(1, accelFactor * deltaSec);
 
-      // Add gentle aquatic drift & fin cadence
+      // Add gentle aquatic drift only when not in direct chase
       const sway = Math.cos(this.timer * (this.isColossal ? 1.8 : 3.0)) * (this.isColossal ? 8 : 12);
-      this.x += (this.vx + (pursuing ? sway * 0.15 : sway * 0.5)) * deltaSec;
-      this.y += (this.vy + Math.sin(this.timer * 2.4) * (this.isColossal ? 6 : 4)) * deltaSec;
+      this.x += (this.vx + (pursuing ? 0 : sway * 0.5)) * deltaSec;
+      this.y += (this.vy + (pursuing ? 0 : Math.sin(this.timer * 2.4) * (this.isColossal ? 6 : 4))) * deltaSec;
 
       this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.x));
       this.y = Math.max(this.minY ?? 0, Math.min(this.maxY ?? Infinity, this.y));

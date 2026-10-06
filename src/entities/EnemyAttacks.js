@@ -8,8 +8,10 @@ export function updateAttack(enemy, dt, hook, width) {
   if (!enemy.behavior.attack) return false;
   enemy.attackCooldown = Math.max(0, (enemy.attackCooldown ?? 1.5) - step);
   const active = hook && ['DESCENDING', 'REELING'].includes(hook.state);
-  if (!enemy.attackState && active && !enemy.attackCooldown && Math.hypot(hook.x - enemy.x, hook.y - enemy.y) < 400) {
-    const dx = hook.x - enemy.x, dy = hook.y - enemy.y;
+  if (!enemy.attackState && active && !enemy.attackCooldown && Math.hypot(hook.x - enemy.x, hook.y - enemy.y) < 450) {
+    const leadX = (hook.vx || 0) * 0.2;
+    const leadY = (hook.vy || 0) * 0.2;
+    const dx = (hook.x + leadX) - enemy.x, dy = (hook.y + leadY) - enemy.y;
     const length = Math.hypot(dx, dy) || 1;
     let x = dx / length, y = dy / length;
     if (enemy.behavior.attack === 'shoot') {
@@ -23,18 +25,21 @@ export function updateAttack(enemy, dt, hook, width) {
   const attack = enemy.attackState;
   if (!attack) return true;
   if (!active) { enemy.attackState = null; enemy.attackCooldown = 2; return true; }
-  if (attack.warning > 0) { attack.warning -= step; return true; }
+  if (attack.warning > 0) {
+    attack.warning -= step;
+    return true;
+  }
   enemy.facing = attack.x < 0 ? -1 : 1;
   if (enemy.behavior.attack === 'shoot') {
-    if (enemy.shots.length < 2) enemy.shots.push({ x: enemy.x, y: enemy.y, vx: attack.x * 440, vy: attack.y * 440, life: 2.5 });
-    enemy.attackState = null; enemy.attackCooldown = 3.5;
+    if (enemy.shots.length < 2) enemy.shots.push({ x: enemy.x, y: enemy.y, vx: attack.x * 480, vy: attack.y * 480, life: 2.5 });
+    enemy.attackState = null; enemy.attackCooldown = 3.2;
   } else {
-    // High-speed committed charge with hydrodynamic inertia and overshoot
+    // High-speed committed charge along committed vector
     const totalDuration = 0.75;
     const elapsed = totalDuration - attack.remaining;
-    // Speed curve: explosive acceleration up front (speed 580px/s), overshooting past hook, followed by compensatory braking glide
-    const speedMultiplier = elapsed < 0.35 ? 1.25 : elapsed < 0.58 ? 0.85 : 0.45;
-    const currentSpeed = 480 * speedMultiplier;
+    // Speed curve: explosive acceleration up front, overshooting past hook, followed by compensatory braking glide
+    const speedMultiplier = elapsed < 0.35 ? 1.35 : elapsed < 0.58 ? 0.95 : 0.55;
+    const currentSpeed = 520 * speedMultiplier;
 
     enemy.x += attack.x * currentSpeed * step;
     enemy.y += attack.y * currentSpeed * step;
@@ -47,8 +52,8 @@ export function updateAttack(enemy, dt, hook, width) {
     attack.remaining -= step;
     if (attack.remaining <= 0) {
       enemy.attackState = null;
-      enemy.attackCooldown = 2.8;
-      enemy.restTime = 1.8;
+      enemy.attackCooldown = 2.6;
+      enemy.restTime = 1.5;
       // Re-orient facing toward active hook to resume tracking
       if (active && Math.abs(hook.x - enemy.x) > 1) {
         enemy.facing = Math.sign(hook.x - enemy.x);

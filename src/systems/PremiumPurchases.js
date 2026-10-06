@@ -32,14 +32,14 @@ export async function premiumPurchase(ui, input) {
         return true;
       }
       if (input.kind === 'upgrade') {
-        const upgDef = UPGRADE_DEFINITIONS[input.key];
-        if (!upgDef) throw new Error('Choose a valid upgrade.');
+        const upg = UPGRADE_DEFINITIONS[input.key];
+        if (!upg) throw new Error('Choose a valid upgrade.');
         const currentLvl = save.getUpgradeLevel(input.key);
-        const nextTier = upgDef.tiers[currentLvl + 1];
-        if (!nextTier) throw new Error('Upgrade already maxed.');
-        if ((save.data.level || 1) < (nextTier.reqLevel || 0)) throw new Error(`Requires Angler Level ${nextTier.reqLevel}.`);
-        const cost = input.cost ?? Math.max(1, Math.ceil(nextTier.cost / 600));
-        if (save.data.gems < cost) throw new Error(`You need ${cost} Gems for this upgrade.`);
+        const nextTier = upg.tiers[currentLvl + 1];
+        if (!nextTier) throw new Error('Max level reached.');
+        if (save.data.level < nextTier.reqLevel) throw new Error(`Unlocks at Level ${nextTier.reqLevel}.`);
+        const cost = input.cost !== undefined ? input.cost : Math.max(1, Math.ceil(nextTier.cost / 600));
+        if (save.getGemBalance() < cost) throw new Error(`You need ${cost} earned Gems for this upgrade.`);
         save.mutateAtomically(() => {
           save.data.gems -= cost;
           save.setUpgradeLevel(input.key, currentLvl + 1);
@@ -54,12 +54,12 @@ export async function premiumPurchase(ui, input) {
           ui.showAccountChat?.();
         }
         ui.onUpgradePurchased?.();
-        ui.showToast(`Purchased ${upgDef.name} Level ${currentLvl + 1}!`);
+        ui.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
         return true;
       }
       if (input.kind === 'soundtrack') {
-        const cost = input.cost ?? 0;
-        if (save.data.gems < cost) throw new Error(`You need ${cost} Gems for this soundtrack.`);
+        const cost = input.cost !== undefined ? input.cost : 3;
+        if (save.getGemBalance() < cost) throw new Error(`You need ${cost} earned Gems to unlock this soundtrack.`);
         save.mutateAtomically(() => {
           save.data.gems -= cost;
           save.data.unlockedSoundtracks ||= ['harbor_breeze', 'rainy_lighthouse', 'deep_blue'];

@@ -53,14 +53,29 @@ export class Fish {
     // Depth scaling: deeper catches yield higher reward multipliers
     const depthBonusMult = depthRewardMultiplier(this.depthMeters);
     this.value = Math.max(2, Math.round(val * (options.valueMultiplier || 1) * depthBonusMult));
-    const realmSize = options.sizeMultiplier || 1;
+    const isCaldera = this.zone === 6 || species.zone === 6 || species.realmId === 6 || (species.id && species.id.startsWith('realm_6_')) || (species.id && species.id.includes('caldera'));
+    this.isCaldera = isCaldera;
+    const calderaFishMult = isCaldera ? 1.6 : 1.0;
+
+    const realmSize = (options.sizeMultiplier || 1) * calderaFishMult;
     this.size = Math.round(this.size * realmSize * 10) / 10;
     this.weight = Math.round(this.weight * realmSize ** 2.2 * 100) / 100;
 
     // Visual scale based on species base scale + individual fish size (super large for leviathans)
     const baseScale = species.scaleFactor || 1.0;
-    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 3.8;
+    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 4.5;
     this.scale = Math.min(maxScaleCap, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55) * realmSize));
+
+    // Special species classifications & behaviors
+    this.isCephalopod = ['squid', 'octopus', 'flying_squid', 'cuttlefish'].includes(species.shape) || species.movementType === 'jet_burst';
+    this.jetTimer = Math.random() * 2.2;
+    this.isJetting = false;
+    this.isAbyssalPredator = !!species.isAbyssalPredator || ['deep_anglerfish', 'gulper_eel', 'viperfish', 'cyan_viperfish'].includes(species.id) || (species.name && /anglerfish|viperfish|gulper/i.test(species.name));
+    this.isNocturnal = !!species.isNocturnal || ['squid', 'flying_squid', 'octopus', 'cuttlefish'].includes(species.shape) || (species.name && /squid|moray|tarpon|fangtooth|sleeper|shadowfish/i.test(species.name));
+    this.isFilterFeeder = !!species.isFilterFeeder || (species.name && /whale|basking|manta|filter|megamouth/i.test(species.name)) || species.shape === 'ray' && (species.scaleFactor || 1) >= 2.0;
+    this.schoolId = options.schoolId || null;
+    this.schoolOffset = options.schoolOffset || { x: 0, y: 0 };
+    this.schoolScatter = 0;
 
     // Movement & direction
     this.direction = Math.random() < 0.5 ? 1 : -1; // 1 = right, -1 = left
@@ -76,8 +91,8 @@ export class Fish {
     this.hookOffset = { x: 0, y: -22 };
     this.hookIndex = 0;
 
-    // Collision radius (generous and responsive for big leviathans)
-    this.radius = Math.max(14, Math.min(48, 16 * this.scale));
+    // Collision radius (generous and responsive for big leviathans and caldera monsters)
+    this.radius = Math.max(14, Math.min(58, 16 * this.scale));
 
     // Elusive / Evasive abilities for rare, epic, and mythical fish
     this.evasion = species.evasion || null;
@@ -136,7 +151,7 @@ export class Fish {
     this.y = Math.max(this.minY, Math.min(this.maxY, this.y));
   }
 
-  update(dt, worldWidth, hook, particles = null) {
+  update(dt, worldWidth, hook, particles = null, environment = null) {
     const deltaSec = dt / 1000;
     if (this.isGodTier && !this.announced && hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.abs(hook.y - this.y) < 420) {
       this.announced = true;
@@ -183,97 +198,201 @@ export class Fish {
       let vx = 0;
       let vy = 0;
 
-      switch (this.movementType) {
-        case 'spiral': {
-          vx = (this.direction * 25 + Math.cos(this.wiggleTimer) * 45) * deltaSec;
-          vy = Math.sin(this.wiggleTimer) * 45 * deltaSec;
-          break;
-        }
-        case 'lunge': {
-          const pursuing = hook && Math.hypot(hook.x - this.x, hook.y - this.y) < 180;
-          vx = (pursuing ? Math.sign(hook.x - this.x) * 120 : this.direction * 25) * deltaSec;
-          vy = pursuing ? Math.sign(hook.y - this.y) * 60 * deltaSec : Math.sin(this.wiggleTimer) * 8 * deltaSec;
-          break;
-        }
-        case 'hover': {
-          // Lively reef cruising drift with gentle undulating bobbing
-          vx = this.direction * (this.speed * 20) * deltaSec;
-          vy = Math.sin(this.wiggleTimer * 0.8) * 16 * deltaSec;
-          this.swimAngle = Math.sin(this.wiggleTimer * 0.6) * 0.12;
-          break;
-        }
-
-        case 'vertical_pulse': {
-          // Rhythmic jellyfish/squid upward pulse and gentle downward float
-          this.pulseTimer += deltaSec;
-          const cycle = 2.4;
-          const phase = (this.pulseTimer % cycle) / cycle;
-          if (phase < 0.35) {
-            const push = (1 - phase / 0.35);
-            vx = this.direction * (this.speed * 26 + push * 22) * deltaSec;
-            vy = -54 * push * deltaSec;
-            this.swimAngle = -0.32 * push;
-          } else {
-            vx = this.direction * (this.speed * 7) * deltaSec;
-            vy = 16 * deltaSec;
-            this.swimAngle = 0.08 * (phase - 0.35);
+      // Jet-Propelled Bursts: Squids and octopuses moving with sudden horizontal/diagonal impulses followed by gentle decelerations
+      if (this.isCephalopod || this.movementType === 'jet_burst') {
+        this.jetTimer = (this.jetTimer || (Math.random() * 2.2)) + deltaSec;
+        const cycle = 2.2;
+        const phase = (this.jetTimer % cycle) / cycle;
+        if (phase < 0.20) {
+          // Mantle inhalation / prep: gentle hovering deceleration
+          vx = this.direction * 12 * deltaSec;
+          vy = -6 * deltaSec;
+          this.swimAngle = -0.06;
+          this.isJetting = false;
+        } else if (phase < 0.44) {
+          // Explosive jet impulse! Siphon discharges sudden powerful thrust
+          const impulse = 1 - (phase - 0.20) / 0.24;
+          const diag = Math.sin(this.wiggleTimer * 0.8) > 0 ? 0.35 : -0.22;
+          vx = this.direction * (this.speed * 88 * impulse + 35) * deltaSec;
+          vy = (diag * this.speed * 45 * impulse - 12 * impulse) * deltaSec;
+          this.swimAngle = diag * 0.45;
+          this.isJetting = true;
+          if (particles && Math.random() < 0.22) {
+            particles.emitBubbles(this.x - this.direction * 16, this.y, 1, 2);
           }
-          break;
+        } else {
+          // Gentle exponential deceleration & coasting glide
+          const glide = Math.exp(-2.2 * (phase - 0.44));
+          vx = this.direction * (this.speed * 22 * glide + 6) * deltaSec;
+          vy = (Math.sin(this.wiggleTimer * 0.7) * 8 * glide) * deltaSec;
+          this.swimAngle = Math.sin(this.wiggleTimer * 0.5) * 0.08;
+          this.isJetting = false;
         }
-
-        case 'vertical_drift': {
-          // Seahorse upright bobbing and slow vertical navigation
-          this.glideTimer += deltaSec * 0.9;
-          vx = this.direction * (this.speed * 12) * deltaSec;
-          vy = Math.sin(this.glideTimer) * 30 * deltaSec;
-          this.swimAngle = -0.42 + Math.sin(this.glideTimer * 1.4) * 0.08;
-          break;
-        }
-
-        case 'diagonal_glide': {
-          // Graceful rays banking and swooping on sweeping diagonal arcs
-          this.glideTimer += deltaSec * 0.75;
-          const swoop = Math.sin(this.glideTimer);
-          vx = this.direction * (this.speed * 46) * deltaSec;
-          vy = swoop * 34 * deltaSec;
-          this.swimAngle = swoop * 0.28;
-          break;
-        }
-
-        case 'sine_wave': {
-          // Eel / serpent deep undulating oceanic wave
-          vx = this.direction * (this.speed * 50) * deltaSec;
-          vy = Math.cos(this.wiggleTimer * 1.2) * 38 * deltaSec;
-          this.swimAngle = Math.cos(this.wiggleTimer * 1.2) * 0.25;
-          break;
-        }
-
-        case 'erratic': {
-          // Unpredictable abyss anomaly: bursts in 2D directions, pauses, then bolts
-          this.erraticTimer -= deltaSec;
-          if (this.erraticTimer <= 0) {
-            this.erraticTimer = 1.2 + Math.random() * 2.2;
-            const angle = Math.random() * Math.PI * 2;
-            const spd = this.speed * (28 + Math.random() * 42);
-            this.erraticVx = Math.cos(angle) * spd;
-            this.erraticVy = Math.sin(angle) * spd * 0.6;
-            if (this.erraticVx < 0) this.direction = -1;
-            else if (this.erraticVx > 0) this.direction = 1;
+      } else {
+        switch (this.movementType) {
+          case 'spiral': {
+            vx = (this.direction * 25 + Math.cos(this.wiggleTimer) * 45) * deltaSec;
+            vy = Math.sin(this.wiggleTimer) * 45 * deltaSec;
+            break;
           }
-          vx = this.erraticVx * deltaSec;
-          vy = this.erraticVy * deltaSec;
-          this.erraticVx *= Math.max(0, 1 - 0.85 * deltaSec);
-          this.erraticVy *= Math.max(0, 1 - 0.85 * deltaSec);
-          this.swimAngle = Math.atan2(this.erraticVy, Math.abs(this.erraticVx) || 1) * 0.55;
-          break;
-        }
+          case 'lunge': {
+            const pursuing = hook && Math.hypot(hook.x - this.x, hook.y - this.y) < 180;
+            vx = (pursuing ? Math.sign(hook.x - this.x) * 120 : this.direction * 25) * deltaSec;
+            vy = pursuing ? Math.sign(hook.y - this.y) * 60 * deltaSec : Math.sin(this.wiggleTimer) * 8 * deltaSec;
+            break;
+          }
+          case 'hover': {
+            // Lively reef cruising drift with gentle undulating bobbing
+            vx = this.direction * (this.speed * 20) * deltaSec;
+            vy = Math.sin(this.wiggleTimer * 0.8) * 16 * deltaSec;
+            this.swimAngle = Math.sin(this.wiggleTimer * 0.6) * 0.12;
+            break;
+          }
 
-        case 'horizontal':
-        default: {
-          vx = this.direction * this.speed * 55 * deltaSec;
-          vy = Math.sin(this.wiggleTimer * 0.7) * 0.35;
-          this.swimAngle = Math.sin(this.wiggleTimer * 0.7) * 0.04;
-          break;
+          case 'vertical_pulse': {
+            // Rhythmic jellyfish upward pulse and gentle downward float
+            this.pulseTimer += deltaSec;
+            const cycle = 2.4;
+            const phase = (this.pulseTimer % cycle) / cycle;
+            if (phase < 0.35) {
+              const push = (1 - phase / 0.35);
+              vx = this.direction * (this.speed * 26 + push * 22) * deltaSec;
+              vy = -54 * push * deltaSec;
+              this.swimAngle = -0.32 * push;
+            } else {
+              vx = this.direction * (this.speed * 7) * deltaSec;
+              vy = 16 * deltaSec;
+              this.swimAngle = 0.08 * (phase - 0.35);
+            }
+            break;
+          }
+
+          case 'vertical_drift': {
+            // Seahorse upright bobbing and slow vertical navigation
+            this.glideTimer += deltaSec * 0.9;
+            vx = this.direction * (this.speed * 12) * deltaSec;
+            vy = Math.sin(this.glideTimer) * 30 * deltaSec;
+            this.swimAngle = -0.42 + Math.sin(this.glideTimer * 1.4) * 0.08;
+            break;
+          }
+
+          case 'diagonal_glide': {
+            // Graceful rays banking and swooping on sweeping diagonal arcs
+            this.glideTimer += deltaSec * 0.75;
+            const swoop = Math.sin(this.glideTimer);
+            vx = this.direction * (this.speed * 46) * deltaSec;
+            vy = swoop * 34 * deltaSec;
+            this.swimAngle = swoop * 0.28;
+            break;
+          }
+
+          case 'sine_wave': {
+            // Eel / serpent deep undulating oceanic wave
+            vx = this.direction * (this.speed * 50) * deltaSec;
+            vy = Math.cos(this.wiggleTimer * 1.2) * 38 * deltaSec;
+            this.swimAngle = Math.cos(this.wiggleTimer * 1.2) * 0.25;
+            break;
+          }
+
+          case 'erratic': {
+            // Unpredictable abyss anomaly: bursts in 2D directions, pauses, then bolts
+            this.erraticTimer -= deltaSec;
+            if (this.erraticTimer <= 0) {
+              this.erraticTimer = 1.2 + Math.random() * 2.2;
+              const angle = Math.random() * Math.PI * 2;
+              const spd = this.speed * (28 + Math.random() * 42);
+              this.erraticVx = Math.cos(angle) * spd;
+              this.erraticVy = Math.sin(angle) * spd * 0.6;
+              if (this.erraticVx < 0) this.direction = -1;
+              else if (this.erraticVx > 0) this.direction = 1;
+            }
+            vx = this.erraticVx * deltaSec;
+            vy = this.erraticVy * deltaSec;
+            this.erraticVx *= Math.max(0, 1 - 0.85 * deltaSec);
+            this.erraticVy *= Math.max(0, 1 - 0.85 * deltaSec);
+            this.swimAngle = Math.atan2(this.erraticVy, Math.abs(this.erraticVx) || 1) * 0.55;
+            break;
+          }
+
+          case 'horizontal':
+          default: {
+            vx = this.direction * this.speed * 55 * deltaSec;
+            vy = Math.sin(this.wiggleTimer * 0.7) * 0.35;
+            this.swimAngle = Math.sin(this.wiggleTimer * 0.7) * 0.04;
+            break;
+          }
+        }
+      }
+
+      // Abyssal / Trench Predators: Drawn to glowing lures, repelled by bright lights
+      if (this.isAbyssalPredator && hook && ['DESCENDING', 'REELING'].includes(hook.state)) {
+        const distToHook = Math.hypot(hook.x - this.x, hook.y - this.y);
+        const isBrightLight = (hook.lanternRadius || 50) >= 70;
+        if (isBrightLight && distToHook < ((hook.lanternRadius || 80) * 1.6)) {
+          // Repelled by bright light glare: agitated recoil away from hook
+          const fleeX = this.x - hook.x;
+          const fleeY = this.y - hook.y;
+          const fLen = Math.hypot(fleeX, fleeY) || 1;
+          vx += (fleeX / fLen) * (this.speed * 48) * deltaSec;
+          vy += (fleeY / fLen) * (this.speed * 26) * deltaSec;
+          this.direction = Math.sign(fleeX) || this.direction;
+          this.swimAngle = Math.atan2(fleeY, Math.abs(fleeX) || 1) * 0.4;
+        } else if (distToHook < 340) {
+          // Drawn to glowing lure
+          const hasGlowingLure = (hook.lureGlow || hook.isMagnetic || (hook.lureLuckLevel && hook.lureLuckLevel > 0) || !isBrightLight);
+          if (hasGlowingLure) {
+            const stalkX = hook.x - this.x;
+            const stalkY = hook.y - this.y;
+            const sLen = Math.hypot(stalkX, stalkY) || 1;
+            vx += (stalkX / sLen) * (this.speed * 36) * deltaSec;
+            vy += (stalkY / sLen) * (this.speed * 22) * deltaSec;
+            this.direction = Math.sign(stalkX) || this.direction;
+          }
+        }
+      }
+
+      // Day / Night / Dawn Transitions
+      const tod = environment?.timeOfDay;
+      if (tod === 'NIGHT') {
+        if (this.isNocturnal) {
+          // Nocturnal predators rise to shallow waters at night to hunt
+          vy -= 14 * deltaSec;
+          vx *= 1.25;
+        } else if (!this.isAbyssalPredator) {
+          // Daytime schools retreat or settle into reef pockets / seabed
+          vy += 10 * deltaSec;
+          vx *= 0.38;
+        }
+      } else if (tod === 'DAY') {
+        if (this.isNocturnal) {
+          // Nocturnal predators retreat to deep crevices or bottom shadows during daylight
+          vy += 12 * deltaSec;
+          vx *= 0.65;
+        }
+      }
+
+      // School flocking and panic scatter
+      if (this.schoolId) {
+        if (hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.hypot(hook.x - this.x, hook.y - this.y) < 85) {
+          this.schoolScatter = 1.4; // scatter in panic
+          const scatterX = this.x - hook.x;
+          const scatterY = this.y - hook.y;
+          const sLen = Math.hypot(scatterX, scatterY) || 1;
+          vx += (scatterX / sLen) * 110 * deltaSec;
+          vy += (scatterY / sLen) * 90 * deltaSec;
+        } else if (this.schoolScatter > 0) {
+          this.schoolScatter -= deltaSec;
+        }
+      }
+
+      // Ocean Currents & Thermoclines: Pull filter feeders (whales, basking sharks, manta rays) along current bands
+      if (this.isFilterFeeder && environment?.currentBands) {
+        const currentMeters = (this.y - (environment.surfaceY || 220)) / (environment.pixelsPerMeter || 15);
+        for (const band of environment.currentBands) {
+          if (currentMeters >= band.minMeters && currentMeters <= band.maxMeters) {
+            vx += band.direction * band.speed * deltaSec * 0.75;
+            break;
+          }
         }
       }
 
@@ -1904,6 +2023,77 @@ export class Fish {
         ctx.arc(eyeX + 1.2, eyeY - 1, 0.9, 0, Math.PI * 2);
         ctx.fill();
       }
+    }
+
+    // Magma Caldera Trench: Imposing Lava Monster aesthetic overlay
+    if (this.isCaldera && !isHooked) {
+      ctx.save();
+      const t = this.wiggleTimer;
+      // 1. Jagged Obsidian Dorsal Spikes & Volcanic Crest
+      ctx.fillStyle = '#1c1917';
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 1.3;
+      for (let sp = -2; sp <= 2; sp++) {
+        const sx = sp * 7;
+        const sy = -8 - Math.abs(sp) * 1.5;
+        const spikeH = 7 + (2 - Math.abs(sp)) * 3;
+        ctx.beginPath();
+        ctx.moveTo(sx - 3, sy);
+        ctx.lineTo(sx, sy - spikeH);
+        ctx.lineTo(sx + 3, sy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // 2. Glowing Molten Lava Fissure Veins along body
+      const pulseLava = 0.75 + 0.25 * Math.sin(t * 3.2);
+      ctx.strokeStyle = `rgba(249, 115, 22, ${pulseLava})`;
+      ctx.lineWidth = 2.0;
+      ctx.shadowColor = '#facc15';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.moveTo(-16, 2);
+      ctx.lineTo(-8, -1);
+      ctx.lineTo(0, 3);
+      ctx.lineTo(12, -2);
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(239, 68, 68, ${pulseLava})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-12, -4);
+      ctx.lineTo(-4, -2);
+      ctx.lineTo(6, 4);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 3. Demonic Fiery Molten Monster Eye
+      ctx.fillStyle = '#ef4444';
+      ctx.shadowColor = '#facc15';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(10, -3, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(10.5, -3, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Slit pupil
+      ctx.fillStyle = '#09090b';
+      ctx.fillRect(10.2, -5.5, 1.4, 5);
+      ctx.shadowBlur = 0;
+
+      // 4. Floating volcanic embers
+      ctx.fillStyle = '#fb923c';
+      for (let e = 0; e < 3; e++) {
+        const ex = -18 - e * 7 + Math.sin(t * 3 + e) * 3;
+        const ey = Math.sin(t * 4 + e * 2) * 6;
+        ctx.beginPath();
+        ctx.arc(ex, ey, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
     ctx.restore();

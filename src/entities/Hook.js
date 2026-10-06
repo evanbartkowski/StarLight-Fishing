@@ -67,6 +67,7 @@ export class Hook {
     this.knockbackResistance = Math.min(0.4, (getLvl('highTensionLine') || 0) * 0.05);
 
     const luckLvl = getLvl('lureLuck') || 0;
+    this.lureLuckLevel = luckLvl;
     const reelLvl = getLvl('reelPower') || 0;
     this.initialBiteWait = Math.max(1.5, 7.5 - luckLvl * 1.0 - reelLvl * 0.5);
 
