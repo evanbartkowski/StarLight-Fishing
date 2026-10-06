@@ -28,7 +28,8 @@ export class Hazard {
     this.glow = typeConfig.glow || '#ef4444';
     this.isColossal = !!typeConfig.isColossal;
     const isCaldera = this.realmStyle === 'caldera' || this.zone === 6 || typeConfig.zone === 6 || typeConfig.realmId === 6 || (this.type && String(this.type).includes('caldera')) || (this.name && /caldera|magma|volcan|obsidian|pyroclast/i.test(this.name));
-    const calderaScale = isCaldera ? 1.65 : 1.0;
+    const isVolcanoObstacle = isCaldera && (this.type === 'caldera_lava_pillar' || (this.name && /volcan|chimney|sulfur vent|lava pillar/i.test(this.name)));
+    const calderaScale = isVolcanoObstacle ? 2.85 : (isCaldera ? 1.65 : 1.0);
     // Choose a permanent size per giant so its artwork and collision bounds agree.
     this.sizeScale = (typeConfig.sizeScale || (this.isColossal ? [1.4, 1.85, 2.4][Math.floor(Math.random() * 3)] : obstacleScaleAt(x, y))) * calderaScale;
     this.shieldCost = typeConfig.shieldCost || (this.isColossal ? (this.sizeScale >= 2.0 || (this.zone && this.zone >= 5) ? 3 : 2) : (isCaldera && this.sizeScale > 1.8 ? 2 : 1));
@@ -77,8 +78,9 @@ export class Hazard {
       const isShark = this.marineKind === 'shark' || this.type?.includes('shark');
       const isCalderaShark = (isCaldera && isShark) || (isCaldera && this.isColossal);
 
-      const trackMultiplier = isCaldera ? 1.45 : 1.35;
-      const leashBonus = this.chaseTime > 0 ? 1.6 : 1.25;
+      // Sharks have slightly less tracking range per user feedback
+      const trackMultiplier = isShark ? 0.95 : (isCaldera ? 1.4 : 1.3);
+      const leashBonus = isShark ? 1.08 : (this.chaseTime > 0 ? 1.5 : 1.2);
       const chasing = active && this.restTime === 0 && distance < (config.detectionRadius * trackMultiplier)
         && Math.abs(hook.y - this.homeY) < (config.leash * leashBonus);
       this.chaseTime = chasing ? this.chaseTime + deltaSec : 0;

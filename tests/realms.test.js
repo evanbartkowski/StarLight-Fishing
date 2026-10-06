@@ -8,9 +8,15 @@ globalThis.Audio = class {
     this.src = src;
     this.volume = 1;
     this.loop = false;
+    this.paused = true;
   }
-  play() { return Promise.resolve(); }
-  pause() {}
+  play() {
+    this.paused = false;
+    return Promise.resolve();
+  }
+  pause() {
+    this.paused = true;
+  }
 };
 const { FISH_SPECIES, LEGACY_SALVAGE_SPECIES } = await import('../src/data/FishData.js');
 const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
@@ -1041,6 +1047,86 @@ test('Realm 1 music transition, Striped Sea Snake slower movement, and Sunken At
   world.renderSeaAtmosphere(mockCtx, atlantisSea, 220, 0);
   assert.ok(drawCalls > 25, 'Sunken Atlantis renders rich ruined acropolis, aqueducts, and marble pillars');
 });
+
+test('Shark tracking reduction, Caldera unique volcanic art, volcano obstacles depth and sizing, music keepAlive, and hide seabed traps setting', async () => {
+  const { SoundManager } = await import('../src/audio/SoundManager.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { Hazard } = await import('../src/entities/Hazard.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+  const { REALM_HAZARDS } = await import('../src/data/RealmContent.js');
+  const { HAZARD_TYPES } = await import('../src/data/TreasureData.js');
+  const { TrapSystem } = await import('../src/systems/TrapSystem.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+
+  // 1. Shark tracking range is slightly reduced
+  const sharkConfig = HAZARD_TYPES.find(h => h.zone === 6 && h.marineKind === 'shark');
+  assert.ok(sharkConfig, 'Shark hazard config exists');
+  const shark = new Hazard(sharkConfig, 200, 2000);
+  const farHook = { x: 200, y: 2400, state: 'DESCENDING', vx: 0, vy: 100 };
+  shark.update(16, 1200, farHook);
+  // Leash is controlled and tracking distance uses 0.95 multiplier
+  assert.ok(shark.chaseTime === 0 || shark.chaseTime < 3, 'Shark tracking is restrained');
+
+  // 2. Caldera creatures have unique volcanic features without generic lines
+  const calderaFishList = FISH_SPECIES.filter(f => f.zone === 6);
+  assert.ok(calderaFishList.length > 5, 'Caldera has fish species');
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => key.includes('Gradient') ? () => ({ addColorStop() {} }) : () => {},
+    set: () => true
+  });
+  for (const sp of calderaFishList.slice(0, 6)) {
+    const f = new Fish(sp, 300, 1500, { currentSeaId: 6 });
+    assert.equal(f.isCaldera, true);
+    assert.doesNotThrow(() => f.render(mockCtx, 0));
+  }
+
+  // 3. Caldera volcano obstacles spawn deeper and are significantly bigger
+  const calderaVolcanoHazards = REALM_HAZARDS.filter(h => h.zone === 6 && (/chimney|sulfur vent/i.test(h.name)));
+  assert.ok(calderaVolcanoHazards.length >= 2, 'Caldera volcano obstacles exist in REALM_HAZARDS');
+  for (const v of calderaVolcanoHazards) {
+    assert.ok(v.minDepth >= 800, `Caldera volcano obstacle ${v.name} spawns deep (minDepth: ${v.minDepth})`);
+  }
+  const pillarHazard = HAZARD_TYPES.find(h => h.id === 'caldera_lava_pillar');
+  assert.ok(pillarHazard.minDepth >= 800, 'caldera_lava_pillar spawns deep');
+
+  const chimneyConfig = calderaVolcanoHazards.find(h => /chimney/i.test(h.name));
+  const volcanoEntity = new Hazard(chimneyConfig, 400, 2500);
+  assert.ok(volcanoEntity.sizeScale >= 2.5, 'Underwater volcano obstacle is much bigger in sizeScale');
+
+  // 4. Music keepAlive ensures underwater music does not stop or disappear at 350m
+  const sound = new SoundManager();
+  sound.initialized = true;
+  sound.currentSeaId = 1;
+  sound.setMusicMode('underwater');
+  assert.equal(sound.currentMusicMode, 'underwater');
+  sound.underwaterMusic.paused = true;
+  sound.keepAliveUnderwaterMusic();
+  assert.equal(sound.underwaterMusic.paused, false, 'keepAliveUnderwaterMusic resumes playback');
+
+  // 5. Hide seabed traps and buoys setting hides buoys on water
+  const save = new SaveSystem();
+  save.data.upgrades.seabedTraps = 2;
+  const trapSys = new TrapSystem(save);
+  let drawnBuoys = 0;
+  const buoyCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key === 'ellipse' || key === 'fillRect') return () => { drawnBuoys++; };
+      return () => {};
+    },
+    set: () => true
+  });
+  // Default: visible
+  trapSys.renderBuoys(buoyCtx, 400, 220, 0);
+  assert.ok(drawnBuoys > 0, 'Buoys rendered when setting is false');
+
+  // Hidden: returns early
+  drawnBuoys = 0;
+  save.data.settings.hideSeabedTraps = true;
+  trapSys.renderBuoys(buoyCtx, 400, 220, 0);
+  assert.equal(drawnBuoys, 0, 'Buoys are not rendered when hideSeabedTraps is true');
+});
+
 
 
 

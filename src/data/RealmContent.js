@@ -202,7 +202,7 @@ const TREASURES = {
 };
 export const REALM_HAZARDS = FANTASY_SEAS.flatMap(sea => HAZARDS[sea.id].map((name, i) => ({
   id: `realm_${sea.id}_hazard_${i}`, name, zone: sea.id, realmStyle: REALM_PROFILES[sea.id].style, variant: i,
-  minDepth: sea.id === 1 && i === 3 ? 100 : (sea.id <= 2 && i === 0 ? 48 : 5 + Math.round(sea.maxDepth * i * 0.06)),
+  minDepth: sea.id === 1 && i === 3 ? 100 : (sea.id <= 2 && i === 0 ? 48 : (sea.id === 6 ? (i === 3 ? 1200 : i === 0 ? 800 : 5 + Math.round(sea.maxDepth * i * 0.06)) : 5 + Math.round(sea.maxDepth * i * 0.06))),
   maxDepth: 3000,
   damage: 1 + Math.floor((sea.id + i) / 3), knockback: 22 + sea.id * 5 + i * 4,
   radius: i === 3 ? 48 : 18 + i * 6, isColossal: i === 3,

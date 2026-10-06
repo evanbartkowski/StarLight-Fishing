@@ -157,6 +157,7 @@ export class TrapSystem {
   }
 
   renderBuoys(ctx, boatX, surfaceY, cameraY) {
+    if (this.saveSystem?.data?.settings?.hideSeabedTraps) return;
     if (cameraY > surfaceY + 100) return;
 
     const trapCount = this.getTrapCount();

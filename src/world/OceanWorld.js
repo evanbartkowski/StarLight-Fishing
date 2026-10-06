@@ -295,7 +295,11 @@ export class OceanWorld {
 
     populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && !hazard.expedition && belongsToRealm(hazard, this.currentSeaId)),
       depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards,
-      hazard => hazard.isColossal ? 0.6 : (this.currentSeaId === 1 && hazard.naturalKind === 'plant' ? 0.25 : 1),
+      hazard => {
+        const isVolcano = this.currentSeaId === 6 && (/volcan|chimney|sulfur vent|lava pillar/i.test(hazard.name || '') || hazard.id === 'caldera_lava_pillar');
+        if (isVolcano) return 0.22;
+        return hazard.isColossal ? 0.6 : (this.currentSeaId === 1 && hazard.naturalKind === 'plant' ? 0.25 : 1);
+      },
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     populateBands(EXPEDITION_HAZARDS.filter(h => !h.expedition && h.seas.includes(this.currentSeaId)),
       depth => .06 + .15 * depthProgress(depth), () => 1,
@@ -936,7 +940,7 @@ export class OceanWorld {
     ctx.restore();
 
     // Render Seabed Traps Buoys bobbing on water
-    if (this.trapSystem) {
+    if (this.trapSystem && !this.saveSystem?.data?.settings?.hideSeabedTraps) {
       this.trapSystem.renderBuoys(ctx, this.boat.x, this.surfaceY, cameraY);
     }
 

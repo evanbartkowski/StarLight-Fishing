@@ -270,6 +270,7 @@ export class DeployableTrapManager {
   }
 
   renderBuoys(ctx, cameraY, currentZoneId) {
+    if (this.saveSystem?.data?.settings?.hideSeabedTraps) return;
     const traps = this.getPlacedTraps();
 
     traps.forEach((trap) => {

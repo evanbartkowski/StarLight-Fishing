@@ -3658,7 +3658,7 @@ export class UIManager {
             <div class="slot-name">${shinyTag} ${crownTag} ${item.name}</div>
             <div class="slot-sub">${isFish ? `${item.size}cm • ${item.weight}kg` : isRelic ? `Relic (${item.era || 'Ancient'})` : 'Specimen'}</div>
           </div>
-          <button class="btn btn-sm btn-outline btn-remove-inhabitant" data-id="${item.instanceId}" title="Return specimen back to tackle box" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-color:#38bdf8;color:#e0f2fe;font-weight:600;font-size:0.75rem;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg><span>Return</span></button>
+          <button class="btn btn-sm btn-danger btn-remove-inhabitant" data-id="${item.instanceId}" title="Remove specimen from aquarium" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#dc2626;color:#ffffff;font-weight:600;font-size:0.75rem;border:1px solid #ef4444;border-radius:6px;cursor:pointer;"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg><span>Remove</span></button>
         </div>
       `;
     });
@@ -3800,7 +3800,7 @@ export class UIManager {
         const itm = items.find(i => i.instanceId === id);
         this.saveSystem.removeItemFromAquarium(id);
         soundManager.playButtonClick();
-        this.showToast(`🎒 Returned ${itm?.name || 'item'} to tackle box.`);
+        this.showToast(`🎒 Removed ${itm?.name || 'item'} from aquarium.`);
         this.renderAquariumTab();
       });
     });
@@ -5254,12 +5254,14 @@ export class UIManager {
     document.getElementById('setting-always-ask')?.addEventListener('change', (e) => {
       this.saveSystem.data.settings.alwaysAskOnCatch = e.target.checked;
       this.saveSystem.save();
+      accountManager.syncCloudSave();
       this.showToast(e.target.checked ? '🔔 Catch resolution popup enabled.' : '🎒 Catches will now be added directly to inventory.');
     });
 
     document.getElementById('setting-hide-traps')?.addEventListener('change', (e) => {
       this.saveSystem.data.settings.hideSeabedTraps = e.target.checked;
       this.saveSystem.save();
+      accountManager.syncCloudSave();
       this.showToast(e.target.checked ? '👁️ Seabed traps view hidden on water.' : '👁️ Seabed traps view visible on water.');
     });
 
@@ -5268,6 +5270,7 @@ export class UIManager {
       soundManager.setMusicVolume(vol);
       this.saveSystem.data.settings.musicVolume = vol;
       this.saveSystem.save();
+      accountManager.syncCloudSave();
     });
 
     document.getElementById('sfx-vol').addEventListener('input', (e) => {
@@ -5275,6 +5278,7 @@ export class UIManager {
       soundManager.setSfxVolume(vol);
       this.saveSystem.data.settings.sfxVolume = vol;
       this.saveSystem.save();
+      accountManager.syncCloudSave();
     });
 
     document.getElementById('btn-trigger-reset').addEventListener('click', () => {

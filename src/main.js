@@ -201,6 +201,11 @@ uiManager.onAccountSwitched = () => {
   save.save();
   accountManager.syncCloudSave();
   syncLeaderboard();
+  if (save.data.settings) {
+    if (typeof save.data.settings.musicVolume === 'number') soundManager.setMusicVolume(save.data.settings.musicVolume);
+    if (typeof save.data.settings.sfxVolume === 'number') soundManager.setSfxVolume(save.data.settings.sfxVolume);
+    if (typeof save.data.settings.isMuted === 'boolean') soundManager.setMuted(save.data.settings.isMuted);
+  }
   hook.applyUpgrades(save);
   oceanWorld.setSaveSystem(save);
   oceanWorld.setCurrentSea(save.getCurrentSea ? save.getCurrentSea() : 1);
@@ -262,6 +267,13 @@ uiManager.onManualReel = () => {
 // Initialize world cycle from persistent save
 if (worldCycle && typeof worldCycle.deserialize === 'function') {
   worldCycle.deserialize({ timer: save.data.worldTime, weather: save.data.currentWeather });
+}
+
+// Apply saved audio settings
+if (save.data.settings) {
+  if (typeof save.data.settings.musicVolume === 'number') soundManager.setMusicVolume(save.data.settings.musicVolume);
+  if (typeof save.data.settings.sfxVolume === 'number') soundManager.setSfxVolume(save.data.settings.sfxVolume);
+  if (typeof save.data.settings.isMuted === 'boolean') soundManager.setMuted(save.data.settings.isMuted);
 }
 
 // Initialize current zone soundscape
@@ -638,6 +650,7 @@ const update = (dt) => {
   if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING') {
     hook.rodTip = oceanWorld.rodTip;
     hook.update(dt, oceanWorld.surfaceY, screenWidth, particles, isReelingInput, zoneManager);
+    soundManager.keepAliveUnderwaterMusic?.();
 
     // Transition: entering water
     if (gameState === 'CASTING' && hook.state === 'DESCENDING') {

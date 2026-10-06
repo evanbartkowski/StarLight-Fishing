@@ -1,5 +1,5 @@
 export const REALM_ECOLOGY = {
-  1: { fish: 1, hazards: .75, enemies: .6, treasure: .8, size: 1, value: 1, rarity: 1, description: 'A calm, fish-rich coast with light hazards and occasional hidden keepsakes.' },
+  1: { fish: .9, hazards: .75, enemies: .6, treasure: .8, size: 1, value: 1, rarity: 1, description: 'A calm, fish-rich coast with light hazards and occasional hidden keepsakes.' },
   2: { fish: 1.45, hazards: .85, enemies: 1.8, treasure: .65, size: .85, value: 1, rarity: 1, description: 'Dense schools fill the glowing trench, but jellyfish blooms and lurking hunters crowd the currents.' },
   3: { fish: .8, hazards: 1, enemies: .8, treasure: 1.35, size: 1, value: 1, rarity: 1.8, description: 'Sparse, unusual fish gather beneath meteor showers. Rare catches and celestial keepsakes reward patient captains.' },
   4: { fish: .7, hazards: 1.3, enemies: 1, treasure: 3, size: 1, value: 1, rarity: 1.1, description: 'A treasure-rich drowned city: caches and relics lie among crowded ruins guarded by marine sentinels.' },

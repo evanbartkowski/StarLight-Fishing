@@ -1170,6 +1170,18 @@ html, body {
   background: #b91c1c;
 }
 
+.btn-outline {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+.btn-outline:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 0.8rem;

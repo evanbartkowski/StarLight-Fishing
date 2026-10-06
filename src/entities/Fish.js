@@ -2034,48 +2034,158 @@ export class Fish {
       }
     }
 
-    // Magma Caldera Trench: Imposing Lava Monster aesthetic overlay
+    // Magma Caldera Trench: Unique, species-tailored volcanic and lava monster artwork
     if (this.isCaldera && !isHooked) {
       ctx.save();
+      const s = this.species;
+      const sh = s.shape || 'oval';
+      const name = s.name || '';
       const t = this.wiggleTimer;
 
-      // 1. Glowing Molten Lava Fissure Veins along body
-      const pulseLava = 0.75 + 0.25 * Math.sin(t * 3.2);
-      ctx.strokeStyle = `rgba(249, 115, 22, ${pulseLava})`;
-      ctx.lineWidth = 2.0;
-      ctx.shadowColor = '#facc15';
-      ctx.shadowBlur = 6;
-      ctx.beginPath();
-      ctx.moveTo(-16, 2);
-      ctx.lineTo(-8, -1);
-      ctx.lineTo(0, 3);
-      ctx.lineTo(12, -2);
-      ctx.stroke();
+      if (sh === 'shark' || sh === 'whale') {
+        // 1. Obsidian Armored Apex Hunter (Plated basalt scales & glowing thermal gill slits)
+        ctx.fillStyle = 'rgba(28, 25, 23, 0.85)';
+        for (let p = -2; p <= 1; p++) {
+          const px = p * 12;
+          ctx.beginPath();
+          ctx.moveTo(px, -8);
+          ctx.lineTo(px + 9, -2);
+          ctx.lineTo(px + 4, 6);
+          ctx.lineTo(px - 5, 2);
+          ctx.closePath();
+          ctx.fill();
+        }
+        // Thermal gill slits
+        ctx.strokeStyle = '#f97316';
+        ctx.shadowColor = '#ea580c';
+        ctx.shadowBlur = 5;
+        ctx.lineWidth = 1.4;
+        for (let g = 0; g < 3; g++) {
+          ctx.beginPath();
+          ctx.moveTo(8 + g * 3.5, -4);
+          ctx.lineTo(6 + g * 3.5, 3);
+          ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+      } else if (sh === 'eel' || sh === 'serpent' || name.includes('Serpent') || name.includes('Oarfish') || name.includes('Loach')) {
+        // 2. Molten Wyrm & Rift Serpent (Segmented glowing molten magma core beneath basalt ribs)
+        ctx.strokeStyle = '#ea580c';
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 6;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(-22, 0);
+        ctx.lineTo(14, 0);
+        ctx.stroke();
 
-      ctx.strokeStyle = `rgba(239, 68, 68, ${pulseLava})`;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(-12, -4);
-      ctx.lineTo(-4, -2);
-      ctx.lineTo(6, 4);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#1c1917';
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 2.0;
+        for (let r = -4; r <= 3; r++) {
+          const rx = r * 5;
+          ctx.beginPath();
+          ctx.moveTo(rx, -5);
+          ctx.lineTo(rx, 5);
+          ctx.stroke();
+        }
+      } else if (sh === 'swordfish' || sh === 'predator' || name.includes('Pike') || name.includes('Needlefish') || name.includes('Marlin')) {
+        // 3. Magma-Tempered Rostrum Blade & Ember Crest
+        ctx.strokeStyle = '#fef08a';
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.moveTo(14, -2);
+        ctx.lineTo(34, -2);
+        ctx.stroke();
 
-      // 2. Demonic Fiery Molten Monster Eye
-      ctx.fillStyle = '#ef4444';
-      ctx.shadowColor = '#facc15';
-      ctx.shadowBlur = 6;
-      ctx.beginPath();
-      ctx.arc(10, -3, 4.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fef08a';
-      ctx.beginPath();
-      ctx.arc(10.5, -3, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      // Slit pupil
-      ctx.fillStyle = '#09090b';
-      ctx.fillRect(10.2, -5.5, 1.4, 5);
-      ctx.shadowBlur = 0;
+        ctx.fillStyle = '#dc2626';
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.moveTo(-8, -9);
+        ctx.lineTo(4, -15);
+        ctx.lineTo(10, -8);
+        ctx.closePath();
+        ctx.fill();
+      } else if (sh === 'squid' || sh === 'octopus') {
+        // 4. Fire Opal Cephalopod (Prismatic incandescent fire-opal jewel mantle & smoky basalt tips)
+        ctx.fillStyle = '#f97316';
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(2, 0, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(3, -0.5, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#1c1917';
+        for (let tent = -2; tent <= 2; tent++) {
+          ctx.fillRect(-18 + Math.abs(tent), tent * 3 - 1, 4, 2);
+        }
+      } else if (sh === 'ray') {
+        // 5. Volcanic Glass Ray & Throne Manta (Obsidian glass wing bevels & liquid gold molten rim)
+        ctx.strokeStyle = '#facc15';
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 6;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(-8, -14);
+        ctx.quadraticCurveTo(6, -10, 10, 0);
+        ctx.quadraticCurveTo(6, 10, -8, 14);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Spiracle vents
+        ctx.fillStyle = '#ea580c';
+        ctx.beginPath();
+        ctx.arc(4, -4, 1.8, 0, Math.PI * 2);
+        ctx.arc(4, 4, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sh === 'disc' || sh === 'boxfish') {
+        // 6. Smoldering Hearth Opah / Scoria Puffer (Porous volcanic basalt crust & smoldering hearth core)
+        ctx.fillStyle = 'rgba(234, 88, 12, 0.45)';
+        ctx.shadowColor = '#ea580c';
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
+        ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Vesicular basalt pores
+        ctx.fillStyle = '#1c1917';
+        for (let p = 0; p < 4; p++) {
+          const ang = (p * Math.PI) / 2 + 0.4;
+          ctx.beginPath();
+          ctx.arc(Math.cos(ang) * 5, Math.sin(ang) * 5, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        // 7. Hydrothermal Vent & Floor Dweller (Sulfur deposits, geothermal mineral crests)
+        ctx.fillStyle = '#eab308';
+        ctx.shadowColor = '#ca8a04';
+        ctx.shadowBlur = 5;
+        for (let d = 0; d < 3; d++) {
+          ctx.beginPath();
+          ctx.arc(-6 + d * 6, 5, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+
+        // Geothermal vent chimney fin
+        ctx.strokeStyle = '#44403c';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(-4, -7);
+        ctx.lineTo(-2, -12);
+        ctx.lineTo(2, -12);
+        ctx.lineTo(4, -7);
+        ctx.stroke();
+      }
+
       ctx.restore();
     }
 

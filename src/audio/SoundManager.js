@@ -16,6 +16,29 @@ export class SoundManager {
     this.surfaceMusic.loop = true;
     this.underwaterMusic.loop = true;
 
+    // Resilient looping & error auto-recovery so underwater music never stops/disappears
+    this.underwaterMusic.addEventListener?.('ended', () => {
+      if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
+        this.underwaterMusic.currentTime = 0;
+        this.underwaterMusic.play?.()?.catch?.(() => {});
+      }
+    });
+    this.surfaceMusic.addEventListener?.('ended', () => {
+      if (this.currentMusicMode === 'surface' && !this.isMuted && !this.activeStation) {
+        this.surfaceMusic.currentTime = 0;
+        this.surfaceMusic.play?.()?.catch?.(() => {});
+      }
+    });
+    this.underwaterMusic.addEventListener?.('error', () => {
+      if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
+        try {
+          this.underwaterMusic.src = '/sprites/oceanmusic2.mp3';
+          this.underwaterMusic.load?.();
+          this.underwaterMusic.play?.()?.catch?.(() => {});
+        } catch (_) {}
+      }
+    });
+
     this.currentMusicMode = null; // 'surface' | 'underwater' | 'none'
     this.initialized = false;
 
@@ -158,6 +181,18 @@ export class SoundManager {
         if (!this.isMuted) toTrack.volume = targetVol;
       }
     }, 25);
+  }
+
+  keepAliveUnderwaterMusic() {
+    if (this.currentSeaId === 1 && this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
+      const vol = this.musicVolume * 0.6;
+      if (this.underwaterMusic.paused) {
+        this.underwaterMusic.volume = vol;
+        this.underwaterMusic.play?.()?.catch?.(() => {});
+      } else if (this.underwaterMusic.volume <= 0.05) {
+        this.underwaterMusic.volume = vol;
+      }
+    }
   }
 
   syncRecordedMusic() {
