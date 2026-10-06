@@ -57,7 +57,10 @@ export class Fish {
     this.isCaldera = isCaldera;
     const calderaFishMult = isCaldera ? 1.6 : 1.0;
 
-    const realmSize = (options.sizeMultiplier || 1) * calderaFishMult;
+    const isFirst3Realms = (this.zone >= 1 && this.zone <= 3) || (species.zone >= 1 && species.zone <= 3) || (species.realmId >= 1 && species.realmId <= 3);
+    const earlyRealmMult = isFirst3Realms ? 1.25 : 1.0;
+
+    const realmSize = (options.sizeMultiplier || 1) * calderaFishMult * earlyRealmMult;
     this.size = Math.round(this.size * realmSize * 10) / 10;
     this.weight = Math.round(this.weight * realmSize ** 2.2 * 100) / 100;
 
@@ -789,7 +792,8 @@ export class Fish {
     }
 
     // Crown floating icon above fish if crowned
-    if (this.crown) {
+    const isSunfireEel = s.id === 'sunfire_eel' || s.name === 'Sunfire Eel' || s.name?.includes('Sunfire');
+    if (this.crown && !isSunfireEel) {
       ctx.save();
       ctx.font = '11px sans-serif';
       ctx.textAlign = 'center';
@@ -844,7 +848,7 @@ export class Fish {
       'cuttlefish', 'salp', 'krill', 'copepod', 'seal', 'sea_lion', 'walrus',
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
       'puffin', 'cormorant', 'marine_iguana', 'man_o_war', 'siphonophore',
-      'flying_squid', 'velella', 'sea_butterfly', 'arrow_worm', 'tardigrade',
+      'flying_squid', 'velella', 'starfish', 'angelfish', 'sea_butterfly', 'arrow_worm', 'tardigrade',
       'marine_worm', 'octopus', 'squid', 'jellyfish', 'plankton', 'seahorse', 'mermaid'
     ].includes(s.shape);
 
@@ -1970,7 +1974,7 @@ export class Fish {
       }
 
       // Species markings make members of a realm distinguishable at a glance.
-      if (s.pattern) {
+      if (s.pattern && !isSunfireEel) {
         ctx.save();
         ctx.globalAlpha *= 0.7;
         ctx.strokeStyle = secondary;

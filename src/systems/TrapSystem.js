@@ -18,7 +18,7 @@ export const TRAP_LOOT_TABLE = [
 export class TrapSystem {
   constructor(saveSystem) {
     this.saveSystem = saveSystem;
-    this.cycleTimeSeconds = 240; // 4 minutes per trap roll (2x longer soak time)
+    this.cycleTimeSeconds = 300; // 5 minutes per trap roll
     this.cycleTimer = 0;
     this.lastTickTime = Date.now();
 
@@ -111,12 +111,19 @@ export class TrapSystem {
     }
   }
 
+  getRealmMultiplier() {
+    const unlocked = Array.isArray(this.saveSystem?.data?.unlockedSeas) ? this.saveSystem.data.unlockedSeas : [1];
+    const highestSea = Math.max(1, ...unlocked.map(s => parseInt(s, 10) || 1));
+    return 1 + (highestSea - 1) * 0.75;
+  }
+
   harvest() {
     const items = this.getStoredItems();
     if (items.length === 0) {
       return { count: 0, gold: 0, xp: 0, skeletonPieces: 0, items: [] };
     }
 
+    const realmMultiplier = this.getRealmMultiplier();
     let totalGold = 0;
     let totalXp = 0;
     let skeletonPieces = 0;
@@ -124,7 +131,8 @@ export class TrapSystem {
     items.forEach((item) => {
       const ref = TRAP_LOOT_TABLE.find(l => l.id === item.id);
       const val = ref ? ref.value : ((item.value && item.value >= 90) ? item.value : (item.value || 45) * 2);
-      totalGold += val;
+      const scaledVal = Math.round(val * realmMultiplier);
+      totalGold += scaledVal;
       totalXp += item.xp;
 
       if (item.type === 'skeleton' && item.target) {

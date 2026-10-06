@@ -525,7 +525,7 @@ test('depth populations taper fish gently and increase hazards and treasure deep
       save.data.upgrades.lineLength = tier;
       world.populateWorld(save);
       const surfaceFish = world.entities.fish.filter(f => (f.y - world.surfaceY) / world.pixelsPerMeter < 50);
-      assert.ok(surfaceFish.length >= 5 && surfaceFish.length <= 6, 'surface population stays modest after upgrades');
+      assert.ok(surfaceFish.length >= 4 && surfaceFish.length <= 6, 'surface population stays modest after upgrades');
     }
   } finally { Math.random = originalRandom; }
 });
@@ -649,7 +649,7 @@ test('realm ecology produces distinct fish, treasure, obstacle and enemy populat
         }
       }
     }
-    assert.ok(totals[2].fish > totals[5].fish * 3);
+    assert.ok(totals[2].fish > totals[5].fish * 2.3);
     assert.ok(totals[4].treasure > totals[1].treasure * 3);
     assert.ok(totals[6].obstacles > totals[1].obstacles * 3);
     assert.ok(totals[7].enemies > totals[1].enemies * 2);
@@ -1126,6 +1126,80 @@ test('Shark tracking reduction, Caldera unique volcanic art, volcano obstacles d
   trapSys.renderBuoys(buoyCtx, 400, 220, 0);
   assert.equal(drawnBuoys, 0, 'Buoys are not rendered when hideSeabedTraps is true');
 });
+
+test('Penguin in Aether sea, Sunfire Eel diamond removal, 5min trap cycle with realm scaling, starfish, and early realm sizing', async () => {
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { REALM_PROFILES, REALM_TREASURES, buildRealmFish } = await import('../src/data/RealmContent.js');
+  const { REALM_RELICS, RELIC_SPAWN, RELIC_TYPES } = await import('../src/data/RelicsData.js');
+  const { TrapSystem, TRAP_LOOT_TABLE } = await import('../src/systems/TrapSystem.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+
+  const allRealmFish = buildRealmFish(FISH_SPECIES);
+
+  // 1. Penguin spawns in Whispering Aether Sea (Sea 5), not Realm 1
+  const realm1Penguins = allRealmFish.filter(f => f.zone === 1 && f.shape === 'penguin');
+  assert.equal(realm1Penguins.length, 0, 'No penguins in Realm 1');
+  const realm5Penguins = allRealmFish.filter(f => f.zone === 5 && f.shape === 'penguin');
+  assert.ok(realm5Penguins.length > 0, 'Penguin spawns in Whispering Aether Sea');
+
+  // 2. Velella replaced by starfish in Realm 1
+  const realm1Velella = allRealmFish.filter(f => f.zone === 1 && (f.shape === 'velella' || f.name.includes('Velella')));
+  assert.equal(realm1Velella.length, 0, 'No Velella in Realm 1');
+  const realm1Starfish = allRealmFish.filter(f => f.zone === 1 && (f.shape === 'starfish' || f.name.includes('Starfish')));
+  assert.ok(realm1Starfish.length > 0, 'Starfish is present in Realm 1');
+
+  // 3. Sunlit Sea Angel is pink angelfish
+  const seaAngel = allRealmFish.find(f => f.name === 'Sunlit Sea Angel');
+  assert.ok(seaAngel, 'Sunlit Sea Angel exists');
+  assert.equal(seaAngel.shape, 'angelfish', 'Sunlit Sea Angel has angelfish shape');
+  assert.equal(seaAngel.primaryColor, '#f472b6', 'Sunlit Sea Angel has pink primary color');
+
+  // 4. Sunfire Eel does not have a diamond rendered above it
+  const sunfireSpecies = FISH_SPECIES.find(f => f.id === 'sunfire_eel');
+  assert.ok(sunfireSpecies, 'Sunfire Eel exists in FISH_SPECIES');
+  const sunfireFish = new Fish(sunfireSpecies, 200, 450);
+  sunfireFish.crown = 'silver'; // simulate silver crown which normally renders ◇
+  let renderedDiamond = false;
+  const dummyCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key === 'fillText') return (text) => { if (text === '◇' || text === '👑') renderedDiamond = true; };
+      if (key === 'createLinearGradient') return () => ({ addColorStop: () => {} });
+      return () => {};
+    },
+    set: () => true,
+  });
+  sunfireFish.render(dummyCtx, null, 1);
+  assert.equal(renderedDiamond, false, 'Sunfire Eel does not have diamond text rendered above it');
+
+  // 5. Trap takes 5 minutes (300 seconds) to cycle
+  const save = new SaveSystem();
+  save.data.upgrades.seabedTraps = 2;
+  const trapSys = new TrapSystem(save);
+  assert.equal(trapSys.cycleTimeSeconds, 300, 'Trap soak time is 300 seconds (5 minutes)');
+
+  // 6. Trap harvest money scales with farthest unlocked realm
+  save.data.unlockedSeas = [1];
+  save.data.traps.items = [{ id: 'dungeness_crab', name: 'Coastal Dungeness Crab', value: 90, xp: 30, type: 'catch' }];
+  const harvest1 = trapSys.harvest();
+  assert.equal(harvest1.gold, 90, 'Base realm 1 gold payout');
+
+  save.data.unlockedSeas = [1, 2, 3, 4, 5];
+  save.data.traps.items = [{ id: 'dungeness_crab', name: 'Coastal Dungeness Crab', value: 90, xp: 30, type: 'catch' }];
+  const harvest5 = trapSys.harvest();
+  assert.ok(harvest5.gold > harvest1.gold, 'Farthest realm 5 increases gold payout');
+  assert.equal(harvest5.gold, Math.round(90 * (1 + (5 - 1) * 0.75)), 'Accurate realm 5 gold scaling');
+
+  // 7. Relic spawn chance is reduced and values are boosted
+  assert.ok(RELIC_SPAWN.spawnChance <= 0.20, 'Relic spawn chance is reduced');
+  const compass = RELIC_TYPES.find(r => r.id === 'brass_compass');
+  assert.ok(compass.restoredValue >= 1800, 'Brass compass restored value boosted');
+
+  // 8. Marine life in first 3 realms is 25% larger
+  const realm1Fish = new Fish(allRealmFish.find(f => f.zone === 1), 100, 20);
+  assert.ok(realm1Fish.size >= realm1Fish.species.sizeRange[0] * 1.2, 'Realm 1 fish size is boosted by 25%');
+});
+
 
 
 

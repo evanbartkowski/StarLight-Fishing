@@ -899,6 +899,133 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       return true;
     }
 
+    case 'starfish': {
+      // 5-armed sea star with tapering rays, central disc, and ambulacral ridge details
+      const arms = 5;
+      const outerR = 17;
+      const innerR = 7;
+      const rot = Math.sin(t * 0.4) * 0.06;
+      ctx.save();
+      ctx.rotate(rot);
+      ctx.beginPath();
+      for (let i = 0; i < arms * 2; i++) {
+        const r = i % 2 === 0 ? outerR : innerR;
+        const angle = (i * Math.PI) / arms - Math.PI / 2;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = primary || '#f97316';
+      ctx.fill();
+      ctx.strokeStyle = secondary || '#ea580c';
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+
+      // Granular bumps / ambulacral groove details
+      ctx.fillStyle = finColor || '#fef08a';
+      for (let i = 0; i < arms; i++) {
+        const angle = (i * 2 * Math.PI) / arms - Math.PI / 2;
+        for (let d = 5; d <= 12; d += 3.5) {
+          const dotX = Math.cos(angle) * d;
+          const dotY = Math.sin(angle) * d;
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.beginPath();
+      ctx.arc(0, 0, 2.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return true;
+    }
+
+    case 'angelfish': {
+      // Elegant saltwater angelfish: high diamond profile, tall sweeping dorsal and anal fins, delicate streamers, pink coloration, no flapping
+      const pinkPrimary = '#f472b6';
+      const pinkSecondary = '#fbcfe8';
+      const pinkFin = '#fda4af';
+      const bodyColor = (species?.name?.includes('Sea Angel') || shape === 'angelfish') ? pinkPrimary : (primary || '#f472b6');
+      const secColor = (species?.name?.includes('Sea Angel') || shape === 'angelfish') ? pinkSecondary : (secondary || '#fbcfe8');
+      const finCol = (species?.name?.includes('Sea Angel') || shape === 'angelfish') ? pinkFin : (finColor || '#fda4af');
+
+      // Laterally compressed diamond/rounded body disc
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.moveTo(-16, 0);
+      ctx.quadraticCurveTo(-4, -18, 6, -12);
+      ctx.quadraticCurveTo(16, -4, 18, 0);
+      ctx.quadraticCurveTo(16, 4, 6, 12);
+      ctx.quadraticCurveTo(-4, 18, -16, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Tail (caudal) fin with delicate rays (gentle tail wag, no flapping)
+      const tailWiggle = Math.sin(t * 2.8) * 1.5;
+      ctx.fillStyle = finCol;
+      ctx.beginPath();
+      ctx.moveTo(-15, 0);
+      ctx.lineTo(-26, -11 + tailWiggle);
+      ctx.quadraticCurveTo(-23, 0 + tailWiggle, -26, 11 + tailWiggle);
+      ctx.closePath();
+      ctx.fill();
+
+      // Tall sweeping dorsal fin
+      ctx.fillStyle = finCol;
+      ctx.beginPath();
+      ctx.moveTo(-2, -16);
+      ctx.quadraticCurveTo(-6, -32, -18, -36);
+      ctx.quadraticCurveTo(-12, -22, -14, -6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Sweeping long anal fin
+      ctx.beginPath();
+      ctx.moveTo(-2, 16);
+      ctx.quadraticCurveTo(-6, 32, -18, 36);
+      ctx.quadraticCurveTo(-12, 22, -14, 6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Long delicate trailing pelvic fin feelers / streamers
+      ctx.strokeStyle = secColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(4, 8);
+      ctx.quadraticCurveTo(0, 22, -6, 32);
+      ctx.moveTo(6, 7);
+      ctx.quadraticCurveTo(2, 20, -3, 28);
+      ctx.stroke();
+
+      // Soft pearlescent vertical body accents
+      ctx.strokeStyle = secColor;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(2, -13);
+      ctx.quadraticCurveTo(-2, 0, 2, 13);
+      ctx.moveTo(-6, -14);
+      ctx.quadraticCurveTo(-10, 0, -6, 14);
+      ctx.stroke();
+
+      // Gentle eye
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(10, -3, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(11, -3, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(11.6, -3.6, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      return true;
+    }
+
     case 'velella': {
       // By-the-wind sailor floating disc with upright triangular sail
       ctx.fillStyle = primary || '#1d4ed8';
@@ -926,6 +1053,64 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_butterfly': {
+      if (species?.name?.includes('Sea Angel')) {
+        // Sunlit Sea Angel looks like an angelfish, is pink, and does not flap
+        const pinkPrimary = '#f472b6';
+        const pinkSecondary = '#fbcfe8';
+        const pinkFin = '#fda4af';
+        ctx.fillStyle = pinkPrimary;
+        ctx.beginPath();
+        ctx.moveTo(-16, 0);
+        ctx.quadraticCurveTo(-4, -18, 6, -12);
+        ctx.quadraticCurveTo(16, -4, 18, 0);
+        ctx.quadraticCurveTo(16, 4, 6, 12);
+        ctx.quadraticCurveTo(-4, 18, -16, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        const tailWiggle = Math.sin(t * 2.8) * 1.5;
+        ctx.fillStyle = pinkFin;
+        ctx.beginPath();
+        ctx.moveTo(-15, 0);
+        ctx.lineTo(-26, -11 + tailWiggle);
+        ctx.quadraticCurveTo(-23, 0 + tailWiggle, -26, 11 + tailWiggle);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = pinkFin;
+        ctx.beginPath();
+        ctx.moveTo(-2, -16);
+        ctx.quadraticCurveTo(-6, -32, -18, -36);
+        ctx.quadraticCurveTo(-12, -22, -14, -6);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(-2, 16);
+        ctx.quadraticCurveTo(-6, 32, -18, 36);
+        ctx.quadraticCurveTo(-12, 22, -14, 6);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = pinkSecondary;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(4, 8);
+        ctx.quadraticCurveTo(0, 22, -6, 32);
+        ctx.moveTo(6, 7);
+        ctx.quadraticCurveTo(2, 20, -3, 28);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(10, -3, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(11, -3, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+        return true;
+      }
       // Thecosome pteropod with delicate shell and flapping wing-like parapodia
       ctx.beginPath();
       ctx.arc(-4, 0, 8, 0, Math.PI * 2);

@@ -39,7 +39,7 @@ const HUD_ICONS = {
   journal: '<svg viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5zm0 0v13M8 6h8m-8 4h8m-8 4h6"/></svg>',
   aquarium: '<svg viewBox="0 0 24 24"><path d="M3 12c3-5 10-7 15-3l3-3v12l-3-3c-5 4-12 2-15-3Zm5-1h.01m2 5 2-2m-8-3-2-2m16 3h1"/></svg>',
   radio: '<svg viewBox="0 0 24 24"><path d="M4 7h16v14H4zM7 7l10-4m-9 8h5m-5 4h5m5 1h.01"/><circle cx="17" cy="12" r="1"/></svg>',
-  settings: '<svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-6v3m0 14v3m10-10h-3M5 12H2m17.1-7.1-2.1 2.1M7 17l-2.1 2.1m14.2 0L17 17M7 7 4.9 4.9"/></svg>',
+  settings: '<svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
   help: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.6 1.3c-.9 1.1-2.2 1.4-2.2 3.2m0 3h.01"/></svg>',
   sound: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1a5 5 0 0 1 0 6m2-9a9 9 0 0 1 0 12"/></svg>',
   muted: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1 5 6m0-6-5 6"/></svg>',
@@ -2965,6 +2965,7 @@ export class UIManager {
 
       const capacity = this.trapSystem.getStorageCapacity();
       const items = this.trapSystem.getStoredItems();
+      const realmMult = this.trapSystem.getRealmMultiplier ? this.trapSystem.getRealmMultiplier() : 1;
 
       let itemsHtml = '<div class="traps-inventory-grid">';
       if (items.length === 0) {
@@ -2972,21 +2973,20 @@ export class UIManager {
           <div class="empty-trap-box">
             <span style="font-size: 2.5rem; display:inline-block; width:52px; height:52px; margin-bottom:8px;">${MISC_ART.trapPot}</span>
             <p>Your seabed pots are actively soaking in coastal waters!</p>
-            <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 2 minutes even while in other tabs.</p>
-            <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 4 minutes even while in other tabs.</p>
+            <p class="empty-sub">Traps passively catch crabs, oysters, and bone fragments every 5 minutes even while in other tabs.</p>
           </div>
         `;
       } else {
         items.forEach((it) => {
           const lootDef = TRAP_LOOT_TABLE.find(entry => entry.id === it.id);
-          const resolvedValue = lootDef ? lootDef.value : (it.value || 0);
+          const baseVal = lootDef ? lootDef.value : (it.value || 0);
+          const finalVal = Math.round(baseVal * realmMult);
           itemsHtml += `
             <div class="trap-item-pill">
               <span class="trap-item-icon">${it.icon || '🦀'}</span>
               <div class="trap-item-info">
                 <strong>${it.name}</strong>
-                <span>+$${it.value} • +${it.xp} XP</span>
-                <span>+$${resolvedValue} • +${it.xp || 10} XP</span>
+                <span>+$${finalVal.toLocaleString()} • +${it.xp || 10} XP</span>
               </div>
             </div>
           `;
@@ -2995,8 +2995,12 @@ export class UIManager {
       itemsHtml += '</div>';
 
       return `
-<div class="traps-panel"><div class="museum-intro"><p class="eyebrow">QUIET WATERS, HIDDEN FINDS</p><h3>Seabed Drift Pots</h3><p>Let your pots soak while you explore. Collect shellfish, lost coins, and ancient fragments.</p></div>
         <div class="traps-panel">
+          <div class="museum-intro">
+            <p class="eyebrow">QUIET WATERS, HIDDEN FINDS</p>
+            <h3>Seabed Drift Pots</h3>
+            <p>Let your pots soak while you explore. Collect shellfish, lost coins, and ancient fragments.</p>
+          </div>
           <div class="traps-header-info">
             <div class="stat-box">
               <span class="stat-label">Active Drift Pots</span>
@@ -3008,9 +3012,13 @@ export class UIManager {
             </div>
             <div class="stat-box">
               <span class="stat-label">Cycle Speed</span>
-              <span class="stat-value">2.0 mins / soak</span>
-              <span class="stat-value">4.0 mins / soak</span>
+              <span class="stat-value">5.0 mins / soak</span>
             </div>
+            ${realmMult > 1 ? `
+            <div class="stat-box">
+              <span class="stat-label">Realm Bounty</span>
+              <span class="stat-value" style="color: #38bdf8;">+${Math.round((realmMult - 1) * 100)}% Gold</span>
+            </div>` : ''}
           </div>
 
           ${itemsHtml}

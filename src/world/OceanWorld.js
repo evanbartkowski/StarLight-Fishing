@@ -204,7 +204,8 @@ export class OceanWorld {
     const depthProgress = depth => depth / (depth + 350);
     const fishPool = FISH_SPECIES.filter(species => belongsToRealm(species, this.currentSeaId)
       && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
-    populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 1.15 * ecology.fish,
+    const earlyRealmSpawnMult = this.currentSeaId <= 3 ? 0.8 : 1.0;
+    populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 1.15 * ecology.fish * earlyRealmSpawnMult,
       (species, depth) => (rarityWeight[species.rarity] || 0.01)
         * ({ common: 1 / (1 + depth / 350), uncommon: 1 / (1 + depth / 700), rare: 1 + depth / 300, epic: 1 + depth / 180, legendary: 1 + depth / 120 }[species.rarity] || 1)
         * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 * ecology.rarity : 1)
@@ -287,7 +288,7 @@ export class OceanWorld {
 
     REALM_RELICS.filter(relic => relic.zone === this.currentSeaId).forEach(relic => {
       const reachableDepth = Math.min(activeMaxDepth, relic.maxDepth);
-      if (relic.minDepth >= reachableDepth || Math.random() > 0.08 * fossilBonus * ecology.treasure) return;
+      if (relic.minDepth >= reachableDepth || Math.random() > 0.04 * fossilBonus * ecology.treasure) return;
       const x = 70 + Math.random() * (this.worldWidth - 140);
       const y = this.surfaceY + (relic.minDepth + Math.random() * (reachableDepth - relic.minDepth)) * this.pixelsPerMeter;
       this.entities.relics.push(new Relic(relic, x, y));
