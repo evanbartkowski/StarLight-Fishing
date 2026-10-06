@@ -16,10 +16,10 @@ export const MARINE_THREATS = Object.entries(names).flatMap(([realm, roster]) =>
   const colossalShieldCost = isColossal ? (zone >= 4 ? 3 : 2) : 1;
   return {
     id: `marine_${zone}_${i}`, name, zone, marineKind: i === 0 ? 'jelly' : i === 2 ? 'monster' : zone === 2 || zone === 7 ? 'eel' : zone === 4 || zone === 5 ? 'ray' : 'shark',
-    attack: (i === 1 || ((zone === 4 || zone === 6) && i === 2)) ? 'dash' : undefined,
+    attack: ((i === 1 && zone !== 6) || ((zone === 4 || zone === 6) && i === 2)) ? 'dash' : undefined,
     minDepth: [40, 250, 900][i], maxDepth: 3000,
     radius: [22, 34, 65][i], damage: [1, 2, 3][i], knockback: [25, 50, 85][i],
-    speed: [18, 245, 140][i] * (1 + (zone - 1) * .085), detectionRadius: [140, 340, 480][i] * (1 + (zone - 1) * .05), leash: [130, 600, 800][i],
+    speed: [18, 245, 140][i] * (1 + (zone - 1) * .085), detectionRadius: [160, 390, 540][i] * (1 + (zone - 1) * .06), leash: [150, 680, 900][i],
     isColossal, shieldCost: colossalShieldCost, color: REALM_PROFILES[zone].colors[i], glow: REALM_PROFILES[zone].colors[(i + 2) % 5],
     monsterForm: ['kraken', 'maw', 'serpent', 'kraken', 'dragon', 'maw', 'serpent'][zone - 1],
   };

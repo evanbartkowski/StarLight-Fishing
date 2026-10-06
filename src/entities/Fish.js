@@ -2029,24 +2029,8 @@ export class Fish {
     if (this.isCaldera && !isHooked) {
       ctx.save();
       const t = this.wiggleTimer;
-      // 1. Jagged Obsidian Dorsal Spikes & Volcanic Crest
-      ctx.fillStyle = '#1c1917';
-      ctx.strokeStyle = '#f97316';
-      ctx.lineWidth = 1.3;
-      for (let sp = -2; sp <= 2; sp++) {
-        const sx = sp * 7;
-        const sy = -8 - Math.abs(sp) * 1.5;
-        const spikeH = 7 + (2 - Math.abs(sp)) * 3;
-        ctx.beginPath();
-        ctx.moveTo(sx - 3, sy);
-        ctx.lineTo(sx, sy - spikeH);
-        ctx.lineTo(sx + 3, sy);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-      }
 
-      // 2. Glowing Molten Lava Fissure Veins along body
+      // 1. Glowing Molten Lava Fissure Veins along body
       const pulseLava = 0.75 + 0.25 * Math.sin(t * 3.2);
       ctx.strokeStyle = `rgba(249, 115, 22, ${pulseLava})`;
       ctx.lineWidth = 2.0;
@@ -2068,7 +2052,7 @@ export class Fish {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // 3. Demonic Fiery Molten Monster Eye
+      // 2. Demonic Fiery Molten Monster Eye
       ctx.fillStyle = '#ef4444';
       ctx.shadowColor = '#facc15';
       ctx.shadowBlur = 6;
@@ -2083,16 +2067,6 @@ export class Fish {
       ctx.fillStyle = '#09090b';
       ctx.fillRect(10.2, -5.5, 1.4, 5);
       ctx.shadowBlur = 0;
-
-      // 4. Floating volcanic embers
-      ctx.fillStyle = '#fb923c';
-      for (let e = 0; e < 3; e++) {
-        const ex = -18 - e * 7 + Math.sin(t * 3 + e) * 3;
-        const ey = Math.sin(t * 4 + e * 2) * 6;
-        ctx.beginPath();
-        ctx.arc(ex, ey, 1.8, 0, Math.PI * 2);
-        ctx.fill();
-      }
       ctx.restore();
     }
 

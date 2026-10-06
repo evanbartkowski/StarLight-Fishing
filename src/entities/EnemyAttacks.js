@@ -8,7 +8,8 @@ export function updateAttack(enemy, dt, hook, width) {
   if (!enemy.behavior.attack) return false;
   enemy.attackCooldown = Math.max(0, (enemy.attackCooldown ?? 1.5) - step);
   const active = hook && ['DESCENDING', 'REELING'].includes(hook.state);
-  if (!enemy.attackState && active && !enemy.attackCooldown && Math.hypot(hook.x - enemy.x, hook.y - enemy.y) < 450) {
+  const attackRadius = Math.max(540, (enemy.behavior?.detectionRadius ? enemy.behavior.detectionRadius * 1.15 : 540));
+  if (!enemy.attackState && active && !enemy.attackCooldown && Math.hypot(hook.x - enemy.x, hook.y - enemy.y) < attackRadius) {
     const leadX = (hook.vx || 0) * 0.2;
     const leadY = (hook.vy || 0) * 0.2;
     const dx = (hook.x + leadX) - enemy.x, dy = (hook.y + leadY) - enemy.y;

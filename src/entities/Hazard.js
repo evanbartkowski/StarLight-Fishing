@@ -73,8 +73,13 @@ export class Hazard {
       const config = this.behavior;
       const active = hook && ['DESCENDING', 'REELING'].includes(hook.state);
       const distance = active ? Math.hypot(hook.x - this.x, hook.y - this.y) : Infinity;
-      const leashBonus = this.chaseTime > 0 ? 1.4 : 1.0;
-      const chasing = active && this.restTime === 0 && distance < (config.detectionRadius * 1.15)
+      const isCaldera = this.zone === 6 || this.behavior?.zone === 6;
+      const isShark = this.marineKind === 'shark' || this.type?.includes('shark');
+      const isCalderaShark = (isCaldera && isShark) || (isCaldera && this.isColossal);
+
+      const trackMultiplier = isCaldera ? 1.45 : 1.35;
+      const leashBonus = this.chaseTime > 0 ? 1.6 : 1.25;
+      const chasing = active && this.restTime === 0 && distance < (config.detectionRadius * trackMultiplier)
         && Math.abs(hook.y - this.homeY) < (config.leash * leashBonus);
       this.chaseTime = chasing ? this.chaseTime + deltaSec : 0;
       if (this.chaseTime > (config.chaseDuration || 3)) { this.restTime = config.restDuration || 3; this.chaseTime = 0; }
@@ -85,9 +90,10 @@ export class Hazard {
       const waveX = pursuing ? 0 : Math.cos(this.timer * 1.4) * (this.isColossal ? 45 : 30);
       const waveY = pursuing ? 0 : undulate * (this.isColossal ? 26 : 18);
 
-      // Predictive tracking: intercept moving hook trajectory
-      const leadX = pursuing ? (hook.vx || 0) * 0.22 : 0;
-      const leadY = pursuing ? (hook.vy || 0) * 0.22 : 0;
+      // Predictive tracking: intercept moving hook trajectory with fluid hydrodynamic lead
+      const leadScale = isCalderaShark ? 0.12 : (pursuing ? 0.22 : 0);
+      const leadX = pursuing ? (hook.vx || 0) * leadScale : 0;
+      const leadY = pursuing ? (hook.vy || 0) * leadScale : 0;
 
       const targetX = pursuing ? hook.x + leadX : this.homeX + Math.sin(this.timer * 0.35) * 65;
       const targetY = pursuing ? hook.y + leadY : this.homeY + waveY;
@@ -95,12 +101,12 @@ export class Hazard {
       const length = Math.hypot(dx, dy) || 1;
 
       // Realistic hydrodynamic acceleration and fluid drag - boosted tracking speed
-      const maxSpd = config.speed * (pursuing ? 1.35 : 0.32);
+      const maxSpd = config.speed * (pursuing ? (isCalderaShark ? 1.25 : 1.35) : 0.32);
       const desiredVx = (dx / length) * maxSpd;
       const desiredVy = (dy / length) * maxSpd;
 
-      // Sharp turning response when pursuing hook
-      const accelFactor = this.isColossal ? (pursuing ? 7.5 : 2.0) : (pursuing ? 26.0 : 5.0);
+      // Smooth turning response when pursuing hook (caldera sharks glide with natural fluid arcs)
+      const accelFactor = isCalderaShark ? (pursuing ? 9.5 : 2.5) : (this.isColossal ? (pursuing ? 7.5 : 2.0) : (pursuing ? 18.0 : 4.5));
       this.vx += (desiredVx - this.vx) * Math.min(1, accelFactor * deltaSec);
       this.vy += (desiredVy - this.vy) * Math.min(1, accelFactor * deltaSec);
 
@@ -112,16 +118,17 @@ export class Hazard {
       this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.x));
       this.y = Math.max(this.minY ?? 0, Math.min(this.maxY ?? Infinity, this.y));
 
-      // Facing direction: tracks active hook if present, or follows horizontal velocity
-      if (active && Math.abs(hook.x - this.x) > 1) {
-        this.facing = Math.sign(hook.x - this.x);
-      } else if (Math.abs(this.vx) > 3) {
+      // Facing direction: smooth transition following swim velocity or active hook
+      if (Math.abs(this.vx) > 15) {
         this.facing = Math.sign(this.vx);
+      } else if (active && Math.abs(hook.x - this.x) > 20) {
+        this.facing = Math.sign(hook.x - this.x);
       }
 
       // Smooth banking angle according to vertical flow
       const targetPitch = Math.atan2(this.vy, Math.abs(this.vx) || 1) * 0.65;
-      this.swimAngle += (targetPitch - this.swimAngle) * Math.min(1, 4.0 * deltaSec);
+      const pitchSpeed = isCalderaShark ? 3.2 : 4.0;
+      this.swimAngle += (targetPitch - this.swimAngle) * Math.min(1, pitchSpeed * deltaSec);
       return;
     }
 

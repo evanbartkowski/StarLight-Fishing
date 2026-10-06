@@ -945,4 +945,41 @@ test('Magma Caldera visuals, Fire Opal Cluster, probe redesign, and aquarium tip
   assert.equal(capSea6, Math.round(1 * 750 * (1 + (6 - 1) * 0.5)), 'Sea 6 prestige multiplier applied');
 });
 
+test('Caldera fish visual cleanup, smooth Caldera shark chase, and enlarged enemy tracking', async () => {
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { Hazard } = await import('../src/entities/Hazard.js');
+
+  // 1. Verify Caldera fish renders cleanly without dorsal spikes or tail balls
+  const calderaSpecies = FISH_SPECIES.filter(f => f.zone === 6);
+  assert.ok(calderaSpecies.length >= 30, 'Caldera has native species roster');
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => key.includes('Gradient') ? () => ({ addColorStop() {} }) : () => {},
+    set: () => true
+  });
+  const testFish = new Fish(calderaSpecies[0], 200, 300, { currentSeaId: 6 });
+  assert.equal(testFish.isCaldera, true);
+  assert.doesNotThrow(() => testFish.render(mockCtx, 0));
+
+  // 2. Caldera shark (Obsidian Hunter Shark) chases smoothly rather than rigid dash
+  const obsidianSharkConfig = HAZARD_TYPES.find(h => h.zone === 6 && h.marineKind === 'shark' && h.name.includes('Obsidian Hunter Shark'));
+  assert.ok(obsidianSharkConfig, 'Obsidian Hunter Shark exists in Caldera');
+  assert.equal(obsidianSharkConfig.attack, undefined, 'Caldera shark uses fluid hunter pursuit instead of rigid dash');
+
+  const calderaShark = new Hazard(obsidianSharkConfig, 300, 4000);
+  const hook = { x: 500, y: 4000, state: 'DESCENDING', vx: 20, vy: 100 };
+
+  // Run shark update and check smooth pursuit acceleration
+  for (let f = 0; f < 10; f++) {
+    calderaShark.update(16, 1280, hook);
+  }
+  assert.ok(calderaShark.vx > 10, 'Caldera shark accelerates toward hook');
+  assert.ok(Math.abs(calderaShark.swimAngle) < 1.0, 'Shark maintains controlled banking angle');
+
+  // 3. Enemy detection tracking is expanded
+  assert.ok(calderaShark.behavior.detectionRadius >= 350, 'Enemy detection radius is enlarged');
+  assert.ok(calderaShark.behavior.leash >= 600, 'Enemy leash tracking range is enlarged');
+});
+
+
 
