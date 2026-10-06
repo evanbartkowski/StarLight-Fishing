@@ -41,6 +41,12 @@ export class Fish {
     const shinyThreshold = options.shinyChance ?? 0.002;
     this.isShiny = shinyRoll < shinyThreshold;
 
+    if (species.shape === 'mermaid') {
+      const hairPalette = ['#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f8fafc'];
+      const seed = Math.abs((Math.round(this.x * 13 + this.y * 29) || (species.name?.length || 1) * 7) % hairPalette.length);
+      this.hairColor = options.hairColor || hairPalette[seed];
+    }
+
     // Bigger fish sell for exponentially more + crown bonus (boosted +35% for rewarding fishing)
     const sizeMultiplier = Math.pow(sizeRatio, 1.85);
     let val = Math.round(species.baseValue * Math.min(1.8, sizeMultiplier) * Math.min(1.5, crownMult) * (this.isShiny ? 2 : 1));
@@ -711,7 +717,7 @@ export class Fish {
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
       'puffin', 'cormorant', 'marine_iguana', 'man_o_war', 'siphonophore',
       'flying_squid', 'velella', 'sea_butterfly', 'arrow_worm', 'tardigrade',
-      'marine_worm', 'octopus', 'squid', 'jellyfish', 'plankton'
+      'marine_worm', 'octopus', 'squid', 'jellyfish', 'plankton', 'seahorse', 'mermaid'
     ].includes(s.shape);
 
     const wiggle = Math.sin(this.wiggleTimer) * 4;
@@ -748,7 +754,8 @@ export class Fish {
     ctx.fillStyle = primary;
     ctx.beginPath();
 
-    if (drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer)) {
+    const isCustomMarine = drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this);
+    if (isCustomMarine) {
       // Specialized marine creature silhouette rendered
     } else if (s.name === 'Giant Cave Salamander') {
       ctx.ellipse(0, 0, 28, 9, 0, 0, Math.PI * 2); ctx.fill();
@@ -968,67 +975,6 @@ export class Fish {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.arc(12, -2.7, 0.8, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (s.name === 'Corinthian Seahorse') {
-      // Mythological Hippocamp: Horse-crested head, arched neck, Corinthian column ridges & coiled tail
-      const mareWiggle = Math.sin(this.wiggleTimer * 3);
-      ctx.fillStyle = primary || '#059669';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 10, 18, 0.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Horse head with muzzle
-      ctx.beginPath();
-      ctx.moveTo(3, -12);
-      ctx.quadraticCurveTo(12, -18, 16, -14);
-      ctx.lineTo(15, -9);
-      ctx.quadraticCurveTo(8, -8, 4, -4);
-      ctx.closePath();
-      ctx.fill();
-
-      // Corinthian fluted column ridges along spine
-      ctx.strokeStyle = '#fde047';
-      ctx.lineWidth = 1.8;
-      for (let col = -10; col <= 10; col += 4) {
-        ctx.beginPath();
-        ctx.moveTo(-4, col);
-        ctx.lineTo(4, col - 2);
-        ctx.stroke();
-      }
-
-      // Golden horsehair crested mane
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath();
-      ctx.moveTo(2, -14);
-      ctx.quadraticCurveTo(-6, -24 + mareWiggle, -2, -26 + mareWiggle);
-      ctx.quadraticCurveTo(4, -20, 5, -12);
-      ctx.closePath();
-      ctx.fill();
-
-      // Bridle
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(14, -13); ctx.lineTo(7, -8);
-      ctx.stroke();
-
-      // Coiled golden finned tail
-      ctx.strokeStyle = finColor || '#34d399';
-      ctx.lineWidth = 3.5;
-      ctx.beginPath();
-      ctx.moveTo(-2, 14);
-      ctx.quadraticCurveTo(-8 + mareWiggle * 2, 24, -14, 20);
-      ctx.quadraticCurveTo(-18, 14, -10, 10);
-      ctx.stroke();
-
-      // Alert mythical equine eye
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(10, -13, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.arc(10.5, -13, 1.1, 0, Math.PI * 2);
       ctx.fill();
     } else if (s.name === 'Poseidon Crested Swordfish') {
       // Ancient mythological royal swordfish: Golden three-pronged Trident rostrum & Olympian fin crest
@@ -1884,78 +1830,80 @@ export class Fish {
     } else {
       ctx.ellipse(0, 0, 20, 10, 0, 0, Math.PI * 2);
     }
-    ctx.fill();
-
-    // Belly stripe accent (skip for magikart and custom leviathans which have custom flank art)
-    if (s.shape !== 'magikart' && !isCustomTailLeviathan) {
-      ctx.fillStyle = secondary;
-      ctx.beginPath();
-      ctx.ellipse(0, 4, 14, 5, 0, 0, Math.PI);
+    if (!isCustomMarine) {
       ctx.fill();
-    }
 
-    // Species markings make members of a realm distinguishable at a glance.
-    if (s.pattern) {
-      ctx.save();
-      ctx.globalAlpha *= 0.7;
-      ctx.strokeStyle = secondary;
-      ctx.fillStyle = secondary;
-      ctx.lineWidth = 2;
-      if (s.pattern === 'stripe') {
-        ctx.beginPath(); ctx.moveTo(-12, -1); ctx.lineTo(10, -1); ctx.stroke();
-      } else {
-        for (let n = 0; n < 4; n++) {
-          const x = -10 + n * 5;
-          ctx.beginPath();
-          if (s.pattern === 'spots') ctx.arc(x, -3 + n % 2 * 4, 1.8, 0, Math.PI * 2);
-          else if (s.pattern === 'bands') ctx.rect(x, -6, 2, 11);
-          else { ctx.moveTo(x, -5); ctx.lineTo(x + 2, -2); ctx.lineTo(x, 1); ctx.lineTo(x - 2, -2); ctx.closePath(); }
-          ctx.fill();
-        }
+      // Belly stripe accent (skip for magikart and custom leviathans which have custom flank art)
+      if (s.shape !== 'magikart' && !isCustomTailLeviathan) {
+        ctx.fillStyle = secondary;
+        ctx.beginPath();
+        ctx.ellipse(0, 4, 14, 5, 0, 0, Math.PI);
+        ctx.fill();
       }
-      ctx.restore();
-    }
 
-    // Eye (custom leviathans already rendered their unique eyes)
-    if (s.shape === 'magikart') {
-      const eyeX = 12;
-      const eyeY = -4;
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(eyeX, eyeY, 5.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
+      // Species markings make members of a realm distinguishable at a glance.
+      if (s.pattern) {
+        ctx.save();
+        ctx.globalAlpha *= 0.7;
+        ctx.strokeStyle = secondary;
+        ctx.fillStyle = secondary;
+        ctx.lineWidth = 2;
+        if (s.pattern === 'stripe') {
+          ctx.beginPath(); ctx.moveTo(-12, -1); ctx.lineTo(10, -1); ctx.stroke();
+        } else {
+          for (let n = 0; n < 4; n++) {
+            const x = -10 + n * 5;
+            ctx.beginPath();
+            if (s.pattern === 'spots') ctx.arc(x, -3 + n % 2 * 4, 1.8, 0, Math.PI * 2);
+            else if (s.pattern === 'bands') ctx.rect(x, -6, 2, 11);
+            else { ctx.moveTo(x, -5); ctx.lineTo(x + 2, -2); ctx.lineTo(x, 1); ctx.lineTo(x - 2, -2); ctx.closePath(); }
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
 
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.arc(eyeX + 0.5, eyeY, 2.4, 0, Math.PI * 2);
-      ctx.fill();
+      // Eye (custom leviathans already rendered their unique eyes)
+      if (s.shape === 'magikart') {
+        const eyeX = 12;
+        const eyeY = -4;
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
 
-      // Eye catchlight
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(eyeX + 1.8, eyeY - 1.5, 1.2, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (!isCustomTailLeviathan) {
-      const eyeX = s.shape === 'squid' ? 6 : s.shape === 'octopus' ? 4 : 11;
-      const eyeY = -3;
-      ctx.fillStyle = s.eyeColor || '#ffffff';
-      ctx.beginPath();
-      ctx.arc(eyeX, eyeY, 3.5, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(eyeX + 0.5, eyeY, 2.4, 0, Math.PI * 2);
+        ctx.fill();
 
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.arc(eyeX + 0.5, eyeY, 1.8, 0, Math.PI * 2);
-      ctx.fill();
+        // Eye catchlight
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eyeX + 1.8, eyeY - 1.5, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (!isCustomTailLeviathan) {
+        const eyeX = s.shape === 'squid' ? 6 : s.shape === 'octopus' ? 4 : 11;
+        const eyeY = -3;
+        ctx.fillStyle = s.eyeColor || '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eyeX, eyeY, 3.5, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Eye catchlight
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(eyeX + 1.2, eyeY - 1, 0.9, 0, Math.PI * 2);
-      ctx.fill();
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(eyeX + 0.5, eyeY, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye catchlight
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eyeX + 1.2, eyeY - 1, 0.9, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     ctx.restore();

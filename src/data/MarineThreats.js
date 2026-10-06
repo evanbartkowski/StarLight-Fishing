@@ -16,7 +16,7 @@ export const MARINE_THREATS = Object.entries(names).flatMap(([realm, roster]) =>
   const colossalShieldCost = isColossal ? (zone >= 4 ? 3 : 2) : 1;
   return {
     id: `marine_${zone}_${i}`, name, zone, marineKind: i === 0 ? 'jelly' : i === 2 ? 'monster' : zone === 2 || zone === 7 ? 'eel' : zone === 4 || zone === 5 ? 'ray' : 'shark',
-    attack: i === 1 ? 'dash' : undefined,
+    attack: (i === 1 || ((zone === 4 || zone === 6) && i === 2)) ? 'dash' : undefined,
     minDepth: [40, 250, 900][i], maxDepth: 3000,
     radius: [22, 34, 65][i], damage: [1, 2, 3][i], knockback: [25, 50, 85][i],
     speed: [18, 245, 140][i] * (1 + (zone - 1) * .085), detectionRadius: [140, 340, 480][i] * (1 + (zone - 1) * .05), leash: [130, 600, 800][i],
@@ -24,6 +24,31 @@ export const MARINE_THREATS = Object.entries(names).flatMap(([realm, roster]) =>
     monsterForm: ['kraken', 'maw', 'serpent', 'kraken', 'dragon', 'maw', 'serpent'][zone - 1],
   };
 }));
+
+// Realm-specific special predators & legendary attackers
+MARINE_THREATS.push(
+  // Sunken Atlantis Giant Sea Serpent
+  {
+    id: 'marine_4_sea_serpent', name: 'Sunken Colossal Sea Serpent', zone: 4, marineKind: 'monster', monsterForm: 'serpent',
+    minDepth: 450, maxDepth: 3000, attack: 'dash', radius: 72, sizeScale: 1.5,
+    damage: 3, shieldCost: 2, knockback: 90, speed: 250, detectionRadius: 490, leash: 780,
+    chaseDuration: 3.2, restDuration: 2.8, isColossal: true, color: '#059669', glow: '#34d399',
+  },
+  // Astral Shimmerfall Deep Siren
+  {
+    id: 'marine_3_abyssal_siren', name: 'Abyssal Void Siren', zone: 3, marineKind: 'siren', monsterForm: 'siren',
+    minDepth: 920, maxDepth: 3000, attack: 'dash', radius: 48, sizeScale: 1.25,
+    damage: 3, shieldCost: 2, knockback: 75, speed: 295, detectionRadius: 480, leash: 750,
+    chaseDuration: 3.5, restDuration: 2.0, color: '#6366f1', glow: '#e879f9',
+  },
+  // Magma Caldera Giant Magma Monster Sea Creature
+  {
+    id: 'marine_6_magma_behemoth', name: 'Caldera Magma Behemoth', zone: 6, marineKind: 'monster', monsterForm: 'magma_maw',
+    minDepth: 620, maxDepth: 3000, attack: 'dash', radius: 78, sizeScale: 1.55,
+    damage: 4, shieldCost: 2, knockback: 110, speed: 275, detectionRadius: 540, leash: 860,
+    chaseDuration: 3.5, restDuration: 2.4, isColossal: true, color: '#7f1d1d', glow: '#f97316',
+  }
+);
 
 // Each realm has an additional specialist, with distinct pursuit rhythms.
 const specialists = [

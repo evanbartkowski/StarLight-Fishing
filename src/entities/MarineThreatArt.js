@@ -77,39 +77,393 @@ export function drawMarineThreat(ctx, threat) {
     ctx.fillStyle = '#ffb4a0'; ctx.beginPath(); ctx.arc(r * .78, headY - r * .04, r * .025, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#fff4d6';
     for (let i = 0; i < 5; i++) { const x = r * (.67 + i * .055); ctx.beginPath(); ctx.moveTo(x, headY + r * .04); ctx.lineTo(x + r * .025, headY + r * .105); ctx.lineTo(x + r * .04, headY + r * .04); ctx.fill(); }
+  } else if (threat.marineKind === 'siren' || threat.behavior.monsterForm === 'siren') {
+    // Astral Deep Siren: Ethereal mermaid beauty combined with terrifying predatory maw and scary needle teeth
+    const sirenSway = Math.sin(t * 3.5) * (r * 0.15);
+    const tailWave = Math.sin(t * 3.2) * (r * 0.22);
+    const hairWave = Math.sin(t * 2.4) * (r * 0.12);
+
+    // 1. Shadowy undulating nebula tail
+    ctx.fillStyle = threat.color || '#6366f1';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.05, 0);
+    ctx.quadraticCurveTo(-r * 0.3, tailWave * 0.5, -r * 0.6, tailWave);
+    ctx.quadraticCurveTo(-r * 0.85, tailWave * 1.3, -r * 1.05, tailWave * 1.2);
+    ctx.quadraticCurveTo(-r * 0.8, tailWave * 0.8, -r * 0.55, tailWave * 0.3);
+    ctx.quadraticCurveTo(-r * 0.25, -r * 0.08, r * 0.05, -r * 0.05);
+    ctx.closePath();
+    ctx.fill();
+
+    // Spectral caudal flukes
+    ctx.save();
+    ctx.fillStyle = threat.glow || '#e879f9';
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.95, tailWave * 1.2);
+    ctx.quadraticCurveTo(-r * 1.25, -r * 0.35 + tailWave, -r * 1.45, -r * 0.45 + tailWave);
+    ctx.quadraticCurveTo(-r * 1.25, tailWave * 0.9, -r * 1.05, tailWave * 1.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.95, tailWave * 1.2);
+    ctx.quadraticCurveTo(-r * 1.25, r * 0.35 + tailWave, -r * 1.45, r * 0.45 + tailWave);
+    ctx.quadraticCurveTo(-r * 1.25, tailWave * 1.4, -r * 1.05, tailWave * 1.2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // 2. Long flowing shadowy nebula hair
+    ctx.fillStyle = '#1e1b4b';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.35, -r * 0.35);
+    ctx.quadraticCurveTo(0, -r * 0.55 + hairWave, -r * 0.45, -r * 0.4 + hairWave);
+    ctx.quadraticCurveTo(-r * 0.75, -r * 0.25 + hairWave * 1.5, -r * 0.95, -r * 0.15 + hairWave);
+    ctx.quadraticCurveTo(-r * 0.65, -r * 0.1, -r * 0.35, -r * 0.15);
+    ctx.quadraticCurveTo(r * 0.05, -r * 0.2, r * 0.25, -r * 0.18);
+    ctx.closePath();
+    ctx.fill();
+
+    // Luminous hair strands
+    ctx.strokeStyle = threat.glow || '#e879f9';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.35, -r * 0.35);
+    ctx.quadraticCurveTo(0, -r * 0.48 + hairWave, -r * 0.55, -r * 0.3 + hairWave);
+    ctx.stroke();
+
+    // 3. Ethereal Siren Torso & Grasping Talons
+    ctx.fillStyle = threat.color || '#818cf8';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.05, -r * 0.05);
+    ctx.quadraticCurveTo(r * 0.2, -r * 0.18, r * 0.35, -r * 0.2);
+    ctx.quadraticCurveTo(r * 0.48, -r * 0.1, r * 0.45, 0);
+    ctx.quadraticCurveTo(r * 0.28, r * 0.05, r * 0.05, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    // Clawed webbed arms reaching aggressively toward hook
+    ctx.strokeStyle = threat.color || '#818cf8';
+    ctx.lineWidth = r * 0.08;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.3, -r * 0.08);
+    ctx.quadraticCurveTo(r * 0.55, r * 0.05 + sirenSway * 0.5, r * 0.75, r * 0.02 + sirenSway);
+    ctx.stroke();
+    // Talons / claws
+    ctx.fillStyle = '#ffffff';
+    for (let c = -1; c <= 1; c++) {
+      ctx.beginPath();
+      ctx.moveTo(r * 0.74, r * 0.02 + sirenSway + c * 3);
+      ctx.lineTo(r * 0.84, r * 0.01 + sirenSway + c * 4);
+      ctx.lineTo(r * 0.76, r * 0.04 + sirenSway + c * 3);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 4. Siren Head & Terrifying Predatory Scary Teeth
+    // Head & brow
+    ctx.fillStyle = threat.color || '#818cf8';
+    ctx.beginPath();
+    ctx.ellipse(r * 0.44, -r * 0.24, r * 0.18, r * 0.15, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Gaping cavernous predatory throat
+    ctx.fillStyle = '#180b1e';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.42, -r * 0.24);
+    ctx.lineTo(r * 0.68, -r * 0.34);
+    ctx.quadraticCurveTo(r * 0.62, -r * 0.15, r * 0.68, 0.02);
+    ctx.lineTo(r * 0.42, -r * 0.14);
+    ctx.closePath();
+    ctx.fill();
+
+    // Terrifying razor needle teeth (Upper jaw)
+    ctx.fillStyle = '#ffffff';
+    for (let tooth = 0; tooth < 5; tooth++) {
+      const tx = r * (0.45 + tooth * 0.052);
+      const ty = -r * (0.24 + tooth * 0.02);
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tx + r * 0.02, ty + r * 0.11);
+      ctx.lineTo(tx + r * 0.04, ty);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // Terrifying razor needle teeth (Lower jaw pointing up)
+    for (let tooth = 0; tooth < 5; tooth++) {
+      const tx = r * (0.45 + tooth * 0.052);
+      const ty = -r * (0.13 - tooth * 0.03);
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tx + r * 0.02, ty - r * 0.11);
+      ctx.lineTo(tx + r * 0.04, ty);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Piercing glowing red/magenta predatory star eye
+    ctx.fillStyle = '#f43f5e';
+    ctx.shadowColor = '#f43f5e';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(r * 0.44, -r * 0.28, Math.max(2.5, r * 0.045), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(r * 0.44, -r * 0.28, Math.max(1, r * 0.02), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
   } else if (threat.marineKind === 'monster' || threat.marineKind === 'eel') {
     const monster = threat.marineKind === 'monster';
-    ctx.strokeStyle = body; ctx.lineWidth = r * (monster ? .38 : .24); ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(r * .45, 0);
-    ctx.bezierCurveTo(-r * .15, -r * .6, -r * .2, r * .7, -r * .9, Math.sin(t) * r * .2); ctx.stroke();
-    if (monster && threat.behavior.monsterForm === 'kraken') {
-      ctx.lineWidth = 3; ctx.strokeStyle = threat.color;
-      for (let i = 0; i < 6; i++) {
-        ctx.beginPath(); ctx.moveTo(r * .35, r * .1);
-        ctx.quadraticCurveTo((i - 2) * r * .3, r * .4, (i - 3) * r * .22 + Math.sin(t + i) * 9, r * .7); ctx.stroke();
+    const form = threat.behavior.monsterForm;
+
+    if (monster && form === 'magma_maw') {
+      // Magma Caldera Behemoth: Massive cracked obsidian leviathan with glowing molten veins & fiery maw
+      const magmaSway = Math.sin(t * 2.2) * (r * 0.12);
+
+      // 1. Heavy serpentine / leviathan body
+      ctx.strokeStyle = '#1c1917'; // Obsidian stone
+      ctx.lineWidth = r * 0.52;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.5, 0);
+      ctx.bezierCurveTo(-r * 0.1, -r * 0.5, -r * 0.25, r * 0.6, -r * 0.95, magmaSway);
+      ctx.stroke();
+
+      // 2. Pulsing Molten Lava Veins running through cracked basalt carapace
+      ctx.save();
+      ctx.strokeStyle = threat.glow || '#f97316';
+      ctx.shadowColor = threat.glow || '#f97316';
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = r * 0.09;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.45, -r * 0.08);
+      ctx.lineTo(r * 0.15, -r * 0.02);
+      ctx.lineTo(-r * 0.1, -r * 0.15);
+      ctx.lineTo(-r * 0.4, -r * 0.05);
+      ctx.lineTo(-r * 0.7, magmaSway * 0.5);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#facc15'; // Incandescent yellow core veins
+      ctx.lineWidth = r * 0.04;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.4, r * 0.08);
+      ctx.lineTo(r * 0.1, r * 0.12);
+      ctx.lineTo(-r * 0.25, r * 0.08);
+      ctx.lineTo(-r * 0.55, magmaSway * 0.7);
+      ctx.stroke();
+      ctx.restore();
+
+      // 3. Volcanic Basalt Spines & Horns
+      ctx.fillStyle = '#451a03';
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 5; i++) {
+        const sx = -r * 0.65 + i * r * 0.25;
+        const sy = -r * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx - r * 0.1, sy - r * 0.45);
+        ctx.lineTo(sx + r * 0.12, sy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
       }
-    }
-    if (monster) {
-      ctx.fillStyle = threat.glow;
-      for (let i = 0; i < 4; i++) {
-        const x = -r * .6 + i * r * .23;
-        ctx.beginPath(); ctx.moveTo(x, -r * .12); ctx.lineTo(x - r * .12, -r * .48); ctx.lineTo(x + r * .15, -r * .1); ctx.fill();
+
+      // Massive obsidian head
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.55, 0, r * 0.42, r * 0.28, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Gaping incandescent fiery magma maw
+      ctx.save();
+      ctx.fillStyle = '#450a0a';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.72, r * 0.04, r * 0.26, r * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Molten liquid flame core
+      ctx.fillStyle = '#f97316';
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.ellipse(r * 0.7, r * 0.04, r * 0.16, r * 0.12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Razor jagged obsidian burning teeth
+      ctx.fillStyle = '#fff7ed';
+      for (let tooth = 0; tooth < 5; tooth++) {
+        const tx = r * (0.52 + tooth * 0.08);
+        ctx.beginPath();
+        ctx.moveTo(tx, -r * 0.12);
+        ctx.lineTo(tx + r * 0.04, r * 0.02);
+        ctx.lineTo(tx + r * 0.07, -r * 0.12);
+        ctx.closePath();
+        ctx.fill();
       }
-      if (threat.behavior.monsterForm === 'dragon') {
-        for (const side of [-1, 1]) {
-          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-r * .7, side * r * .8);
-          ctx.quadraticCurveTo(-r * .05, side * r * .4, r * .3, side * r * .55); ctx.closePath(); ctx.fill();
+
+      // Searing volcanic magma eye
+      ctx.fillStyle = '#facc15';
+      ctx.shadowColor = '#f97316';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(r * 0.62, -r * 0.14, Math.max(3, r * 0.06), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#7f1d1d';
+      ctx.beginPath();
+      ctx.arc(r * 0.64, -r * 0.14, Math.max(1.5, r * 0.025), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    } else if (monster && form === 'kraken') {
+      // Colossal Kraken: Immense mantle, 8 thick writhing tentacles with suction cups & hypnotic eye
+      ctx.fillStyle = threat.color || '#0284c7';
+      // Bulbous kraken mantle
+      ctx.beginPath();
+      ctx.moveTo(r * 0.15, -r * 0.4);
+      ctx.quadraticCurveTo(-r * 0.45, -r * 0.55, -r * 0.85, 0);
+      ctx.quadraticCurveTo(-r * 0.45, r * 0.55, r * 0.15, r * 0.4);
+      ctx.quadraticCurveTo(r * 0.35, r * 0.25, r * 0.35, -r * 0.25);
+      ctx.closePath();
+      ctx.fill();
+
+      // Mantle bioluminescent runes / ridges
+      ctx.strokeStyle = threat.glow || '#38bdf8';
+      ctx.lineWidth = 2.5;
+      for (let g = 0; g < 3; g++) {
+        ctx.beginPath();
+        ctx.arc(-r * (0.3 + g * 0.2), 0, r * (0.18 + g * 0.08), -Math.PI * 0.6, Math.PI * 0.6);
+        ctx.stroke();
+      }
+
+      // 8 thick, powerful writhing tentacles lunging forward and outward
+      ctx.lineWidth = Math.max(2.5, r * 0.08);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = threat.color;
+      for (let i = 0; i < 8; i++) {
+        const tentWave = Math.sin(t * 3.5 + i * 0.8) * (r * 0.25);
+        const yOffset = (i - 3.5) * r * 0.14;
+        ctx.beginPath();
+        ctx.moveTo(r * 0.3, yOffset * 0.8);
+        ctx.quadraticCurveTo(r * 0.6 + tentWave * 0.4, yOffset * 1.5, r * 0.9 + tentWave, yOffset * 1.8 + Math.cos(t * 2 + i) * 6);
+        ctx.stroke();
+
+        // Glowing suction cups along each tentacle
+        ctx.fillStyle = threat.glow || '#fef08a';
+        ctx.beginPath();
+        ctx.arc(r * 0.55, yOffset * 1.2, Math.max(1.5, r * 0.035), 0, Math.PI * 2);
+        ctx.arc(r * 0.78 + tentWave * 0.6, yOffset * 1.5, Math.max(1.2, r * 0.028), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Cavernous eye cluster
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(r * 0.18, -r * 0.12, r * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = threat.glow || '#fef08a';
+      ctx.beginPath();
+      ctx.arc(r * 0.18, -r * 0.12, r * 0.06, 0, Math.PI * 2);
+      ctx.fill();
+      // Slit pupil
+      ctx.fillStyle = '#020617';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.18, -r * 0.12, r * 0.02, r * 0.055, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (monster && form === 'serpent') {
+      // Colossal Sea Serpent: Long undulating sinuous coils, armored crest, horned dragon head
+      ctx.strokeStyle = body;
+      ctx.lineWidth = r * 0.38;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.5, 0);
+      ctx.bezierCurveTo(r * 0.1, -r * 0.55, -r * 0.25, r * 0.65, -r * 0.65, -r * 0.35 + Math.sin(t * 2.2) * (r * 0.2));
+      ctx.bezierCurveTo(-r * 0.85, -r * 0.1, -r * 1.05, r * 0.4, -r * 1.3, Math.sin(t * 2.2 - 1) * (r * 0.25));
+      ctx.stroke();
+
+      // Glowing spine spikes along serpent body
+      ctx.fillStyle = threat.glow || '#34d399';
+      for (let s = 0; s < 6; s++) {
+        const sx = -r * 0.9 + s * r * 0.24;
+        const sy = Math.sin(t * 2.2 + s * 0.8) * (r * 0.18) - r * 0.15;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx - r * 0.08, sy - r * 0.32);
+        ctx.lineTo(sx + r * 0.08, sy);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Horned serpent head
+      ctx.fillStyle = threat.color || '#059669';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.52, 0, r * 0.38, r * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dragon horns arching back
+      ctx.fillStyle = threat.glow || '#fde047';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.45, -r * 0.15);
+      ctx.quadraticCurveTo(r * 0.3, -r * 0.48, r * 0.15, -r * 0.55);
+      ctx.quadraticCurveTo(r * 0.35, -r * 0.35, r * 0.55, -r * 0.15);
+      ctx.closePath();
+      ctx.fill();
+
+      // Gaping serpent maw & fangs
+      ctx.fillStyle = '#064e3b';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.5, -r * 0.08);
+      ctx.lineTo(r * 0.85, 0);
+      ctx.lineTo(r * 0.5, r * 0.1);
+      ctx.closePath();
+      ctx.fill();
+
+      // Sharp white fangs
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.62, -r * 0.07); ctx.lineTo(r * 0.65, r * 0.04); ctx.lineTo(r * 0.68, -r * 0.07);
+      ctx.moveTo(r * 0.72, -r * 0.04); ctx.lineTo(r * 0.74, r * 0.05); ctx.lineTo(r * 0.77, -r * 0.04);
+      ctx.fill();
+
+      // Glowing predatory serpent eye
+      ctx.fillStyle = threat.glow || '#34d399';
+      ctx.shadowColor = threat.glow || '#34d399';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(r * 0.58, -r * 0.11, Math.max(2.5, r * 0.055), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#022c22';
+      ctx.beginPath();
+      ctx.ellipse(r * 0.58, -r * 0.11, Math.max(1, r * 0.02), Math.max(2, r * 0.05), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    } else {
+      // Default monster / eel
+      ctx.strokeStyle = body; ctx.lineWidth = r * (monster ? .38 : .24); ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(r * .45, 0);
+      ctx.bezierCurveTo(-r * .15, -r * .6, -r * .2, r * .7, -r * .9, Math.sin(t) * r * .2); ctx.stroke();
+      if (monster) {
+        ctx.fillStyle = threat.glow;
+        for (let i = 0; i < 4; i++) {
+          const x = -r * .6 + i * r * .23;
+          ctx.beginPath(); ctx.moveTo(x, -r * .12); ctx.lineTo(x - r * .12, -r * .48); ctx.lineTo(x + r * .15, -r * .1); ctx.fill();
+        }
+        if (threat.behavior.monsterForm === 'dragon') {
+          for (const side of [-1, 1]) {
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-r * .7, side * r * .8);
+            ctx.quadraticCurveTo(-r * .05, side * r * .4, r * .3, side * r * .55); ctx.closePath(); ctx.fill();
+          }
         }
       }
-    }
-    ctx.fillStyle = body;
-    ctx.beginPath(); ctx.ellipse(r * .48, 0, r * .38, r * .24, 0, 0, Math.PI * 2); ctx.fill();
-    if (monster && threat.behavior.monsterForm === 'maw') {
-      ctx.fillStyle = '#130f25'; ctx.beginPath(); ctx.ellipse(r * .65, r * .04, r * .24, r * .2, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fef3c7';
-      for (let i = 0; i < 4; i++) {
-        const x = r * (.46 + i * .1);
-        ctx.beginPath(); ctx.moveTo(x, -r * .12); ctx.lineTo(x + r * .04, r * .02); ctx.lineTo(x + r * .07, -r * .12); ctx.fill();
+      ctx.fillStyle = body;
+      ctx.beginPath(); ctx.ellipse(r * .48, 0, r * .38, r * .24, 0, 0, Math.PI * 2); ctx.fill();
+      if (monster && threat.behavior.monsterForm === 'maw') {
+        ctx.fillStyle = '#130f25'; ctx.beginPath(); ctx.ellipse(r * .65, r * .04, r * .24, r * .2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fef3c7';
+        for (let i = 0; i < 4; i++) {
+          const x = r * (.46 + i * .1);
+          ctx.beginPath(); ctx.moveTo(x, -r * .12); ctx.lineTo(x + r * .04, r * .02); ctx.lineTo(x + r * .07, -r * .12); ctx.fill();
+        }
       }
     }
   } else {
@@ -132,7 +486,7 @@ export function drawMarineThreat(ctx, threat) {
       }
     }
   }
-  if (!['jelly', 'plesiosaur', 'mosasaur'].includes(threat.marineKind)) {
+  if (!['jelly', 'plesiosaur', 'mosasaur', 'siren'].includes(threat.marineKind) && !['siren', 'kraken', 'serpent', 'magma_maw'].includes(threat.behavior.monsterForm)) {
     ctx.fillStyle = '#fff2b2'; ctx.beginPath(); ctx.arc(r * .57, -r * .1, Math.max(2, r * .06), 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#091323'; ctx.beginPath(); ctx.arc(r * .59, -r * .1, Math.max(1, r * .025), 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#091323'; ctx.lineWidth = 2;

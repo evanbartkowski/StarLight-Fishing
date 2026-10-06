@@ -841,3 +841,63 @@ test('creature roster updates, powerup durations, and centered modal overlay sty
   assert.ok(css.includes('position: fixed') && css.includes('z-index: 100000'), 'Modal overlay should be fixed with high z-index');
   assert.ok(css.includes('.chat-announcement-fleet') && css.includes('.chat-announcement-global'), 'Announcement styles should be present');
 });
+
+test('Sunken Atlantis mermaids, krakens and serpents; Shimmerfall deep sirens; Caldera magma monsters and lava obstacles', () => {
+  // 1. Sunken Atlantis Mermaids: catchable species with shape 'mermaid' and distinct hair colors
+  const atlantisMermaids = FISH_SPECIES.filter(f => f.zone === 4 && f.shape === 'mermaid');
+  assert.ok(atlantisMermaids.length >= 2, 'Sunken Atlantis must have catchable mermaids');
+  assert.ok(atlantisMermaids.some(f => f.name.includes('Mermaid')));
+
+  // Test individual hair color variation on mermaids
+  const mermaidSpecies = atlantisMermaids[0];
+  const mermaid1 = new Fish(mermaidSpecies, 100, 300);
+  const mermaid2 = new Fish(mermaidSpecies, 400, 500);
+  assert.ok(mermaid1.hairColor, 'Mermaid instance has hair color');
+  assert.ok(typeof mermaid1.hairColor === 'string');
+
+  // Verify render without errors
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => key.includes('Gradient') ? () => ({ addColorStop() {} }) : () => {},
+    set: () => true
+  });
+  mermaid1.render(mockCtx, 0);
+  mermaid2.render(mockCtx, 0);
+
+  // 2. Corinthian Seahorse: verify rendered without error
+  const corinthian = FISH_SPECIES.find(f => f.name === 'Corinthian Seahorse');
+  assert.ok(corinthian, 'Corinthian Seahorse exists in species');
+  assert.equal(corinthian.shape, 'seahorse');
+  const corinthianFish = new Fish(corinthian, 200, 400);
+  corinthianFish.render(mockCtx, 0);
+
+  // 3. Sunken Atlantis Giant Kraken and Sea Serpents: attack player
+  const krakenEnemy = HAZARD_TYPES.find(h => h.zone === 4 && h.marineKind === 'monster' && h.name.includes('Kraken'));
+  assert.ok(krakenEnemy, 'Atlantis giant kraken enemy exists');
+  assert.equal(krakenEnemy.attack, 'dash', 'Kraken enemy attacks hook with dash');
+  assert.ok(krakenEnemy.isColossal, 'Kraken enemy is colossal');
+
+  const serpentEnemy = HAZARD_TYPES.find(h => h.zone === 4 && h.monsterForm === 'serpent');
+  assert.ok(serpentEnemy, 'Atlantis giant sea serpent enemy exists');
+  assert.equal(serpentEnemy.attack, 'dash', 'Serpent enemy attacks hook with dash');
+  assert.ok(serpentEnemy.isColossal, 'Serpent enemy is colossal');
+
+  // 4. Astral Shimmerfall Deep Sirens: spawn deep and attack hook
+  const sirenEnemy = HAZARD_TYPES.find(h => h.zone === 3 && (h.marineKind === 'siren' || h.monsterForm === 'siren'));
+  assert.ok(sirenEnemy, 'Astral Shimmerfall siren enemy exists');
+  assert.ok(sirenEnemy.minDepth >= 800, 'Sirens spawn very deep in Astral Shimmerfall');
+  assert.equal(sirenEnemy.attack, 'dash', 'Sirens attack hook');
+
+  // 5. Magma Caldera Giant Magma Monster & Lava Obstacles
+  const magmaMonster = HAZARD_TYPES.find(h => h.zone === 6 && h.marineKind === 'monster');
+  assert.ok(magmaMonster, 'Magma Caldera giant magma monster exists');
+  assert.equal(magmaMonster.attack, 'dash', 'Magma monster attacks hook with dash');
+  assert.ok(magmaMonster.isColossal, 'Magma monster is colossal');
+
+  const lavaHazards = REALM_HAZARDS.filter(h => h.zone === 6 && h.realmStyle === 'lava');
+  assert.equal(lavaHazards.length, 4, 'All 4 lava hazards in Caldera Trench');
+  lavaHazards.forEach(h => {
+    const hazardObj = new Hazard(h, 200, 300);
+    hazardObj.render(mockCtx, 0);
+  });
+});
+

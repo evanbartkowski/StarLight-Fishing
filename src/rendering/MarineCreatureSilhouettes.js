@@ -5,7 +5,7 @@
 // marine iguanas, nautiluses, Portuguese man o' war, siphonophores, flying squid,
 // Velella velella, sea butterflies, arrow worms, tardigrades, and marine worms.
 
-export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wiggle, wiggleTimer) {
+export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wiggle, wiggleTimer, species = null, fish = null) {
   const t = wiggleTimer;
   switch (shape) {
     case 'cuttlefish': {
@@ -1293,6 +1293,444 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
         ctx.fill();
       }
 
+      return true;
+    }
+
+    case 'seahorse': {
+      const isCorinthian = species?.name?.toLowerCase().includes('corinthian');
+      const sway = Math.sin(t * 2.2) * 2;
+      const finFlutter = Math.sin(t * 8) * 3;
+
+      ctx.save();
+      // Upright seahorse posture with gentle swimming pitch
+      ctx.rotate(sway * 0.05);
+
+      // 1. Fluttering Dorsal Fin (rippling on back)
+      ctx.save();
+      ctx.fillStyle = finColor || '#38bdf8';
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(-7, -4);
+      ctx.quadraticCurveTo(-16 + finFlutter, -1, -15 + finFlutter, 8);
+      ctx.quadraticCurveTo(-11, 10, -5, 6);
+      ctx.closePath();
+      ctx.fill();
+      // Delicate fin rays
+      ctx.strokeStyle = isCorinthian ? '#fde047' : (secondary || '#ffffff');
+      ctx.lineWidth = 1;
+      for (let r = 0; r < 4; r++) {
+        ctx.beginPath();
+        ctx.moveTo(-6, -2 + r * 2.5);
+        ctx.lineTo(-14 + finFlutter * 0.8, -1 + r * 2.6);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 2. Prehensile Spiraled Tail
+      ctx.strokeStyle = primary;
+      ctx.lineWidth = isCorinthian ? 5 : 4.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-2, 10);
+      ctx.quadraticCurveTo(-6, 18, -10, 22);
+      ctx.quadraticCurveTo(-14, 26, -11, 29);
+      ctx.quadraticCurveTo(-7, 32, -3, 29);
+      ctx.quadraticCurveTo(1, 26, -1, 22);
+      ctx.quadraticCurveTo(-3, 19, -6, 21);
+      ctx.stroke();
+
+      if (isCorinthian) {
+        // Gilded acanthus flourishes along coiled tail
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-4, 13);
+        ctx.quadraticCurveTo(-8, 20, -11, 24);
+        ctx.stroke();
+      }
+
+      // 3. Arched S-Curved Torso & Prominent Rounded Belly
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.moveTo(-3, -12);
+      ctx.quadraticCurveTo(-8, -4, -6, 4);
+      ctx.quadraticCurveTo(-4, 10, -2, 12);
+      ctx.quadraticCurveTo(7, 10, 7, 2);
+      ctx.quadraticCurveTo(7, -4, 3, -10);
+      ctx.closePath();
+      ctx.fill();
+
+      // 4. Segmented Bony Armor Plates (Annuli Rings)
+      ctx.strokeStyle = isCorinthian ? '#fbbf24' : (secondary || '#bae6fd');
+      ctx.lineWidth = isCorinthian ? 1.8 : 1.3;
+      for (let ring = -8; ring <= 8; ring += 3.2) {
+        ctx.beginPath();
+        ctx.moveTo(-5, ring);
+        ctx.quadraticCurveTo(0, ring - 1, 5, ring);
+        ctx.stroke();
+      }
+
+      // 5. Arched Neck and Equine Head
+      ctx.fillStyle = primary;
+      ctx.beginPath();
+      ctx.moveTo(1, -10);
+      ctx.quadraticCurveTo(4, -16, 9, -15);
+      ctx.lineTo(19, -13);
+      ctx.lineTo(20, -11);
+      ctx.lineTo(15, -9);
+      ctx.quadraticCurveTo(9, -8, 4, -5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Snout tip puckered mouth
+      ctx.fillStyle = isCorinthian ? '#f59e0b' : (finColor || '#38bdf8');
+      ctx.beginPath();
+      ctx.ellipse(19, -12, 1.8, 1.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Small fluttering pectoral cheek fin
+      const pecFlutter = Math.sin(t * 8.5) * 2;
+      ctx.fillStyle = finColor || '#7dd3fc';
+      ctx.beginPath();
+      ctx.moveTo(4, -10);
+      ctx.quadraticCurveTo(0 + pecFlutter, -12, 2, -15);
+      ctx.quadraticCurveTo(6, -14, 5, -10);
+      ctx.closePath();
+      ctx.fill();
+
+      // 6. Coronet Crest (Head Ornament)
+      if (isCorinthian) {
+        // Majestic Classical Greek Corinthian Acanthus Column Capital Crest
+        ctx.fillStyle = '#f59e0b';
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(5, -15);
+        ctx.quadraticCurveTo(2, -24, -3, -26);
+        ctx.quadraticCurveTo(2, -20, 7, -17);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(4, -14);
+        ctx.quadraticCurveTo(-2, -21, -8, -19);
+        ctx.quadraticCurveTo(-4, -16, 2, -13);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(1, -12);
+        ctx.quadraticCurveTo(-5, -15, -9, -12);
+        ctx.quadraticCurveTo(-4, -11, 0, -10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Corinthian ornate golden bridle filigree across cheek
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(15, -11);
+        ctx.lineTo(7, -8);
+        ctx.lineTo(2, -12);
+        ctx.stroke();
+
+        // Imperial Atlantean sapphire gem on bridle
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(8, -9, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(7.4, -9.4, 0.7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Breastplate golden laurel fluting
+        ctx.fillStyle = '#fde047';
+        for (let b = -4; b <= 6; b += 4) {
+          ctx.beginPath();
+          ctx.ellipse(5, b, 1.5, 2.5, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        // Natural seahorse spiny coronet
+        ctx.fillStyle = finColor || '#38bdf8';
+        ctx.beginPath();
+        ctx.moveTo(5, -15);
+        ctx.lineTo(2, -22);
+        ctx.lineTo(6, -17);
+        ctx.lineTo(4, -24);
+        ctx.lineTo(8, -16);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // 7. Expressive Seahorse Eye
+      const eyeX = 9, eyeY = -12;
+      ctx.fillStyle = isCorinthian ? '#f59e0b' : '#0f172a';
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = isCorinthian ? '#38bdf8' : (secondary || '#fde047');
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#090d16';
+      ctx.beginPath();
+      ctx.arc(eyeX + 0.3, eyeY, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeX - 0.6, eyeY - 0.7, 0.9, 0, Math.PI * 2);
+      ctx.arc(eyeX + 0.9, eyeY + 0.6, 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+      return true;
+    }
+
+    case 'mermaid': {
+      const hairPalette = [
+        '#f59e0b', // Golden blonde
+        '#10b981', // Emerald seafoam
+        '#ef4444', // Ruby coral
+        '#8b5cf6', // Midnight violet
+        '#06b6d4', // Ocean cyan
+        '#ec4899', // Rose petal pink
+        '#f8fafc', // Platinum starlight
+      ];
+      let hairColor = fish?.hairColor || species?.hairColor;
+      if (!hairColor) {
+        const seed = Math.abs((Math.round((fish?.x || 0) * 13 + (fish?.y || 0) * 29) || (species?.name?.length || 1) * 7) % hairPalette.length);
+        hairColor = hairPalette[seed];
+      }
+
+      const sway = Math.sin(t * 3.2) * 4;
+      const tailWave1 = Math.sin(t * 3.2) * 5;
+      const tailWave2 = Math.sin(t * 3.2 - 0.7) * 9;
+      const tailWave3 = Math.sin(t * 3.2 - 1.4) * 14;
+      const hairWave = Math.sin(t * 2.4) * 3.5;
+
+      ctx.save();
+
+      // 1. Iridescent Scaled Lower Mermaid Tail (Graceful undulating S-curve)
+      ctx.save();
+      const tailGrad = ctx.createLinearGradient(0, 0, -38, tailWave3);
+      tailGrad.addColorStop(0, primary || '#0284c7');
+      tailGrad.addColorStop(0.5, secondary || '#38bdf8');
+      tailGrad.addColorStop(1, finColor || '#34d399');
+      ctx.fillStyle = tailGrad;
+
+      ctx.beginPath();
+      ctx.moveTo(1, 2);
+      ctx.quadraticCurveTo(-10, 4 + tailWave1 * 0.4, -18, 3 + tailWave1);
+      ctx.quadraticCurveTo(-26, 2 + tailWave2 * 0.7, -34, tailWave2);
+      ctx.quadraticCurveTo(-38, tailWave3, -42, tailWave3);
+      ctx.quadraticCurveTo(-34, -4 + tailWave2, -26, -5 + tailWave2 * 0.6);
+      ctx.quadraticCurveTo(-18, -4 + tailWave1 * 0.3, -8, -3);
+      ctx.quadraticCurveTo(1, -2, 1, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Shimmering tail scales
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 1;
+      for (let s = 0; s < 4; s++) {
+        const sx = -6 - s * 6;
+        const sy = tailWave1 * (s / 4);
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 2. Translucent Flowing Caudal Flukes (Tail Fins)
+      ctx.save();
+      ctx.fillStyle = finColor || '#38bdf8';
+      ctx.globalAlpha = 0.78;
+      ctx.beginPath();
+      ctx.moveTo(-40, tailWave3);
+      ctx.quadraticCurveTo(-52, -12 + tailWave3 + hairWave, -62, -16 + tailWave3);
+      ctx.quadraticCurveTo(-54, -4 + tailWave3, -45, tailWave3 - 1);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(-40, tailWave3);
+      ctx.quadraticCurveTo(-52, 12 + tailWave3 - hairWave, -62, 16 + tailWave3);
+      ctx.quadraticCurveTo(-54, 4 + tailWave3, -45, tailWave3 + 1);
+      ctx.closePath();
+      ctx.fill();
+
+      // Delicate translucent pelvic/hip fin frills
+      ctx.beginPath();
+      ctx.moveTo(-4, 3);
+      ctx.quadraticCurveTo(-10, 10 + tailWave1 * 0.5, -16, 8 + tailWave1 * 0.5);
+      ctx.quadraticCurveTo(-11, 4, -4, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // 3. Graceful Feminine Torso & Arms
+      const skinTone = '#fde68a';
+      ctx.fillStyle = skinTone;
+
+      ctx.beginPath();
+      ctx.moveTo(1, 2);
+      ctx.lineTo(2, -3);
+      ctx.quadraticCurveTo(6, -6, 9, -6);
+      ctx.quadraticCurveTo(13, -7, 14, -11);
+      ctx.quadraticCurveTo(10, -11, 8, -6);
+      ctx.quadraticCurveTo(3, -5, 1, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Delicate arms
+      ctx.strokeStyle = skinTone;
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(13, -8);
+      ctx.quadraticCurveTo(19, -4 + sway * 0.3, 25, -5 + sway * 0.4);
+      ctx.stroke();
+
+      ctx.fillStyle = skinTone;
+      ctx.beginPath();
+      ctx.ellipse(26, -5 + sway * 0.4, 2, 1.2, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(10, -7);
+      ctx.quadraticCurveTo(7, -1, 3, 1);
+      ctx.stroke();
+
+      // 4. Seashell / Pearl Bustier Top
+      ctx.fillStyle = '#f472b6';
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(12, -7, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(9, -7, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(10.5, -7, 1, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Neck and Head
+      ctx.fillStyle = skinTone;
+      ctx.beginPath();
+      ctx.moveTo(13, -11);
+      ctx.lineTo(15, -14);
+      ctx.quadraticCurveTo(19, -15, 19, -18);
+      ctx.quadraticCurveTo(18, -21, 14, -21);
+      ctx.quadraticCurveTo(10, -18, 11, -13);
+      ctx.closePath();
+      ctx.fill();
+
+      // Rosy cheek blush
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.45)';
+      ctx.beginPath();
+      ctx.arc(15.5, -17, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Serene gentle smile
+      ctx.strokeStyle = '#e11d48';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(17.5, -16.2, 1.2, 0.2, Math.PI * 0.7);
+      ctx.stroke();
+
+      // 6. Large Beautiful Anime/Classical Eye
+      const eyeX = 16, eyeY = -18.5;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(eyeX, eyeY, 2.2, 2.6, 0.1, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0284c7';
+      ctx.beginPath();
+      ctx.arc(eyeX + 0.3, eyeY, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(eyeX + 0.4, eyeY, 1, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(eyeX - 0.4, eyeY - 0.7, 0.8, 0, Math.PI * 2);
+      ctx.arc(eyeX + 0.7, eyeY + 0.6, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(eyeX, eyeY - 0.4, 2.4, -Math.PI * 0.8, -0.2);
+      ctx.stroke();
+
+      // 7. Long Luxurious Flowing Hair
+      ctx.fillStyle = hairColor;
+      ctx.beginPath();
+      ctx.moveTo(12, -22);
+      ctx.quadraticCurveTo(17, -23, 19, -19);
+      ctx.quadraticCurveTo(15, -19, 13, -16);
+      ctx.quadraticCurveTo(10, -18, 9, -21);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(12, -22);
+      ctx.quadraticCurveTo(5, -23 + hairWave, -4, -18 + hairWave);
+      ctx.quadraticCurveTo(-14, -10 + hairWave * 1.5, -24, -8 + hairWave * 2);
+      ctx.quadraticCurveTo(-15, -4 + hairWave, -5, -8 + hairWave);
+      ctx.quadraticCurveTo(4, -12, 10, -13);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(10, -21);
+      ctx.quadraticCurveTo(2, -18 + hairWave, -6, -12 + hairWave);
+      ctx.quadraticCurveTo(-16, -5 + hairWave * 1.4, -28, -2 + hairWave * 2);
+      ctx.quadraticCurveTo(-18, 1 + hairWave, -7, -3 + hairWave);
+      ctx.quadraticCurveTo(2, -7, 8, -12);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(12, -21);
+      ctx.quadraticCurveTo(4, -20 + hairWave, -8, -14 + hairWave);
+      ctx.stroke();
+
+      // 8. Pearl / Coral Tiara Headpiece
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.moveTo(14, -22);
+      ctx.lineTo(16, -24.5);
+      ctx.lineTo(17.5, -22);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(16, -23, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
       return true;
     }
 

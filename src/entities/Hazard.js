@@ -148,15 +148,191 @@ export class Hazard {
     ctx.lineWidth = 2;
     ctx.shadowColor = this.glow;
     ctx.shadowBlur = 4;
-    if (this.realmStyle === 'reef' || this.realmStyle === 'lava') {
-      // Branching coral versus jagged basalt chimneys.
-      const branches = this.realmStyle === 'reef' ? 7 : 4;
+    if (this.realmStyle === 'reef') {
+      // Branching coral
+      const branches = 7;
       for (let i = 0; i < branches; i++) {
         const x = (i / (branches - 1) - 0.5) * r * 1.5;
         const h = r * (0.55 + Math.abs(Math.sin(i * 8 + this.variant)) * 0.9);
         ctx.beginPath(); ctx.moveTo(x - 6, r * 0.55);
         ctx.lineTo(x - 4, -h * 0.65); ctx.lineTo(x + 5, -h);
         ctx.lineTo(x + 9, r * 0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+    } else if (this.realmStyle === 'lava') {
+      // Magma Caldera Trench: Active volcanic obstacles to avoid
+      const lavaVariant = (this.variant || 0) % 4;
+      const t = this.timer || 0;
+      const pulseLava = 0.5 + 0.5 * Math.sin(t * 3.5);
+
+      if (lavaVariant === 0) {
+        // 0. Boiling Sulfur Vent: Volcanic chimney cone bubbling violently with sulfurous steam & molten sulfur crust
+        ctx.save();
+        ctx.fillStyle = '#1c1917';
+        ctx.strokeStyle = '#44403c';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.75, r * 0.65);
+        ctx.lineTo(-r * 0.35, -r * 0.55);
+        ctx.quadraticCurveTo(0, -r * 0.45, r * 0.35, -r * 0.55);
+        ctx.lineTo(r * 0.75, r * 0.65);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#eab308';
+        ctx.shadowColor = '#facc15';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.55, r * 0.35, r * 0.12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.15, -r * 0.5); ctx.lineTo(-r * 0.25, 0); ctx.lineTo(-r * 0.4, r * 0.4);
+        ctx.moveTo(r * 0.1, -r * 0.5); ctx.lineTo(r * 0.2, -r * 0.1); ctx.lineTo(r * 0.35, r * 0.35);
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(250, 204, 21, ${0.7 + pulseLava * 0.3})`;
+        for (let b = 0; b < 3; b++) {
+          const by = -r * 0.65 - ((t * 40 + b * 25) % (r * 0.8));
+          const bx = Math.sin(t * 5 + b * 2) * (r * 0.18);
+          ctx.beginPath();
+          ctx.arc(bx, by, Math.max(2, r * 0.06 - (by / (-r * 1.2)) * 2), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      } else if (lavaVariant === 1) {
+        // 1. Erupting Basalt Spikes: Sharp clustered obsidian basalt needles with glowing molten red lava channels
+        ctx.save();
+        const numSpikes = 5;
+        for (let s = 0; s < numSpikes; s++) {
+          const sx = (s / (numSpikes - 1) - 0.5) * r * 1.5;
+          const sh = r * (0.7 + Math.sin(s * 3.7 + 1) * 0.35);
+          ctx.fillStyle = '#0c0a09';
+          ctx.strokeStyle = '#292524';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(sx - r * 0.18, r * 0.65);
+          ctx.lineTo(sx - r * 0.04, -sh);
+          ctx.lineTo(sx + r * 0.18, r * 0.65);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.strokeStyle = '#ef4444';
+          ctx.shadowColor = '#f97316';
+          ctx.shadowBlur = 8;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(sx - r * 0.04, -sh);
+          ctx.lineTo(sx, -sh * 0.4);
+          ctx.lineTo(sx - r * 0.05, r * 0.3);
+          ctx.stroke();
+
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(sx - r * 0.04, -sh, Math.max(2.5, r * 0.04), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      } else if (lavaVariant === 2) {
+        // 2. Molten Chain Cluster: Incandescent slag boulders wrapped in red-hot glowing forged chains
+        ctx.save();
+        ctx.fillStyle = '#450a0a';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 0.65, r * 0.55, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ea580c';
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 0.45, r * 0.38, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#1c1917';
+        ctx.beginPath();
+        ctx.arc(-r * 0.2, -r * 0.1, r * 0.22, 0, Math.PI * 2);
+        ctx.arc(r * 0.25, r * 0.12, r * 0.25, 0, Math.PI * 2);
+        ctx.arc(0, r * 0.25, r * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#facc15';
+        ctx.shadowColor = '#ea580c';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.65, -r * 0.2);
+        ctx.quadraticCurveTo(0, -r * 0.4, r * 0.65, -r * 0.1);
+        ctx.moveTo(-r * 0.55, r * 0.25);
+        ctx.quadraticCurveTo(0, r * 0.45, r * 0.55, r * 0.2);
+        ctx.stroke();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#78350f';
+        for (let l = -3; l <= 3; l++) {
+          ctx.beginPath();
+          ctx.arc(l * r * 0.18, -r * 0.25 + Math.abs(l) * r * 0.05, 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else {
+        // 3. Caldera Lava Chimney (Colossal): Massive volcanic spire with cascading liquid lava flutes
+        ctx.save();
+        ctx.fillStyle = '#18181b';
+        ctx.strokeStyle = '#3f3f46';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.8, r * 0.8);
+        ctx.lineTo(-r * 0.5, -r * 0.7);
+        ctx.lineTo(r * 0.5, -r * 0.7);
+        ctx.lineTo(r * 0.8, r * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = '#dc2626';
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 14;
+        ctx.lineWidth = r * 0.14;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.2, -r * 0.65);
+        ctx.lineTo(-r * 0.35, 0);
+        ctx.lineTo(-r * 0.4, r * 0.75);
+        ctx.moveTo(r * 0.2, -r * 0.65);
+        ctx.lineTo(r * 0.25, r * 0.1);
+        ctx.lineTo(r * 0.35, r * 0.75);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = r * 0.05;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.2, -r * 0.65);
+        ctx.lineTo(-r * 0.35, 0);
+        ctx.lineTo(-r * 0.4, r * 0.75);
+        ctx.moveTo(r * 0.2, -r * 0.65);
+        ctx.lineTo(r * 0.25, r * 0.1);
+        ctx.lineTo(r * 0.35, r * 0.75);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ea580c';
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.7, r * 0.48, r * 0.15, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.7, r * 0.32, r * 0.09, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = `rgba(251, 146, 60, ${0.75 + pulseLava * 0.25})`;
+        for (let e = 0; e < 5; e++) {
+          const ex = Math.sin(t * 3.5 + e * 1.5) * (r * 0.6);
+          const ey = -r * 0.75 - ((t * 35 + e * 30) % (r * 0.6));
+          ctx.beginPath();
+          ctx.arc(ex, ey, Math.max(1.5, r * 0.035), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
       }
     } else if (this.realmStyle === 'ruins') {
       // Sunken Atlantis: Fluted Marble Pillars, Poseidon's Trident Spires & Clockwork Astrolabes
@@ -580,11 +756,19 @@ export class Hazard {
     const pulse = 0.5 + 0.5 * Math.sin(this.timer * 2.5);
     const auraRadius = this.radius * (1.10 + pulse * 0.08) + 4;
     const auraStrength = this.isColossal ? 0.48 : this.marineKind ? 0.40 : 0.35;
+    const isLava = this.realmStyle === 'lava' || this.zone === 6;
     const auraGrad = ctx.createRadialGradient(0, 0, this.radius * 0.80, 0, 0, auraRadius);
-    auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.85 + pulse * 0.15)})`);
-    auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
-    auraGrad.addColorStop(0.80, `rgba(220, 38, 38, ${auraStrength * 0.22})`);
-    auraGrad.addColorStop(1, 'rgba(185, 28, 28, 0)');
+    if (isLava) {
+      auraGrad.addColorStop(0, `rgba(249, 115, 22, ${auraStrength * (0.85 + pulse * 0.15)})`);
+      auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
+      auraGrad.addColorStop(0.80, `rgba(185, 28, 28, ${auraStrength * 0.22})`);
+      auraGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');
+    } else {
+      auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.85 + pulse * 0.15)})`);
+      auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
+      auraGrad.addColorStop(0.80, `rgba(220, 38, 38, ${auraStrength * 0.22})`);
+      auraGrad.addColorStop(1, 'rgba(185, 28, 28, 0)');
+    }
     ctx.fillStyle = auraGrad;
     ctx.beginPath();
     ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
