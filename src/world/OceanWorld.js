@@ -644,6 +644,9 @@ export class OceanWorld {
         ctx.fillText('✦', sx, sy);
       }
       ctx.restore();
+    } else if (sea.id === 4) {
+      // Sunken Atlantis: Classical Atlantean architecture emerging from the horizon in ruins
+      this.renderAtlantisSurfaceRuins(ctx, skyHeight, cameraY);
     } else if (sea.id === 5) {
       // Whispering Aether: Floating distant sky islands silhouette
       ctx.save();
@@ -655,6 +658,251 @@ export class OceanWorld {
       ctx.fill();
       ctx.restore();
     }
+  }
+
+  // Sunken Atlantis Surface Background: Grand Classical temples, shattered aqueducts, and fluted marble pillars in ruins
+  renderAtlantisSurfaceRuins(ctx, skyHeight, cameraY) {
+    const vY = this.surfaceY - cameraY;
+    if (!Number.isFinite(vY)) return;
+
+    ctx.save();
+    const t = this.waveTimer || 0;
+    const w = this.worldWidth || 1200;
+
+    // 1. Distant Turquoise Sea Haze & Ancient Orichalcum Aura along horizon
+    try {
+      const mistGrad = ctx.createLinearGradient(0, vY - 95, 0, vY + 8);
+      mistGrad.addColorStop(0, 'rgba(13, 148, 136, 0)');
+      mistGrad.addColorStop(0.5, 'rgba(45, 212, 191, 0.12)');
+      mistGrad.addColorStop(1, 'rgba(20, 184, 166, 0.28)');
+      ctx.fillStyle = mistGrad;
+      ctx.fillRect(0, vY - 95, w, 103);
+    } catch (e) {
+      ctx.fillStyle = 'rgba(20, 184, 166, 0.15)';
+      ctx.fillRect(0, vY - 95, w, 103);
+    }
+
+    // 2. Far Background: Distant Sunken Acropolis & Shattered Temple Silhouettes
+    ctx.fillStyle = 'rgba(19, 78, 74, 0.55)';
+
+    // Distant Temple 1 (Far Left Acropolis with broken pediment)
+    const t1X = w * 0.12;
+    ctx.beginPath();
+    ctx.moveTo(t1X - 70, vY);
+    ctx.lineTo(t1X - 60, vY - 24);
+    ctx.lineTo(t1X - 45, vY - 24);
+    ctx.lineTo(t1X - 10, vY - 58);
+    ctx.lineTo(t1X + 8, vY - 42); // Fractured summit
+    ctx.lineTo(t1X + 45, vY - 24);
+    ctx.lineTo(t1X + 65, vY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Colonnade gaps on distant temple 1
+    ctx.fillStyle = 'rgba(15, 118, 110, 0.65)';
+    for (let c = -3; c <= 3; c++) {
+      ctx.fillRect(t1X + c * 14 - 3, vY - 24, 6, 24);
+    }
+
+    // Distant Sunken Aqueduct Spans (Center Horizon)
+    const aqX = w * 0.44;
+    ctx.fillStyle = 'rgba(19, 78, 74, 0.45)';
+    ctx.fillRect(aqX - 120, vY - 32, 240, 8);
+    for (let a = -3; a <= 3; a++) {
+      if (a === 1) continue; // Gap where aqueduct broke and collapsed
+      const archX = aqX + a * 32;
+      ctx.fillRect(archX - 4, vY - 32, 8, 32);
+      ctx.beginPath();
+      ctx.arc(archX + 16, vY - 14, 11, Math.PI, 0);
+      ctx.fill();
+    }
+
+    // Leaning ancient obelisk (Far Right Horizon)
+    const obX = w * 0.86;
+    ctx.save();
+    ctx.translate(obX, vY);
+    ctx.rotate(0.14); // Leaning in the water
+    ctx.fillStyle = 'rgba(15, 118, 110, 0.5)';
+    ctx.beginPath();
+    ctx.moveTo(-7, 0);
+    ctx.lineTo(-4, -75);
+    ctx.lineTo(0, -84);
+    ctx.lineTo(4, -75);
+    ctx.lineTo(7, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // 3. Midground: Grand Classical Ruined Marble Pillars Breaching the Water
+    const leftPillars = [
+      { x: w * 0.05, h: 62, broken: false, lean: -0.04 },
+      { x: w * 0.08, h: 42, broken: true, lean: 0.06 },
+      { x: w * 0.22, h: 78, broken: false, lean: 0 },
+      { x: w * 0.26, h: 54, broken: true, lean: -0.05 },
+    ];
+
+    for (const p of leftPillars) {
+      ctx.save();
+      ctx.translate(p.x, vY);
+      if (p.lean) ctx.rotate(p.lean);
+
+      let grad = '#cbd5e1';
+      try {
+        const pGrad = ctx.createLinearGradient(-10, -p.h, 10, 0);
+        pGrad.addColorStop(0, '#e2e8f0');
+        pGrad.addColorStop(0.3, '#cbd5e1');
+        pGrad.addColorStop(0.7, '#94a3b8');
+        pGrad.addColorStop(1, '#64748b');
+        grad = pGrad;
+      } catch (e) {}
+
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1.2;
+
+      ctx.beginPath();
+      if (p.broken) {
+        ctx.moveTo(-9, 0);
+        ctx.lineTo(-9, -p.h + 8);
+        ctx.lineTo(-4, -p.h);
+        ctx.lineTo(2, -p.h + 12);
+        ctx.lineTo(7, -p.h + 4);
+        ctx.lineTo(9, -p.h + 10);
+        ctx.lineTo(9, 0);
+      } else {
+        ctx.moveTo(-9, 0);
+        ctx.lineTo(-9, -p.h);
+        ctx.lineTo(9, -p.h);
+        ctx.lineTo(9, 0);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Fluted grooves
+      ctx.strokeStyle = 'rgba(71, 85, 105, 0.4)';
+      ctx.lineWidth = 1;
+      for (let g = -1; g <= 1; g++) {
+        const gx = g * 4.5;
+        ctx.beginPath();
+        ctx.moveTo(gx, 0);
+        ctx.lineTo(gx, p.broken ? -p.h + 14 : -p.h);
+        ctx.stroke();
+      }
+
+      // Ornate Capital (if intact)
+      if (!p.broken) {
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(-13, -p.h - 6, 26, 6);
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.arc(-11, -p.h - 3, 3.5, 0, Math.PI * 2);
+        ctx.arc(11, -p.h - 3, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Verdigris sea moss / hanging seaweed draped on marble
+      ctx.fillStyle = '#0d9488';
+      ctx.beginPath();
+      ctx.ellipse(-7, -p.h * 0.45, 3.5, 8, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(8, -p.h * 0.3, 3, 6, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pedestal base at waterline
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(-12, -4, 24, 6);
+
+      ctx.restore();
+    }
+
+    // Colossal Sunken Triumphal Arch of Atlantis (Right Horizon)
+    const archX = w * 0.68;
+    const archH = 88;
+    ctx.save();
+    ctx.translate(archX, vY);
+
+    let pierGrad = '#cbd5e1';
+    try {
+      const g = ctx.createLinearGradient(-35, -archH, 35, 0);
+      g.addColorStop(0, '#f1f5f9');
+      g.addColorStop(0.5, '#cbd5e1');
+      g.addColorStop(1, '#64748b');
+      pierGrad = g;
+    } catch (e) {}
+
+    // Left and Right Arch Piers
+    ctx.fillStyle = pierGrad;
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.4;
+    ctx.fillRect(-38, -archH, 18, archH + 4);
+    ctx.strokeRect(-38, -archH, 18, archH + 4);
+    ctx.fillRect(20, -archH, 18, archH + 4);
+    ctx.strokeRect(20, -archH, 18, archH + 4);
+
+    // Archway vaulted ceiling span
+    ctx.beginPath();
+    ctx.moveTo(-20, -archH * 0.6);
+    ctx.bezierCurveTo(-20, -archH * 0.92, 20, -archH * 0.92, 20, -archH * 0.6);
+    ctx.lineTo(20, -archH * 0.6 + 6);
+    ctx.bezierCurveTo(20, -archH * 0.86, -20, -archH * 0.86, -20, -archH * 0.6 + 6);
+    ctx.closePath();
+    ctx.fillStyle = '#94a3b8';
+    ctx.fill();
+    ctx.stroke();
+
+    // Broken Attica / Entablature atop the Arch
+    ctx.fillStyle = pierGrad;
+    ctx.beginPath();
+    ctx.moveTo(-44, -archH);
+    ctx.lineTo(44, -archH);
+    ctx.lineTo(44, -archH - 18);
+    ctx.lineTo(22, -archH - 22);
+    ctx.lineTo(14, -archH - 14); // Jagged crack fissure
+    ctx.lineTo(-44, -archH - 22);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Ancient glowing Orichalcum Atlantean inscription / runes on the frieze
+    const runePulse = 0.6 + 0.4 * Math.sin(t * 2.2);
+    ctx.fillStyle = `rgba(250, 204, 21, ${runePulse})`;
+    ctx.shadowColor = '#2dd4bf';
+    ctx.shadowBlur = 8 * runePulse;
+    ctx.fillRect(-28, -archH - 14, 8, 3.5);
+    ctx.fillRect(-14, -archH - 15, 6, 5);
+    ctx.fillRect(-2, -archH - 14, 10, 3.5);
+    ctx.shadowBlur = 0;
+
+    // Hanging ivy & sea vines drooping from the ruined archway
+    ctx.strokeStyle = '#047857';
+    ctx.lineWidth = 2;
+    for (let v = 0; v < 4; v++) {
+      const vx = -14 + v * 10;
+      const vy = -archH * 0.65;
+      const vLen = 14 + ((v * 7) % 18);
+      ctx.beginPath();
+      ctx.moveTo(vx, vy);
+      ctx.quadraticCurveTo(vx + Math.sin(t * 1.5 + v) * 4, vy + vLen * 0.5, vx + Math.sin(t * 2 + v) * 2, vy + vLen);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // 4. Floating Orichalcum & Turquoise Motes drifting into the air from the ruins
+    for (let m = 0; m < 14; m++) {
+      const seed = m * 61.9;
+      const mx = (seed * 19 + t * (12 + (m % 4) * 6)) % w;
+      const my = (this.surfaceY - 10) - ((t * 22 + seed * 23) % (skyHeight + 30)) - cameraY;
+      const alpha = 0.35 + 0.45 * Math.sin(t * 2.8 + seed);
+      ctx.fillStyle = m % 2 === 0 ? `rgba(45, 212, 191, ${alpha})` : `rgba(251, 191, 36, ${alpha})`;
+      ctx.shadowColor = '#2dd4bf';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(mx, my, 2 + (m % 2), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
   }
 
   renderWaterSurface(ctx, cameraY = 0) {

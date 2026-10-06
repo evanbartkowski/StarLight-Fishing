@@ -46,14 +46,15 @@ export function buildRealmFish(originals) {
       const minDepth = niche === 0 ? 2 : Math.max(8, Math.round(sea.maxDepth * [0.015, 0.08, 0.22, 0.43, 0.67][niche]));
       const maxDepth = Math.min(sea.maxDepth, Math.round(minDepth + sea.maxDepth * (0.25 + (i % 3) * 0.08)));
       const length = 8 + (i % 8) * 7 + (shape === 'shark' || shape === 'whale' ? 80 : 0);
-      const movementType = ['eel', 'swordfish', 'mermaid'].includes(shape) ? 'sine_wave' : shape === 'ray' ? 'diagonal_glide' : (shape === 'seahorse' || shape === 'nautilus') ? 'vertical_drift' : shape === 'squid' ? 'vertical_pulse' : (sea.id === 1 ? (i === 13 ? 'hover' : (i % 3 === 0 ? 'diagonal_glide' : i % 2 === 0 ? 'sine_wave' : 'horizontal')) : (i % 4 === 0 ? 'hover' : i % 4 === 1 ? 'erratic' : 'horizontal'));
+      const movementType = ['eel', 'swordfish', 'mermaid', 'sea_snake'].includes(shape) ? 'sine_wave' : shape === 'ray' ? 'diagonal_glide' : (shape === 'seahorse' || shape === 'nautilus') ? 'vertical_drift' : shape === 'squid' ? 'vertical_pulse' : (sea.id === 1 ? (i === 13 ? 'hover' : (i % 3 === 0 ? 'diagonal_glide' : i % 2 === 0 ? 'sine_wave' : 'horizontal')) : (i % 4 === 0 ? 'hover' : i % 4 === 1 ? 'erratic' : 'horizontal'));
       natives.push({
         id: `realm_${sea.id}_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, name, zone: sea.id, rarity,
         minDepth, maxDepth, baseValue: Math.round(profile.commonValue * VALUE_BY_RARITY[rarity] * (0.9 + (i % 5) * 0.08)),
         baseWeight: Math.round(length * length / 1200 * 100) / 100, sizeRange: [length, Math.round(length * 1.9)],
         scaleFactor: 0.65 + (i % 7) * 0.16, shape, movementType,
         primaryColor: profile.colors[i % 5], secondaryColor: profile.colors[(i + 2) % 5], finColor: profile.colors[(i + 3) % 5], eyeColor: '#ffffff',
-        swimSpeed: 0.55 + (i % 6) * 0.22 + sea.id * 0.04, wiggleSpeed: 3 + i % 7,
+        swimSpeed: shape === 'sea_snake' ? 0.35 : (0.55 + (i % 6) * 0.22 + sea.id * 0.04),
+        wiggleSpeed: shape === 'sea_snake' ? 1.2 : (3 + i % 7),
         pattern: ['spots', 'bands', 'stripe', 'diamonds'][i % 4], fantasyTrail: profile.trail, xpMultiplier: profile.xpMultiplier,
         lore: `${name} inhabits the ${['sheltered surface nurseries', 'kelp-lined ledges', 'open currents', 'shadowed shelves', 'deep sanctuaries'][niche]} of ${sea.name}. It ${['grazes on mineral blooms', 'hunts drifting larvae', 'sifts tiny shells', 'stalks luminous plankton', 'follows warm upwellings'][i % 5]} among ${profile.habitat}.`,
       });

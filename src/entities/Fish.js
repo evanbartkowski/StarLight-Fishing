@@ -84,6 +84,12 @@ export class Fish {
     this.wiggleTimer = Math.random() * Math.PI * 2;
     this.auraTime = this.wiggleTimer;
     this.wiggleFreq = species.wiggleSpeed;
+    const shape = species.shape || '';
+    if (shape === 'sea_snake' || species.name?.includes('Sea Snake')) {
+      this.wiggleFreq = Math.min(this.wiggleFreq, 1.35);
+      this.baseSpeed = Math.min(this.baseSpeed, 0.38);
+      this.speed = this.baseSpeed;
+    }
 
     // Entity state
     this.state = 'SWIMMING'; // 'SWIMMING' | 'HOOKED'
@@ -117,7 +123,6 @@ export class Fish {
     this.teleportFlash = 0;
 
     // Determine 2D swimming movement pattern for unusual fish
-    const shape = species.shape || '';
     const id = species.id || '';
     if (species.movementType) {
       this.movementType = species.movementType;
@@ -127,7 +132,7 @@ export class Fish {
       this.movementType = 'vertical_pulse'; // Jellyfish/squid rhythmic upward pulse & drift
     } else if (shape === 'ray' || id.includes('ray') || shape === 'siren_ray') {
       this.movementType = 'diagonal_glide'; // Graceful ray swooping & gliding along diagonals
-    } else if (shape === 'eel' || shape === 'ribbon_eel' || id.includes('serpent') || id.includes('ribbon') || shape === 'star_ribbon') {
+    } else if (shape === 'eel' || shape === 'ribbon_eel' || shape === 'sea_snake' || id.includes('serpent') || id.includes('ribbon') || id.includes('sea_snake') || shape === 'star_ribbon') {
       this.movementType = 'sine_wave'; // Undulating sinusoidal oceanic wave curves
     } else if (shape === 'angler' || shape === 'blobfish' || shape === 'scorpionfish' || id.includes('turtle') || id.includes('coelacanth') || species.isStationary) {
       this.movementType = 'hover'; // Ambush predator / ancient relic staying virtually still
@@ -287,10 +292,14 @@ export class Fish {
           }
 
           case 'sine_wave': {
-            // Eel / serpent deep undulating oceanic wave
-            vx = this.direction * (this.speed * 50) * deltaSec;
-            vy = Math.cos(this.wiggleTimer * 1.2) * 38 * deltaSec;
-            this.swimAngle = Math.cos(this.wiggleTimer * 1.2) * 0.25;
+            // Eel / serpent / sea snake undulating oceanic wave
+            const isSeaSnake = this.species.shape === 'sea_snake' || this.name.includes('Sea Snake');
+            const speedFactor = isSeaSnake ? 24 : 50;
+            const waveFreq = isSeaSnake ? 0.75 : 1.2;
+            const waveAmp = isSeaSnake ? 16 : 38;
+            vx = this.direction * (this.speed * speedFactor) * deltaSec;
+            vy = Math.cos(this.wiggleTimer * waveFreq) * waveAmp * deltaSec;
+            this.swimAngle = Math.cos(this.wiggleTimer * waveFreq) * (isSeaSnake ? 0.12 : 0.25);
             break;
           }
 

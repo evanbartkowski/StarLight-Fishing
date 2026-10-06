@@ -307,6 +307,7 @@ function handlePointerDown(e) {
 
   // Initialize audio on user gesture
   soundManager.ensureAudio();
+  if (!soundManager.currentMusicMode) soundManager.setMusicMode('surface');
 
   const coords = getCanvasCoords(e);
   mousePos.x = coords.x;

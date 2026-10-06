@@ -103,14 +103,71 @@ export class SoundManager {
   }
 
   setMusicMode(mode) {
+    const prevMode = this.currentMusicMode;
     this.currentMusicMode = mode;
+    if (this.currentSeaId === 1 && prevMode && prevMode !== mode && (mode === 'surface' || mode === 'underwater') && (prevMode === 'surface' || prevMode === 'underwater')) {
+      if (!this.activeStation) {
+        this.crossfadeRealm1(prevMode, mode);
+        return;
+      }
+    }
     this.setSeaTrack(this.currentSeaId);
   }
 
+  crossfadeRealm1(fromMode, toMode) {
+    if (this._fadeInterval) {
+      clearInterval(this._fadeInterval);
+      this._fadeInterval = null;
+    }
+
+    const fromTrack = fromMode === 'underwater' ? this.underwaterMusic : this.surfaceMusic;
+    const toTrack = toMode === 'underwater' ? this.underwaterMusic : this.surfaceMusic;
+    const vol = this.isMuted ? 0 : this.musicVolume;
+    const targetVol = toMode === 'underwater' ? vol * 0.6 : vol * 0.4;
+
+    // Node.js test runner / headless environment: immediate synchronous pause/play
+    if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') {
+      fromTrack.pause?.();
+      toTrack.volume = targetVol;
+      toTrack.play?.()?.catch?.(() => {});
+      return;
+    }
+
+    // Browser runtime: smooth 1.2s crossfade transition
+    toTrack.volume = 0;
+    toTrack.play?.()?.catch?.(() => {});
+
+    const startTime = performance.now();
+    const duration = 1200;
+    const startFromVol = fromTrack.volume || 0;
+
+    this._fadeInterval = setInterval(() => {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const ease = 0.5 - 0.5 * Math.cos(progress * Math.PI);
+
+      if (!this.isMuted) {
+        fromTrack.volume = Math.max(0, startFromVol * (1 - ease));
+        toTrack.volume = targetVol * ease;
+      }
+
+      if (progress >= 1) {
+        clearInterval(this._fadeInterval);
+        this._fadeInterval = null;
+        fromTrack.pause?.();
+        if (!this.isMuted) toTrack.volume = targetVol;
+      }
+    }, 25);
+  }
+
   syncRecordedMusic() {
-    this.surfaceMusic.pause();
-    this.underwaterMusic.pause();
-    for (const track of this.realmTracks.values()) track.pause();
+    if (this._fadeInterval) {
+      clearInterval(this._fadeInterval);
+      this._fadeInterval = null;
+    }
+    this.surfaceMusic.pause?.();
+    this.underwaterMusic.pause?.();
+    for (const track of this.realmTracks.values()) track.pause?.();
     if (this.activeStation || this.currentMusicMode === 'none' || !this.currentMusicMode) return;
     let track;
     if (this.currentSeaId === 1) {
@@ -126,7 +183,7 @@ export class SoundManager {
       track = this.realmTracks.get(this.currentSeaId);
     }
     this.applyVolumes();
-    track.play()?.catch(() => {});
+    track?.play?.()?.catch?.(() => {});
   }
 
   // Pure Web Audio API: Procedural Soft Ambient Water & Rain Loops

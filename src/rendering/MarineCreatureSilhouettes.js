@@ -498,39 +498,47 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_snake': {
-      // Flattened paddle tail with sinusoidal undulating body
-      ctx.lineWidth = 5;
+      // Elongated sinusoidal undulating body with flattened paddle tail - slower, graceful serpentine movement
+      ctx.lineWidth = 5.2;
       ctx.lineCap = 'round';
       ctx.strokeStyle = primary;
       ctx.beginPath();
-      ctx.moveTo(22, 0);
-      for (let s = 1; s <= 4; s++) {
-        const sx = 22 - s * 11;
-        const sy = Math.sin(t * 3.8 - s * 0.8) * 8;
+      ctx.moveTo(24, 0);
+      for (let s = 1; s <= 6; s++) {
+        const sx = 24 - s * 8.5;
+        const sy = Math.sin(t * 1.35 - s * 0.7) * 6.5;
         ctx.lineTo(sx, sy);
       }
       ctx.stroke();
 
-      // Banded pattern rings (batched)
+      // Banded pattern rings (alternating striped markings)
       ctx.strokeStyle = secondary;
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 4.8;
       ctx.beginPath();
-      for (let b = 1; b <= 3; b += 2) {
-        const bx = 22 - b * 11;
-        const by = Math.sin(t * 3.8 - b * 0.8) * 8;
-        ctx.moveTo(bx - 3, by);
-        ctx.lineTo(bx + 3, by);
+      for (let b = 1; b <= 5; b += 2) {
+        const bx = 24 - b * 8.5;
+        const by = Math.sin(t * 1.35 - b * 0.7) * 6.5;
+        ctx.moveTo(bx - 2.5, by);
+        ctx.lineTo(bx + 2.5, by);
       }
       ctx.stroke();
 
-      // Head & eye
+      // Flattened paddle tail fin
+      const tailX = 24 - 6 * 8.5;
+      const tailY = Math.sin(t * 1.35 - 6 * 0.7) * 6.5;
+      ctx.fillStyle = finColor || secondary;
+      ctx.beginPath();
+      ctx.ellipse(tailX - 4, tailY, 6, 4, Math.sin(t * 1.35) * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Slender snake head & dark eye
       ctx.fillStyle = primary;
       ctx.beginPath();
-      ctx.arc(23, 0, 3.5, 0, Math.PI * 2);
+      ctx.arc(25, 0, 3.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(24, -1, 1, 0, Math.PI * 2);
+      ctx.arc(26, -1, 1, 0, Math.PI * 2);
       ctx.fill();
       return true;
     }

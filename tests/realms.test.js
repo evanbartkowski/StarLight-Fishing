@@ -3,7 +3,15 @@ import assert from 'node:assert/strict';
 
 const storage = new Map();
 globalThis.localStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) };
-globalThis.Audio = class {};
+globalThis.Audio = class {
+  constructor(src) {
+    this.src = src;
+    this.volume = 1;
+    this.loop = false;
+  }
+  play() { return Promise.resolve(); }
+  pause() {}
+};
 const { FISH_SPECIES, LEGACY_SALVAGE_SPECIES } = await import('../src/data/FishData.js');
 const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
 const { FANTASY_SEAS } = await import('../src/entities/SeasData.js');
@@ -980,6 +988,60 @@ test('Caldera fish visual cleanup, smooth Caldera shark chase, and enlarged enem
   assert.ok(calderaShark.behavior.detectionRadius >= 350, 'Enemy detection radius is enlarged');
   assert.ok(calderaShark.behavior.leash >= 600, 'Enemy leash tracking range is enlarged');
 });
+
+test('Realm 1 music transition, Striped Sea Snake slower movement, and Sunken Atlantis surface ruins', async () => {
+  const { SoundManager } = await import('../src/audio/SoundManager.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+  const { getSeaById } = await import('../src/entities/SeasData.js');
+
+  // 1. Realm 1 different music for surface and underwater with transition
+  const sound = new SoundManager();
+  sound.initialized = true;
+  sound.setMusicMode('surface');
+  assert.equal(sound.currentMusicMode, 'surface');
+  assert.notEqual(sound.surfaceMusic.src, sound.underwaterMusic.src);
+
+  // Transition to underwater fishing
+  sound.setMusicMode('underwater');
+  assert.equal(sound.currentMusicMode, 'underwater');
+
+  // Transition back to surface
+  sound.setMusicMode('surface');
+  assert.equal(sound.currentMusicMode, 'surface');
+
+  // 2. Striped Sea Snake movement visuals are slower
+  const snakeSpecies = FISH_SPECIES.find(f => f.name === 'Striped Sea Snake') || { name: 'Striped Sea Snake', shape: 'sea_snake', swimSpeed: 0.8, wiggleSpeed: 4 };
+  const snakeFish = new Fish(snakeSpecies, 200, 300);
+  assert.ok(snakeFish.wiggleFreq <= 1.4, 'Snake wiggle frequency is slowed down');
+  assert.ok(snakeFish.speed <= 0.45, 'Snake swimming speed is slowed down');
+  assert.equal(snakeFish.movementType, 'sine_wave', 'Snake undulates in sine_wave');
+
+  // 3. Sunken Atlantis surface atmosphere renders ruined classical architecture
+  const world = new OceanWorld({ width: 1200, height: 720 });
+  world.currentSeaId = 4;
+  const atlantisSea = getSeaById(4);
+  assert.ok(atlantisSea, 'Sunken Atlantis sea exists');
+
+  let drawCalls = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key.includes('Gradient')) return () => ({ addColorStop() {} });
+      return (...args) => {
+        drawCalls++;
+        for (const v of args) {
+          if (typeof v === 'number') assert.ok(Number.isFinite(v), `${String(key)} received non-finite value in ruins render`);
+        }
+      };
+    },
+    set: () => true
+  });
+
+  world.renderSeaAtmosphere(mockCtx, atlantisSea, 220, 0);
+  assert.ok(drawCalls > 25, 'Sunken Atlantis renders rich ruined acropolis, aqueducts, and marble pillars');
+});
+
 
 
 
