@@ -312,10 +312,12 @@ export class OceanWorld {
     // Creature encounters are sparse groups, separate from static obstacles.
     for (const creature of HAZARD_TYPES.filter(h => h.marineKind && h.zone === this.currentSeaId)) {
       const end = Math.min(activeMaxDepth, creature.maxDepth);
-      const populationBoost = this.currentSeaId >= 5 ? 3 : 1.5;
+      const populationBoost = this.currentSeaId >= 5 ? 1.25 : 1.5;
       const spacing = (creature.isColossal ? 750 : 250) / populationBoost;
       for (let depth = creature.minDepth; depth + 20 < end; depth += spacing) {
-        const chance = creature.isColossal ? .22 : creature.marineKind === 'jelly' ? .3 : .22;
+        const baseChance = creature.isColossal ? .22 : creature.marineKind === 'jelly' ? .3 : .22;
+        const realmEnemyDampener = this.currentSeaId >= 5 ? 0.72 : 1.0;
+        const chance = baseChance * realmEnemyDampener;
         if (Math.random() >= Math.min(.85, chance * ecology.enemies * (1 + depthProgress(depth) * 1.8))) continue;
         const centerDepth = depth + 10 + Math.random() * Math.min(spacing - 20, end - depth - 20);
         const centerX = 120 + Math.random() * Math.max(1, this.worldWidth - 240);
@@ -2278,25 +2280,6 @@ export class OceanWorld {
         ctx.fillStyle = aGrad;
         ctx.fillRect(aX, voidY, 180, 500);
       } catch (e) {}
-    }
-
-    // Space-whale background silhouette
-    const whaleX = ((time * 18) % (this.worldWidth + 300)) - 150;
-    const whaleY = voidY + 140 + Math.sin(time * 0.5) * 20;
-
-    if (whaleY > -100 && whaleY < screenHeight + 100) {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
-      ctx.beginPath();
-      ctx.ellipse(whaleX, whaleY, 65, 22, 0.08, 0, Math.PI * 2);
-      ctx.fill();
-      // Fluke
-      ctx.beginPath();
-      ctx.moveTo(whaleX - 60, whaleY);
-      ctx.lineTo(whaleX - 95, whaleY - 18);
-      ctx.lineTo(whaleX - 85, whaleY);
-      ctx.lineTo(whaleX - 95, whaleY + 18);
-      ctx.closePath();
-      ctx.fill();
     }
 
     ctx.restore();

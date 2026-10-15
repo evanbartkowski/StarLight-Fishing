@@ -1735,6 +1735,199 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       return true;
     }
 
+    case 'unicorn':
+    case 'sea_unicorn': {
+      const manePalette = ['#e9d5ff', '#c084fc', '#fbcfe8', '#a5f3fc', '#fef08a', '#e0e7ff'];
+      const seed = Math.abs((Math.round((fish?.x || 0) * 17 + (fish?.y || 0) * 31) || (species?.name?.length || 1) * 7) % manePalette.length);
+      const maneColor = fish?.maneColor || species?.glowColor || manePalette[seed];
+
+      const sway = Math.sin(t * 3.2) * 3.5;
+      const tailWave1 = Math.sin(t * 3.2) * 5;
+      const tailWave2 = Math.sin(t * 3.2 - 0.7) * 9;
+      const tailWave3 = Math.sin(t * 3.2 - 1.4) * 14;
+      const maneWave = Math.sin(t * 2.5) * 4;
+
+      ctx.save();
+
+      // 1. Aquatic Equine Tail (Graceful hippocampus / dolphin lower body)
+      ctx.save();
+      const tailGrad = ctx.createLinearGradient(0, 0, -36, tailWave3);
+      tailGrad.addColorStop(0, primary || '#fdf4ff');
+      tailGrad.addColorStop(0.5, secondary || '#f0abfc');
+      tailGrad.addColorStop(1, finColor || '#c084fc');
+      ctx.fillStyle = tailGrad;
+
+      ctx.beginPath();
+      ctx.moveTo(2, 4);
+      ctx.quadraticCurveTo(-8, 5 + tailWave1 * 0.4, -16, 4 + tailWave1);
+      ctx.quadraticCurveTo(-24, 3 + tailWave2 * 0.7, -32, tailWave2);
+      ctx.quadraticCurveTo(-38, tailWave3, -42, tailWave3);
+      ctx.quadraticCurveTo(-34, -5 + tailWave2, -24, -6 + tailWave2 * 0.6);
+      ctx.quadraticCurveTo(-15, -5 + tailWave1 * 0.3, -6, -4);
+      ctx.quadraticCurveTo(2, -3, 2, 4);
+      ctx.closePath();
+      ctx.fill();
+
+      // Shimmering starlight flank dappling
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      for (let d = 0; d < 4; d++) {
+        const dx = -6 - d * 6;
+        const dy = tailWave1 * (d / 4) - 1;
+        ctx.beginPath();
+        ctx.arc(dx, dy, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // 2. Translucent Flowing Hippocampus Caudal Flukes
+      ctx.save();
+      ctx.fillStyle = finColor || '#c084fc';
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(-40, tailWave3);
+      ctx.quadraticCurveTo(-50, -14 + tailWave3 + maneWave, -62, -18 + tailWave3);
+      ctx.quadraticCurveTo(-54, -4 + tailWave3, -44, tailWave3 - 1);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(-40, tailWave3);
+      ctx.quadraticCurveTo(-50, 14 + tailWave3 - maneWave, -62, 18 + tailWave3);
+      ctx.quadraticCurveTo(-54, 4 + tailWave3, -44, tailWave3 + 1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // 3. Noble Equine Torso & Arched Chest
+      const coatColor = primary || '#fdf4ff';
+      ctx.fillStyle = coatColor;
+      ctx.beginPath();
+      ctx.moveTo(2, 4);
+      ctx.quadraticCurveTo(7, 5, 12, 3);
+      ctx.quadraticCurveTo(18, 0, 18, -6);
+      ctx.quadraticCurveTo(17, -12, 14, -14); // Arched neck base
+      ctx.quadraticCurveTo(6, -8, 2, -3);
+      ctx.closePath();
+      ctx.fill();
+
+      // Delicate Webbed Front Equine Flippers / Hooves
+      ctx.save();
+      ctx.fillStyle = secondary || '#f0abfc';
+      ctx.beginPath();
+      ctx.moveTo(12, 2);
+      ctx.quadraticCurveTo(14, 12 + sway * 0.4, 19, 14 + sway * 0.5);
+      ctx.quadraticCurveTo(16, 8, 14, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(8, 2);
+      ctx.quadraticCurveTo(9, 10 + sway * 0.3, 13, 12 + sway * 0.4);
+      ctx.quadraticCurveTo(11, 7, 9, 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // 4. Arched Equine Neck & Head
+      ctx.fillStyle = coatColor;
+      ctx.beginPath();
+      ctx.moveTo(14, -14);
+      ctx.quadraticCurveTo(16, -20, 20, -22); // Throat latch
+      ctx.lineTo(28, -20);                    // Chin
+      ctx.lineTo(31, -21.5);                  // Muzzle / nose
+      ctx.lineTo(30, -24.5);                  // Forehead top
+      ctx.lineTo(21, -25);                    // Brow
+      ctx.quadraticCurveTo(14, -22, 11, -12); // Neck crest
+      ctx.closePath();
+      ctx.fill();
+
+      // Alert Equine Pointed Ear
+      ctx.fillStyle = coatColor;
+      ctx.beginPath();
+      ctx.moveTo(20, -25);
+      ctx.lineTo(22, -32);
+      ctx.lineTo(24, -25);
+      ctx.closePath();
+      ctx.fill();
+      // Inner ear pink shading
+      ctx.fillStyle = 'rgba(244, 114, 182, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(21, -25.5);
+      ctx.lineTo(22.2, -30.5);
+      ctx.lineTo(23.2, -25.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // 5. Billowing Celestial Starry Mane
+      ctx.save();
+      ctx.fillStyle = maneColor;
+      ctx.globalAlpha = 0.85;
+      for (let m = 0; m < 5; m++) {
+        const mx = 10 + m * 2.8;
+        const my = -13 - m * 2.6;
+        const mw = Math.sin(t * 3 + m * 0.8) * 5;
+        ctx.beginPath();
+        ctx.moveTo(mx, my);
+        ctx.quadraticCurveTo(mx - 8, my - 6 + mw, mx - 15, my - 2 + mw * 1.2);
+        ctx.quadraticCurveTo(mx - 6, my + 1, mx, my);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // 6. Radiant Spiraled Celestial Unicorn Horn
+      ctx.save();
+      const hornGrad = ctx.createLinearGradient(25, -24, 38, -35);
+      hornGrad.addColorStop(0, '#fef08a');
+      hornGrad.addColorStop(0.5, '#facc15');
+      hornGrad.addColorStop(1, '#ffffff');
+      ctx.fillStyle = hornGrad;
+      ctx.shadowColor = '#facc15';
+      ctx.shadowBlur = 10;
+
+      ctx.beginPath();
+      ctx.moveTo(25, -23.5);
+      ctx.lineTo(38, -35);
+      ctx.lineTo(27, -26);
+      ctx.closePath();
+      ctx.fill();
+
+      // Horn spiral ridge lines
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(26, -24.5); ctx.lineTo(27.5, -27);
+      ctx.moveTo(28.5, -27.5); ctx.lineTo(30.5, -29.5);
+      ctx.moveTo(32, -30.5); ctx.lineTo(34, -32.5);
+      ctx.stroke();
+
+      // Horn tip diamond sparkle
+      const sparkleHue = (t * 80) % 360;
+      ctx.fillStyle = `hsl(${sparkleHue}, 100%, 85%)`;
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(38.5, -35.5, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 7. Gentle, Large Celestial Equine Eye
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(24.5, -22, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = species?.eyeColor || '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(24.5, -22, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(24, -22.6, 0.7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+      return true;
+    }
+
     case 'mermaid': {
       const hairPalette = [
         '#f59e0b', // Golden blonde

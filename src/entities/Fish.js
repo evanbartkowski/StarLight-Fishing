@@ -109,6 +109,12 @@ export class Fish {
       this.hairColor = options.hairColor || hairPalette[seed];
     }
 
+    if (species.shape === 'unicorn' || species.shape === 'sea_unicorn') {
+      const manePalette = ['#e9d5ff', '#c084fc', '#fbcfe8', '#a5f3fc', '#fef08a', '#e0e7ff'];
+      const seed = Math.abs((Math.round(this.x * 17 + this.y * 31) || (species.name?.length || 1) * 5) % manePalette.length);
+      this.maneColor = options.maneColor || manePalette[seed];
+    }
+
     // Bigger fish sell for exponentially more + crown bonus (boosted +35% for rewarding fishing)
     const sizeMultiplier = Math.pow(sizeRatio, 1.85);
     let val = Math.round(species.baseValue * Math.min(1.8, sizeMultiplier) * Math.min(1.5, crownMult) * (this.isShiny ? 2 : 1));
@@ -1030,7 +1036,8 @@ export class Fish {
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
       'puffin', 'cormorant', 'marine_iguana', 'man_o_war', 'siphonophore',
       'flying_squid', 'velella', 'starfish', 'angelfish', 'sea_butterfly', 'arrow_worm', 'tardigrade',
-      'marine_worm', 'octopus', 'squid', 'jellyfish', 'plankton', 'seahorse', 'mermaid'
+      'marine_worm', 'octopus', 'squid', 'jellyfish', 'plankton', 'seahorse', 'mermaid',
+      'unicorn', 'sea_unicorn'
     ].includes(s.shape);
 
     const wiggle = Math.sin(this.wiggleTimer) * 4;

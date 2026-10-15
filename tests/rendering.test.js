@@ -598,6 +598,130 @@ test('Sea 7 (Eldritch Chrono Void) mythical fish, unique obstacles, rainbow clou
   assert.ok(calls.length > 5, 'OceanWorld renderUnderwaterBackground must execute for Sea 7');
 });
 
+test('Sea 5-7 enemy balancing, Megalodons, Void aesthetic enemies, Realm 7 mermaids, Realm 5 unicorns, and distinct fishing music', async () => {
+  const { MARINE_THREATS } = await import('../src/data/MarineThreats.js');
+  const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
+  const { NATIVE_ROSTERS, REALM_PROFILES } = await import('../src/data/RealmContent.js');
+  const { drawMarineThreat } = await import('../src/entities/MarineThreatArt.js');
+  const { SoundManager } = await import('../src/audio/SoundManager.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+
+  const calls = [];
+  const mockCtx = new Proxy({}, {
+    get: (target, prop) => {
+      if (prop === 'canvas') return { width: 1200, height: 720 };
+      return (...args) => {
+        calls.push({ method: prop, args });
+        if (prop === 'createLinearGradient' || prop === 'createRadialGradient') {
+          return { addColorStop: () => {} };
+        }
+        return {};
+      };
+    },
+    set: () => true
+  });
+
+  // 1. Reduced enemy hazard density for realms 5, 6, 7
+  assert.ok(REALM_PROFILES[5].hazardDensity <= 1.15, 'Realm 5 hazard density should be lowered');
+  assert.ok(REALM_PROFILES[6].hazardDensity <= 1.15, 'Realm 6 hazard density should be lowered');
+  assert.ok(REALM_PROFILES[7].hazardDensity <= 1.2, 'Realm 7 hazard density should be lowered');
+
+  // 2. Megalodon enemies in Realm 6 (Molten Lava) and Realm 7 (Celestial Void)
+  const lavaMegalodon = MARINE_THREATS.find(t => t.zone === 6 && (t.monsterForm === 'lava_megalodon' || t.name.includes('Lava Megalodon')));
+  assert.ok(lavaMegalodon, 'Must have Molten Lava Megalodon in Realm 6');
+  assert.equal(lavaMegalodon.monsterForm, 'lava_megalodon');
+  assert.equal(lavaMegalodon.isColossal, true);
+
+  const voidMegalodon = MARINE_THREATS.find(t => t.zone === 7 && (t.monsterForm === 'void_megalodon' || t.name.includes('Void Megalodon')));
+  assert.ok(voidMegalodon, 'Must have Celestial Void Megalodon in Realm 7');
+  assert.equal(voidMegalodon.monsterForm, 'void_megalodon');
+  assert.equal(voidMegalodon.isColossal, true);
+
+  // 3. Render Lava Megalodon and Void Megalodon without errors
+  calls.length = 0;
+  drawMarineThreat(mockCtx, {
+    radius: 105, sizeScale: 1.45, timer: 1.5, facing: 1, swimAngle: 0,
+    marineKind: 'shark', behavior: { monsterForm: 'lava_megalodon', zone: 6 },
+    color: '#450a0a', glow: '#f97316', zone: 6, id: 'marine_6_lava_megalodon'
+  });
+  assert.ok(calls.length > 20, 'Lava Megalodon must render with rich volcanic details');
+
+  calls.length = 0;
+  drawMarineThreat(mockCtx, {
+    radius: 110, sizeScale: 1.45, timer: 1.5, facing: 1, swimAngle: 0,
+    marineKind: 'shark', behavior: { monsterForm: 'void_megalodon', zone: 7 },
+    color: '#312e81', glow: '#a855f7', zone: 7, id: 'marine_7_cosmic_megalodon'
+  });
+  assert.ok(calls.length > 20, 'Void Megalodon must render with celestial starlight details');
+
+  // 4. Realm 7 aesthetic enemies render cleanly (Hourglass Jelly, Riftfang Eel, World-Eater Serpent, Chronovore Nautilus)
+  const voidEnemies = [
+    { marineKind: 'jelly', name: 'Hourglass Jelly', zone: 7, radius: 30, sizeScale: 1, behavior: {} },
+    { marineKind: 'eel', name: 'Riftfang Eel', zone: 7, radius: 40, sizeScale: 1, behavior: {} },
+    { marineKind: 'monster', name: 'World-Eater Serpent', zone: 7, radius: 65, sizeScale: 1, behavior: { monsterForm: 'serpent' } },
+    { marineKind: 'nautilus', name: 'Chronovore Nautilus', zone: 7, radius: 45, sizeScale: 1, behavior: {} },
+  ];
+  for (const enemy of voidEnemies) {
+    calls.length = 0;
+    drawMarineThreat(mockCtx, { ...enemy, timer: 2.0, facing: 1, swimAngle: 0, color: '#38bdf8', glow: '#c084fc' });
+    assert.ok(calls.length > 10, `Void enemy ${enemy.name} must render with aesthetic styling`);
+  }
+
+  // 5. Beautiful mermaids in Realm 7 (catchable native roster and mythic)
+  const realm7Roster = NATIVE_ROSTERS[7];
+  assert.ok(realm7Roster.includes('mermaid'), 'Realm 7 roster must contain catchable mermaids');
+  const mythicMermaid = LEGENDARY_SPECIES.find(l => l.id === 'chrono_void_mermaid');
+  assert.ok(mythicMermaid, 'Must have Celestial Chrono Mermaid mythic');
+  assert.equal(mythicMermaid.shape, 'mermaid');
+
+  const mermaidFish = new Fish(mythicMermaid, 400, 800, { zone: 7 });
+  calls.length = 0;
+  mermaidFish.render(mockCtx, 0);
+  assert.ok(calls.length > 15, 'Mermaid must render with hair, tail, and accessories');
+
+  // 6. Underwater unicorns as mythic in Realm 5 (Aetherian Water Unicorn)
+  const mythicUnicorn = LEGENDARY_SPECIES.find(l => l.id === 'aether_sea_unicorn');
+  assert.ok(mythicUnicorn, 'Must have Aetherian Water Unicorn mythic in Realm 5');
+  assert.equal(mythicUnicorn.shape, 'unicorn');
+  assert.equal(mythicUnicorn.zone, 5);
+
+  const unicornFish = new Fish(mythicUnicorn, 250, 500, { zone: 5 });
+  assert.ok(unicornFish.maneColor, 'Unicorn must have maneColor initialized');
+  calls.length = 0;
+  unicornFish.render(mockCtx, 0);
+  assert.ok(calls.length > 15, 'Unicorn must render with hippocampus tail, horn, and mane');
+
+  // 7. No black shadow fish in OceanWorld.renderEldritchVoidWhales
+  const ocean = new OceanWorld({ width: 1200, height: 720 });
+  ocean.currentSeaId = 7;
+  ocean.waveTimer = 5;
+  calls.length = 0;
+  ocean.renderEldritchVoidWhales(mockCtx, 1200, 720);
+  // Verify no slate-black dark shadows were filled
+  const darkFills = calls.filter(c => c.method === 'fillStyle' && typeof c.args[0] === 'string' && /15,\s*23,\s*42/i.test(c.args[0]));
+  assert.equal(darkFills.length, 0, 'No dark black whale shadow in renderEldritchVoidWhales');
+
+  // 8. SoundManager distinct music for surface vs fishing & Realm 7 fishing track
+  const sound = new SoundManager();
+  sound.initialized = true;
+
+  // Check Realm 7 tracks
+  const r7Surface = sound.getTrackForMode(7, 'surface');
+  const r7Fishing = sound.getTrackForMode(7, 'underwater');
+  assert.notEqual(r7Surface.src, r7Fishing.src, 'Realm 7 must have distinct surface vs fishing tracks');
+  assert.equal(r7Fishing.src, '/music/chrono-void-fishing.mp3', 'Realm 7 fishing track must be the user attached song');
+  assert.equal(r7Surface.src, '/music/ocean-vibes.mp3', 'Realm 7 surface track must be ocean-vibes');
+
+  // Check all realms have distinct surface vs fishing tracks
+  for (let r = 1; r <= 7; r++) {
+    const surf = sound.getTrackForMode(r, 'surface');
+    const fish = sound.getTrackForMode(r, 'underwater');
+    assert.notEqual(surf.src, fish.src, `Realm ${r} must have distinct surface and fishing music`);
+  }
+});
+
+
 
 
 

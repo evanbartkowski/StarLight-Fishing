@@ -47,6 +47,20 @@ MARINE_THREATS.push(
     minDepth: 620, maxDepth: 3000, attack: 'dash', radius: 78, sizeScale: 1.55,
     damage: 4, shieldCost: 2, knockback: 110, speed: 275, detectionRadius: 540, leash: 860,
     chaseDuration: 3.5, restDuration: 2.4, isColossal: true, color: '#7f1d1d', glow: '#f97316',
+  },
+  // Magma Caldera Molten Lava Megalodon
+  {
+    id: 'marine_6_lava_megalodon', name: 'Molten Lava Megalodon', zone: 6, marineKind: 'shark', monsterForm: 'lava_megalodon',
+    minDepth: 415, maxDepth: 3000, attack: 'dash', radius: 105, sizeScale: 1.45,
+    damage: 3, shieldCost: 2, knockback: 95, speed: 155, detectionRadius: 520, leash: 700,
+    chaseDuration: 3.0, restDuration: 3.5, isColossal: true, color: '#450a0a', glow: '#f97316',
+  },
+  // Chrono Void Celestial Void Megalodon
+  {
+    id: 'marine_7_cosmic_megalodon', name: 'Celestial Void Megalodon', zone: 7, marineKind: 'shark', monsterForm: 'void_megalodon',
+    minDepth: 535, maxDepth: 3000, attack: 'dash', radius: 110, sizeScale: 1.45,
+    damage: 3, shieldCost: 2, knockback: 95, speed: 165, detectionRadius: 540, leash: 720,
+    chaseDuration: 3.0, restDuration: 3.2, isColossal: true, color: '#312e81', glow: '#a855f7',
   }
 );
 
@@ -75,14 +89,16 @@ specialists.forEach(([name, marineKind, minDepth, speed, detectionRadius], index
 // Late-realm apex predators have their own silhouettes and slower, readable pursuits.
 for (const zone of [4, 5, 6, 7]) {
   const palette = REALM_PROFILES[zone].colors;
-  for (const [kind, name, depth, radius, form, shieldDmg] of [
+  for (const [kind, baseName, depth, radius, baseForm, shieldDmg] of [
     ['shark', 'Megalodon', 650, 105, 'megalodon', 2],
     ['plesiosaur', 'Ancient Plesiosaur', 850, 115, 'plesiosaur', 2],
     ['mosasaur', 'Abyssal Mosasaur', 1100, 125, 'mosasaur', 3],
     ['monster', 'Dread Kraken', 1400, 135, 'kraken', 3],
   ]) {
+    const form = kind === 'shark' ? (zone === 6 ? 'lava_megalodon' : zone === 7 ? 'void_megalodon' : baseForm) : baseForm;
+    const name = kind === 'shark' && zone === 6 ? 'Molten Lava Megalodon' : kind === 'shark' && zone === 7 ? 'Celestial Void Megalodon' : `${['', '', '', '', 'Atlantean', 'Stormbound', 'Infernal', 'Void'][zone]} ${baseName}`;
     MARINE_THREATS.push({
-      id: `apex_${zone}_${kind}_${form}`, name: `${['', '', '', '', 'Atlantean', 'Stormbound', 'Infernal', 'Void'][zone]} ${name}`,
+      id: `apex_${zone}_${kind}_${form}`, name,
       zone, marineKind: kind, monsterForm: form, minDepth: depth, maxDepth: 3000,
       radius, sizeScale: 1.45, isColossal: true, damage: 3, shieldCost: shieldDmg, knockback: 95,
       speed: 105 + zone * 8, detectionRadius: 470, leash: 650,

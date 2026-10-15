@@ -170,7 +170,7 @@ test('submarines are rare and full-sized while endgame enemies increase with dep
   } finally { Math.random = original; }
 });
 
-test('each endgame realm more than doubles its previous enemy population', async () => {
+test('endgame realms 5, 6, and 7 maintain balanced enemy populations with user requested reduction', async () => {
   const { REALM_ECOLOGY } = await import('../src/data/RealmEcology.js');
   const save = advancedSave(), world = new OceanWorld({ width: 1280, height: 720 });
   const original = Math.random; let seed = 67892;
@@ -190,7 +190,7 @@ test('each endgame realm more than doubles its previous enemy population', async
         world.populateWorld(save);
         actual += world.entities.hazards.filter(h => h.marineKind && !h.type.startsWith('apex_')).length;
       }
-      assert.ok(actual / 40 > oldExpected * 2, `realm ${realm}: ${actual / 40} vs previous ${oldExpected}`);
+      assert.ok(actual / 40 > oldExpected * 0.8 && actual / 40 < oldExpected * 2.0, `realm ${realm}: ${actual / 40} vs previous ${oldExpected}`);
     }
   } finally { Math.random = original; }
 });
