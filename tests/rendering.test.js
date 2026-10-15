@@ -1172,12 +1172,98 @@ test('Realm 7 deep dive reel stability, mouse tracking responsiveness, underwate
   }, 'renderUnderwaterBlackHole must render cleanly without error');
 });
 
+test('Hook right-edge wall-free tracking, responsive steer speed, giant predator active idle cruise, and Realm 7 catch stability', async () => {
+  const { Hook } = await import('../src/entities/Hook.js');
+  const { Hazard } = await import('../src/entities/Hazard.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
 
+  // 1. Hook tracks mouse right edge freely without hitting an artificial wall at 1170px
+  const hook = new Hook();
+  hook.state = 'DESCENDING';
+  hook.x = 900;
+  hook.y = 1500;
+  hook.setTargetX(1920, 1920);
+  assert.ok(hook.targetX >= 1900, `targetX (${hook.targetX}) should reach near 1920 on wide screens`);
 
+  // 2. Responsive steering reaches high cruising speed smoothly
+  hook.update(16, 220, 1920);
+  assert.ok(hook.vx > 100, `Hook should accelerate rapidly toward distant cursor (vx=${hook.vx})`);
 
+  // Hook can reach the far right boundary
+  hook.x = 1900;
+  hook.targetX = 1920;
+  hook.update(16, 220, 1920);
+  assert.ok(hook.x >= 1900 && hook.x <= 1920, `Hook x (${hook.x}) can travel to the right edge`);
 
+  // 3. Giant predators (e.g. Molten Lava Megalodon in Realm 6) actively cruise when not targeting anything
+  const lavaShark = new Hazard({
+    id: 'caldera_lava_shark',
+    marineKind: 'shark',
+    isColossal: true,
+    zone: 6,
+    speed: 120,
+    detectionRadius: 220,
+    leash: 280,
+    radius: 65,
+  }, 600, 3000);
 
+  const initialX = lavaShark.x;
+  // Advance 2 seconds of idle simulation without active hook in pursuit range
+  const idleHook = { x: 600, y: 100, state: 'SURFACE_IDLE' };
+  for (let i = 0; i < 120; i++) {
+    lavaShark.update(16, 1280, idleHook);
+  }
+  const displacement = Math.abs(lavaShark.x - initialX);
+  assert.ok(displacement > 20, `Giant lava shark should actively patrol across screen when idle (moved ${displacement}px)`);
 
+  // 4. Realm 7 giant / mythical catch visual stability
+  const voidDrake = new Fish({
+    id: 'singularity_astral_drake',
+    name: 'Singularity Astral Drake',
+    zone: 7,
+    scaleFactor: 4.8,
+    sizeRange: [250, 600],
+    baseWeight: 80.0,
+    isMythic: true,
+    isLeviathan: true,
+    shape: 'dragon',
+    primaryColor: '#8b5cf6',
+  }, 600, 5000);
 
+  // When swimming, scale is large (> 2.5)
+  assert.ok(voidDrake.scale > 2.5, `Leviathan swimming scale (${voidDrake.scale}) should be large`);
 
+  // When caught on hook, visual scale is capped neatly to prevent engulfing the screen
+  voidDrake.isHooked = true;
+  voidDrake.state = 'HOOKED';
+  voidDrake.hook = hook;
 
+  const gradient = { addColorStop() {} };
+  const mockCtx = new Proxy({
+    globalAlpha: 1,
+    shadowBlur: 0,
+    shadowColor: '',
+    fillStyle: '',
+    strokeStyle: '',
+    lineWidth: 1,
+    createLinearGradient: () => gradient,
+    createRadialGradient: () => gradient,
+  }, {
+    get: (target, key) => key in target ? target[key] : () => {},
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+
+  assert.doesNotThrow(() => {
+    voidDrake.render(mockCtx, 0, hook);
+  }, 'Hooked Realm 7 leviathan must render safely without overflowing or throwing');
+
+  // 5. OceanWorld void visuals rendering verification
+  const dummyCanvas = { width: 1280, height: 720, clientWidth: 1280, clientHeight: 720, getContext: () => mockCtx };
+  const world = new OceanWorld(dummyCanvas);
+  world.currentSeaId = 7;
+  assert.doesNotThrow(() => {
+    world.renderVoidSurfaceAnomalies?.(mockCtx, 0, 720);
+    world.renderEldritchVoidWhales?.(mockCtx, 1500, 720);
+  }, 'OceanWorld Realm 7 void backdrop and singularity must render cleanly without error');
+});

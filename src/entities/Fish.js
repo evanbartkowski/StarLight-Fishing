@@ -720,7 +720,10 @@ export class Fish {
       }
     }
 
-    ctx.scale(this.scale, this.scale);
+    const renderScale = isHooked
+      ? Math.min(1.35, this.scale * (this.isLeviathan || this.scale > 2.2 ? 0.36 : 0.72))
+      : this.scale;
+    ctx.scale(renderScale, renderScale);
 
     // Speed lines if currently dashing
     if (this.isDashing) {
@@ -756,14 +759,14 @@ export class Fish {
     const isLegendary = this.isLegendary || s.rarity === 'legendary' || this.rarity === 'legendary' || !!s.isLegendary || !!this.isMythic || !!s.isMythic || !!this.isGodTier || !!s.isLeviathan;
     const isVoidFish = this.isVoidRealm || s.zone === 7 || this.zone === 7 || s.realmId === 7 || (s.id && s.id.startsWith('realm_7_'));
 
-    if (s.rarity !== 'common' || isRainbow || this.isMythic || this.isSpecialDeep || s.glowColor) {
+    if (!isHooked && (s.rarity !== 'common' || isRainbow || this.isMythic || this.isSpecialDeep || s.glowColor)) {
       const color = RARITY_CONFIG[s.rarity]?.color || '#a78bfa';
       const auraRadius = s.isLeviathan ? (isLegendary ? 115 : 77) : (isLegendary ? 90 : 60);
       drawAura(ctx, this.auraTime, isLegendary ? '#facc15' : color, auraRadius, 0.64);
     }
 
-    // Noticeable radiant celestial glow aura and surrounding rainbow star sparkles for legendary creatures
-    if (isLegendary) {
+    // Noticeable radiant celestial glow aura and surrounding rainbow star sparkles for swimming legendary creatures
+    if (isLegendary && !isHooked) {
       ctx.save();
       const auraRadius = s.isLeviathan ? 122 : 94;
       const t = this.wiggleTimer;
@@ -826,8 +829,17 @@ export class Fish {
       ctx.restore();
     }
 
+    // Elegant compact tackle glint for hooked legendary or void fish
+    if (isHooked && (isLegendary || isVoidFish || this.isMythic)) {
+      ctx.save();
+      const t = this.wiggleTimer;
+      const glintHue = (t * 80) % 360;
+      drawRainbowStarSparkle(ctx, 0, -4, 4.2, t * 1.5, glintHue, 0.85);
+      ctx.restore();
+    }
+
     // Super mythical ethereal celestial aura and selective orbiting stardust motes for Realm 7 normal fish
-    if (isVoidFish && !isLegendary) {
+    if (isVoidFish && !isLegendary && !isHooked) {
       ctx.save();
       const auraRadius = s.isLeviathan ? 88 : 46;
       const t = this.wiggleTimer;
@@ -880,7 +892,7 @@ export class Fish {
       ctx.restore();
     }
     // Trailing rainbow/stardust star sparkles for rare/epic/legendary fish
-    if (isRainbow || isLegendary) {
+    if (!isHooked && (isRainbow || isLegendary)) {
       ctx.save();
       const t = this.wiggleTimer;
       for (let p = 0; p < 4; p++) {
@@ -892,7 +904,7 @@ export class Fish {
         drawRainbowStarSparkle(ctx, px, py, pSize, pRot, sparkHue, 0.85);
       }
       ctx.restore();
-    } else if (isEpic) {
+    } else if (!isHooked && isEpic) {
       ctx.save();
       const t = this.wiggleTimer;
       ctx.fillStyle = '#f472b6';
@@ -906,7 +918,7 @@ export class Fish {
         ctx.fill();
       }
       ctx.restore();
-    } else if (isRare) {
+    } else if (!isHooked && isRare) {
       ctx.save();
       const t = this.wiggleTimer;
       ctx.fillStyle = '#67e8f9';
@@ -2434,8 +2446,8 @@ export class Fish {
       ctx.restore();
     }
 
-    // Shimmering rainbow star sparkles directly ON and IN the body of the legendary fish / marine animal
-    if (isLegendary) {
+    // Shimmering rainbow star sparkles directly ON and IN the body of the swimming legendary creature
+    if (isLegendary && !isHooked) {
       const bodySparkles = [
         { x: 18, y: -2, baseSize: 7.2, phase: 0.5 },  // Rostrum / snout
         { x: 10, y: -8, baseSize: 6.2, phase: 1.7 },  // Forehead / eye crest

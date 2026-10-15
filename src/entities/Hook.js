@@ -149,9 +149,9 @@ export class Hook {
   }
 
   steer(dir, deltaSec = 0.016, worldWidth = 1200) {
-    const steerForce = 420 * this.agility;
+    const steerForce = 560 * this.agility;
     this.vx += dir * steerForce * 4 * deltaSec;
-    const maxSteer = 480 * this.agility;
+    const maxSteer = 950 * this.agility;
     this.vx = Math.max(-maxSteer, Math.min(maxSteer, this.vx));
     this.x += dir * steerForce * deltaSec;
     const maxX = Math.max(100, (worldWidth || 1200) - 30);
@@ -161,9 +161,11 @@ export class Hook {
 
   setTargetX(targetX, worldWidth) {
     if (Number.isFinite(targetX)) {
-      const w = worldWidth || (typeof window !== 'undefined' ? window.innerWidth : 1200);
-      const maxX = Math.max(100, w - 30);
-      this.targetX = Math.max(30, Math.min(maxX, targetX));
+      const w = (Number.isFinite(worldWidth) && worldWidth > 50)
+        ? worldWidth
+        : (typeof window !== 'undefined' && window.innerWidth > 50 ? window.innerWidth : 1200);
+      const maxX = Math.max(50, w - 12);
+      this.targetX = Math.max(12, Math.min(maxX, targetX));
     }
   }
 
@@ -315,14 +317,15 @@ export class Hook {
       this.vy += (targetSinkSpeed - this.vy) * 4 * deltaSec;
 
       const steerDiff = this.targetX - this.x;
-      const maxSteerSpeed = 450 * this.agility;
-      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 8.5 * this.agility));
-      this.vx += (desiredVx - this.vx) * 14 * deltaSec;
+      const maxSteerSpeed = 950 * this.agility;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 14 * this.agility));
+      this.vx += (desiredVx - this.vx) * 20 * deltaSec;
       this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
       this.x += this.vx * deltaSec;
       this.y += this.vy * deltaSec;
-      this.x = Math.max(30, Math.min(worldWidth - 30, this.x));
+      const maxX = Math.max(50, (worldWidth || 1200) - 12);
+      this.x = Math.max(12, Math.min(maxX, this.x));
 
       this.depthMeters = Math.max(0, (this.y - surfaceY) / 15);
       if (this.depthMeters > this.maxDepthReachedThisDive) {
@@ -375,14 +378,15 @@ export class Hook {
 
       // Agile steering during auto-reel
       const steerDiff = this.targetX - this.x;
-      const maxSteerSpeed = 450 * this.agility;
-      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 8.0 * this.agility));
-      this.vx += (desiredVx - this.vx) * 14 * deltaSec;
+      const maxSteerSpeed = 950 * this.agility;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 14 * this.agility));
+      this.vx += (desiredVx - this.vx) * 20 * deltaSec;
       this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
       this.x += this.vx * deltaSec;
       this.y += this.vy * deltaSec;
-      this.x = Math.max(30, Math.min(worldWidth - 30, this.x));
+      const maxX = Math.max(50, (worldWidth || 1200) - 12);
+      this.x = Math.max(12, Math.min(maxX, this.x));
 
       this.depthMeters = Math.max(0, (this.y - surfaceY) / 15);
 

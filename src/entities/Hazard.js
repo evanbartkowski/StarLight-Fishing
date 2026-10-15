@@ -57,11 +57,21 @@ export class Hazard {
       const gDy = this.y - hook.y;
       const gDist = Math.hypot(gDx, gDy);
       const pullRange = this.radius * 3.6;
-      if (gDist > 10 && gDist < pullRange) {
+      if (gDist > 12 && gDist < pullRange) {
         const pullFactor = (1 - gDist / pullRange);
-        const pullSpeed = pullFactor * (this.isColossal ? 180 : 130) * deltaSec;
-        hook.x += (gDx / gDist) * pullSpeed;
-        hook.y += (gDy / gDist) * pullSpeed * 0.45;
+        const pullSpeed = pullFactor * (this.isColossal ? 120 : 85) * deltaSec;
+        const normX = gDx / gDist;
+        const normY = gDy / gDist;
+        if (Number.isFinite(normX) && Number.isFinite(normY)) {
+          hook.x += normX * pullSpeed;
+          hook.y += normY * pullSpeed * 0.35;
+          if (hook.vx !== undefined) {
+            hook.vx += normX * pullSpeed * 4.0;
+            hook.vx = Math.max(-650, Math.min(650, hook.vx));
+          }
+          const maxX = Math.max(50, (worldWidth || 1200) - 12);
+          hook.x = Math.max(12, Math.min(maxX, hook.x));
+        }
       }
     }
     if (this.marineKind && hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.abs(hook.x - this.x) > 1) {
@@ -111,44 +121,50 @@ export class Hazard {
       // Natural undulating wander vs targeted pursuit
       const undulate = Math.sin(this.timer * (this.isColossal ? 1.4 : 2.2));
       const undulate2 = Math.cos(this.timer * (this.isColossal ? 0.7 : 1.1));
-      const waveX = pursuing ? 0 : Math.cos(this.timer * (this.isColossal ? 0.9 : 1.4)) * (this.isColossal ? 45 : 30);
-      const waveY = pursuing ? 0 : (undulate * 0.7 + undulate2 * 0.3) * (this.isColossal ? 26 : 18);
+      const waveX = pursuing ? 0 : Math.cos(this.timer * (this.isColossal ? 0.9 : 1.4)) * (this.isColossal ? 55 : 36);
+      const waveY = pursuing ? 0 : (undulate * 0.7 + undulate2 * 0.3) * (this.isColossal ? 34 : 22);
 
       // Predictive tracking: intercept moving hook trajectory with fluid hydrodynamic lead
       const leadScale = isCalderaShark ? 0.12 : (pursuing ? 0.22 : 0);
       const leadX = pursuing ? (hook.vx || 0) * leadScale : 0;
       const leadY = pursuing ? (hook.vy || 0) * leadScale : 0;
 
-      const targetX = pursuing ? hook.x + leadX : this.homeX + Math.sin(this.timer * 0.35) * 65;
+      // Active cruising patrol across the screen when idle (never frozen or stationary)
+      const patrolSpan = Math.max(180, Math.min(420, (worldWidth - this.radius * 2) * 0.42));
+      const idleCruiseX = this.homeX + Math.sin(this.timer * (isCalderaShark ? 0.32 : 0.26)) * patrolSpan + waveX;
+      const targetX = pursuing ? hook.x + leadX : idleCruiseX;
       const targetY = pursuing ? hook.y + leadY : this.homeY + waveY;
       const dx = targetX - this.x, dy = targetY - this.y;
       const length = Math.hypot(dx, dy) || 1;
 
-      // Realistic hydrodynamic acceleration and fluid drag - balanced tracking speed
-      const maxSpd = config.speed * (pursuing ? (isCalderaShark ? 1.05 : 1.12) : 0.28);
+      // Realistic hydrodynamic acceleration - energetic cruising patrol when not pursuing
+      const idleSpeedFactor = (this.isColossal || isShark) ? 0.68 : 0.52;
+      const maxSpd = config.speed * (pursuing ? (isCalderaShark ? 1.05 : 1.12) : idleSpeedFactor);
       const desiredVx = (dx / length) * maxSpd;
       const desiredVy = (dy / length) * maxSpd;
 
-      // Smooth turning response when pursuing hook (smooth hydrodynamic glide)
+      // Smooth turning response when pursuing or actively patrolling
       const accelFactor = isCalderaShark
-        ? (pursuing ? 6.5 : 2.2)
-        : (this.isColossal ? (pursuing ? 3.6 : 1.4) : (pursuing ? 12.0 : 3.8));
+        ? (pursuing ? 6.5 : 3.6)
+        : (this.isColossal ? (pursuing ? 3.6 : 2.8) : (pursuing ? 12.0 : 4.6));
       this.vx += (desiredVx - this.vx) * Math.min(1, accelFactor * deltaSec);
       this.vy += (desiredVy - this.vy) * Math.min(1, accelFactor * deltaSec);
 
       // Add gentle aquatic drift with inertia for colossal scale
-      const sway = Math.cos(this.timer * (this.isColossal ? 1.2 : 3.0)) * (this.isColossal ? 6 : 12);
+      const sway = Math.cos(this.timer * (this.isColossal ? 1.2 : 3.0)) * (this.isColossal ? 8 : 14);
       this.x += (this.vx + (pursuing ? 0 : sway * 0.5)) * deltaSec;
-      this.y += (this.vy + (pursuing ? 0 : Math.sin(this.timer * (this.isColossal ? 1.6 : 2.4)) * (this.isColossal ? 7 : 4))) * deltaSec;
+      this.y += (this.vy + (pursuing ? 0 : Math.sin(this.timer * (this.isColossal ? 1.6 : 2.4)) * (this.isColossal ? 8 : 5))) * deltaSec;
 
       this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.x));
       this.y = Math.max(this.minY ?? 0, Math.min(this.maxY ?? Infinity, this.y));
 
-      // Facing direction: smooth transition following swim velocity or active hook
-      if (Math.abs(this.vx) > 15) {
-        this.facing = Math.sign(this.vx);
-      } else if (active && Math.abs(hook.x - this.x) > 20) {
+      // Facing direction: hunters face the active hook if present in the water, or face their cruising direction
+      if (active && Math.abs(hook.x - this.x) > 15) {
         this.facing = Math.sign(hook.x - this.x);
+      } else if (Math.abs(this.vx) > 8) {
+        this.facing = Math.sign(this.vx);
+      } else if (!pursuing && Math.abs(dx) > 15) {
+        this.facing = Math.sign(dx);
       }
 
       // Smooth banking angle according to vertical flow

@@ -309,9 +309,11 @@ function getCanvasCoords(e) {
     clientX = e.clientX || 0;
     clientY = e.clientY || 0;
   }
+  const scaleX = rect.width ? screenWidth / rect.width : 1;
+  const scaleY = rect.height ? screenHeight / rect.height : 1;
   return {
-    x: clientX - rect.left,
-    y: clientY - rect.top,
+    x: Math.max(0, Math.min(screenWidth, (clientX - rect.left) * scaleX)),
+    y: Math.max(0, Math.min(screenHeight, (clientY - rect.top) * scaleY)),
   };
 }
 
@@ -404,7 +406,7 @@ function handlePointerDown(e) {
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     isMouseDown = true;
     lastSteerMode = 'mouse';
-    hook.setTargetX(mousePos.x);
+    hook.setTargetX(mousePos.x, screenWidth);
   }
 }
 

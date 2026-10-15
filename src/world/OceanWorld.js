@@ -12,7 +12,7 @@ import { FANTASY_SEAS, getSeaById } from '../entities/SeasData.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { TREASURE_ITEMS, HAZARD_TYPES } from '../data/TreasureData.js';
 import { LEGENDARY_SPECIES, checkMythicSpawn } from '../data/legendaries.js';
-import { Fish } from '../entities/Fish.js';
+import { Fish, drawRainbowStarSparkle } from '../entities/Fish.js';
 import { drawEventAtmosphere } from '../rendering/EventAtmosphere.js';
 import { Hazard } from '../entities/Hazard.js';
 import { Treasure } from '../entities/Treasure.js';
@@ -987,6 +987,20 @@ export class OceanWorld {
       ctx.translate(vx, vy);
       ctx.scale(scale, scale);
 
+      // 1-pre. Deep Cosmic Nebular Aura Halo around Singularity
+      ctx.save();
+      const nebHue = (t * 35) % 360;
+      const nebulaBloom = ctx.createRadialGradient(0, 0, 16, 0, 0, 195);
+      nebulaBloom.addColorStop(0, `hsla(${nebHue}, 95%, 75%, 0.38)`);
+      nebulaBloom.addColorStop(0.3, `hsla(${(nebHue + 60) % 360}, 90%, 65%, 0.24)`);
+      nebulaBloom.addColorStop(0.65, `hsla(${(nebHue + 140) % 360}, 85%, 45%, 0.12)`);
+      nebulaBloom.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = nebulaBloom;
+      ctx.beginPath();
+      ctx.arc(0, 0, 195, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
       // 1a. Relativistic Astrophysical Plasma Jets (Helical collimated energy beams)
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
@@ -1127,7 +1141,23 @@ export class OceanWorld {
       ctx.arc(0, 0, 18.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Subtle water ripple reflection below on ocean surface
+      // Relativistic Chromatic Needle Glint at center
+      drawRainbowStarSparkle(ctx, 0, 0, 5.5, t * 1.8, (t * 90) % 360, 0.95);
+
+      // Ethereal water ripple reflection on ocean surface below the singularity
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const refY = (vY - vy);
+      const refGrad = ctx.createRadialGradient(0, refY, 4, 0, refY, 110);
+      refGrad.addColorStop(0, `hsla(${nebHue}, 95%, 75%, 0.35)`);
+      refGrad.addColorStop(0.5, `hsla(${(nebHue + 80) % 360}, 85%, 60%, 0.16)`);
+      refGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = refGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, refY, 85, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
       ctx.restore();
     }
 
@@ -2321,25 +2351,164 @@ export class OceanWorld {
     ctx.restore();
   }
 
-  // Sea 7: Eldritch Chrono Void Auroras & Space-Whales
+  // Sea 7: Eldritch Chrono Void Auroras, Cosmic Nebulas & Gliding Space-Whales
   renderEldritchVoidWhales(ctx, cameraY, screenHeight) {
     const seaStartY = Math.max(this.surfaceY, cameraY - 120);
     const voidY = seaStartY - cameraY;
+    const w = this.worldWidth || 1200;
 
     ctx.save();
-    // Shimmering iridescent aurora curtains
-    const time = this.causticTimer * 0.8;
-    for (let a = 0; a < 3; a++) {
-      const aX = (a * 280 + Math.sin(time + a) * 50) % (this.worldWidth + 200) - 100;
+    const time = this.causticTimer * 0.75;
+    const t = this.waveTimer || 0;
+
+    // 1. Vast Deep-Space Chrono Void Rift & Swirling Nebular Veils
+    for (let rift = 0; rift < 3; rift++) {
+      const rx = ((rift * (w * 0.42) + Math.sin(time * 0.4 + rift * 1.5) * 60) % (w + 260) + w + 260) % (w + 260) - 130;
+      const ry = voidY + 80 + rift * 190;
       try {
-        const aGrad = ctx.createLinearGradient(aX, voidY, aX + 180, voidY + 400);
-        aGrad.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
-        aGrad.addColorStop(0.5, 'rgba(168, 85, 247, 0.12)');
-        aGrad.addColorStop(1, 'rgba(236, 72, 153, 0)');
-        ctx.fillStyle = aGrad;
-        ctx.fillRect(aX, voidY, 180, 500);
+        const riftGrad = ctx.createRadialGradient(rx + 90, ry + 120, 20, rx + 90, ry + 120, 260);
+        const hue = (t * 22 + rift * 70) % 360;
+        riftGrad.addColorStop(0, `hsla(${hue}, 85%, 65%, 0.16)`);
+        riftGrad.addColorStop(0.35, `hsla(${(hue + 55) % 360}, 90%, 55%, 0.11)`);
+        riftGrad.addColorStop(0.7, `hsla(${(hue + 120) % 360}, 80%, 40%, 0.06)`);
+        riftGrad.addColorStop(1, 'rgba(3, 7, 18, 0)');
+        ctx.fillStyle = riftGrad;
+        ctx.beginPath();
+        ctx.ellipse(rx + 90, ry + 120, 240, 160, Math.sin(time * 0.3 + rift) * 0.25, 0, Math.PI * 2);
+        ctx.fill();
       } catch (e) {}
     }
+
+    // 2. Weaving Iridescent Aurora Ribbons through the abyss
+    for (let a = 0; a < 4; a++) {
+      const aX = ((a * 290 + Math.sin(time * 0.8 + a) * 70) % (w + 240) + w + 240) % (w + 240) - 120;
+      const aGrad = ctx.createLinearGradient(aX, voidY, aX + 220, voidY + screenHeight);
+      const aHue = (t * 30 + a * 65) % 360;
+      aGrad.addColorStop(0, `hsla(${aHue}, 90%, 70%, 0.14)`);
+      aGrad.addColorStop(0.4, `hsla(${(aHue + 60) % 360}, 95%, 65%, 0.12)`);
+      aGrad.addColorStop(0.75, `hsla(${(aHue + 130) % 360}, 85%, 55%, 0.08)`);
+      aGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+      ctx.fillStyle = aGrad;
+      ctx.beginPath();
+      ctx.moveTo(aX, voidY);
+      ctx.bezierCurveTo(
+        aX + 90 + Math.sin(time + a) * 50, voidY + screenHeight * 0.35,
+        aX - 50 + Math.cos(time * 1.2 + a) * 60, voidY + screenHeight * 0.7,
+        aX + 80, voidY + screenHeight
+      );
+      ctx.lineTo(aX + 180, voidY + screenHeight);
+      ctx.bezierCurveTo(
+        aX + 60 + Math.cos(time * 1.2 + a) * 60, voidY + screenHeight * 0.7,
+        aX + 190 + Math.sin(time + a) * 50, voidY + screenHeight * 0.35,
+        aX + 140, voidY
+      );
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 3. Majestic Background Celestial Space-Whales gracefully gliding through the deep cosmos
+    const whaleSpeed = 22;
+    const whalePeriod = (w + 600) / whaleSpeed;
+    for (let wIdx = 0; wIdx < 2; wIdx++) {
+      const wPhase = (time * 18 + wIdx * (whalePeriod * 0.5)) % (w + 600);
+      const wx = (w + 300) - wPhase; // Gliding gracefully right-to-left
+      const wy = voidY + 160 + wIdx * 240 + Math.sin(time * 0.6 + wIdx * 2) * 28;
+      const wPitch = Math.cos(time * 0.6 + wIdx * 2) * 0.08;
+      const wScale = wIdx === 0 ? 1.35 : 0.95;
+
+      ctx.save();
+      ctx.translate(wx, wy);
+      ctx.rotate(wPitch);
+      ctx.scale(wScale, wScale);
+      ctx.globalAlpha = 0.28;
+
+      // Whale Body Silhouette (deep cosmic indigo with bioluminescent constellation)
+      const wGrad = ctx.createLinearGradient(-110, -25, 110, 25);
+      wGrad.addColorStop(0, '#0369a1');
+      wGrad.addColorStop(0.35, '#38bdf8');
+      wGrad.addColorStop(0.7, '#818cf8');
+      wGrad.addColorStop(1, '#c084fc');
+      ctx.fillStyle = wGrad;
+
+      // Smooth whale body
+      ctx.beginPath();
+      ctx.moveTo(-115, 0); // Tail junction
+      ctx.quadraticCurveTo(-60, -32, 40, -30); // Dorsal curve
+      ctx.quadraticCurveTo(110, -24, 125, 0); // Rostrum / snout
+      ctx.quadraticCurveTo(110, 28, 40, 26); // Ventral jaw / throat
+      ctx.quadraticCurveTo(-50, 24, -115, 0); // Belly to fluke
+      ctx.closePath();
+      ctx.fill();
+
+      // Tail flukes undulating
+      const flukeWave = Math.sin(time * 2.2 + wIdx) * 12;
+      ctx.beginPath();
+      ctx.moveTo(-115, 0);
+      ctx.lineTo(-145, -26 + flukeWave);
+      ctx.quadraticCurveTo(-132, flukeWave * 0.5, -155, 0 + flukeWave);
+      ctx.quadraticCurveTo(-132, flukeWave * 0.5, -145, 26 + flukeWave);
+      ctx.closePath();
+      ctx.fill();
+
+      // Pectoral fin wing
+      ctx.beginPath();
+      ctx.moveTo(25, 12);
+      ctx.quadraticCurveTo(0, 48, -42, 54);
+      ctx.quadraticCurveTo(5, 28, 32, 10);
+      ctx.closePath();
+      ctx.fill();
+
+      // Starlight constellation line along whale flank
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(224, 242, 254, 0.75)';
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([3, 4]);
+      const starNodes = [
+        { x: -95, y: -2 },
+        { x: -55, y: -6 },
+        { x: -10, y: -8 },
+        { x: 35, y: -5 },
+        { x: 80, y: -2 },
+        { x: 105, y: -6 }
+      ];
+      ctx.beginPath();
+      ctx.moveTo(starNodes[0].x, starNodes[0].y);
+      for (let s = 1; s < starNodes.length; s++) {
+        ctx.lineTo(starNodes[s].x, starNodes[s].y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Constellation star diamond glints
+      for (let s = 0; s < starNodes.length; s++) {
+        const node = starNodes[s];
+        const sHue = (t * 60 + s * 55) % 360;
+        ctx.fillStyle = `hsl(${sHue}, 100%, 85%)`;
+        ctx.beginPath();
+        const sSize = 2.4 + Math.sin(time * 3 + s) * 0.8;
+        ctx.arc(node.x, node.y, sSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    // 4. Drifting stardust motes in the cosmic void abyss
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let d = 0; d < 12; d++) {
+      const dx = ((d * 187 + Math.sin(time * 0.5 + d) * 40) % (w + 80) + w + 80) % (w + 80) - 40;
+      const dy = voidY + 40 + ((d * 73 + time * 14) % (screenHeight - 80));
+      const dHue = (t * 50 + d * 45) % 360;
+      const dAlpha = 0.25 + 0.2 * Math.sin(time * 1.5 + d);
+      ctx.fillStyle = `hsla(${dHue}, 100%, 80%, ${dAlpha})`;
+      ctx.beginPath();
+      ctx.arc(dx, dy, 1.8 + Math.sin(time + d) * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
 
     ctx.restore();
   }
