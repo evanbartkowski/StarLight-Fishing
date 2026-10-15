@@ -1521,7 +1521,10 @@ export class UIManager {
     } else {
       hook.caughtItems.forEach((item, itemIdx) => {
         const isCrate = !!item.isCrate || item.category === 'crate';
-        const itemVal = isCrate && item.unboxed ? 0 : Math.max(1, Math.round(item.value * sellMultiplier));
+        const baseVal = Number.isFinite(item.value) ? item.value : (item.loot && Number.isFinite(item.loot.coins) ? item.loot.coins : 350);
+        const itemVal = isCrate
+          ? (item.unboxed ? (item.loot && Number.isFinite(item.loot.coins) ? Math.max(0, item.loot.coins) : 0) : Math.max(1, Math.round(baseVal * sellMultiplier)))
+          : Math.max(1, Math.round(baseVal * sellMultiplier));
         subtotal += itemVal;
 
         const isRelic = !!item.isRelic;
@@ -1790,7 +1793,7 @@ export class UIManager {
       let soldCount = 0;
       let totalSoldGold = 0;
       hook.caughtItems.forEach((item) => {
-        if (item.isCrate && !item.unboxed) return;
+        if (item.isCrate) return;
         const instId = item.inventoryRef?.instanceId;
         if (instId && !soldIds.has(instId)) {
           const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
@@ -1804,6 +1807,8 @@ export class UIManager {
       if (soldCount > 0) {
         soundManager.playCoin();
         this.showToast(`🪙 Sold ${soldCount} catches for +$${totalSoldGold.toLocaleString()}!`, { dismissOnFishing: true });
+      } else if (hook.caughtItems.some(i => i.isCrate && i.unboxed)) {
+        this.showToast('🪙 Crate loot has been claimed and added to your purse!');
       }
       this._onCatchSummaryContinue = null;
       this.closeModal();
@@ -1906,9 +1911,9 @@ export class UIManager {
         // Local catch economy is committed before its presentation animation.
         const loot = this.saveSystem.mutateAtomically(() => {
         const loot = rollCrateLoot(currentCrate.crateRank, this.saveSystem);
-        const realmReward = currentCrate.rewardMultiplier || 1;
-        loot.coins = Math.round(loot.coins * realmReward);
-        loot.xp = Math.round(loot.xp * Math.min(5, Math.sqrt(realmReward)));
+        const realmReward = Number.isFinite(currentCrate.rewardMultiplier) && currentCrate.rewardMultiplier > 0 ? currentCrate.rewardMultiplier : 1;
+        loot.coins = Number.isFinite(loot.coins) ? Math.round(loot.coins * realmReward) : 350;
+        loot.xp = Number.isFinite(loot.xp) ? Math.round(loot.xp * Math.min(5, Math.sqrt(realmReward))) : 50;
         currentCrate.unboxed = true;
         currentCrate.loot = loot;
         const storedCrateId = currentCrate.instanceId || currentCrate.inventoryRef?.instanceId;
@@ -2079,6 +2084,10 @@ export class UIManager {
               crackBtn.textContent = 'Continue ⛵';
               crackBtn.onclick = () => {
                 this._currentCrateContext = null;
+                this.updateHUD?.();
+                if (loot && Number.isFinite(loot.coins)) {
+                  this.showToast(`🎁 Claimed crate reward: ${loot.coins >= 0 ? `+$${loot.coins.toLocaleString()}` : `-$${Math.abs(loot.coins)}`} Gold!`);
+                }
                 if (hook) this.openCatchSummary(hook, onContinue);
                 else this.openInventory();
               };

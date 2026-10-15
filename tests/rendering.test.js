@@ -510,6 +510,95 @@ test('secret /gold1 chat command adds 1,000,000 gold without broadcasting to pub
   assert.equal(backendSendCalled, false, 'Must not send to backend');
 });
 
+test('Sea 7 (Eldritch Chrono Void) mythical fish, unique obstacles, rainbow clouds and water, and crate gold reward fixes', async () => {
+  const { EXPEDITION_HAZARDS } = await import('../src/data/ExpeditionHazards.js');
+  const { CRATE_BASE_VALUES, openCrate } = await import('../src/data/TreasureData.js');
+  const { Hazard } = await import('../src/entities/Hazard.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+
+  // 1. Falling stalactites must not spawn in Sea 7
+  const stalactite = EXPEDITION_HAZARDS.find(h => h.id === 'falling_stalactite');
+  assert.ok(stalactite, 'Must find falling_stalactite hazard');
+  assert.ok(!stalactite.seas.includes(7), 'falling_stalactite must not spawn in Sea 7');
+
+  // 2. High rank crates (ranks 6, 7, 8) must have positive finite base values and valid coin rewards
+  const { TREASURE_ITEMS } = await import('../src/data/TreasureData.js');
+  const { CRATE_RANKS, rollCrateLoot } = await import('../src/data/CrateData.js');
+
+  const crateTreasures = TREASURE_ITEMS.filter(t => t.category === 'crate' && t.isCrate);
+  assert.ok(crateTreasures.length >= 8, 'Must have at least 8 crate ranks in TREASURE_ITEMS');
+  for (const crate of crateTreasures) {
+    assert.ok(Number.isFinite(crate.value) && crate.value > 0, `Crate rank ${crate.crateRank} (${crate.name}) must have finite positive value, got ${crate.value}`);
+    const loot = rollCrateLoot(crate.crateRank);
+    assert.ok(Number.isFinite(loot.coins), `Loot coins for rank ${crate.crateRank} must be finite`);
+    assert.ok(!Number.isNaN(loot.coins), `Loot coins for rank ${crate.crateRank} must not be NaN`);
+  }
+
+  // 3. Mock Canvas context for rendering tests
+  const gradient = { addColorStop() {} };
+  const calls = [];
+  const mockCtx = new Proxy({ globalAlpha: 1, lineWidth: 1 }, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      if (key === 'createRadialGradient' || key === 'createLinearGradient') return () => gradient;
+      return (...args) => calls.push({ key, args });
+    },
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+
+  // 4. Realm 7 hazards (variants 0-3) render with mythical cosmic visuals
+  const typeConfig = {
+    name: 'Temporal Fracture',
+    type: 'temporal_fracture',
+    zone: 7,
+    radius: 30,
+    width: 60,
+    height: 60,
+    damage: 25,
+    color: '#a855f7',
+    glowColor: '#ec4899',
+    realmStyle: 'void'
+  };
+  for (let v = 0; v < 4; v++) {
+    calls.length = 0;
+    const hazard = new Hazard(typeConfig, 200, 400, { variant: v, realmStyle: 'void', zone: 7 });
+    hazard.render(mockCtx, 0);
+    assert.ok(calls.length > 5, `Realm 7 hazard variant ${v} must render successfully`);
+  }
+
+  // 5. Realm 7 normal fish render with isVoidRealm/isVoidFish mythical aura and constellation stardust
+  const voidSpecies = FISH_SPECIES.find(f => f.zone === 7 && f.rarity === 'common') || FISH_SPECIES.find(f => f.zone === 7);
+  assert.ok(voidSpecies, 'Must have Realm 7 fish species');
+  const voidFish = new Fish(voidSpecies, 300, 600, { zone: 7 });
+  assert.equal(voidFish.isVoidRealm, true, 'Fish must have isVoidRealm flag');
+  calls.length = 0;
+  voidFish.render(mockCtx, 0);
+  assert.ok(calls.length > 10, 'Realm 7 fish must render with mythical aura without error');
+
+  // 6. OceanWorld atmosphere, clouds, and water render for Sea 7
+  const ocean = new OceanWorld({ width: 1200, height: 720 });
+  ocean.currentSeaId = 7;
+  ocean.waveTimer = 10;
+  calls.length = 0;
+  ocean.renderSky(mockCtx, 0);
+  assert.ok(calls.length > 5, 'OceanWorld renderSky must execute for Sea 7');
+
+  calls.length = 0;
+  ocean.renderWaterSurface(mockCtx, 0);
+  assert.ok(calls.length > 5, 'OceanWorld renderWaterSurface must execute for Sea 7');
+
+  calls.length = 0;
+  ocean.renderVoidSurfaceAnomalies(mockCtx, 200, 0);
+  assert.ok(calls.length > 5, 'OceanWorld renderVoidSurfaceAnomalies must execute for Sea 7');
+
+  calls.length = 0;
+  ocean.renderUnderwaterBackground(mockCtx, 0, 720);
+  assert.ok(calls.length > 5, 'OceanWorld renderUnderwaterBackground must execute for Sea 7');
+});
+
+
 
 
 

@@ -117,6 +117,8 @@ export class Fish {
     this.value = Math.max(2, Math.round(val * (options.valueMultiplier || 1) * depthBonusMult));
     const isCaldera = this.zone === 6 || species.zone === 6 || species.realmId === 6 || (species.id && species.id.startsWith('realm_6_')) || (species.id && species.id.includes('caldera'));
     this.isCaldera = isCaldera;
+    const isVoidRealm = this.zone === 7 || species.zone === 7 || species.realmId === 7 || (species.id && species.id.startsWith('realm_7_')) || (species.id && species.id.includes('chrono'));
+    this.isVoidRealm = isVoidRealm;
     const calderaFishMult = isCaldera ? 1.6 : 1.0;
 
     const isFirst3Realms = (this.zone >= 1 && this.zone <= 3) || (species.zone >= 1 && species.zone <= 3) || (species.realmId >= 1 && species.realmId <= 3);
@@ -742,6 +744,7 @@ export class Fish {
     const isEpic = s.rarity === 'epic';
     const isRare = s.rarity === 'rare';
     const isLegendary = this.isLegendary || s.rarity === 'legendary' || this.rarity === 'legendary' || !!s.isLegendary || !!this.isMythic || !!s.isMythic || !!this.isGodTier || !!s.isLeviathan;
+    const isVoidFish = this.isVoidRealm || s.zone === 7 || this.zone === 7 || s.realmId === 7 || (s.id && s.id.startsWith('realm_7_'));
 
     if (s.rarity !== 'common' || isRainbow || this.isMythic || this.isSpecialDeep || s.glowColor) {
       const color = RARITY_CONFIG[s.rarity]?.color || '#a78bfa';
@@ -810,6 +813,45 @@ export class Fish {
         drawRainbowStarSparkle(ctx, ox, oy, size, rot, hue, alpha);
       }
 
+      ctx.restore();
+    }
+
+    // Super mythical ethereal celestial aura and orbiting stardust motes for Realm 7 (Chrono Void) normal fish
+    if (isVoidFish && !isLegendary) {
+      ctx.save();
+      const auraRadius = s.isLeviathan ? 88 : 46;
+      const t = this.wiggleTimer;
+
+      // 1. Iridescent undulating cosmic bloom
+      const voidGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, auraRadius);
+      const cycleHue = (t * 45) % 360;
+      voidGrad.addColorStop(0, `hsla(${cycleHue}, 90%, 85%, 0.42)`);
+      voidGrad.addColorStop(0.35, `hsla(${(cycleHue + 60) % 360}, 95%, 70%, 0.26)`);
+      voidGrad.addColorStop(0.7, `hsla(${(cycleHue + 140) % 360}, 85%, 60%, 0.14)`);
+      voidGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+
+      ctx.save();
+      ctx.scale(1, 0.65);
+      ctx.fillStyle = voidGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 2. Orbiting stardust motes & prismatic celestial sparks
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let m = 0; m < 5; m++) {
+        const moteAngle = m * (Math.PI * 2 / 5) + t * 0.9;
+        const moteDistX = (auraRadius * 0.72) + Math.sin(t * 2 + m) * 6;
+        const moteDistY = (auraRadius * 0.42) + Math.cos(t * 1.8 + m) * 4;
+        const mx = Math.cos(moteAngle) * moteDistX;
+        const my = Math.sin(moteAngle) * moteDistY;
+        const mHue = (t * 70 + m * 72) % 360;
+        const mSize = 2.6 + Math.sin(t * 3.5 + m) * 0.9;
+        drawRainbowStarSparkle(ctx, mx, my, mSize, t * 1.2 + m, mHue, 0.78);
+      }
+      ctx.restore();
       ctx.restore();
     }
 
@@ -963,6 +1005,15 @@ export class Fish {
       gradient.addColorStop(.5, '#38bdf8');
       gradient.addColorStop(1, this.bodyColors[1]);
       primary = gradient;
+    } else if (isVoidFish && !s.isLeviathan && !this.mutation && !this.isShiny) {
+      const vHue = (this.wiggleTimer * 40 + this.x * 0.08) % 360;
+      const gradient = ctx.createLinearGradient(-25, -12, 25, 12);
+      gradient.addColorStop(0, `hsl(${vHue}, 75%, 45%)`);
+      gradient.addColorStop(0.5, `hsl(${(vHue + 55) % 360}, 85%, 62%)`);
+      gradient.addColorStop(1, `hsl(${(vHue + 120) % 360}, 75%, 50%)`);
+      primary = gradient;
+      secondary = `hsl(${(vHue + 160) % 360}, 95%, 78%)`;
+      finColor = `hsla(${(vHue + 70) % 360}, 90%, 75%, 0.8)`;
     }
 
     const isCustomTailLeviathan = [
@@ -2318,6 +2369,50 @@ export class Fish {
         ctx.lineTo(2, -12);
         ctx.lineTo(4, -7);
         ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    // Eldritch Chrono Void: Super mythical, unique celestial constellation artwork & star eye for Realm 7 fish
+    if (isVoidFish && !isHooked) {
+      ctx.save();
+      const t = this.wiggleTimer;
+
+      // 1. Shimmering celestial constellation stars along the flank
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const constelPts = [
+        { x: -14, y: -2 },
+        { x: -6, y: -4 },
+        { x: 2, y: 1 },
+        { x: 10, y: -2 }
+      ];
+      ctx.strokeStyle = 'rgba(224, 231, 255, 0.4)';
+      ctx.lineWidth = 0.9;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(constelPts[0].x, constelPts[0].y);
+      for (let i = 1; i < constelPts.length; i++) {
+        ctx.lineTo(constelPts[i].x, constelPts[i].y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      for (let i = 0; i < constelPts.length; i++) {
+        const pt = constelPts[i];
+        const starHue = (t * 60 + i * 80) % 360;
+        const starSize = 2.8 + Math.sin(t * 3 + i * 1.5) * 1.0;
+        drawRainbowStarSparkle(ctx, pt.x, pt.y, starSize, t * 0.8 + i, starHue, 0.85);
+      }
+      ctx.restore();
+
+      // 2. Ethereal radiant star eye glint for non-legendary void fish
+      if (!isLegendary) {
+        const eyeX = s.shape === 'squid' ? 6 : s.shape === 'octopus' ? 4 : 11;
+        const eyeY = -3;
+        const eyeHue = (t * 90) % 360;
+        drawRainbowStarSparkle(ctx, eyeX, eyeY, 3.2 + Math.sin(t * 4) * 0.8, t * 1.5, eyeHue, 0.9);
       }
 
       ctx.restore();

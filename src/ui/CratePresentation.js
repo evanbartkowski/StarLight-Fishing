@@ -1,7 +1,7 @@
 import { getCrateDropPreview } from '../data/CrateData.js';
 
 export function crateArtwork(rank) {
-  return `<div class="relic-case relic-case-${rank}" aria-hidden="true"><i></i><b>${['', 'I', 'II', 'III', 'IV', 'V'][rank]}</b><span></span></div>`;
+  return `<div class="relic-case relic-case-${rank}" aria-hidden="true"><i></i><b>${['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'][rank] || String(rank)}</b><span></span></div>`;
 }
 
 export function crateRewardGallery(rank, save) {

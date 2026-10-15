@@ -9,7 +9,7 @@ export const TREASURE_ITEMS = [
   ...LEGACY_SALVAGE_SPECIES.map(item => ({ ...item, zone: ['lava_geode', 'obsidian_rock'].includes(item.id) ? 6 : item.zone, category: 'treasure', value: item.baseValue, color: item.primaryColor, glow: item.secondaryColor })),
   ...CRATE_RANKS.map(crate => ({
     ...crate, category: 'crate', isCrate: true, crateRank: crate.rank,
-    value: [0, 60, 160, 390, 900, 1950][crate.rank], lore: crate.desc,
+    value: [0, 60, 160, 390, 900, 1950, 4200, 9500, 22000][crate.rank] || (crate.rank * 2500), lore: crate.desc,
   })),
   // Standard Sunken Treasures (Rebalanced slightly lower)
   {

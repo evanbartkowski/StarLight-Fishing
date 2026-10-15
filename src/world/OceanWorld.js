@@ -501,20 +501,48 @@ export class OceanWorld {
     ctx.fill();
     ctx.restore();
 
-    // Clouds tinted by current sea realm palette
+    // Clouds tinted by current sea realm palette (or rainbow colored for Sea 7)
     ctx.save();
-    const cloudColor = sky.isNight
-      ? (sea.id === 6 ? 'rgba(70, 20, 20, 0.65)' : 'rgba(30, 41, 59, 0.45)')
-      : (sea.id === 6 ? 'rgba(254, 215, 170, 0.75)' : sea.id === 2 ? 'rgba(233, 213, 255, 0.75)' : sea.id === 4 ? 'rgba(204, 251, 241, 0.8)' : sea.id === 5 ? 'rgba(243, 232, 255, 0.8)' : 'rgba(255, 255, 255, 0.85)');
-    ctx.fillStyle = cloudColor;
-    this.clouds.forEach((cloud) => {
-      const cy = cloud.y - cameraY * 0.3;
-      ctx.beginPath();
-      ctx.arc(cloud.x, cy, 22 * cloud.scale, 0, Math.PI * 2);
-      ctx.arc(cloud.x + 20 * cloud.scale, cy - 8 * cloud.scale, 28 * cloud.scale, 0, Math.PI * 2);
-      ctx.arc(cloud.x + 44 * cloud.scale, cy, 20 * cloud.scale, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    if (sea.id === 7) {
+      // Rainbow colored clouds for the last realm
+      const t = this.waveTimer || 0;
+      this.clouds.forEach((cloud, idx) => {
+        const cy = cloud.y - cameraY * 0.3;
+        const cloudHue = (t * 25 + idx * 60) % 360;
+        try {
+          const cloudGrad = ctx.createLinearGradient(cloud.x - 30 * cloud.scale, cy, cloud.x + 60 * cloud.scale, cy);
+          cloudGrad.addColorStop(0, `hsla(${cloudHue}, 90%, 75%, 0.85)`);
+          cloudGrad.addColorStop(0.33, `hsla(${(cloudHue + 50) % 360}, 92%, 78%, 0.85)`);
+          cloudGrad.addColorStop(0.66, `hsla(${(cloudHue + 110) % 360}, 95%, 76%, 0.85)`);
+          cloudGrad.addColorStop(1, `hsla(${(cloudHue + 170) % 360}, 90%, 78%, 0.85)`);
+          ctx.fillStyle = cloudGrad;
+        } catch (e) {
+          ctx.fillStyle = `hsla(${cloudHue}, 90%, 75%, 0.85)`;
+        }
+        ctx.shadowColor = `hsla(${cloudHue}, 90%, 70%, 0.5)`;
+        ctx.shadowBlur = 10 * cloud.scale;
+
+        ctx.beginPath();
+        ctx.arc(cloud.x, cy, 22 * cloud.scale, 0, Math.PI * 2);
+        ctx.arc(cloud.x + 20 * cloud.scale, cy - 8 * cloud.scale, 28 * cloud.scale, 0, Math.PI * 2);
+        ctx.arc(cloud.x + 44 * cloud.scale, cy, 20 * cloud.scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+    } else {
+      const cloudColor = sky.isNight
+        ? (sea.id === 6 ? 'rgba(70, 20, 20, 0.65)' : 'rgba(30, 41, 59, 0.45)')
+        : (sea.id === 6 ? 'rgba(254, 215, 170, 0.75)' : sea.id === 2 ? 'rgba(233, 213, 255, 0.75)' : sea.id === 4 ? 'rgba(204, 251, 241, 0.8)' : sea.id === 5 ? 'rgba(243, 232, 255, 0.8)' : 'rgba(255, 255, 255, 0.85)');
+      ctx.fillStyle = cloudColor;
+      this.clouds.forEach((cloud) => {
+        const cy = cloud.y - cameraY * 0.3;
+        ctx.beginPath();
+        ctx.arc(cloud.x, cy, 22 * cloud.scale, 0, Math.PI * 2);
+        ctx.arc(cloud.x + 20 * cloud.scale, cy - 8 * cloud.scale, 28 * cloud.scale, 0, Math.PI * 2);
+        ctx.arc(cloud.x + 44 * cloud.scale, cy, 20 * cloud.scale, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
     ctx.restore();
 
     // Realm-specific surface atmospheric effects
@@ -666,6 +694,9 @@ export class OceanWorld {
       ctx.ellipse(this.worldWidth * 0.25, islandY - 30, 65, 16, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+    } else if (sea.id === 7) {
+      // Eldritch Chrono Void: Surface background Black Vortex and Tornados that periodically spawn and leave
+      this.renderVoidSurfaceAnomalies(ctx, skyHeight, cameraY);
     }
   }
 
@@ -914,12 +945,292 @@ export class OceanWorld {
     ctx.restore();
   }
 
+  // Sea 7: Eldritch Chrono Void Surface Background Anomalies
+  // Periodically spawns a majestic Black Vortex and Cosmic Tornados at the horizon that eventually leave
+  renderVoidSurfaceAnomalies(ctx, skyHeight, cameraY) {
+    const vY = this.surfaceY - cameraY;
+    if (!Number.isFinite(vY)) return;
+
+    ctx.save();
+    const t = this.waveTimer || 0;
+    const w = this.worldWidth || 1200;
+
+    // -------------------------------------------------------------
+    // 1. BLACK VORTEX (Cosmic Singularity with accretion disk & lensing)
+    // Spawns every 42s, active for 20s (enters, swirls, exits), absent 22s
+    // -------------------------------------------------------------
+    const vortexPeriod = 42;
+    const vortexPhase = (t % vortexPeriod);
+    const vortexActiveTime = 20;
+
+    if (vortexPhase < vortexActiveTime) {
+      let scale = 1;
+      if (vortexPhase < 4) {
+        scale = Math.sin((vortexPhase / 4) * (Math.PI / 2));
+      } else if (vortexPhase > vortexActiveTime - 4) {
+        scale = Math.cos(((vortexPhase - (vortexActiveTime - 4)) / 4) * (Math.PI / 2));
+      }
+      scale = Math.max(0.001, scale);
+
+      const vx = w * 0.72 + Math.sin(t * 0.3) * 35;
+      const vy = vY - 55 - Math.cos(t * 0.25) * 8;
+
+      ctx.save();
+      ctx.translate(vx, vy);
+      ctx.scale(scale, scale);
+
+      // Relativistic plasma jet (vertical ethereal beams shooting into cosmos & sea)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const jetGrad = ctx.createLinearGradient(0, -140, 0, 70);
+      const jetHue = (t * 60) % 360;
+      jetGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+      jetGrad.addColorStop(0.35, `hsla(${jetHue}, 90%, 75%, 0.35)`);
+      jetGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.7)');
+      jetGrad.addColorStop(0.65, `hsla(${(jetHue + 120) % 360}, 90%, 75%, 0.35)`);
+      jetGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+      ctx.fillStyle = jetGrad;
+      ctx.beginPath();
+      ctx.moveTo(-7, -140);
+      ctx.lineTo(7, -140);
+      ctx.lineTo(12, 70);
+      ctx.lineTo(-12, 70);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Outer Gravitational Lensing Halo (rainbow warped starlight)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let ring = 0; ring < 3; ring++) {
+        const rRad = 52 + ring * 14 + Math.sin(t * 2 + ring) * 4;
+        const rHue = (t * 70 + ring * 65) % 360;
+        ctx.strokeStyle = `hsla(${rHue}, 95%, 72%, ${0.28 - ring * 0.07})`;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rRad, rRad * 0.36, -0.15 + ring * 0.08, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Glowing Accretion Disk (spinning matter ring tilted in 3D perspective)
+      ctx.save();
+      ctx.rotate(-0.25);
+      const diskGrad = ctx.createRadialGradient(0, 0, 18, 0, 0, 56);
+      const diskHue = (t * 50) % 360;
+      diskGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      diskGrad.addColorStop(0.25, `hsla(${diskHue}, 100%, 70%, 0.85)`);
+      diskGrad.addColorStop(0.65, `hsla(${(diskHue + 60) % 360}, 95%, 60%, 0.55)`);
+      diskGrad.addColorStop(0.9, `hsla(${(diskHue + 160) % 360}, 90%, 50%, 0.25)`);
+      diskGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.fillStyle = diskGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 56, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Infalling stardust matter spirals
+      for (let s = 0; s < 6; s++) {
+        const spiralAng = s * (Math.PI / 3) + t * 2.5;
+        const sr = 22 + ((t * 28 + s * 9) % 32);
+        const sx = Math.cos(spiralAng) * sr;
+        const sy = Math.sin(spiralAng) * (sr * 0.32);
+        const sHue = (t * 90 + s * 60) % 360;
+        ctx.fillStyle = `hsl(${sHue}, 100%, 80%)`;
+        ctx.shadowColor = `hsl(${sHue}, 100%, 70%)`;
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.restore();
+
+      // Event Horizon (Pitch-black obsidian void core that consumes all light)
+      ctx.fillStyle = '#020617';
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(0, 0, 19, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Pure black core
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(0, 0, 16.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Iridescent photon ring (thin glowing edge around event horizon)
+      ctx.strokeStyle = `hsla(${(t * 80) % 360}, 100%, 85%, 0.9)`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(0, 0, 17, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // -------------------------------------------------------------
+    // 2. COSMIC TORNADOS (Swirling Waterspouts with stardust spray)
+    // Spawns every 48s, active for 25s (funnel forms, roils & drifts, dissipates)
+    // -------------------------------------------------------------
+    const tornadoPeriod = 48;
+    const tornadoPhase = ((t + 22) % tornadoPeriod);
+    const tornadoActiveTime = 25;
+
+    if (tornadoPhase < tornadoActiveTime) {
+      let intensity = 1;
+      if (tornadoPhase < 4) {
+        intensity = Math.sin((tornadoPhase / 4) * (Math.PI / 2));
+      } else if (tornadoPhase > tornadoActiveTime - 4) {
+        intensity = Math.cos(((tornadoPhase - (tornadoActiveTime - 4)) / 4) * (Math.PI / 2));
+      }
+      intensity = Math.max(0.001, intensity);
+
+      const tornados = [
+        {
+          startX: w * 0.18,
+          travelX: 110,
+          baseY: vY,
+          height: 125,
+          topWidth: 46,
+          bottomWidth: 14,
+          speedMult: 1.0,
+          swirlDir: 1
+        },
+        {
+          startX: w * 0.44,
+          travelX: -90,
+          baseY: vY,
+          height: 110,
+          topWidth: 38,
+          bottomWidth: 11,
+          speedMult: 0.85,
+          swirlDir: -1
+        }
+      ];
+
+      for (let i = 0; i < tornados.length; i++) {
+        const tor = tornados[i];
+        const progress = tornadoPhase / tornadoActiveTime;
+        const curX = tor.startX + tor.travelX * progress;
+        const curBaseY = tor.baseY;
+        const curTopY = curBaseY - tor.height * Math.min(1, tornadoPhase / 2.5);
+        const curTopW = tor.topWidth * intensity;
+        const curBotW = tor.bottomWidth * intensity;
+
+        ctx.save();
+        ctx.globalAlpha = intensity;
+
+        // Swirling wind funnel curves
+        const slices = 16;
+        for (let s = 0; s < slices; s++) {
+          const sy = curTopY + (curBaseY - curTopY) * (s / slices);
+          const nextY = curTopY + (curBaseY - curTopY) * ((s + 1) / slices);
+          const ratio = s / slices;
+          const nextRatio = (s + 1) / slices;
+
+          const sway = Math.sin(t * 3.5 * tor.speedMult + s * 0.45) * (7 + ratio * 8);
+          const nextSway = Math.sin(t * 3.5 * tor.speedMult + (s + 1) * 0.45) * (7 + nextRatio * 8);
+
+          const w1 = (curTopW * (1 - ratio) + curBotW * ratio) * (1 + 0.15 * Math.sin(t * 5 + s));
+          const w2 = (curTopW * (1 - nextRatio) + curBotW * nextRatio) * (1 + 0.15 * Math.sin(t * 5 + s + 1));
+
+          const sliceHue = (t * 50 + s * 22) % 360;
+          ctx.fillStyle = `rgba(15, 23, 42, ${0.45 + 0.25 * (1 - ratio)})`;
+          ctx.beginPath();
+          ctx.moveTo(curX + sway - w1 * 0.5, sy);
+          ctx.lineTo(curX + sway + w1 * 0.5, sy);
+          ctx.lineTo(curX + nextSway + w2 * 0.5, nextY);
+          ctx.lineTo(curX + nextSway - w2 * 0.5, nextY);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.strokeStyle = `hsla(${sliceHue}, 90%, 70%, 0.45)`;
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          const bandOffset = Math.sin(t * 6 * tor.swirlDir + s * 0.8) * (w1 * 0.4);
+          ctx.moveTo(curX + sway + bandOffset, sy);
+          ctx.lineTo(curX + nextSway + bandOffset * 0.9, nextY);
+          ctx.stroke();
+        }
+
+        // Swirling stardust motes rotating around the tornado funnel
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let p = 0; p < 8; p++) {
+          const pProgress = ((t * 22 + p * 15) % 100) / 100;
+          const py = curTopY + (curBaseY - curTopY) * pProgress;
+          const pRatio = pProgress;
+          const pW = (curTopW * (1 - pRatio) + curBotW * pRatio) * 0.85;
+          const pAngle = t * 6 * tor.swirlDir + p * (Math.PI / 4);
+          const px = curX + Math.sin(t * 3.5 + pProgress * 3) * (7 + pRatio * 8) + Math.cos(pAngle) * pW;
+          const pHue = (t * 80 + p * 45) % 360;
+          ctx.fillStyle = `hsla(${pHue}, 100%, 75%, 0.8)`;
+          ctx.beginPath();
+          ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // Churning sea spray & foam vortex at the touchdown point on water surface
+        const touchY = curBaseY + this.getWaveHeight(curX, this.waveTimer);
+        const sprayHue = (t * 70 + i * 120) % 360;
+        ctx.fillStyle = `hsla(${sprayHue}, 90%, 75%, 0.6)`;
+        ctx.beginPath();
+        ctx.ellipse(curX, touchY, curBotW * 1.8, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let sp = 0; sp < 6; sp++) {
+          const spAng = sp * (Math.PI / 3) + t * 4 * tor.swirlDir;
+          const spDist = curBotW * 1.2 + Math.sin(t * 5 + sp) * 4;
+          const spX = curX + Math.cos(spAng) * spDist;
+          const spY = touchY - 4 - Math.abs(Math.sin(t * 4 + sp)) * 8;
+          ctx.fillStyle = `hsla(${(sprayHue + sp * 50) % 360}, 100%, 80%, 0.7)`;
+          ctx.beginPath();
+          ctx.arc(spX, spY, 1.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    ctx.restore();
+  }
+
   renderWaterSurface(ctx, cameraY = 0) {
     const drawSurfaceY = this.surfaceY - cameraY;
     const sea = getSeaById(this.currentSeaId) || FANTASY_SEAS[0];
 
     ctx.save();
-    ctx.fillStyle = sea.waterSurfaceColor || 'rgba(56, 189, 248, 0.45)';
+    let surfaceStyle = sea.waterSurfaceColor || 'rgba(56, 189, 248, 0.45)';
+    let crestStyle = sea.skyHorizon || '#e0f2fe';
+
+    // Undulating rainbow colored water for Sea 7 (Eldritch Chrono Void)
+    if (sea.id === 7) {
+      const t = this.waveTimer || 0;
+      const baseHue = (t * 35) % 360;
+      try {
+        const rainbowWater = ctx.createLinearGradient(0, drawSurfaceY, this.worldWidth, drawSurfaceY);
+        rainbowWater.addColorStop(0, `hsla(${baseHue}, 85%, 60%, 0.55)`);
+        rainbowWater.addColorStop(0.25, `hsla(${(baseHue + 70) % 360}, 90%, 65%, 0.55)`);
+        rainbowWater.addColorStop(0.5, `hsla(${(baseHue + 140) % 360}, 85%, 60%, 0.55)`);
+        rainbowWater.addColorStop(0.75, `hsla(${(baseHue + 210) % 360}, 90%, 65%, 0.55)`);
+        rainbowWater.addColorStop(1, `hsla(${(baseHue + 280) % 360}, 85%, 60%, 0.55)`);
+        surfaceStyle = rainbowWater;
+
+        const rainbowCrest = ctx.createLinearGradient(0, drawSurfaceY, this.worldWidth, drawSurfaceY);
+        rainbowCrest.addColorStop(0, `hsla(${(baseHue + 30) % 360}, 100%, 80%, 0.95)`);
+        rainbowCrest.addColorStop(0.33, `hsla(${(baseHue + 110) % 360}, 100%, 82%, 0.95)`);
+        rainbowCrest.addColorStop(0.66, `hsla(${(baseHue + 200) % 360}, 100%, 82%, 0.95)`);
+        rainbowCrest.addColorStop(1, `hsla(${(baseHue + 290) % 360}, 100%, 80%, 0.95)`);
+        crestStyle = rainbowCrest;
+      } catch (e) {}
+    }
+
+    ctx.fillStyle = surfaceStyle;
     ctx.beginPath();
     ctx.moveTo(0, drawSurfaceY);
 
@@ -932,9 +1243,9 @@ export class OceanWorld {
     ctx.closePath();
     ctx.fill();
 
-    // Crest line matching sea horizon tint
-    ctx.strokeStyle = sea.skyHorizon || '#e0f2fe';
-    ctx.lineWidth = 3;
+    // Crest line matching sea horizon tint or undulating rainbow
+    ctx.strokeStyle = crestStyle;
+    ctx.lineWidth = sea.id === 7 ? 4 : 3;
     ctx.beginPath();
     for (let x = 0; x <= this.worldWidth; x += 8) {
       const wy = drawSurfaceY + this.getWaveHeight(x, this.waveTimer);
@@ -1165,6 +1476,21 @@ export class OceanWorld {
     }
 
     ctx.fillRect(0, topY, this.worldWidth, bottomY - topY);
+
+    // Undulating rainbow water wash for Sea 7 (Eldritch Chrono Void)
+    if (this.currentSeaId === 7) {
+      try {
+        const t = this.waveTimer || 0;
+        const rainbowShift = (t * 30) % 360;
+        const waterRainbow = ctx.createLinearGradient(0, topY, this.worldWidth, bottomY);
+        waterRainbow.addColorStop(0, `hsla(${rainbowShift}, 85%, 55%, 0.16)`);
+        waterRainbow.addColorStop(0.33, `hsla(${(rainbowShift + 60) % 360}, 90%, 60%, 0.14)`);
+        waterRainbow.addColorStop(0.66, `hsla(${(rainbowShift + 140) % 360}, 85%, 58%, 0.14)`);
+        waterRainbow.addColorStop(1, `hsla(${(rainbowShift + 220) % 360}, 85%, 55%, 0.16)`);
+        ctx.fillStyle = waterRainbow;
+        ctx.fillRect(0, topY, this.worldWidth, bottomY - topY);
+      } catch (e) {}
+    }
 
     ctx.save();
     ctx.beginPath(); ctx.rect(0, topY, this.worldWidth, bottomY - topY); ctx.clip();

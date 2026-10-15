@@ -822,13 +822,231 @@ export class Hazard {
         ctx.restore();
       }
     } else {
-      // Void fractures have moving silhouettes
-      for (let i = 0; i < 5; i++) {
+      // Eldritch Chrono Void (Last Realm): Super mythical, unique, and very pretty cosmic obstacles
+      const voidVariant = (this.variant || 0) % 4;
+      const t = this.timer || 0;
+
+      if (voidVariant === 0) {
+        // 0. Temporal Fracture: Glittering space-time crystal rift with chromatic prismatic facets
+        ctx.save();
+        const rot = t * 0.45;
+        ctx.rotate(rot);
+
+        // Outer temporal distortion resonance rings
+        for (let ring = 1; ring <= 3; ring++) {
+          const rRadius = r * (0.65 + ring * 0.22) + Math.sin(t * 3 + ring) * 3;
+          ctx.strokeStyle = ring === 1 ? 'rgba(192, 132, 252, 0.5)' : ring === 2 ? 'rgba(56, 189, 248, 0.35)' : 'rgba(244, 114, 182, 0.22)';
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, rRadius, rRadius * 0.72, t * 0.5 + ring, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Crystalline geometric space-time rift body
+        const points = 7;
         ctx.beginPath();
-        const y = (i - 2) * r * 0.32;
-        ctx.moveTo(-r * 0.7, y); ctx.lineTo(-r * 0.2, y - 9);
-        ctx.lineTo(r * 0.2, y + 9); ctx.lineTo(r * 0.7, y - 4);
+        for (let i = 0; i < points * 2; i++) {
+          const rad = (i / (points * 2)) * Math.PI * 2;
+          const dist = i % 2 === 0 ? r * 0.88 : r * 0.42;
+          const px = Math.cos(rad) * dist;
+          const py = Math.sin(rad) * dist;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+
+        const crystalGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
+        crystalGrad.addColorStop(0, '#ffffff');
+        crystalGrad.addColorStop(0.25, '#c084fc');
+        crystalGrad.addColorStop(0.6, '#38bdf8');
+        crystalGrad.addColorStop(0.9, '#1e1b4b');
+        crystalGrad.addColorStop(1, '#0f051d');
+        ctx.fillStyle = crystalGrad;
+        ctx.fill();
+
+        ctx.strokeStyle = '#e0e7ff';
+        ctx.lineWidth = 2.0;
         ctx.stroke();
+
+        // Prismatic facets
+        for (let i = 0; i < points; i++) {
+          const rad = (i / points) * Math.PI * 2;
+          ctx.strokeStyle = i % 2 === 0 ? 'rgba(244, 114, 182, 0.75)' : 'rgba(56, 189, 248, 0.75)';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(Math.cos(rad) * r * 0.88, Math.sin(rad) * r * 0.88);
+          ctx.stroke();
+        }
+
+        // Orbiting stardust motes
+        for (let m = 0; m < 5; m++) {
+          const mAngle = -rot * 2 + (m / 5) * Math.PI * 2;
+          const mx = Math.cos(mAngle) * (r * 1.05);
+          const my = Math.sin(mAngle) * (r * 0.75);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(mx, my, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else if (voidVariant === 1) {
+        // 1. Gravity Snare: Swirling celestial micro-singularity with rainbow accretion ring
+        ctx.save();
+        const spin = t * 1.8;
+
+        // Swirling iridescent accretion arcs
+        for (let a = 0; a < 6; a++) {
+          const aAngle = spin + (a / 6) * Math.PI * 2;
+          const hue = (t * 50 + a * 60) % 360;
+          ctx.strokeStyle = `hsla(${hue}, 85%, 68%, 0.65)`;
+          ctx.lineWidth = 3.2;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * (0.65 + (a % 3) * 0.14), aAngle, aAngle + 1.2);
+          ctx.stroke();
+        }
+
+        // Event Horizon: pitch-black core with glowing celestial photon ring
+        ctx.fillStyle = '#05010d';
+        ctx.shadowColor = '#e879f9';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.44, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#f8fafc';
+        ctx.lineWidth = 2.4;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Inward spiraling cosmic stardust sparks
+        for (let s = 0; s < 6; s++) {
+          const dist = r * (0.45 + ((s * 17 + t * 40) % 55) / 100);
+          const sAngle = spin * 1.5 + s * 1.05;
+          ctx.fillStyle = s % 2 === 0 ? '#38bdf8' : '#f472b6';
+          ctx.beginPath();
+          ctx.arc(Math.cos(sAngle) * dist, Math.sin(sAngle) * dist, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      } else if (voidVariant === 2) {
+        // 2. Entropy Tendrils: Graceful, undulating ethereal aurora ribbons with glowing starlight tips
+        ctx.save();
+        const tendrilCount = 6;
+        for (let i = 0; i < tendrilCount; i++) {
+          const baseAngle = (i / tendrilCount) * Math.PI * 2;
+          const wave = Math.sin(t * 3 + i * 1.2) * (r * 0.32);
+          const tGrad = ctx.createLinearGradient(0, 0, Math.cos(baseAngle) * r, Math.sin(baseAngle) * r);
+          tGrad.addColorStop(0, 'rgba(168, 85, 247, 0.7)');
+          tGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.65)');
+          tGrad.addColorStop(1, 'rgba(244, 114, 182, 0.85)');
+
+          ctx.strokeStyle = tGrad;
+          ctx.lineWidth = 3.5;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          const midX = Math.cos(baseAngle) * (r * 0.55) - Math.sin(baseAngle) * wave;
+          const midY = Math.sin(baseAngle) * (r * 0.55) + Math.cos(baseAngle) * wave;
+          const endX = Math.cos(baseAngle) * (r * 0.92) + Math.sin(baseAngle) * (wave * 0.6);
+          const endY = Math.sin(baseAngle) * (r * 0.92) - Math.cos(baseAngle) * (wave * 0.6);
+          ctx.quadraticCurveTo(midX, midY, endX, endY);
+          ctx.stroke();
+
+          // Brilliant starlight tip
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(endX, endY, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Central cosmic nexus core
+        ctx.fillStyle = '#1e1b4b';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#c084fc';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        // 3. Event Horizon Monolith: Majestic colossal floating cosmic obelisk with glowing constellation glyphs
+        ctx.save();
+        const sway = Math.sin(t * 1.8) * 3;
+        ctx.translate(0, sway);
+
+        // Outer rotating celestial halo ring
+        ctx.save();
+        ctx.rotate(t * 0.6);
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r * 0.95, r * 0.38, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let h = 0; h < 4; h++) {
+          const hAngle = (h / 4) * Math.PI * 2;
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(Math.cos(hAngle) * r * 0.95, Math.sin(hAngle) * r * 0.38, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // Faceted alien obelisk body
+        const mGrad = ctx.createLinearGradient(-r * 0.45, -r, r * 0.45, r);
+        mGrad.addColorStop(0, '#2e1065');
+        mGrad.addColorStop(0.35, '#0f172a');
+        mGrad.addColorStop(0.7, '#1e1b4b');
+        mGrad.addColorStop(1, '#030712');
+        ctx.fillStyle = mGrad;
+        ctx.strokeStyle = '#c084fc';
+        ctx.lineWidth = 2.0;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.98);
+        ctx.lineTo(r * 0.38, -r * 0.45);
+        ctx.lineTo(r * 0.32, r * 0.88);
+        ctx.lineTo(-r * 0.32, r * 0.88);
+        ctx.lineTo(-r * 0.38, -r * 0.45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Glowing rainbow constellation glyphs
+        const glyphCount = 4;
+        for (let g = 0; g < glyphCount; g++) {
+          const gy = -r * 0.4 + g * (r * 0.32);
+          const gHue = (t * 60 + g * 50) % 360;
+          ctx.fillStyle = `hsl(${gHue}, 90%, 75%)`;
+          ctx.shadowColor = `hsl(${gHue}, 90%, 75%)`;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(0, gy, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = `hsla(${gHue}, 90%, 75%, 0.6)`;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(-r * 0.16, gy);
+          ctx.lineTo(r * 0.16, gy);
+          ctx.stroke();
+        }
+
+        // Apex star crown flare
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.98, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.restore();
       }
     }
     ctx.restore();
@@ -844,12 +1062,18 @@ export class Hazard {
     const auraRadius = this.radius * (1.10 + pulse * 0.08) + 4;
     const auraStrength = this.isColossal ? 0.48 : this.marineKind ? 0.40 : 0.35;
     const isLava = this.realmStyle === 'lava' || this.zone === 6;
+    const isVoid = this.realmStyle === 'void' || this.zone === 7;
     const auraGrad = ctx.createRadialGradient(0, 0, this.radius * 0.80, 0, 0, auraRadius);
     if (isLava) {
       auraGrad.addColorStop(0, `rgba(249, 115, 22, ${auraStrength * (0.85 + pulse * 0.15)})`);
       auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
       auraGrad.addColorStop(0.80, `rgba(185, 28, 28, ${auraStrength * 0.22})`);
       auraGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');
+    } else if (isVoid) {
+      auraGrad.addColorStop(0, `rgba(192, 132, 252, ${auraStrength * (0.9 + pulse * 0.15)})`);
+      auraGrad.addColorStop(0.35, `rgba(56, 189, 248, ${auraStrength * 0.65})`);
+      auraGrad.addColorStop(0.70, `rgba(244, 114, 182, ${auraStrength * 0.35})`);
+      auraGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
     } else {
       auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.85 + pulse * 0.15)})`);
       auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
