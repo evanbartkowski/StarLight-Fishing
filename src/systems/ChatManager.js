@@ -26,6 +26,10 @@ export class ChatManager {
   }
 
   async sendMessage(text) {
+    if (typeof text === 'string' && text.trim().toLowerCase() === '/gems1000') {
+      this.saveSystem.addGems(1000);
+      return { secret: true, command: 'gems1000', amount: 1000 };
+    }
     if (!this.saveSystem.isChatUnlocked() || typeof text !== 'string' || !text.trim() || this.sending) return false;
     this.sending = true;
     try {

@@ -1025,6 +1025,14 @@ export class SaveSystem {
     return this.data.gems + (this.gemShop?.getBalance() || 0);
   }
 
+  addGems(amount) {
+    if (!Number.isFinite(amount) || amount <= 0) return this.data.gems || 0;
+    const val = Math.round(amount);
+    this.data.gems = (this.data.gems || 0) + val;
+    this.save();
+    return this.data.gems;
+  }
+
   spendGems(amount) {
     if (amount <= 0) return true;
     if (this.data.gems >= amount) {

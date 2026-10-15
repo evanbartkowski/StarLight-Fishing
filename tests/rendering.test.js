@@ -437,5 +437,50 @@ test('quests and rewards scale dynamically with realm depth, difficulty, and eco
   }
 });
 
+test('secret /gems1000 chat command adds 1000 gems without broadcasting to public chat', async () => {
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { ChatManager } = await import('../src/systems/ChatManager.js');
+
+  const save = new SaveSystem();
+  save.data.gems = 50;
+
+  // 1. Direct save.addGems() test
+  save.addGems(500);
+  assert.equal(save.data.gems, 550, 'addGems must add valid amount');
+  save.addGems(-100);
+  assert.equal(save.data.gems, 550, 'addGems must ignore non-positive numbers');
+
+  // 2. ChatManager secret command interception
+  const chatManager = new ChatManager(save);
+  let backendSendCalled = false;
+  chatManager.loadBackend = async () => ({
+    send: async () => { backendSendCalled = true; return true; },
+    subscribe: async () => () => {},
+  });
+
+  // Test lowercase, uppercase, and untrimmed variants
+  const res1 = await chatManager.sendMessage('/gems1000');
+  assert.deepEqual(res1, { secret: true, command: 'gems1000', amount: 1000 });
+  assert.equal(save.data.gems, 1550, 'Must award 1000 gems on /gems1000');
+  assert.equal(backendSendCalled, false, 'Must never send secret command to network backend');
+
+  const res2 = await chatManager.sendMessage('  /GEMS1000  ');
+  assert.deepEqual(res2, { secret: true, command: 'gems1000', amount: 1000 });
+  assert.equal(save.data.gems, 2550, 'Must award another 1000 gems on case-insensitive untrimmed /GEMS1000');
+  assert.equal(backendSendCalled, false, 'Must not send to backend');
+
+  // 3. Normal messages still follow normal chat flow
+  save.isChatUnlocked = () => false;
+  const normalBlocked = await chatManager.sendMessage('Hello world');
+  assert.equal(normalBlocked, false);
+  assert.equal(backendSendCalled, false);
+
+  save.isChatUnlocked = () => true;
+  const normalSent = await chatManager.sendMessage('Ahoy mateys!');
+  assert.equal(normalSent, true);
+  assert.equal(backendSendCalled, true, 'Normal message must reach backend');
+});
+
+
 
 

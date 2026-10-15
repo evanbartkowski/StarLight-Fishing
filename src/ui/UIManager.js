@@ -146,7 +146,12 @@ export class UIManager {
       button.disabled = true;
       const sent = await manager.sendMessage(text);
       button.disabled = false;
-      if (sent && input.value === text) input.value = '';
+      if (sent && (input.value === text || sent.secret)) input.value = '';
+      if (sent && typeof sent === 'object' && sent.secret) {
+        soundManager.playDivineChime?.();
+        this.showToast('💎 Secret code activated: +1,000 Gems added to your account!');
+        return;
+      }
       if (!sent) this.showToast('Message not sent. Reconnect or wait two seconds before trying again.');
     });
   }
