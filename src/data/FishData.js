@@ -538,7 +538,7 @@ const ORIGINAL_SPECIES = [
     minDepth: 150,
     maxDepth: 280,
     rarity: 'legendary',
-    baseValue: 280,
+    baseValue: 560,
     baseWeight: 18.0,
     sizeRange: [80, 140],
     scaleFactor: 2.4,
@@ -673,7 +673,7 @@ const ORIGINAL_SPECIES = [
     minDepth: 250,
     maxDepth: 550,
     rarity: 'legendary',
-    baseValue: 420,
+    baseValue: 840,
     baseWeight: 45.0,
     sizeRange: [90, 160],
     scaleFactor: 2.6,
@@ -1410,3 +1410,66 @@ for (const fish of FISH_SPECIES) {
   if (fish.name === 'Mooncloud Whale') { fish.name = 'Rainbow Narwhal'; fish.movementType = 'spiral'; }
   if (fish.name === 'Mushroom Cap Puffer') fish.movementType = 'spiral';
 }
+
+/**
+ * Returns an authentic, tailored icon or emoji for every fish, creature, treasure, fossil, or relic.
+ */
+export function getSpeciesIcon(item) {
+  if (!item) return '🐟';
+  if (typeof item === 'string') return '🐟';
+  if (item.icon && typeof item.icon === 'string' && item.icon.length <= 4) return item.icon;
+  if (item.species?.icon && typeof item.species.icon === 'string' && item.species.icon.length <= 4) return item.species.icon;
+
+  const id = String(item.id || item.speciesId || item.species?.id || '').toLowerCase();
+  const name = String(item.name || item.species?.name || '').toLowerCase();
+  const shape = String(item.shape || item.species?.shape || '').toLowerCase();
+  const category = String(item.category || item.type || '').toLowerCase();
+
+  // Safes & Containers
+  if (item.isSunkenSafe || id.includes('safe') || name.includes('safe')) return '🔒';
+  if (item.isBottle || id.includes('bottle') || name.includes('bottle') || name.includes('message')) return '🍾';
+  if (item.isCrate || category === 'crate' || id.includes('crate') || name.includes('crate') || name.includes('cache')) {
+    return item.loot?.icon || '📦';
+  }
+
+  // Prehistoric Fossils
+  if (category === 'fossil' || id.includes('fossil') || name.includes('fossil') || name.includes('vertebra') || name.includes('spine') || name.includes('skull') || name.includes('ribcage')) {
+    return '🦴';
+  }
+
+  // Relics & Antiquities
+  if (item.isRelic || category === 'relic' || id.includes('relic') || name.includes('relic') || name.includes('astrolabe') || name.includes('testament') || name.includes('tablet')) {
+    return item.icon || '🏺';
+  }
+
+  // Sunken Dredged Treasures
+  if (item.isTreasure || category === 'treasure' || id.includes('treasure') || name.includes('diamond') || name.includes('heart') || name.includes('sigil') || name.includes('shard') || name.includes('crown') || name.includes('hourglass') || name.includes('gem') || name.includes('coin')) {
+    return '💎';
+  }
+
+  // Specific Realm 7 and Fantasy Fauna Silhouettes
+  if (shape === 'mermaid' || name.includes('mermaid') || name.includes('siren')) return '🧜‍♀️';
+  if (shape === 'unicorn' || shape === 'sea_unicorn' || name.includes('unicorn') || name.includes('kirin') || name.includes('pegasus')) return '🦄';
+  if (shape === 'shark' || shape === 'megalodon' || shape === 'megalodon_behemoth' || name.includes('shark') || name.includes('megalodon') || name.includes('clockjaw')) return '🦈';
+  if (shape === 'whale' || name.includes('whale') || name.includes('leviathan')) return '🐋';
+  if (shape === 'narwhal' || name.includes('narwhal')) return '🦄';
+  if (shape === 'dolphin' || name.includes('dolphin')) return '🐬';
+  if (shape === 'sea_turtle' || shape === 'mossback_turtle' || name.includes('turtle')) return '🐢';
+  if (shape === 'squid' || shape === 'flying_squid' || shape === 'colossal_kraken' || name.includes('squid') || name.includes('kraken') || name.includes('maw') || name.includes('oracle')) return '🦑';
+  if (shape === 'octopus' || name.includes('octopus')) return '🐙';
+  if (shape === 'jellyfish' || name.includes('jelly')) return '🪼';
+  if (shape === 'seahorse' || name.includes('seahorse')) return '🪸';
+  if (shape === 'starfish' || name.includes('starfish')) return '⭐';
+  if (shape === 'world_serpent' || shape === 'void_wyrm' || name.includes('serpent') || name.includes('drake') || name.includes('dragon')) return '🐉';
+  if (shape === 'eel' || name.includes('eel') || name.includes('loach') || name.includes('siphon') || name.includes('ribbon')) return '🐍';
+  if (shape === 'ray' || shape === 'siren_ray' || shape === 'flatfish' || name.includes('ray') || name.includes('skate') || name.includes('manta') || name.includes('voidray')) return '🐡';
+  if (shape === 'cuttlefish' || name.includes('cuttlefish')) return '🦑';
+  if (shape === 'swordfish' || name.includes('swordfish') || name.includes('marlin') || name.includes('needlefish') || name.includes('pike')) return '🗡️';
+  if (name.includes('crab') || shape === 'crab') return '🦀';
+  if (name.includes('lobster') || shape === 'lobster') return '🦞';
+
+  if (item.isGodTier || item.species?.isGodTier) return '👑';
+  if (item.isMythic || item.species?.isMythic) return '🌟';
+  return '🐟';
+}
+

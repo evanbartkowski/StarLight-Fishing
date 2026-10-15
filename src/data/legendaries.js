@@ -11,7 +11,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 240,
     maxDepth: 550,
     rarity: 'legendary',
-    baseValue: 3800, // increased sell reward for legendary achievement
+    baseValue: 7600, // doubled sell reward for legendary achievement
     baseWeight: 22.0,
     sizeRange: [180, 310], // cm
     scaleFactor: 2.8,
@@ -29,7 +29,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['NIGHT'],
       weathers: ['CLEAR'],
       minDepth: 240,
-      chance: 0.18, // Checked per dive roll
+      chance: 0.09, // Halved spawn rate
     },
   },
   {
@@ -40,7 +40,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 45,
     maxDepth: 180,
     rarity: 'legendary',
-    baseValue: 3100, // increased sell reward for legendary achievement
+    baseValue: 6200, // doubled sell reward for legendary achievement
     baseWeight: 140.0,
     sizeRange: [220, 380], // cm
     scaleFactor: 3.2,
@@ -58,7 +58,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DAWN'],
       weathers: ['FOG', 'RAIN'],
       minDepth: 45,
-      chance: 0.22,
+      chance: 0.11, // Halved spawn rate
     },
   },
   {
@@ -69,7 +69,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 80,
     maxDepth: 220,
     rarity: 'legendary',
-    baseValue: 3500, // increased sell reward for legendary achievement
+    baseValue: 7000, // doubled sell reward for legendary achievement
     baseWeight: 48.0,
     sizeRange: [160, 260], // cm
     scaleFactor: 2.6,
@@ -87,7 +87,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DUSK', 'NIGHT'],
       weathers: ['CLEAR'],
       minDepth: 80,
-      chance: 0.20,
+      chance: 0.10, // Halved spawn rate
     },
   },
   {
@@ -99,7 +99,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 360,
     maxDepth: 490,
     rarity: 'legendary',
-    baseValue: 4600, // increased sell reward for legendary achievement
+    baseValue: 9200, // doubled sell reward for legendary achievement
     baseWeight: 68.0,
     sizeRange: [140, 230], // cm
     scaleFactor: 2.4,
@@ -114,10 +114,10 @@ export const LEGENDARY_SPECIES = [
     evasion: { type: 'zigzag', cooldown: 2.0, label: 'PREHISTORIC EVASION!' },
     lore: 'A pristine prehistoric relic adorned with natural pyrite and gold plating from magma vent vents. Extremely rare drop of ancient antiquity.',
     spawnConditions: {
-      timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'], // Any time, but very rare
+      timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
       weathers: ['CLEAR', 'FOG', 'RAIN'],
       minDepth: 360,
-      chance: 0.08, // Rare 0.8% - 1.5% drop frequency
+      chance: 0.04, // Halved spawn rate
     },
   },
   {
@@ -128,7 +128,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 130,
     maxDepth: 300,
     rarity: 'legendary',
-    baseValue: 4100, // increased sell reward for legendary achievement
+    baseValue: 8200, // doubled sell reward for legendary achievement
     baseWeight: 95.0,
     sizeRange: [200, 340], // cm
     scaleFactor: 3.0,
@@ -146,7 +146,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DUSK', 'NIGHT'],
       weathers: ['CLEAR'],
       minDepth: 130,
-      chance: 0.18,
+      chance: 0.09, // Halved spawn rate
     },
   },
   {
@@ -158,7 +158,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 285,
     maxDepth: 420,
     rarity: 'legendary',
-    baseValue: 4900,
+    baseValue: 9800, // doubled sell reward
     baseWeight: 85.0,
     sizeRange: [210, 350],
     scaleFactor: 3.1,
@@ -176,7 +176,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
       weathers: ['CLEAR', 'FOG', 'RAIN'],
       minDepth: 285,
-      chance: 0.24,
+      chance: 0.12, // Halved spawn rate
     },
   },
   {
@@ -188,7 +188,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 540,
     maxDepth: 2500,
     rarity: 'legendary',
-    baseValue: 6500,
+    baseValue: 13000, // doubled sell reward
     baseWeight: 52.0,
     sizeRange: [160, 270],
     scaleFactor: 2.9,
@@ -206,7 +206,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
       weathers: ['CLEAR', 'FOG', 'RAIN'],
       minDepth: 540,
-      chance: 0.25,
+      chance: 0.125, // Halved spawn rate
     },
   },
   {
@@ -217,7 +217,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 15,
     maxDepth: 55,
     rarity: 'legendary',
-    baseValue: 2900,
+    baseValue: 5800, // doubled sell reward
     baseWeight: 42.0,
     sizeRange: [140, 220],
     scaleFactor: 2.5,
@@ -235,7 +235,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DAWN', 'DAY'],
       weathers: ['CLEAR'],
       minDepth: 15,
-      chance: 0.22,
+      chance: 0.11, // Halved spawn rate
     },
   },
   {
@@ -246,7 +246,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 110,
     maxDepth: 250,
     rarity: 'legendary',
-    baseValue: 3900,
+    baseValue: 7800, // doubled sell reward
     baseWeight: 62.0,
     sizeRange: [180, 290],
     scaleFactor: 2.7,
@@ -264,7 +264,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DUSK', 'NIGHT'],
       weathers: ['CLEAR', 'FOG'],
       minDepth: 110,
-      chance: 0.22,
+      chance: 0.11, // Halved spawn rate
     },
   },
   {
@@ -276,7 +276,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 415,
     maxDepth: 535,
     rarity: 'legendary',
-    baseValue: 5400,
+    baseValue: 10800, // doubled sell reward
     baseWeight: 115.0,
     sizeRange: [240, 390],
     scaleFactor: 3.4,
@@ -294,7 +294,7 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
       weathers: ['CLEAR', 'FOG', 'RAIN'],
       minDepth: 415,
-      chance: 0.24,
+      chance: 0.12, // Halved spawn rate
     },
   },
   {
@@ -306,7 +306,7 @@ export const LEGENDARY_SPECIES = [
     minDepth: 620,
     maxDepth: 3000,
     rarity: 'legendary',
-    baseValue: 7800,
+    baseValue: 15600, // doubled sell reward
     baseWeight: 240.0,
     sizeRange: [350, 600],
     scaleFactor: 4.2,
@@ -324,7 +324,214 @@ export const LEGENDARY_SPECIES = [
       timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
       weathers: ['CLEAR', 'FOG', 'RAIN'],
       minDepth: 620,
-      chance: 0.25,
+      chance: 0.125, // Halved spawn rate
+    },
+  },
+  // --- New Catchable Legendary & Mythical Variety Across Realms ---
+  {
+    id: 'lagoon_sun_emperor',
+    name: 'Lagoon Sun Emperor',
+    isMythic: true,
+    zone: 1,
+    minDepth: 18,
+    maxDepth: 48,
+    rarity: 'legendary',
+    baseValue: 6000,
+    baseWeight: 88.0,
+    sizeRange: [190, 320],
+    scaleFactor: 3.0,
+    shape: 'ray',
+    primaryColor: '#f59e0b',
+    secondaryColor: '#fef08a',
+    finColor: '#ea580c',
+    glowColor: '#fde047',
+    eyeColor: '#0284c7',
+    swimSpeed: 1.6,
+    wiggleSpeed: 4,
+    evasion: { type: 'dash', cooldown: 1.7, speedMult: 4.0, label: 'SOLAR GLIDE!' },
+    lore: 'A magnificent solar manta ray that basks along the sunlit coral shallows at midday, bathing the shallow reef in golden radiance.',
+    spawnConditions: {
+      timesOfDay: ['DAY', 'DAWN'],
+      weathers: ['CLEAR'],
+      minDepth: 18,
+      chance: 0.11,
+    },
+  },
+  {
+    id: 'abyssal_biolum_hydra',
+    name: 'Luminescent Trench Hydra',
+    isMythic: true,
+    isSpecialDeep: true,
+    zone: 2,
+    minDepth: 55,
+    maxDepth: 160,
+    rarity: 'legendary',
+    baseValue: 7200,
+    baseWeight: 110.0,
+    sizeRange: [240, 390],
+    scaleFactor: 3.3,
+    shape: 'world_serpent',
+    primaryColor: '#06b6d4',
+    secondaryColor: '#34d399',
+    finColor: '#0284c7',
+    glowColor: '#67e8f9',
+    eyeColor: '#ffffff',
+    swimSpeed: 1.7,
+    wiggleSpeed: 5,
+    evasion: { type: 'camouflage', cooldown: 2.4, duration: 2.0, label: 'BIOLUM PHANTOM!' },
+    lore: 'A multi-crested deep trench serpent crowned in emerald bioluminescent lanterns, hunting silently through dark fungal kelp shelves.',
+    spawnConditions: {
+      timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
+      weathers: ['CLEAR', 'FOG', 'RAIN'],
+      minDepth: 55,
+      chance: 0.10,
+    },
+  },
+  {
+    id: 'cosmic_nova_serpent',
+    name: 'Cosmic Nova Serpent',
+    isMythic: true,
+    zone: 3,
+    minDepth: 120,
+    maxDepth: 260,
+    rarity: 'legendary',
+    baseValue: 8400,
+    baseWeight: 135.0,
+    sizeRange: [260, 420],
+    scaleFactor: 3.5,
+    shape: 'world_serpent',
+    primaryColor: '#818cf8',
+    secondaryColor: '#c084fc',
+    finColor: '#4f46e5',
+    glowColor: '#a5b4fc',
+    eyeColor: '#fef08a',
+    swimSpeed: 2.2,
+    wiggleSpeed: 6,
+    evasion: { type: 'teleport', cooldown: 1.6, blinkDist: 280, label: 'NOVA DRIFT!' },
+    lore: 'A celestial starlight dragon that glides through falling meteor showers, weaving nova constellations in the deep pelagic tide.',
+    spawnConditions: {
+      timesOfDay: ['DUSK', 'NIGHT'],
+      weathers: ['CLEAR'],
+      minDepth: 120,
+      chance: 0.10,
+    },
+  },
+  {
+    id: 'atlantean_sun_crown_leviathan',
+    name: 'Atlantean Sun-Crown Leviathan',
+    isMythic: true,
+    zone: 4,
+    minDepth: 160,
+    maxDepth: 340,
+    rarity: 'legendary',
+    baseValue: 9600,
+    baseWeight: 210.0,
+    sizeRange: [280, 480],
+    scaleFactor: 3.6,
+    shape: 'mossback_turtle',
+    primaryColor: '#d97706',
+    secondaryColor: '#fef3c7',
+    finColor: '#b45309',
+    glowColor: '#facc15',
+    eyeColor: '#ffffff',
+    swimSpeed: 1.1,
+    wiggleSpeed: 4,
+    evasion: { type: 'repel', cooldown: 1.8, force: 280, label: 'ORICHALCUM SHIELD!' },
+    lore: 'A centuries-old imperial sea turtle adorned with carved orichalcum plates and ancient sundial gears from the submerged palace.',
+    spawnConditions: {
+      timesOfDay: ['DAWN', 'DAY', 'DUSK'],
+      weathers: ['CLEAR', 'RAIN'],
+      minDepth: 160,
+      chance: 0.09,
+    },
+  },
+  {
+    id: 'aetherial_zephyr_kirin',
+    name: 'Aetherial Zephyr Kirin',
+    isMythic: true,
+    zone: 5,
+    minDepth: 270,
+    maxDepth: 460,
+    rarity: 'legendary',
+    baseValue: 11200,
+    baseWeight: 92.0,
+    sizeRange: [220, 360],
+    scaleFactor: 3.2,
+    shape: 'unicorn',
+    primaryColor: '#f0abfc',
+    secondaryColor: '#e0e7ff',
+    finColor: '#c084fc',
+    glowColor: '#f472b6',
+    eyeColor: '#38bdf8',
+    swimSpeed: 2.3,
+    wiggleSpeed: 6,
+    evasion: { type: 'dash', cooldown: 1.4, speedMult: 4.8, label: 'ZEPHYR SPRINT!' },
+    lore: 'An ethereal cloud-strider with rainbow crystalline wings that rides updrafts between floating sky-islands in the aether breeze.',
+    spawnConditions: {
+      timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
+      weathers: ['CLEAR', 'FOG', 'RAIN'],
+      minDepth: 270,
+      chance: 0.11,
+    },
+  },
+  {
+    id: 'pyrostrom_smoldering_wyrm',
+    name: 'Pyrostrom Smoldering Wyrm',
+    isMythic: true,
+    isSpecialDeep: true,
+    zone: 6,
+    minDepth: 390,
+    maxDepth: 560,
+    rarity: 'legendary',
+    baseValue: 12400,
+    baseWeight: 180.0,
+    sizeRange: [290, 510],
+    scaleFactor: 3.8,
+    shape: 'world_serpent',
+    primaryColor: '#b91c1c',
+    secondaryColor: '#f97316',
+    finColor: '#7f1d1d',
+    glowColor: '#ef4444',
+    eyeColor: '#fde047',
+    swimSpeed: 2.1,
+    wiggleSpeed: 5,
+    evasion: { type: 'dash', cooldown: 1.5, speedMult: 5.0, label: 'MAGMA CHARGE!' },
+    lore: 'A primordial molten sea dragon swimming through rivers of liquid basalt in the caldera trenches.',
+    spawnConditions: {
+      timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
+      weathers: ['CLEAR', 'FOG', 'RAIN'],
+      minDepth: 390,
+      chance: 0.10,
+    },
+  },
+  {
+    id: 'eldritch_epoch_devourer',
+    name: 'Eldritch Epoch Devourer',
+    isMythic: true,
+    isSpecialDeep: true,
+    zone: 7,
+    minDepth: 700,
+    maxDepth: 3100,
+    rarity: 'legendary',
+    baseValue: 18000,
+    baseWeight: 310.0,
+    sizeRange: [420, 720],
+    scaleFactor: 4.5,
+    shape: 'world_serpent',
+    primaryColor: '#4c1d95',
+    secondaryColor: '#06b6d4',
+    finColor: '#701a75',
+    glowColor: '#38bdf8',
+    eyeColor: '#f43f5e',
+    swimSpeed: 2.4,
+    wiggleSpeed: 6,
+    evasion: { type: 'teleport', cooldown: 1.4, blinkDist: 360, label: 'CHRONAL DEVOUR!' },
+    lore: 'An ancient chronal abyssal titan whose scales shimmer with birth and death cycles of galaxies at the edge of the universe.',
+    spawnConditions: {
+      timesOfDay: ['DAWN', 'DAY', 'DUSK', 'NIGHT'],
+      weathers: ['CLEAR', 'FOG', 'RAIN'],
+      minDepth: 700,
+      chance: 0.10,
     },
   },
 ];

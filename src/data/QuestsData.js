@@ -62,11 +62,13 @@ export const QUEST_POOL = [
     id: 'apex_hunter',
     title: 'Apex Ocean Hunter',
     category: 'fishing',
+    rarity: 'rare',
     icon: '🌟',
     description: 'Reel in any Epic, Legendary, Mythic, or Deep Titan fish.',
     target: 1,
     rewardCoins: 450,
     rewardXp: 200,
+    rewardGems: 2,
     check: (event, current) => {
       if (event.type === 'catch_fish') {
         const r = event.fish.rarity;
@@ -135,11 +137,13 @@ export const QUEST_POOL = [
     id: 'crown_trophy',
     title: 'Crown Trophy Hunter',
     category: 'fishing',
+    rarity: 'rare',
     icon: '👑',
     description: 'Catch any fish that earns a Gold Crown (Giant) or Silver Crown (Mini).',
     target: 1,
     rewardCoins: 350,
     rewardXp: 160,
+    rewardGems: 2,
     check: (event, current) => {
       if (event.type === 'catch_fish' && (event.fish.crown === 'gold' || event.fish.crown === 'silver')) {
         return current + 1;
@@ -151,11 +155,13 @@ export const QUEST_POOL = [
     id: 'heavyweight_champ',
     title: 'Heavyweight Catch',
     category: 'fishing',
+    rarity: 'rare',
     icon: '⚖️',
     description: 'Catch any fish weighing 15.0 kg or heavier.',
     target: 1,
     rewardCoins: 280,
     rewardXp: 120,
+    rewardGems: 1,
     check: (event, current, target, realmId = 1) => {
       const minWeight = getHeavyweightTarget(realmId);
       if (event.type === 'catch_fish' && event.fish.weight >= minWeight) return current + 1;
@@ -180,11 +186,13 @@ export const QUEST_POOL = [
     id: 'starlight_contract',
     title: 'Starlight Nightfall Contract',
     category: 'fantasy',
+    rarity: 'rare',
     icon: '✨',
     description: 'Catch 2 Starlight or Prism specimens from celestial waters.',
     target: 2,
     rewardCoins: 380,
     rewardXp: 150,
+    rewardGems: 2,
     check: (event, current) => {
       if (event.type === 'catch_fish' && (event.fish.speciesId === 'starlight_angler' || event.fish.speciesId === 'prism_fin' || event.fish.speciesId === 'chrono_guppy')) {
         return current + 1;
@@ -196,11 +204,13 @@ export const QUEST_POOL = [
     id: 'atlantis_core_contract',
     title: 'Atlantis Core Salvage',
     category: 'fantasy',
+    rarity: 'rare',
     icon: '🏛️',
     description: 'Dredge 1 sunken relic, automaton fish, or Sun-Core specimen from Sea 4.',
     target: 1,
     rewardCoins: 480,
     rewardXp: 190,
+    rewardGems: 2,
     check: (event, current) => {
       if (event.type === 'catch_fish' && (event.fish.speciesId === 'atlantis_sun_core' || event.fish.speciesId === 'gilded_automaton_fish')) return current + 1;
       if (event.type === 'catch_treasure' && event.item?.era) return current + 1;
@@ -211,11 +221,13 @@ export const QUEST_POOL = [
     id: 'aether_skies_contract',
     title: 'Whispering Aether Contract',
     category: 'fantasy',
+    rarity: 'rare',
     icon: '☁️',
     description: 'Catch 2 cloud-dwelling or celestial specimens from Sea 5: Whispering Aether Sea.',
     target: 2,
     rewardCoins: 520,
     rewardXp: 220,
+    rewardGems: 3,
     check: (event, current) => {
       if (event.type === 'catch_fish' && (event.fish.zone === 5 || event.fish.speciesId?.includes('aether') || event.fish.speciesId?.includes('cloud'))) return current + 1;
       return current;
@@ -225,11 +237,13 @@ export const QUEST_POOL = [
     id: 'caldera_lava_contract',
     title: 'Magma Caldera Expedition',
     category: 'fantasy',
+    rarity: 'rare',
     icon: '🌋',
     description: 'Catch 2 molten or volcanic creatures from Sea 6: Magma Caldera Trench.',
     target: 2,
     rewardCoins: 580,
     rewardXp: 250,
+    rewardGems: 3,
     check: (event, current) => {
       if (event.type === 'catch_fish' && (event.fish.zone === 6 || event.fish.speciesId?.includes('caldera') || event.fish.speciesId?.includes('lava') || event.fish.speciesId?.includes('magma'))) return current + 1;
       return current;
@@ -239,11 +253,13 @@ export const QUEST_POOL = [
     id: 'void_titan_contract',
     title: 'Chrono Void Expedition',
     category: 'fantasy',
+    rarity: 'rare',
     icon: '🌀',
     description: 'Lend your line to the Chrono Void: Catch 1 specimen or descend past 500m.',
     target: 1,
     rewardCoins: 650,
     rewardXp: 280,
+    rewardGems: 4,
     check: (event, current) => {
       if (event.type === 'catch_fish' && event.fish.zone === 7) return current + 1;
       if (event.type === 'dive_completed' && event.maxDepth >= 500) return current + 1;
@@ -262,7 +278,7 @@ QUEST_POOL.push(
     check: (event, current) => event.type === 'catch_treasure' ? current + 1 : current },
   { id: 'sealed_surprise', title: 'A Sealed Surprise', category: 'treasure', icon: '\uD83D\uDCE6', description: 'Open a mystery crate from your inventory.', target: 1, rewardCoins: 160, rewardXp: 80,
     check: (event, current) => event.type === 'open_crate' ? current + 1 : current },
-  { id: 'steady_hands', title: 'Steady Hands', category: 'skill', icon: '\u26F5', description: 'Finish 2 dives with at least one catch and no hazard hits.', target: 2, rewardCoins: 300, rewardXp: 130,
+  { id: 'steady_hands', title: 'Steady Hands', category: 'skill', rarity: 'rare', rewardGems: 1, icon: '\u26F5', description: 'Finish 2 dives with at least one catch and no hazard hits.', target: 2, rewardCoins: 300, rewardXp: 130,
     check: (event, current) => event.type === 'dive_completed' && !event.tookDamage && event.catchesCount > 0 ? current + 1 : current },
   { id: 'three_good_trips', title: 'Three Good Trips', category: 'exploration', icon: '\uD83E\uDDED', description: 'Return from 3 dives carrying at least one catch.', target: 3, rewardCoins: 220, rewardXp: 100,
     check: (event, current) => event.type === 'dive_completed' && event.catchesCount > 0 ? current + 1 : current },

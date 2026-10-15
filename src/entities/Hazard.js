@@ -25,7 +25,8 @@ export class Hazard {
     this.damage = typeConfig.damage;
     this.knockback = typeConfig.knockback;
     this.color = typeConfig.color;
-    this.glow = typeConfig.glow || '#ef4444';
+    const isVoidConfig = typeConfig.realmStyle === 'void' || typeConfig.zone === 7 || (typeConfig.id && String(typeConfig.id).includes('_7_'));
+    this.glow = isVoidConfig ? '#ef4444' : (typeConfig.glow || '#ef4444');
     this.isColossal = !!typeConfig.isColossal;
     const isCaldera = this.realmStyle === 'caldera' || this.zone === 6 || typeConfig.zone === 6 || typeConfig.realmId === 6 || (this.type && String(this.type).includes('caldera')) || (this.name && /caldera|magma|volcan|obsidian|pyroclast/i.test(this.name));
     const isVolcanoObstacle = isCaldera && (this.type === 'caldera_lava_pillar' || (this.name && /volcan|chimney|sulfur vent|lava pillar/i.test(this.name)));
@@ -51,6 +52,11 @@ export class Hazard {
     if (this.marineKind && hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.abs(hook.x - this.x) > 1) {
       this.facing = Math.sign(hook.x - this.x);
     }
+    if (this.smoothFacing === undefined) {
+      this.smoothFacing = this.facing || 1;
+    }
+    const turnRate = this.isColossal ? 2.4 : 7.5;
+    this.smoothFacing += (this.facing - this.smoothFacing) * Math.min(1, turnRate * deltaSec);
     if (updateAttack(this, dt, hook, worldWidth)) return;
     if (this.behavior.motion === 'falling') {
       this.y += 150 * deltaSec;
@@ -88,9 +94,10 @@ export class Hazard {
       const pursuing = chasing && this.restTime === 0;
 
       // Natural undulating wander vs targeted pursuit
-      const undulate = Math.sin(this.timer * 2.2);
-      const waveX = pursuing ? 0 : Math.cos(this.timer * 1.4) * (this.isColossal ? 45 : 30);
-      const waveY = pursuing ? 0 : undulate * (this.isColossal ? 26 : 18);
+      const undulate = Math.sin(this.timer * (this.isColossal ? 1.4 : 2.2));
+      const undulate2 = Math.cos(this.timer * (this.isColossal ? 0.7 : 1.1));
+      const waveX = pursuing ? 0 : Math.cos(this.timer * (this.isColossal ? 0.9 : 1.4)) * (this.isColossal ? 45 : 30);
+      const waveY = pursuing ? 0 : (undulate * 0.7 + undulate2 * 0.3) * (this.isColossal ? 26 : 18);
 
       // Predictive tracking: intercept moving hook trajectory with fluid hydrodynamic lead
       const leadScale = isCalderaShark ? 0.12 : (pursuing ? 0.22 : 0);
@@ -108,14 +115,16 @@ export class Hazard {
       const desiredVy = (dy / length) * maxSpd;
 
       // Smooth turning response when pursuing hook (smooth hydrodynamic glide)
-      const accelFactor = isCalderaShark ? (pursuing ? 6.5 : 2.2) : (this.isColossal ? (pursuing ? 5.5 : 1.8) : (pursuing ? 12.0 : 3.8));
+      const accelFactor = isCalderaShark
+        ? (pursuing ? 6.5 : 2.2)
+        : (this.isColossal ? (pursuing ? 3.6 : 1.4) : (pursuing ? 12.0 : 3.8));
       this.vx += (desiredVx - this.vx) * Math.min(1, accelFactor * deltaSec);
       this.vy += (desiredVy - this.vy) * Math.min(1, accelFactor * deltaSec);
 
-      // Add gentle aquatic drift only when not in direct chase
-      const sway = Math.cos(this.timer * (this.isColossal ? 1.8 : 3.0)) * (this.isColossal ? 8 : 12);
+      // Add gentle aquatic drift with inertia for colossal scale
+      const sway = Math.cos(this.timer * (this.isColossal ? 1.2 : 3.0)) * (this.isColossal ? 6 : 12);
       this.x += (this.vx + (pursuing ? 0 : sway * 0.5)) * deltaSec;
-      this.y += (this.vy + (pursuing ? 0 : Math.sin(this.timer * 2.4) * (this.isColossal ? 6 : 4))) * deltaSec;
+      this.y += (this.vy + (pursuing ? 0 : Math.sin(this.timer * (this.isColossal ? 1.6 : 2.4)) * (this.isColossal ? 7 : 4))) * deltaSec;
 
       this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.x));
       this.y = Math.max(this.minY ?? 0, Math.min(this.maxY ?? Infinity, this.y));
@@ -129,7 +138,7 @@ export class Hazard {
 
       // Smooth banking angle according to vertical flow
       const targetPitch = Math.atan2(this.vy, Math.abs(this.vx) || 1) * 0.65;
-      const pitchSpeed = isCalderaShark ? 3.2 : 4.0;
+      const pitchSpeed = isCalderaShark ? 3.2 : (this.isColossal ? 2.5 : 4.0);
       this.swimAngle += (targetPitch - this.swimAngle) * Math.min(1, pitchSpeed * deltaSec);
       return;
     }
@@ -155,15 +164,16 @@ export class Hazard {
   }
 
   renderRealmHazard(ctx) {
+    const isVoid = this.realmStyle === 'void' || this.zone === 7 || this.behavior?.zone === 7;
     const r = this.radius / this.sizeScale;
     ctx.save();
     const material = ctx.createLinearGradient(-r, -r, r, r);
-    material.addColorStop(0, this.color); material.addColorStop(1, '#172737');
+    material.addColorStop(0, this.color); material.addColorStop(1, isVoid ? '#200b14' : '#172737');
     ctx.fillStyle = material;
-    ctx.strokeStyle = this.glow;
-    ctx.lineWidth = 2;
-    ctx.shadowColor = this.glow;
-    ctx.shadowBlur = 4;
+    ctx.strokeStyle = isVoid ? '#ef4444' : this.glow;
+    ctx.lineWidth = isVoid ? 2.5 : 2;
+    ctx.shadowColor = isVoid ? '#ef4444' : this.glow;
+    ctx.shadowBlur = isVoid ? 12 : 4;
     if (this.realmStyle === 'reef') {
       // Branching coral
       const branches = 7;
@@ -822,25 +832,28 @@ export class Hazard {
         ctx.restore();
       }
     } else {
-      // Eldritch Chrono Void (Last Realm): Super mythical, unique, and very pretty cosmic obstacles
+      // Eldritch Chrono Void (Last Realm): Super mythical, unique, and very pretty cosmic obstacles with unmistakable red danger accents
       const voidVariant = (this.variant || 0) % 4;
       const t = this.timer || 0;
 
       if (voidVariant === 0) {
-        // 0. Temporal Fracture: Glittering space-time crystal rift with chromatic prismatic facets
+        // 0. Temporal Fracture: Space-time crystal rift with chromatic prismatic facets and intense crimson warning glow
         ctx.save();
         const rot = t * 0.45;
         ctx.rotate(rot);
 
-        // Outer temporal distortion resonance rings
+        // Outer temporal distortion resonance rings with bright danger red warning pulse
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 12;
         for (let ring = 1; ring <= 3; ring++) {
           const rRadius = r * (0.65 + ring * 0.22) + Math.sin(t * 3 + ring) * 3;
-          ctx.strokeStyle = ring === 1 ? 'rgba(192, 132, 252, 0.5)' : ring === 2 ? 'rgba(56, 189, 248, 0.35)' : 'rgba(244, 114, 182, 0.22)';
-          ctx.lineWidth = 1.6;
+          ctx.strokeStyle = ring === 1 ? 'rgba(255, 40, 70, 0.85)' : ring === 2 ? 'rgba(239, 68, 68, 0.60)' : 'rgba(220, 38, 38, 0.35)';
+          ctx.lineWidth = 2.0;
           ctx.beginPath();
           ctx.ellipse(0, 0, rRadius, rRadius * 0.72, t * 0.5 + ring, 0, Math.PI * 2);
           ctx.stroke();
         }
+        ctx.shadowBlur = 0;
 
         // Crystalline geometric space-time rift body
         const points = 7;
@@ -858,82 +871,98 @@ export class Hazard {
         const crystalGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
         crystalGrad.addColorStop(0, '#ffffff');
         crystalGrad.addColorStop(0.25, '#c084fc');
-        crystalGrad.addColorStop(0.6, '#38bdf8');
-        crystalGrad.addColorStop(0.9, '#1e1b4b');
-        crystalGrad.addColorStop(1, '#0f051d');
+        crystalGrad.addColorStop(0.55, '#ef4444');
+        crystalGrad.addColorStop(0.85, '#991b1b');
+        crystalGrad.addColorStop(1, '#1f030a');
         ctx.fillStyle = crystalGrad;
         ctx.fill();
 
-        ctx.strokeStyle = '#e0e7ff';
-        ctx.lineWidth = 2.0;
+        ctx.shadowColor = '#dc2626';
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2.4;
         ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        // Prismatic facets
+        // Prismatic warning facets
         for (let i = 0; i < points; i++) {
           const rad = (i / points) * Math.PI * 2;
-          ctx.strokeStyle = i % 2 === 0 ? 'rgba(244, 114, 182, 0.75)' : 'rgba(56, 189, 248, 0.75)';
-          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = i % 2 === 0 ? 'rgba(255, 60, 90, 0.85)' : 'rgba(239, 68, 68, 0.75)';
+          ctx.lineWidth = 1.4;
           ctx.beginPath();
           ctx.moveTo(0, 0);
           ctx.lineTo(Math.cos(rad) * r * 0.88, Math.sin(rad) * r * 0.88);
           ctx.stroke();
         }
 
-        // Orbiting stardust motes
+        // Orbiting danger red stardust motes
         for (let m = 0; m < 5; m++) {
           const mAngle = -rot * 2 + (m / 5) * Math.PI * 2;
           const mx = Math.cos(mAngle) * (r * 1.05);
           const my = Math.sin(mAngle) * (r * 0.75);
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowColor = '#38bdf8';
-          ctx.shadowBlur = 6;
+          ctx.fillStyle = '#ff2b55';
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 8;
           ctx.beginPath();
-          ctx.arc(mx, my, 2.2, 0, Math.PI * 2);
+          ctx.arc(mx, my, 2.5, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.shadowBlur = 0;
         ctx.restore();
       } else if (voidVariant === 1) {
-        // 1. Gravity Snare: Swirling celestial micro-singularity with rainbow accretion ring
+        // 1. Gravity Snare: Swirling celestial micro-singularity with bright red danger accretion ring
         ctx.save();
         const spin = t * 1.8;
 
-        // Swirling iridescent accretion arcs
+        // Danger crimson outer accretion warning ring
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 16;
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Swirling iridescent & crimson accretion arcs
         for (let a = 0; a < 6; a++) {
           const aAngle = spin + (a / 6) * Math.PI * 2;
           const hue = (t * 50 + a * 60) % 360;
-          ctx.strokeStyle = `hsla(${hue}, 85%, 68%, 0.65)`;
+          ctx.strokeStyle = a % 2 === 0 ? 'rgba(255, 30, 60, 0.85)' : `hsla(${hue}, 85%, 68%, 0.65)`;
           ctx.lineWidth = 3.2;
           ctx.beginPath();
           ctx.arc(0, 0, r * (0.65 + (a % 3) * 0.14), aAngle, aAngle + 1.2);
           ctx.stroke();
         }
 
-        // Event Horizon: pitch-black core with glowing celestial photon ring
+        // Event Horizon: pitch-black core with glowing celestial danger red photon ring
         ctx.fillStyle = '#05010d';
-        ctx.shadowColor = '#e879f9';
-        ctx.shadowBlur = 14;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 18;
         ctx.beginPath();
         ctx.arc(0, 0, r * 0.44, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = '#f8fafc';
-        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = '#ff3366';
+        ctx.lineWidth = 2.6;
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Inward spiraling cosmic stardust sparks
+        // Inward spiraling cosmic danger stardust sparks
         for (let s = 0; s < 6; s++) {
           const dist = r * (0.45 + ((s * 17 + t * 40) % 55) / 100);
           const sAngle = spin * 1.5 + s * 1.05;
-          ctx.fillStyle = s % 2 === 0 ? '#38bdf8' : '#f472b6';
+          ctx.fillStyle = s % 2 === 0 ? '#ff2555' : '#f43f5e';
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 6;
           ctx.beginPath();
-          ctx.arc(Math.cos(sAngle) * dist, Math.sin(sAngle) * dist, 1.8, 0, Math.PI * 2);
+          ctx.arc(Math.cos(sAngle) * dist, Math.sin(sAngle) * dist, 2.2, 0, Math.PI * 2);
           ctx.fill();
         }
+        ctx.shadowBlur = 0;
         ctx.restore();
       } else if (voidVariant === 2) {
-        // 2. Entropy Tendrils: Graceful, undulating ethereal aurora ribbons with glowing starlight tips
+        // 2. Entropy Tendrils: Undulating ethereal ribbons with prominent danger ruby-red tips & warning glow
         ctx.save();
         const tendrilCount = 6;
         for (let i = 0; i < tendrilCount; i++) {
@@ -941,11 +970,11 @@ export class Hazard {
           const wave = Math.sin(t * 3 + i * 1.2) * (r * 0.32);
           const tGrad = ctx.createLinearGradient(0, 0, Math.cos(baseAngle) * r, Math.sin(baseAngle) * r);
           tGrad.addColorStop(0, 'rgba(168, 85, 247, 0.7)');
-          tGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.65)');
-          tGrad.addColorStop(1, 'rgba(244, 114, 182, 0.85)');
+          tGrad.addColorStop(0.4, 'rgba(239, 68, 68, 0.85)');
+          tGrad.addColorStop(1, 'rgba(255, 30, 60, 0.95)');
 
           ctx.strokeStyle = tGrad;
-          ctx.lineWidth = 3.5;
+          ctx.lineWidth = 3.6;
           ctx.lineCap = 'round';
           ctx.beginPath();
           ctx.moveTo(0, 0);
@@ -956,57 +985,63 @@ export class Hazard {
           ctx.quadraticCurveTo(midX, midY, endX, endY);
           ctx.stroke();
 
-          // Brilliant starlight tip
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowColor = '#38bdf8';
-          ctx.shadowBlur = 8;
+          // Radiant red warning starlight tip
+          ctx.fillStyle = '#ff2555';
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 12;
           ctx.beginPath();
-          ctx.arc(endX, endY, 2.8, 0, Math.PI * 2);
+          ctx.arc(endX, endY, 3.2, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Central cosmic nexus core
+        // Central cosmic nexus core with red danger rim
         ctx.fillStyle = '#1e1b4b';
         ctx.beginPath();
         ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#c084fc';
-        ctx.lineWidth = 1.8;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2.2;
         ctx.stroke();
         ctx.shadowBlur = 0;
         ctx.restore();
       } else {
-        // 3. Event Horizon Monolith: Majestic colossal floating cosmic obelisk with glowing constellation glyphs
+        // 3. Event Horizon Monolith: Majestic colossal floating cosmic obelisk with glowing red danger beacon and runes
         ctx.save();
         const sway = Math.sin(t * 1.8) * 3;
         ctx.translate(0, sway);
 
-        // Outer rotating celestial halo ring
+        // Outer rotating celestial danger halo ring
         ctx.save();
         ctx.rotate(t * 0.6);
-        ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
-        ctx.lineWidth = 2.2;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 14;
+        ctx.strokeStyle = 'rgba(255, 45, 75, 0.85)';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.ellipse(0, 0, r * 0.95, r * 0.38, 0, 0, Math.PI * 2);
         ctx.stroke();
         for (let h = 0; h < 4; h++) {
           const hAngle = (h / 4) * Math.PI * 2;
-          ctx.fillStyle = '#38bdf8';
+          ctx.fillStyle = '#ff2b55';
           ctx.beginPath();
-          ctx.arc(Math.cos(hAngle) * r * 0.95, Math.sin(hAngle) * r * 0.38, 2.5, 0, Math.PI * 2);
+          ctx.arc(Math.cos(hAngle) * r * 0.95, Math.sin(hAngle) * r * 0.38, 3.0, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
 
-        // Faceted alien obelisk body
+        // Faceted alien obelisk body with danger red rim
         const mGrad = ctx.createLinearGradient(-r * 0.45, -r, r * 0.45, r);
         mGrad.addColorStop(0, '#2e1065');
         mGrad.addColorStop(0.35, '#0f172a');
         mGrad.addColorStop(0.7, '#1e1b4b');
         mGrad.addColorStop(1, '#030712');
         ctx.fillStyle = mGrad;
-        ctx.strokeStyle = '#c084fc';
-        ctx.lineWidth = 2.0;
+        ctx.shadowColor = '#dc2626';
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2.4;
 
         ctx.beginPath();
         ctx.moveTo(0, -r * 0.98);
@@ -1017,33 +1052,33 @@ export class Hazard {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        // Glowing rainbow constellation glyphs
+        // Glowing red hazard warning glyphs
         const glyphCount = 4;
         for (let g = 0; g < glyphCount; g++) {
           const gy = -r * 0.4 + g * (r * 0.32);
-          const gHue = (t * 60 + g * 50) % 360;
-          ctx.fillStyle = `hsl(${gHue}, 90%, 75%)`;
-          ctx.shadowColor = `hsl(${gHue}, 90%, 75%)`;
-          ctx.shadowBlur = 8;
+          ctx.fillStyle = '#ff2b55';
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 10;
           ctx.beginPath();
           ctx.arc(0, gy, 3.2, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.strokeStyle = `hsla(${gHue}, 90%, 75%, 0.6)`;
-          ctx.lineWidth = 1.4;
+          ctx.strokeStyle = 'rgba(255, 50, 80, 0.85)';
+          ctx.lineWidth = 1.6;
           ctx.beginPath();
           ctx.moveTo(-r * 0.16, gy);
           ctx.lineTo(r * 0.16, gy);
           ctx.stroke();
         }
 
-        // Apex star crown flare
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = '#38bdf8';
-        ctx.shadowBlur = 12;
+        // Apex star crown danger beacon flare
+        ctx.fillStyle = '#ff2555';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 16;
         ctx.beginPath();
-        ctx.arc(0, -r * 0.98, 4.2, 0, Math.PI * 2);
+        ctx.arc(0, -r * 0.98, 4.6, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -1057,23 +1092,29 @@ export class Hazard {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // Danger aura: subtle rim glow that extends just slightly beyond the obstacle bounds
+    // Danger aura: prominent red danger aura for Realm 7 obstacles so players clearly know to avoid them
     const pulse = 0.5 + 0.5 * Math.sin(this.timer * 2.5);
-    const auraRadius = this.radius * (1.10 + pulse * 0.08) + 4;
-    const auraStrength = this.isColossal ? 0.48 : this.marineKind ? 0.40 : 0.35;
     const isLava = this.realmStyle === 'lava' || this.zone === 6;
-    const isVoid = this.realmStyle === 'void' || this.zone === 7;
-    const auraGrad = ctx.createRadialGradient(0, 0, this.radius * 0.80, 0, 0, auraRadius);
+    const isVoid = this.realmStyle === 'void' || this.zone === 7 || this.behavior?.zone === 7 || (this.type && String(this.type).includes('_7_')) || (this.name && /void|chrono|singularity|entropy|temporal|world-eater|riftfang|event horizon/i.test(this.name));
+    const auraRadius = isVoid
+      ? (this.radius * (1.30 + pulse * 0.16) + 12)
+      : (this.radius * (1.10 + pulse * 0.08) + 4);
+    const auraStrength = isVoid
+      ? ((this.isColossal ? 0.88 : this.marineKind ? 0.80 : 0.72) * (0.85 + pulse * 0.30))
+      : (this.isColossal ? 0.48 : this.marineKind ? 0.40 : 0.35);
+
+    const auraGrad = ctx.createRadialGradient(0, 0, this.radius * (isVoid ? 0.55 : 0.80), 0, 0, auraRadius);
     if (isLava) {
       auraGrad.addColorStop(0, `rgba(249, 115, 22, ${auraStrength * (0.85 + pulse * 0.15)})`);
       auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
       auraGrad.addColorStop(0.80, `rgba(185, 28, 28, ${auraStrength * 0.22})`);
       auraGrad.addColorStop(1, 'rgba(127, 29, 29, 0)');
     } else if (isVoid) {
-      auraGrad.addColorStop(0, `rgba(192, 132, 252, ${auraStrength * (0.9 + pulse * 0.15)})`);
-      auraGrad.addColorStop(0.35, `rgba(56, 189, 248, ${auraStrength * 0.65})`);
-      auraGrad.addColorStop(0.70, `rgba(244, 114, 182, ${auraStrength * 0.35})`);
-      auraGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
+      // Prominent radiant crimson danger aura so players clearly identify Realm 7 obstacles to avoid
+      auraGrad.addColorStop(0, `rgba(255, 30, 60, ${auraStrength})`);
+      auraGrad.addColorStop(0.35, `rgba(239, 68, 68, ${auraStrength * 0.80})`);
+      auraGrad.addColorStop(0.70, `rgba(220, 38, 38, ${auraStrength * 0.45})`);
+      auraGrad.addColorStop(1, 'rgba(185, 28, 28, 0)');
     } else {
       auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.85 + pulse * 0.15)})`);
       auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);
@@ -1084,6 +1125,33 @@ export class Hazard {
     ctx.beginPath();
     ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
     ctx.fill();
+
+    if (isVoid) {
+      // Pulsing concentric danger warning perimeter ring for Realm 7 obstacles
+      ctx.save();
+      ctx.shadowColor = '#ef4444';
+      ctx.shadowBlur = 12 + pulse * 8;
+      ctx.strokeStyle = `rgba(255, 45, 75, ${0.55 + pulse * 0.40})`;
+      ctx.lineWidth = 2.4;
+      ctx.setLineDash([8, 5]);
+      ctx.lineDashOffset = -this.timer * 8;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * (1.10 + pulse * 0.08), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Orbiting crimson hazard warning sparks
+      ctx.fillStyle = '#ff2555';
+      const sparkCount = this.isColossal ? 6 : 4;
+      for (let s = 0; s < sparkCount; s++) {
+        const sAngle = this.timer * 2.2 + (s / sparkCount) * Math.PI * 2;
+        const sDist = this.radius * (1.18 + pulse * 0.05);
+        ctx.beginPath();
+        ctx.arc(Math.cos(sAngle) * sDist, Math.sin(sAngle) * sDist, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
     ctx.scale(this.sizeScale, this.sizeScale);
     try {
@@ -1477,50 +1545,181 @@ export class Hazard {
         ctx.fill();
         ctx.shadowBlur = 0;
       } else if (this.type === 'caldera_lava_pillar') {
-        // Volcanic Basalt Column
-        ctx.fillStyle = '#261c14';
+        // Colossal Volcanic Basalt Column & Lava Chimney
+        ctx.save();
+        const t = this.timer || 0;
+        const pulse = 0.5 + 0.5 * Math.sin(t * 3.5);
+
+        // Ambient incandescent heat glow
+        ctx.save();
+        ctx.shadowColor = '#ea580c';
+        ctx.shadowBlur = 18;
+        const heatGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, 48);
+        heatGrad.addColorStop(0, 'rgba(234, 88, 12, 0.45)');
+        heatGrad.addColorStop(1, 'rgba(234, 88, 12, 0)');
+        ctx.fillStyle = heatGrad;
         ctx.beginPath();
-        ctx.moveTo(-22, -36);
-        ctx.lineTo(22, -36);
-        ctx.lineTo(26, 36);
-        ctx.lineTo(-26, 36);
+        ctx.arc(0, 0, 48, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Hexagonal columnar basalt joints
+        const colGrad = ctx.createLinearGradient(-26, 0, 26, 0);
+        colGrad.addColorStop(0, '#0c0a09');
+        colGrad.addColorStop(0.25, '#1c1917');
+        colGrad.addColorStop(0.55, '#292524');
+        colGrad.addColorStop(0.85, '#1c1917');
+        colGrad.addColorStop(1, '#0c0a09');
+        ctx.fillStyle = colGrad;
+        ctx.strokeStyle = '#44403c';
+        ctx.lineWidth = 2.0;
+
+        ctx.beginPath();
+        ctx.moveTo(-24, -38);
+        ctx.lineTo(24, -38);
+        ctx.lineTo(28, 38);
+        ctx.lineTo(-28, 38);
         ctx.closePath();
         ctx.fill();
-
-        // Magma fissures
-        ctx.strokeStyle = '#ff5722';
-        ctx.lineWidth = 2.5;
-        ctx.shadowColor = '#ff5722';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.moveTo(-10, -28);
-        ctx.lineTo(4, -8);
-        ctx.lineTo(-8, 14);
-        ctx.lineTo(12, 30);
         ctx.stroke();
-        ctx.shadowBlur = 0;
-      } else if (this.type === 'eldritch_monolith') {
-        // Abyssal Chrono Monolith
-        ctx.fillStyle = '#1e1135';
-        ctx.beginPath();
-        ctx.moveTo(0, -42);
-        ctx.lineTo(20, -18);
-        ctx.lineTo(16, 38);
-        ctx.lineTo(-16, 38);
-        ctx.lineTo(-20, -18);
-        ctx.closePath();
-        ctx.fill();
 
-        // Cosmic runes
-        ctx.strokeStyle = '#a855f7';
-        ctx.lineWidth = 2;
-        ctx.shadowColor = '#c084fc';
+        // Vertical columnar joint facets
+        ctx.strokeStyle = '#1c1917';
+        ctx.lineWidth = 1.6;
+        for (const jx of [-12, 0, 12]) {
+          ctx.beginPath();
+          ctx.moveTo(jx, -38);
+          ctx.lineTo(jx * 1.15, 38);
+          ctx.stroke();
+        }
+
+        // Deep glowing incandescent magma flutes cutting down the stone
+        ctx.strokeStyle = '#ef4444';
+        ctx.shadowColor = '#f97316';
         ctx.shadowBlur = 10;
-        ctx.stroke();
+        ctx.lineWidth = 3.2;
         ctx.beginPath();
-        ctx.arc(0, 2, 8, 0, Math.PI * 2);
+        ctx.moveTo(-8, -36);
+        ctx.lineTo(-14, -12);
+        ctx.lineTo(-6, 8);
+        ctx.lineTo(-12, 34);
+        ctx.moveTo(8, -36);
+        ctx.lineTo(14, -6);
+        ctx.lineTo(6, 16);
+        ctx.lineTo(14, 34);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Boiling sulfur/lava caldera pool at top
+        ctx.fillStyle = '#ea580c';
+        ctx.beginPath();
+        ctx.ellipse(0, -38, 24, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.ellipse(0, -38, 16, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Rising thermal ash motes & embers
+        ctx.fillStyle = `rgba(251, 146, 60, ${0.7 + pulse * 0.3})`;
+        for (let e = 0; e < 4; e++) {
+          const ex = Math.sin(t * 3.5 + e * 1.8) * 18;
+          const ey = -42 - ((t * 35 + e * 20) % 35);
+          ctx.beginPath();
+          ctx.arc(ex, ey, 2.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      } else if (this.type === 'eldritch_monolith') {
+        // Colossal Abyssal Chrono Monolith & Space-Time Singularity Obelisk
+        ctx.save();
+        const t = this.timer || 0;
+        const pulse = 0.5 + 0.5 * Math.sin(t * 3.0);
+
+        // Radiant danger crimson gravitational accretion perimeter
+        ctx.save();
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 18;
+        ctx.strokeStyle = `rgba(255, 30, 60, ${0.75 + pulse * 0.25})`;
+        ctx.lineWidth = 2.4;
+        ctx.setLineDash([8, 6]);
+        ctx.lineDashOffset = -t * 12;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 42, 22, t * 0.4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Deep-void dark matter obelisk with beveled obsidian facets
+        const monoGrad = ctx.createLinearGradient(-22, 0, 22, 0);
+        monoGrad.addColorStop(0, '#090514');
+        monoGrad.addColorStop(0.35, '#1e1135');
+        monoGrad.addColorStop(0.65, '#2e1065');
+        monoGrad.addColorStop(1, '#090514');
+        ctx.fillStyle = monoGrad;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2.2;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 12;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -50); // Sharp pointed obelisk tip
+        ctx.lineTo(22, -18);
+        ctx.lineTo(18, 44);
+        ctx.lineTo(-18, 44);
+        ctx.lineTo(-22, -18);
+        ctx.closePath();
+        ctx.fill();
         ctx.stroke();
         ctx.shadowBlur = 0;
+
+        // Medial facet spine line
+        ctx.strokeStyle = '#a855f7';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(0, -48);
+        ctx.lineTo(0, 42);
+        ctx.stroke();
+
+        // Engraved temporal cosmic runes that glow with crimson starlight
+        ctx.strokeStyle = '#ff3366';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(0, -2, 9, 0, Math.PI * 2);
+        ctx.moveTo(-10, -2); ctx.lineTo(10, -2);
+        ctx.moveTo(0, -12); ctx.lineTo(0, 8);
+        ctx.stroke();
+
+        // Floating fractured monolith fragments hovering in anti-gravity
+        for (let f = 0; f < 3; f++) {
+          const fAngle = t * 1.5 + f * (Math.PI * 2 / 3);
+          const fx = Math.cos(fAngle) * 28;
+          const fy = Math.sin(fAngle) * 16 + Math.sin(t * 2 + f) * 4;
+          ctx.fillStyle = '#3b0764';
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(fx, fy - 5);
+          ctx.lineTo(fx + 4, fy);
+          ctx.lineTo(fx, fy + 5);
+          ctx.lineTo(fx - 4, fy);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        // Radiant crimson danger beacon at obelisk apex
+        ctx.fillStyle = '#ff2555';
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(0, -50, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       } else {
         // Driftwood Log
         ctx.fillStyle = '#78350f';

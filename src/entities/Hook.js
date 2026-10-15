@@ -148,19 +148,30 @@ export class Hook {
     }
   }
 
-  steer(dir, deltaSec = 0.016) {
+  steer(dir, deltaSec = 0.016, worldWidth = 1200) {
     const steerForce = 420 * this.agility;
     this.vx += dir * steerForce * 4 * deltaSec;
+    const maxSteer = 480 * this.agility;
+    this.vx = Math.max(-maxSteer, Math.min(maxSteer, this.vx));
     this.x += dir * steerForce * deltaSec;
+    const maxX = Math.max(100, (worldWidth || 1200) - 30);
+    this.x = Math.max(30, Math.min(maxX, this.x));
     this.targetX = this.x;
   }
 
-  setTargetX(targetX) {
-    this.targetX = targetX;
+  setTargetX(targetX, worldWidth = 1200) {
+    if (Number.isFinite(targetX)) {
+      const maxX = Math.max(100, (worldWidth || 1200) - 30);
+      this.targetX = Math.max(30, Math.min(maxX, targetX));
+    }
   }
 
   addCatch(entity, particles) {
     if (this.caughtItems.length >= this.capacity) return false;
+
+    // Stabilize hook horizontal velocity on catch to prevent uncontrollable overshoot
+    this.vx *= 0.25;
+    this.targetX = this.x;
 
     this.caughtItems.push(entity);
     entity.hookTo(this, this.caughtItems.length - 1);
@@ -278,6 +289,7 @@ export class Hook {
 
   update(dt, surfaceY, worldWidth, particles, isReelingInput = true, zoneManager = null) {
     const deltaSec = dt / 1000;
+    this.lineWaveTimer = (this.lineWaveTimer || 0) + deltaSec;
     this.hazardCooldown = Math.max(0, (this.hazardCooldown || 0) - deltaSec);
     this.prevX = this.x;
     this.prevY = this.y;
@@ -303,7 +315,10 @@ export class Hook {
       this.vy += (targetSinkSpeed - this.vy) * 4 * deltaSec;
 
       const steerDiff = this.targetX - this.x;
-      this.vx += (steerDiff * 4.0 * this.agility - this.vx) * 6 * deltaSec;
+      const maxSteerSpeed = 450 * this.agility;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 4.0 * this.agility));
+      this.vx += (desiredVx - this.vx) * 6 * deltaSec;
+      this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
       this.x += this.vx * deltaSec;
       this.y += this.vy * deltaSec;
@@ -360,7 +375,10 @@ export class Hook {
 
       // Agile steering during auto-reel
       const steerDiff = this.targetX - this.x;
-      this.vx += (steerDiff * 3.6 * this.agility - this.vx) * 6 * deltaSec;
+      const maxSteerSpeed = 420 * this.agility;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 3.6 * this.agility));
+      this.vx += (desiredVx - this.vx) * 6 * deltaSec;
+      this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
       this.x += this.vx * deltaSec;
       this.y += this.vy * deltaSec;
@@ -411,22 +429,41 @@ export class Hook {
   renderLine(ctx, rodTipX, rodTipY, cameraY = 0) {
     const drawHookY = this.y - cameraY;
     const drawRodY = rodTipY - cameraY;
+    const hookX = Number.isFinite(this.x) ? this.x : rodTipX;
 
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(rodTipX, drawRodY);
 
     if (this.state === 'CASTING') {
-      const midX = (rodTipX + this.x) / 2;
+      const midX = (rodTipX + hookX) / 2;
       const midY = Math.min(drawRodY, drawHookY) - 30;
-      ctx.quadraticCurveTo(midX, midY, this.x, drawHookY);
+      ctx.moveTo(rodTipX, drawRodY);
+      ctx.quadraticCurveTo(midX, midY, hookX, drawHookY);
     } else {
       // Natural fluid hydrodynamics: curve smoothly against velocity with gentle micro-drift
-      const dragOffset = -(this.vx || 0) * 0.04;
-      const microSway = Math.sin((this.bubbleTimer || 0) * 1.6) * 2.5;
-      const sagX = (rodTipX + this.x) / 2 + dragOffset + microSway;
-      const sagY = (drawRodY + drawHookY) / 2;
-      ctx.quadraticCurveTo(sagX, sagY, this.x, drawHookY);
+      const dragOffset = Math.max(-45, Math.min(45, -(this.vx || 0) * 0.035));
+      const microSway = Math.sin((this.lineWaveTimer || 0) * 2.2) * 2.5;
+
+      // When diving deep (cameraY is large), rodTip is off-screen above the viewport (drawRodY < 0).
+      // If drawRodY is deep negative (<-32768 or <-50), rasterizers overflow 16-bit vertex buffers causing
+      // chaotic line whipping across the screen. We cleanly calculate the entry point at y = 0.
+      if (drawRodY < -20) {
+        const totalDy = (drawHookY - drawRodY) || 1;
+        const t = Math.max(0, Math.min(1, (0 - drawRodY) / totalDy));
+        const entryX = rodTipX + (hookX - rodTipX) * t;
+        const canvasW = ctx.canvas ? ctx.canvas.width : 1200;
+        const clampedEntryX = Math.max(-40, Math.min(canvasW + 40, entryX));
+        const sagX = (clampedEntryX + hookX) / 2 + dragOffset + microSway;
+        const sagY = Math.max(0, drawHookY * 0.5);
+
+        ctx.moveTo(clampedEntryX, 0);
+        ctx.quadraticCurveTo(sagX, sagY, hookX, drawHookY);
+      } else {
+        const sagX = (rodTipX + hookX) / 2 + dragOffset + microSway;
+        const sagY = (drawRodY + drawHookY) / 2;
+        ctx.moveTo(rodTipX, drawRodY);
+        ctx.quadraticCurveTo(sagX, sagY, hookX, drawHookY);
+      }
     }
 
     // High-visibility braided line with subtle clean sheen

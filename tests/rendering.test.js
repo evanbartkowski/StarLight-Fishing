@@ -5,6 +5,15 @@ import { auraFrame, drawAura } from '../src/rendering/AuraRenderer.js';
 import { drawDepthScenery } from '../src/rendering/DepthScenery.js';
 import { Powerup, POWERUP_TYPES } from '../src/entities/Powerup.js';
 import { Treasure } from '../src/entities/Treasure.js';
+import { getNPCRealmMultiplier, scaleNPCOptions } from '../src/systems/NPCSystem.js';
+import { QUEST_POOL } from '../src/data/QuestsData.js';
+import { QuestSystem, questReward } from '../src/systems/QuestSystem.js';
+import { SoundManager } from '../src/audio/SoundManager.js';
+import { Hook } from '../src/entities/Hook.js';
+import { VALUE_BY_RARITY } from '../src/data/RealmContent.js';
+import { LEGENDARY_SPECIES } from '../src/data/legendaries.js';
+import { FISH_SPECIES } from '../src/data/FishData.js';
+import { Hazard } from '../src/entities/Hazard.js';
 
 test('depth scenery preserves the shallow view and fixes rare landmarks to deep world depths', () => {
   const calls = [];
@@ -548,7 +557,7 @@ test('Sea 7 (Eldritch Chrono Void) mythical fish, unique obstacles, rainbow clou
     set: (target, key, value) => { target[key] = value; return true; },
   });
 
-  // 4. Realm 7 hazards (variants 0-3) render with mythical cosmic visuals
+  // 4. Realm 7 hazards (variants 0-3) render with mythical cosmic visuals and noticeable red danger glow
   const typeConfig = {
     name: 'Temporal Fracture',
     type: 'temporal_fracture',
@@ -561,12 +570,54 @@ test('Sea 7 (Eldritch Chrono Void) mythical fish, unique obstacles, rainbow clou
     glowColor: '#ec4899',
     realmStyle: 'void'
   };
+  const gradientStops = [];
+  const trackedGradient = {
+    addColorStop(offset, color) {
+      gradientStops.push({ offset, color });
+    }
+  };
+  const trackedCtx = new Proxy({ globalAlpha: 1, lineWidth: 1, shadowColor: '', strokeStyle: '', fillStyle: '' }, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      if (key === 'createRadialGradient' || key === 'createLinearGradient') return () => trackedGradient;
+      return (...args) => calls.push({ key, args });
+    },
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+
   for (let v = 0; v < 4; v++) {
     calls.length = 0;
+    gradientStops.length = 0;
     const hazard = new Hazard(typeConfig, 200, 400, { variant: v, realmStyle: 'void', zone: 7 });
-    hazard.render(mockCtx, 0);
+    assert.equal(hazard.glow, '#ef4444', 'Realm 7 hazard glow must be danger red #ef4444');
+    hazard.render(trackedCtx, 0);
     assert.ok(calls.length > 5, `Realm 7 hazard variant ${v} must render successfully`);
+    // Verify danger red gradient stop was added to the danger aura
+    const hasRedStop = gradientStops.some(s => s.color.includes('255, 30, 60') || s.color.includes('239, 68, 68') || s.color.includes('#ef4444'));
+    assert.ok(hasRedStop, `Realm 7 hazard variant ${v} must include red danger warning color in its aura gradient`);
+    // Verify shadowColor or strokeStyle used red warning colors
+    assert.ok(trackedCtx.shadowColor.includes('ef4444') || trackedCtx.shadowColor.includes('dc2626') || trackedCtx.strokeStyle.includes('ef4444') || trackedCtx.strokeStyle.includes('ff3366'), 'Must have danger red shadow or stroke for Realm 7 hazard');
   }
+
+  // 4b. Realm 7 Marine threats render with prominent danger red warning aura
+  const { drawMarineThreat } = await import('../src/entities/MarineThreatArt.js');
+  const voidThreat = {
+    id: 'marine_7_cosmic_megalodon',
+    name: 'Celestial Void Megalodon',
+    zone: 7,
+    marineKind: 'shark',
+    behavior: { monsterForm: 'void_megalodon', zone: 7 },
+    radius: 40,
+    timer: 1.5,
+    facing: 1,
+    swimAngle: 0
+  };
+  calls.length = 0;
+  gradientStops.length = 0;
+  drawMarineThreat(trackedCtx, voidThreat);
+  assert.ok(calls.length > 5, 'Realm 7 void megalodon must render');
+  const threatHasRedStop = gradientStops.some(s => s.color.includes('255, 30, 60') || s.color.includes('239, 68, 68'));
+  assert.ok(threatHasRedStop, 'Realm 7 void megalodon must have red danger warning in aura');
 
   // 5. Realm 7 normal fish render with isVoidRealm/isVoidFish mythical aura and constellation stardust
   const voidSpecies = FISH_SPECIES.find(f => f.zone === 7 && f.rarity === 'common') || FISH_SPECIES.find(f => f.zone === 7);
@@ -804,6 +855,263 @@ test('Performance lag reduction, Realm 7 rainbow fish with selective stars, mobi
   const voidMegalodon = MARINE_THREATS.find(m => m.name === 'Celestial Void Megalodon');
   assert.ok(voidMegalodon.speed <= 150, 'Celestial Void Megalodon speed must be <= 150');
 });
+
+test('Deep abyss fishing line stability, Realm 7 creature & treasure icons, and full storage Sell All payout', async () => {
+  const { Hook } = await import('../src/entities/Hook.js');
+  const { getSpeciesIcon, FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
+  const { TREASURE_ITEMS } = await import('../src/data/TreasureData.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { UIManager } = await import('../src/ui/UIManager.js');
+
+  // 1. Hook deep abyss coordinates never overflow or whip wildly
+  const deepHook = new Hook();
+  deepHook.state = 'DESCENDING';
+  deepHook.x = 600;
+  deepHook.y = 35000; // 35,000px deep (abyss depth ~600m)
+  deepHook.targetX = 620;
+
+  // Steering is clamped and never generates NaN or runaway velocities
+  deepHook.steer(-10000);
+  assert.ok(deepHook.targetX >= 30, 'targetX must be clamped within screen boundaries');
+  deepHook.steer(10000);
+  assert.ok(deepHook.targetX <= 1170, 'targetX must be clamped within screen boundaries');
+
+  const lineDrawCalls = [];
+  const mockLineCtx = new Proxy({}, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      return (...args) => lineDrawCalls.push({ key, args });
+    },
+    set: (target, key, val) => { target[key] = val; return true; },
+  });
+
+  // When rod is 34,700px off screen above viewport (cameraY = 34900), renderLine clips entry point at y=0
+  deepHook.renderLine(mockLineCtx, 600, 200, 34900);
+  const moveToCall = lineDrawCalls.find(c => c.key === 'moveTo');
+  assert.ok(moveToCall, 'Line must call moveTo for top entry');
+  const entryY = moveToCall.args[1];
+  assert.ok(entryY >= -1 && entryY <= 1, `Line entry Y (${entryY}) must clip smoothly at viewport top`);
+
+  const quadCall = lineDrawCalls.find(c => c.key === 'quadraticCurveTo');
+  assert.ok(quadCall, 'Must draw smooth curve in visible screen');
+  const hookScreenY = quadCall.args[3];
+  assert.ok(Number.isFinite(hookScreenY) && hookScreenY > 0 && hookScreenY < 720, 'Hook screen Y must be finite and on screen');
+
+  // 2. All Realm 7 species, mythical creatures, and dredged salvage have valid, distinct icons
+  const r7Mermaid = FISH_SPECIES.find(f => f.zone === 7 && (f.shape === 'mermaid' || f.name.includes('Mermaid')));
+  assert.ok(r7Mermaid, 'Realm 7 must have mermaid');
+  assert.equal(getSpeciesIcon(r7Mermaid), '🧜‍♀️', 'Mermaids must have mermaid icon');
+
+  const r7Whale = FISH_SPECIES.find(f => f.zone === 7 && (f.shape === 'whale' || f.name.includes('Whale')));
+  assert.ok(r7Whale, 'Realm 7 must have whale');
+  assert.equal(getSpeciesIcon(r7Whale), '🐋', 'Whales must have whale icon');
+
+  const r7Serpent = FISH_SPECIES.find(f => f.zone === 7 && f.name.includes('Serpent'));
+  assert.ok(r7Serpent, 'Realm 7 must have serpent');
+  assert.equal(getSpeciesIcon(r7Serpent), '🐉', 'Serpents must have dragon/serpent icon');
+
+  const r5Unicorn = FISH_SPECIES.find(f => f.zone === 5 && (f.shape === 'unicorn' || f.name.includes('Unicorn')));
+  assert.ok(r5Unicorn, 'Realm 5 must have unicorn');
+  assert.equal(getSpeciesIcon(r5Unicorn), '🦄', 'Unicorns must have unicorn icon');
+
+  const chronoMermaid = LEGENDARY_SPECIES.find(l => l.id === 'chrono_void_mermaid');
+  assert.ok(chronoMermaid, 'Must have Celestial Chrono Mermaid');
+  assert.equal(getSpeciesIcon(chronoMermaid), '🧜‍♀️', 'Chrono mermaid must have mermaid icon');
+
+  const safeTreasure = { id: 'sunken_safe', name: 'Reinforced Sunken Safe', isSunkenSafe: true };
+  assert.equal(getSpeciesIcon(safeTreasure), '🔒', 'Sunken safe must have lock icon');
+
+  const diamondTreasure = { id: 'abyssal_diamond', name: 'Heart of the Void Diamond', category: 'treasure', isTreasure: true };
+  assert.equal(getSpeciesIcon(diamondTreasure), '💎', 'Diamond treasure must have diamond icon');
+
+  const ancientRelic = { id: 'chrono_astrolabe', name: 'Chrono Astrolabe', isRelic: true, icon: '🏺' };
+  assert.equal(getSpeciesIcon(ancientRelic), '🏺', 'Relic must have relic icon');
+
+  // 3. Catch Summary Sell All succeeds even when tackle box was completely full
+  const save = new SaveSystem();
+  save.data.coins = 1000;
+  save.data.inventory = [];
+  // Fill inventory to capacity
+  const cap = save.getInventoryCapacity();
+  for (let i = 0; i < cap; i++) {
+    save.data.inventory.push({ instanceId: `filled_${i}`, name: 'Existing Fish', value: 10, type: 'fish' });
+  }
+  assert.equal(save.isInventoryFull(), true, 'Inventory must be full');
+
+  const testHook = new Hook();
+  testHook.maxDepthReachedThisDive = 2500;
+  const caught1 = { id: r7Mermaid.id, name: r7Mermaid.name, species: r7Mermaid, value: 500 };
+  const caught2 = { id: 'sunken_safe', name: 'Sunken Safe', isSunkenSafe: true, value: 1200 };
+  testHook.caughtItems = [caught1, caught2];
+
+  // Try adding to inventory - returns null because full
+  caught1.inventoryRef = save.addItemToInventory(caught1);
+  caught2.inventoryRef = save.addItemToInventory(caught2);
+  assert.equal(caught1.inventoryRef, null, 'Caught item 1 inventoryRef is null when full');
+  assert.equal(caught2.inventoryRef, null, 'Caught item 2 inventoryRef is null when full');
+
+  // Mock DOM container for modal
+  const domElements = {};
+  const getOrCreate = (id) => {
+    if (!domElements[id]) {
+      const el = {
+        id,
+        textContent: '',
+        innerHTML: '',
+        className: '',
+        classList: { add: () => {}, remove: () => {}, contains: () => false, toggle: () => false },
+        style: {},
+        addEventListener: (evt, fn) => { el.listener = fn; }
+      };
+      domElements[id] = el;
+    }
+    return domElements[id];
+  };
+  globalThis.document = {
+    getElementById: (id) => getOrCreate(id),
+    createElement: () => ({ appendChild: () => {}, querySelector: () => null, addEventListener: () => {} }),
+    querySelectorAll: () => [],
+    body: { appendChild: () => {} }
+  };
+
+  const ui = new UIManager(save, () => {}, () => {});
+  let diveRestarted = false;
+
+  // Open catch summary with storageOverflow = true
+  ui.openCatchSummary(testHook, () => { diveRestarted = true; }, true);
+
+  // Trigger Sell All Catches
+  const sellAllBtnListener = domElements['btn-sell-all-catches']?.listener;
+  if (sellAllBtnListener) {
+    sellAllBtnListener();
+  }
+
+  // Verify coins were awarded directly from hook items
+  assert.ok(save.data.coins > 1000, `Coins must increase from haul sale (now: ${save.data.coins})`);
+});
+
+test('15 improvements verification: sound persistence, rare quest gems, NPC realm scaling, hook clamping, aquarium reliability, music assignments, and legendary balance', async () => {
+  // 1. Audio persistence from localStorage and initial state
+  const mockStorage = {
+    getItem: (key) => key === 'starlight_fishing_save' ? JSON.stringify({ settings: { isMuted: true } }) : null
+  };
+  globalThis.localStorage = mockStorage;
+  const smMuted = new SoundManager();
+  assert.equal(smMuted.isMuted, true, 'SoundManager should initialize isMuted from localStorage');
+
+  // Verify Realm 1 default music is completely unchanged
+  assert.equal(smMuted.surfaceMusic.src, '/sprites/seamusic.mp3', 'Realm 1 surface music must remain unchanged');
+  assert.equal(smMuted.underwaterMusic.src, '/sprites/oceanmusic2.mp3', 'Realm 1 underwater music must remain unchanged');
+
+  // Verify other realms have distinct music assigned for surface and underwater
+  for (let r = 2; r <= 7; r++) {
+    const sTrack = smMuted.getTrackForMode(r, 'surface');
+    const uTrack = smMuted.getTrackForMode(r, 'underwater');
+    assert.ok(sTrack && sTrack.src, `Realm ${r} should have a designated surface track`);
+    assert.ok(uTrack && uTrack.src, `Realm ${r} should have a designated underwater track`);
+    assert.notEqual(sTrack.src, uTrack.src, `Realm ${r} surface and underwater tracks should be distinct`);
+  }
+
+  // 2. Hook physics stability: steering clamping & velocity damping on catch
+  const hook = new Hook(400, 200, { agility: 1.2 });
+  hook.state = 'DESCENDING';
+  hook.targetX = 1200; // Large horizontal delta
+  hook.update(0.1, 1200);
+  assert.ok(Math.abs(hook.vx) <= 450 * 1.2 + 0.1, `Hook horizontal velocity must be clamped to avoid overshoot runaway`);
+
+  // On catch, velocity is damped
+  hook.vx = 300;
+  hook.addCatch({ name: 'Test Fish', size: 20, weight: 1.5, primaryColor: '#fff', hookTo() {}, draw() {} });
+  assert.ok(Math.abs(hook.vx) < 100, `Hook velocity must be damped on catch`);
+
+  // 3. Legendary 2x rarity and 2x selling prices
+  assert.equal(VALUE_BY_RARITY.legendary, 84, 'VALUE_BY_RARITY.legendary must be doubled to 84');
+  const speciesMossback = LEGENDARY_SPECIES.find(s => s.id === 'mossback_leviathan');
+  assert.ok(speciesMossback && speciesMossback.baseValue >= 6200, 'Legendary base value must be doubled');
+  assert.ok(speciesMossback.spawnConditions.chance <= 0.12, 'Legendary spawn chance must be halved');
+  const speciesAbyssal = FISH_SPECIES.find(s => s.id === 'abyssal_chimera');
+  assert.ok(speciesAbyssal && speciesAbyssal.baseValue >= 560, 'FishData legendary base value must be doubled');
+
+  // Verify new realm-themed legendary species are present
+  const expectedNewSpecies = [
+    'lagoon_sun_emperor',
+    'abyssal_biolum_hydra',
+    'cosmic_nova_serpent',
+    'atlantean_sun_crown_leviathan',
+    'aetherial_zephyr_kirin',
+    'pyrostrom_smoldering_wyrm',
+    'eldritch_epoch_devourer'
+  ];
+  for (const spId of expectedNewSpecies) {
+    assert.ok(LEGENDARY_SPECIES.some(s => s.id === spId), `Legendary species ${spId} must be registered`);
+  }
+
+  // 4. NPC dialogue reward scaling based on player's unlocked realm
+  const saveRealm1 = { data: { unlockedSeas: [1], coins: 500, xp: 0, addCoins(c) { this.coins += c; }, addXp(x) { this.xp += x; }, spendCoins(c) { if (this.coins >= c) { this.coins -= c; return true; } return false; } } };
+  const saveRealm7 = { data: { unlockedSeas: [1, 2, 3, 4, 5, 6, 7], coins: 500, xp: 0, addCoins(c) { this.coins += c; }, addXp(x) { this.xp += x; }, spendCoins(c) { if (this.coins >= c) { this.coins -= c; return true; } return false; } } };
+
+  const multR1 = getNPCRealmMultiplier(saveRealm1);
+  const multR7 = getNPCRealmMultiplier(saveRealm7);
+  assert.equal(multR1, 1.0, 'Realm 1 NPC multiplier should be 1.0');
+  assert.ok(multR7 >= 10.0, `Realm 7 NPC multiplier should be significantly higher (got ${multR7})`);
+
+  // 5. Rare quests and gems rewards
+  const rareQuests = QUEST_POOL.filter(q => q.rarity === 'rare' || (q.rewardGems && q.rewardGems > 0));
+  assert.ok(rareQuests.length >= 5, 'Should have multiple rare quests awarding gems');
+
+  const qDef = rareQuests.find(q => q.id === 'apex_hunter');
+  assert.ok(qDef && qDef.rewardGems >= 2, 'Apex hunter must have gem reward');
+
+  const reward = questReward(qDef, 1);
+  assert.ok(reward.rewardGems >= 2, 'questReward must include rewardGems');
+
+  // Test claim quest adds gems
+  const saveWithQuests = {
+    data: {
+      coins: 0,
+      xp: 0,
+      gems: 0,
+      unlockedSeas: [1],
+      quests: {
+        active: [{ id: 'apex_hunter', realmId: 1, current: 1, target: 1, claimed: false }],
+        completedCount: 0,
+      }
+    },
+    getCurrentSea() { return 1; },
+    addCoins(c) { this.data.coins += c; },
+    addXP(x) { this.data.xp += x; },
+    addGems(g) { this.data.gems = (this.data.gems || 0) + g; },
+    save() {}
+  };
+  const qs = new QuestSystem(saveWithQuests);
+  const claimedReward = qs.claimQuest('apex_hunter');
+  assert.ok(claimedReward, 'Claiming quest should return reward object');
+  assert.ok(saveWithQuests.data.gems >= 2, `Claiming rare quest must award gems (got ${saveWithQuests.data.gems})`);
+
+  // 6. Tank button reliability: String-cast ID matching in SaveSystem
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const fullSave = new SaveSystem();
+  fullSave.data = {
+    inventory: [{ instanceId: 'item-101', name: 'Coral Trout', type: 'fish' }],
+    aquarium: { isUnlocked: true, slottedItemIds: [], maxCapacity: 5 },
+    upgrades: { personalAquarium: 1 }
+  };
+  assert.equal(fullSave.isItemInAquarium('item-101'), false);
+  const moveRes = fullSave.moveItemToAquarium('item-101');
+  assert.equal(moveRes.success, true, 'moveItemToAquarium should succeed');
+  assert.equal(fullSave.isItemInAquarium('item-101'), true, 'isItemInAquarium should find slotted item');
+  assert.equal(fullSave.removeItemFromAquarium('item-101'), true, 'removeItemFromAquarium should succeed');
+  assert.equal(fullSave.isItemInAquarium('item-101'), false, 'Item should be removed from aquarium');
+
+  // 7. Colossal creatures smoothFacing and movement
+  const colossalHazard = new Hazard({ id: 'giant_leviathan', marineKind: 'shark', isColossal: true, speed: 60, radius: 40, detectionRadius: 300, leash: 400 }, 300, 300);
+  assert.ok(colossalHazard.isColossal, 'Hazard should be colossal');
+  colossalHazard.update(100, 1200, { state: 'DESCENDING', x: 500, y: 300, vx: 0, vy: 50 });
+  assert.ok(colossalHazard.smoothFacing !== undefined, 'Colossal hazard should update smoothFacing smoothly');
+});
+
+
 
 
 

@@ -208,16 +208,16 @@ function drawVoidMegalodon(ctx, threat, r, t) {
 
   ctx.save();
 
-  // 1. Luminous Celestial Aurora Halo / Shimmer
+  // 1. Luminous Celestial Danger Crimson Halo / Shimmer
   ctx.save();
-  ctx.shadowColor = '#c084fc';
-  ctx.shadowBlur = 24;
+  ctx.shadowColor = '#ef4444';
+  ctx.shadowBlur = 28;
   const auroraGlow = ctx.createLinearGradient(-r * 0.8, 0, r * 0.8, 0);
-  auroraGlow.addColorStop(0, 'rgba(168, 85, 247, 0.45)');
-  auroraGlow.addColorStop(0.5, 'rgba(56, 189, 248, 0.45)');
-  auroraGlow.addColorStop(1, 'rgba(244, 114, 182, 0.45)');
+  auroraGlow.addColorStop(0, 'rgba(255, 30, 60, 0.70)');
+  auroraGlow.addColorStop(0.5, 'rgba(239, 68, 68, 0.55)');
+  auroraGlow.addColorStop(1, 'rgba(220, 38, 38, 0.40)');
   ctx.strokeStyle = auroraGlow;
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 6.5;
   ctx.beginPath();
   ctx.moveTo(r * 1.08, 0);
   ctx.quadraticCurveTo(r * 0.45, -r * 0.52, -r * 0.55, -r * 0.15);
@@ -720,24 +720,27 @@ export function drawMarineThreat(ctx, threat) {
 
   ctx.save();
   if (threat.marineKind !== 'jelly') {
-    ctx.scale(threat.facing || 1, 1);
+    const scaleX = threat.smoothFacing !== undefined ? threat.smoothFacing : (threat.facing || 1);
+    ctx.scale(scaleX, 1);
     if (threat.swimAngle) {
-      ctx.rotate((threat.facing || 1) * threat.swimAngle);
+      ctx.rotate(Math.sign(scaleX || 1) * threat.swimAngle);
     }
   }
 
-  // Ethereal celestial aura behind all Realm 7 enemies
+  // Prominent danger red warning aura behind all Realm 7 enemies
   if (isVoidRealm) {
     ctx.save();
-    ctx.shadowColor = threat.glow || '#c084fc';
-    ctx.shadowBlur = 18;
-    const aura = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r * 1.15);
-    aura.addColorStop(0, 'rgba(168, 85, 247, 0.2)');
-    aura.addColorStop(0.5, 'rgba(56, 189, 248, 0.15)');
-    aura.addColorStop(1, 'rgba(244, 114, 182, 0)');
+    const redPulse = 0.5 + 0.5 * Math.sin(t * 3.0);
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 24 + redPulse * 8;
+    const aura = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r * 1.35);
+    aura.addColorStop(0, `rgba(255, 30, 60, ${0.50 + redPulse * 0.25})`);
+    aura.addColorStop(0.45, `rgba(239, 68, 68, ${0.38 + redPulse * 0.20})`);
+    aura.addColorStop(0.80, 'rgba(220, 38, 38, 0.18)');
+    aura.addColorStop(1, 'rgba(185, 28, 28, 0)');
     ctx.fillStyle = aura;
     ctx.beginPath();
-    ctx.ellipse(0, 0, r * 1.15, r * 0.75, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, r * 1.35, r * 0.85, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }

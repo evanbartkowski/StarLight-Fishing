@@ -205,6 +205,7 @@ uiManager.onAccountSwitched = () => {
     if (typeof save.data.settings.musicVolume === 'number') soundManager.setMusicVolume(save.data.settings.musicVolume);
     if (typeof save.data.settings.sfxVolume === 'number') soundManager.setSfxVolume(save.data.settings.sfxVolume);
     if (typeof save.data.settings.isMuted === 'boolean') soundManager.setMuted(save.data.settings.isMuted);
+    uiManager.syncMuteButton();
   }
   hook.applyUpgrades(save);
   oceanWorld.setSaveSystem(save);
@@ -247,13 +248,18 @@ minimapUI.onSailToSea = (sea) => {
   gameState = 'SURFACE_IDLE';
   cameraY = 0;
   targetCameraY = 0;
+  if (typeof handleResize === 'function') {
+    handleResize();
+  }
+  oceanWorld.populateWorld(save);
+  oceanWorld.boat.x = (typeof screenWidth === 'number' && screenWidth > 200 ? screenWidth : (oceanWorld.worldWidth || 1200)) * 0.5;
+  oceanWorld.updateRodTip();
   const preservedCatches = Array.isArray(hook.caughtItems) ? [...hook.caughtItems] : [];
   hook.applyUpgrades(save);
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
   if (preservedCatches.length > 0) {
     hook.caughtItems = preservedCatches;
   }
-  oceanWorld.populateWorld(save);
   soundManager.setSeaTrack(sea.id);
   uiManager.updateHUD(hook, gameState);
   uiManager.announceZoneEntry(sea);
@@ -276,6 +282,7 @@ if (save.data.settings) {
   if (typeof save.data.settings.musicVolume === 'number') soundManager.setMusicVolume(save.data.settings.musicVolume);
   if (typeof save.data.settings.sfxVolume === 'number') soundManager.setSfxVolume(save.data.settings.sfxVolume);
   if (typeof save.data.settings.isMuted === 'boolean') soundManager.setMuted(save.data.settings.isMuted);
+  if (uiManager) uiManager.syncMuteButton();
 }
 
 // Initialize current zone soundscape
@@ -769,6 +776,8 @@ const update = (dt) => {
     // Surfaced
     if (gameState === 'REELING' && hook.state === 'SURFACED') {
       gameState = 'CATCH_SUMMARY';
+      cameraY = 0;
+      targetCameraY = 0;
       soundManager.setMusicMode('surface');
       checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager);
 
@@ -1121,7 +1130,13 @@ const render = () => {
     hook.renderLine(ctx, oceanWorld.rodTip.x, oceanWorld.rodTip.y, cameraY);
     hook.render(ctx, cameraY);
     hook.caughtItems.forEach((item) => {
-      item.render(ctx, cameraY);
+      if (item && typeof item.render === 'function') {
+        try {
+          item.render(ctx, cameraY);
+        } catch (itemErr) {
+          console.warn('Caught item render error:', itemErr);
+        }
+      }
     });
   } catch (e) {
     console.warn('Error in hook/line render:', e);
@@ -1131,7 +1146,7 @@ const render = () => {
   try {
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
-    const isSurface = gameState === 'SURFACE_IDLE' || gameState === 'AIMING' || gameState === 'CATCH_SUMMARY';
+    const isSurface = gameState === 'SURFACE_IDLE' || gameState === 'AIMING' || gameState === 'CATCH_SUMMARY' || (hook && hook.state === 'SURFACE_IDLE');
     oceanWorld.renderBoatAndFisherman(ctx, cameraY, isSurface);
   } catch (boatErr) {
     console.error('Fatal boat and fisherman render error:', boatErr);

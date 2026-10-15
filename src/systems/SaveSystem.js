@@ -5,7 +5,7 @@ import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
-import { FISH_SPECIES } from '../data/FishData.js';
+import { FISH_SPECIES, getSpeciesIcon } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { calculateGradeTier, claimZonePerk } from '../data/almanac.config.js';
 import { accountManager } from './AccountManager.js';
@@ -851,7 +851,7 @@ export class SaveSystem {
       weight: item.weight || 0,
       value: isBottle ? 0 : (item.value || 0),
       sellValue: isBottle ? 0 : (item.sellValue || item.value || 0),
-      icon: isBottle ? '🍾' : (isCrate ? (item.loot?.icon || '📦') : isRelic ? (item.icon || '🏺') : isFossil ? '🦴' : isTreasure ? '💎' : (item.isMythic ? '🌟' : '🐟')),
+      icon: getSpeciesIcon(item),
       primaryColor: item.primaryColor || item.species?.primaryColor || '#38bdf8',
       finColor: item.finColor || item.species?.finColor || '#0284c7',
       scaleFactor: item.scaleFactor || item.scale || 1.0,
@@ -973,13 +973,14 @@ export class SaveSystem {
   }
 
   isItemInAquarium(instanceId) {
-    return !!(this.data.aquarium?.slottedItemIds?.includes(instanceId));
+    if (instanceId === undefined || instanceId === null) return false;
+    return !!(this.data.aquarium?.slottedItemIds?.some((id) => String(id) === String(instanceId)));
   }
 
   getAquariumItems() {
     const ids = this.data.aquarium?.slottedItemIds || [];
     const inv = this.getInventory();
-    return ids.map((id) => inv.find((item) => item.instanceId === id)).filter(Boolean);
+    return ids.map((id) => inv.find((item) => String(item.instanceId) === String(id))).filter(Boolean);
   }
 
   moveItemToAquarium(instanceId) {
@@ -989,15 +990,15 @@ export class SaveSystem {
     if (this.data.aquarium.slottedItemIds.length >= capacity) {
       return { success: false, reason: 'full' };
     }
-    if (this.data.aquarium.slottedItemIds.includes(instanceId)) {
+    if (this.isItemInAquarium(instanceId)) {
       return { success: false, reason: 'already_slotted' };
     }
-    const item = this.getInventory().find((i) => i.instanceId === instanceId);
+    const item = this.getInventory().find((i) => String(i.instanceId) === String(instanceId));
     if (!item) return { success: false, reason: 'not_found' };
     if (item.isCrate) return { success: false, reason: 'Open or sell this crate first' };
 
     this.accrueVisitorTips();
-    this.data.aquarium.slottedItemIds.push(instanceId);
+    this.data.aquarium.slottedItemIds.push(item.instanceId);
     this.save();
     return { success: true, item };
   }
@@ -1006,7 +1007,7 @@ export class SaveSystem {
     if (!this.data.aquarium?.slottedItemIds) return false;
     this.accrueVisitorTips();
     const initialLen = this.data.aquarium.slottedItemIds.length;
-    this.data.aquarium.slottedItemIds = this.data.aquarium.slottedItemIds.filter((id) => id !== instanceId);
+    this.data.aquarium.slottedItemIds = this.data.aquarium.slottedItemIds.filter((id) => String(id) !== String(instanceId));
     if (this.data.aquarium.slottedItemIds.length !== initialLen) {
       this.save();
       return true;

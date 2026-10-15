@@ -31,7 +31,11 @@ export function questReward(def, realmId, target = null) {
   const rewardCoins = Math.round(baseCoins * realmMultiplier * (1 + (targetRatio - 1) * 0.45));
   const rewardXp = Math.round(baseXp * xpMult * (1 + (targetRatio - 1) * 0.35));
 
-  return { ...def, realmId, rewardCoins, rewardXp };
+  // Rare quests award valuable gems!
+  const baseGems = def.rewardGems || (def.rarity === 'rare' ? 2 : 0);
+  const rewardGems = baseGems ? Math.max(1, Math.round(baseGems * (realmId >= 5 ? 1.5 : 1))) : 0;
+
+  return { ...def, realmId, rewardCoins, rewardXp, rewardGems };
 }
 
 export class QuestSystem {
@@ -165,9 +169,16 @@ export class QuestSystem {
     qState.claimed = true;
     (this.saveSystem.data.quests.cooldowns ||= {})[questId] = Date.now() + 30 * 60 * 1000;
 
-    // Award coins and XP
+    // Award coins and XP (and gems for rare quests!)
     this.saveSystem.addCoins(reward.rewardCoins);
     this.saveSystem.addXP(reward.rewardXp);
+    if (reward.rewardGems && reward.rewardGems > 0) {
+      if (typeof this.saveSystem.addGems === 'function') {
+        this.saveSystem.addGems(reward.rewardGems);
+      } else {
+        this.saveSystem.data.gems = (this.saveSystem.data.gems || 0) + reward.rewardGems;
+      }
+    }
     this.saveSystem.data.quests.completedCount = (this.saveSystem.data.quests.completedCount || 0) + 1;
 
     // Remove claimed quest and draw a new one

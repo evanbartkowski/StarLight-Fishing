@@ -1944,11 +1944,14 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
         hairColor = hairPalette[seed];
       }
 
-      const sway = Math.sin(t * 3.2) * 4;
-      const tailWave1 = Math.sin(t * 3.2) * 5;
-      const tailWave2 = Math.sin(t * 3.2 - 0.7) * 9;
-      const tailWave3 = Math.sin(t * 3.2 - 1.4) * 14;
-      const hairWave = Math.sin(t * 2.4) * 3.5;
+      // Multi-harmonic gentle sinusoidal undulating motion for serene, realistic mermaid swimming
+      const swimBase = t * 2.2;
+      const sway = Math.sin(swimBase) * 3.2 + Math.sin(swimBase * 0.5) * 1.4;
+      const tailWave1 = Math.sin(swimBase) * 4.2 + Math.sin(swimBase * 0.5) * 1.6;
+      const tailWave2 = Math.sin(swimBase - 0.75) * 7.5 + Math.sin(swimBase * 0.5 - 0.35) * 2.6;
+      const tailWave3 = Math.sin(swimBase - 1.45) * 11.5 + Math.sin(swimBase * 0.5 - 0.7) * 3.8;
+      const hairWave = Math.sin(t * 1.8) * 3.2 + Math.cos(t * 0.9) * 1.5;
+      const hairWave2 = Math.cos(t * 2.1 - 0.6) * 2.6;
 
       ctx.save();
 
@@ -1956,8 +1959,9 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.save();
       const tailGrad = ctx.createLinearGradient(0, 0, -38, tailWave3);
       tailGrad.addColorStop(0, primary || '#0284c7');
-      tailGrad.addColorStop(0.5, secondary || '#38bdf8');
-      tailGrad.addColorStop(1, finColor || '#34d399');
+      tailGrad.addColorStop(0.35, secondary || '#38bdf8');
+      tailGrad.addColorStop(0.75, finColor || '#a855f7');
+      tailGrad.addColorStop(1, '#ec4899');
       ctx.fillStyle = tailGrad;
 
       ctx.beginPath();
@@ -1971,43 +1975,79 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.closePath();
       ctx.fill();
 
-      // Shimmering tail scales
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      // Medial iridescent spine highlight
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-18, tailWave1 * 0.7, -32, tailWave2 * 0.9);
+      ctx.lineTo(-40, tailWave3);
+      ctx.stroke();
+
+      // Shimmering tail scales (overlapping arcs)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.48)';
       ctx.lineWidth = 1;
-      for (let s = 0; s < 4; s++) {
-        const sx = -6 - s * 6;
-        const sy = tailWave1 * (s / 4);
+      for (let s = 0; s < 5; s++) {
+        const sx = -5 - s * 6.5;
+        const sy = tailWave1 * (s / 5) + (s >= 3 ? (tailWave2 - tailWave1) * ((s - 2) / 3) : 0);
         ctx.beginPath();
-        ctx.arc(sx, sy, 3, 0.2, Math.PI - 0.2);
+        ctx.arc(sx, sy, 3.2, 0.2, Math.PI - 0.2);
         ctx.stroke();
       }
       ctx.restore();
 
-      // 2. Translucent Flowing Caudal Flukes (Tail Fins)
+      // 2. Translucent Flowing Caudal Flukes (Tail Fins) with delicate ray flutes
       ctx.save();
-      ctx.fillStyle = finColor || '#38bdf8';
-      ctx.globalAlpha = 0.78;
+      const flukeGrad = ctx.createLinearGradient(-40, tailWave3, -64, tailWave3);
+      flukeGrad.addColorStop(0, finColor || '#38bdf8');
+      flukeGrad.addColorStop(0.6, secondary || '#a855f7');
+      flukeGrad.addColorStop(1, '#f472b6');
+      ctx.fillStyle = flukeGrad;
+      ctx.globalAlpha = 0.82;
+
+      // Upper caudal fin lobe
       ctx.beginPath();
       ctx.moveTo(-40, tailWave3);
-      ctx.quadraticCurveTo(-52, -12 + tailWave3 + hairWave, -62, -16 + tailWave3);
+      ctx.quadraticCurveTo(-52, -14 + tailWave3 + hairWave, -64, -18 + tailWave3);
       ctx.quadraticCurveTo(-54, -4 + tailWave3, -45, tailWave3 - 1);
       ctx.closePath();
       ctx.fill();
 
+      // Lower caudal fin lobe
       ctx.beginPath();
       ctx.moveTo(-40, tailWave3);
-      ctx.quadraticCurveTo(-52, 12 + tailWave3 - hairWave, -62, 16 + tailWave3);
+      ctx.quadraticCurveTo(-52, 14 + tailWave3 - hairWave, -64, 18 + tailWave3);
       ctx.quadraticCurveTo(-54, 4 + tailWave3, -45, tailWave3 + 1);
       ctx.closePath();
       ctx.fill();
 
+      // Translucent fin ray lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(-42, tailWave3); ctx.lineTo(-60, -14 + tailWave3);
+      ctx.moveTo(-42, tailWave3); ctx.lineTo(-61, -8 + tailWave3);
+      ctx.moveTo(-42, tailWave3); ctx.lineTo(-61, 8 + tailWave3);
+      ctx.moveTo(-42, tailWave3); ctx.lineTo(-60, 14 + tailWave3);
+      ctx.stroke();
+
       // Delicate translucent pelvic/hip fin frills
       ctx.beginPath();
       ctx.moveTo(-4, 3);
-      ctx.quadraticCurveTo(-10, 10 + tailWave1 * 0.5, -16, 8 + tailWave1 * 0.5);
+      ctx.quadraticCurveTo(-11, 11 + tailWave1 * 0.5, -17, 8 + tailWave1 * 0.5);
       ctx.quadraticCurveTo(-11, 4, -4, 3);
       ctx.closePath();
       ctx.fill();
+
+      // Drifting pearl sparkles off tail
+      ctx.fillStyle = '#ffffff';
+      for (let p = 0; p < 3; p++) {
+        const px = -62 - Math.sin(t * 2 + p) * 8;
+        const py = tailWave3 + Math.cos(t * 2.5 + p * 1.5) * 6;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
 
       // 3. Graceful Feminine Torso & Arms
@@ -2073,6 +2113,14 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.closePath();
       ctx.fill();
 
+      // Pearl choker necklace
+      ctx.fillStyle = '#fef08a';
+      for (let c = -1; c <= 1; c++) {
+        ctx.beginPath();
+        ctx.arc(13 + c * 2.2, -10 + Math.abs(c) * 0.8, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       // Rosy cheek blush
       ctx.fillStyle = 'rgba(244, 63, 94, 0.45)';
       ctx.beginPath();
@@ -2115,7 +2163,7 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.arc(eyeX, eyeY - 0.4, 2.4, -Math.PI * 0.8, -0.2);
       ctx.stroke();
 
-      // 7. Long Luxurious Flowing Hair
+      // 7. Long Luxurious Flowing Hair (Multi-harmonic billow)
       ctx.fillStyle = hairColor;
       ctx.beginPath();
       ctx.moveTo(12, -22);
@@ -2134,6 +2182,16 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.closePath();
       ctx.fill();
 
+      // Secondary flowing hair strand
+      ctx.beginPath();
+      ctx.moveTo(11, -20);
+      ctx.quadraticCurveTo(3, -19 + hairWave2, -5, -15 + hairWave2);
+      ctx.quadraticCurveTo(-15, -8 + hairWave2 * 1.3, -26, -5 + hairWave2 * 1.8);
+      ctx.quadraticCurveTo(-16, -1 + hairWave2, -6, -5 + hairWave2);
+      ctx.quadraticCurveTo(3, -9, 9, -14);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.beginPath();
       ctx.moveTo(10, -21);
       ctx.quadraticCurveTo(2, -18 + hairWave, -6, -12 + hairWave);
@@ -2149,6 +2207,16 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.moveTo(12, -21);
       ctx.quadraticCurveTo(4, -20 + hairWave, -8, -14 + hairWave);
       ctx.stroke();
+
+      // Glistening starfish hair clip & jewel
+      ctx.fillStyle = '#f472b6';
+      ctx.beginPath();
+      ctx.arc(11, -20, 2.0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(11, -20, 0.8, 0, Math.PI * 2);
+      ctx.fill();
 
       // 8. Pearl / Coral Tiara Headpiece
       ctx.fillStyle = '#fde047';

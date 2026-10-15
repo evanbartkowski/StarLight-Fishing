@@ -23,7 +23,19 @@ const createAudioElement = (src) => {
 export class SoundManager {
   constructor() {
     this.audioCtx = null;
-    this.isMuted = false;
+    let savedMuted = false;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const rawSave = localStorage.getItem('starlight_fishing_save');
+        if (rawSave) {
+          const parsed = JSON.parse(rawSave);
+          if (parsed?.settings && typeof parsed.settings.isMuted === 'boolean') {
+            savedMuted = parsed.settings.isMuted;
+          }
+        }
+      }
+    } catch (_) {}
+    this.isMuted = savedMuted;
     this.sfxVolume = 0.7;
     this.musicVolume = 0.5;
 
@@ -184,16 +196,16 @@ export class SoundManager {
         2: '/music/aquarain.mp3',
         3: '/music/meditation.mp3',
         4: '/music/peaceful.mp3',
-        5: '/music/ocean-waves.mp3',
+        5: '/music/faespencer-island-heartbeat-211013.mp3',
         6: '/music/tropical.mp3',
         7: '/music/ocean-vibes.mp3',
       };
       const fishingTracks = {
-        2: '/music/peaceful.mp3',
-        3: '/music/ocean-waves.mp3',
-        4: '/music/meditation.mp3',
-        5: '/music/aquarain.mp3',
-        6: '/sprites/oceanmusic2.mp3',
+        2: '/music/juliush-relax-chill-out-music-for-landscapes-under-water-animals-forests-8105.mp3',
+        3: '/music/alex-morgan-underwater-dreamscape-537486.mp3',
+        4: '/music/onecinematicstudio-the-lost-city-of-atlantis-_-mystical-underwater-cinematic-music-529056.mp3',
+        5: '/music/ocean-waves.mp3',
+        6: '/music/desifreemusic-ocean-documentary-background-music-with-calm-cinematic-ambience-569283.mp3',
         7: '/music/chrono-void-fishing.mp3',
       };
       const src = isUnderwater ? (fishingTracks[id] || '/music/chrono-void-fishing.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');

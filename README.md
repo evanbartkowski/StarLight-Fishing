@@ -186,9 +186,62 @@ The diamond beside gold opens daily login rewards for captain accounts: a 30-day
 - Settings, traps, Fossils, and the museum have updated layouts. Six discovered fossils or reconstructed sets can be placed in the gallery. Each complete fossil set awards a one-time 3-gem achievement.
 - The treasure chart has selectable islands, a compass, and a dotted sailing route. Phone loading/welcome and catch-summary panels stay within the dynamic viewport and scroll internally.
 
+## Core Enhancements & System Balancing
+
+### 1. Obstacle Spawn Balancing
+- Obstacle and static hazard spawn rates beyond 1,000 meters have been balanced to avoid dense cluster walls in deep expeditions while maintaining exciting navigation risks.
+
+### 2. Fishing Physics & Hook Stability
+- Fixed runaway horizontal steering velocity when hooking fish. Maximum horizontal steering velocity is clamped relative to rod agility, and hooking catches applies instantaneous velocity damping (`vx * 0.25`) to eliminate erratic screen-wide oscillations.
+
+### 3. Persistent Sound Settings & Audio UI
+- Audio mute states are preserved across browser refreshes via `localStorage`. The HUD audio toggle automatically reflects the correct muted/unmuted speaker icon on initialization.
+
+### 4. Legendary Fish Rebalancing
+- Catchable legendary and mythic fish are now twice as rare across all oceans (`0.006` base weight and halved environmental spawn chances), but reward dedicated anglers with **double their previous selling prices** (`VALUE_BY_RARITY.legendary` doubled from 42 to 84, base sell values doubled).
+
+### 5. Beautiful Mermaid Design & Fluid Art
+- Mermaids have been completely redesigned with shimmering scales, pearl chokers, glowing tiaras, and multi-layered flowing hair. Swimming features smooth multi-harmonic sinusoidal tail undulations and natural billow physics.
+
+### 6. Dynamic NPC Dialogue Reward Scaling
+- Wandering NPC encounters now scale their Gold and XP rewards based on the player's highest unlocked realm (scaling smoothly from 1.0x in Sunlit Shoals up to 16.0x in Realm 7), making high-sea dialogue rewarding and relevant to late-game progression.
+
+### 7. Rare Noticeboard Quests & Gem Rewards
+- High-tier and rare noticeboard quests (such as Apex Predator hunts and Colossal Leviathan challenges) now award bonus Gems (1 to 4 gems per contract), marked with distinct `✨ RARE QUEST` badges.
+
+### 8. Realistic Colossal Creature Motion
+- Colossal sea monsters (such as ancient megasharks, kraken tentacles, and leviathans) now feature smooth rotational inertia (`smoothFacing`), realistic turn smoothing, and multi-harmonic aquatic locomotion.
+
+### 9. Realm 6 (Magma Caldera) Obstacle Overhaul
+- Caldera obstacles (including volcanic chimneys, magma pillars, and sulfur vents) have been visually overhauled with molten lava veins, pulsing radiant heat glows, thermal distortion halos, and jagged basalt textures.
+
+### 10. Realm 7 (Eldritch Chrono Void) Obstacle & Boat Fixes
+- Fixed the Realm 7 boat positioning bug where switching realms caused the vessel to float off-screen or vanish; the vessel position is now dynamically clamped and centered. Colossal void monoliths and temporal fractures now feature pulsing eldritch warning auras and cosmic particulate effects.
+
+### 11. Expanded Legendary & Mythical Roster
+- Added seven new realm-themed legendary and mythical species to enrich diversity:
+  - *Lagoon Sun Emperor* (Realm 1)
+  - *Abyssal Bioluminescent Hydra* (Realm 2)
+  - *Cosmic Nova Serpent* (Realm 3)
+  - *Atlantean Sun-Crown Leviathan* (Realm 4)
+  - *Aetherial Zephyr Kirin* (Realm 5)
+  - *Pyrostrom Smoldering Wyrm* (Realm 6)
+  - *Eldritch Epoch Devourer* (Realm 7)
+- All new species include custom silhouettes, thematic palettes, evasion mechanics, and dedicated almanac icons.
+
+### 12. 100% Reliable Personal Aquarium "To Tank" Button
+- Standardized instance ID resolution using string-cast matching (`String(id) === String(instanceId)`) across all aquarium management functions (`isItemInAquarium`, `moveItemToAquarium`, `removeItemFromAquarium`), resolving inconsistent tank transfers.
+
+### 13. Enhanced Inventory & Creature Inspection Modal
+- Upgraded the inventory inspection system with an intuitive creature inspection icon and a live animated specimen canvas viewport displaying realistic swimming animations, origin realm badges, and personal crown record indicators.
+
+### 14. Multi-Realm Audio & Soundtrack Integration
+- Integrated distinct surface and underwater music tracks from `public/music/` across Realms 2 through 7 with clean state transitions and mutual exclusion to prevent track overlap.
+- **Realm 1 (Sunlit Shoals) original soundtrack remains completely unchanged** (`/sprites/seamusic.mp3` on the surface and `/sprites/oceanmusic2.mp3` underwater).
+
 ## Music
 
-The original `seamusic.mp3` and `oceanmusic2.mp3` play in Sunlit Shoals. Other realms use the six supplied recordings in `public/music/`: Aquarain (Trench), Meditation (Astral), Peaceful (Atlantis), Ocean Waves (Aether), Tropical House (Magma), and Ocean Vibes (Void). Radio stations use Tropical House, Aquarain, and Ocean Vibes. Radio overrides realm music until switched off. Sound effects are 20% quieter at the same slider setting.
+The original `seamusic.mp3` and `oceanmusic2.mp3` play in Sunlit Shoals and remain strictly unchanged. Realms 2 through 7 feature unique, curated surface and underwater soundtracks from `public/music/` (including Aquarain, Meditation, Peaceful, Ocean Waves, Tropical House, Ocean Vibes, and atmospheric variations). Transitions between surface and diving modes are seamlessly managed without audio overlap, and muted preferences persist reliably across sessions. Radio overrides realm music until switched off. Sound effects are 20% quieter at the same slider setting.
 
 ## Fleet Radio and Gem Store backend
 

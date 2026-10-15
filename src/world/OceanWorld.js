@@ -159,8 +159,11 @@ export class OceanWorld {
     this.entities.flora = [];
     this.entities.powerups = [];
 
-    this.boat.x = this.worldWidth * .5;
+    const activeWidth = (typeof screenWidth === 'number' && screenWidth > 200) ? screenWidth : (this.canvas?.clientWidth || this.worldWidth || 1200);
+    this.boat.x = activeWidth * .5;
     this.boat.y = this.surfaceY - 14;
+    this.boat.bobOffset = 0;
+    this.boat.angle = 0;
     this.updateRodTip();
     this.boat.vesselLevel = saveSystem.getUpgradeLevel('boatVessel') || 0;
 
@@ -182,7 +185,7 @@ export class OceanWorld {
 
     // Depth-band budgets prevent overlapping species habitats crowding the surface.
     const environment = { time: worldCycle.getTimeOfDay(), weather: worldCycle.getWeather(), minZoneTier: this.currentSeaId };
-    const rarityWeight = { common: 1, uncommon: 0.5, rare: 0.16, epic: 0.045, legendary: 0.012 };
+    const rarityWeight = { common: 1, uncommon: 0.5, rare: 0.16, epic: 0.045, legendary: 0.006 };
     const populateBands = (pool, density, weight, spawn) => {
       const limit = Math.min(activeMaxDepth, 3000);
       for (let start = 0; start < limit; start += 50) {
@@ -299,7 +302,7 @@ export class OceanWorld {
     });
 
     populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && !hazard.expedition && belongsToRealm(hazard, this.currentSeaId)),
-      depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards,
+      depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards * (depth > 1000 ? 0.86 : 1.0),
       hazard => {
         const isVolcano = this.currentSeaId === 6 && (/volcan|chimney|sulfur vent|lava pillar/i.test(hazard.name || '') || hazard.id === 'caldera_lava_pillar');
         if (isVolcano) return 0.22;
@@ -307,7 +310,7 @@ export class OceanWorld {
       },
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     populateBands(EXPEDITION_HAZARDS.filter(h => !h.expedition && h.seas.includes(this.currentSeaId)),
-      depth => .06 + .15 * depthProgress(depth), () => 1,
+      depth => (.06 + .15 * depthProgress(depth)) * (depth > 1000 ? 0.88 : 1.0), () => 1,
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     // Creature encounters are sparse groups, separate from static obstacles.
     for (const creature of HAZARD_TYPES.filter(h => h.marineKind && h.zone === this.currentSeaId)) {
@@ -317,7 +320,8 @@ export class OceanWorld {
       for (let depth = creature.minDepth; depth + 20 < end; depth += spacing) {
         const baseChance = creature.isColossal ? .22 : creature.marineKind === 'jelly' ? .3 : .22;
         const realmEnemyDampener = this.currentSeaId >= 5 ? 0.72 : 1.0;
-        const chance = baseChance * realmEnemyDampener;
+        const depthDampener = depth > 1000 ? 0.88 : 1.0;
+        const chance = baseChance * realmEnemyDampener * depthDampener;
         if (Math.random() >= Math.min(.85, chance * ecology.enemies * (1 + depthProgress(depth) * 1.8))) continue;
         const centerDepth = depth + 10 + Math.random() * Math.min(spacing - 20, end - depth - 20);
         const centerX = 120 + Math.random() * Math.max(1, this.worldWidth - 240);
@@ -425,9 +429,11 @@ export class OceanWorld {
     });
 
     // Boat wave physics
-    if (!Number.isFinite(this.boat.x) || this.boat.x <= 0 || (this.worldWidth && this.boat.x >= this.worldWidth)) {
-      this.boat.x = (this.worldWidth || 1200) * 0.5;
+    const activeWidth = (typeof screenWidth === 'number' && screenWidth > 200) ? screenWidth : (this.canvas?.clientWidth || this.worldWidth || 1200);
+    if (!Number.isFinite(this.boat.x) || this.boat.x <= 40 || this.boat.x >= activeWidth - 40) {
+      this.boat.x = activeWidth * 0.5;
     }
+    this.boat.x = Math.max(80, Math.min(activeWidth - 80, this.boat.x));
     const waveY = this.getWaveHeight(this.boat.x, this.waveTimer);
     const waveSlope = this.getWaveSlope(this.boat.x, this.waveTimer);
     this.boat.bobOffset = Number.isFinite(waveY) ? waveY : 0;
@@ -1282,10 +1288,11 @@ export class OceanWorld {
     const b = this.boat;
     b.width = Number.isFinite(b.width) && b.width > 0 ? b.width : 140;
     b.height = Number.isFinite(b.height) && b.height > 0 ? b.height : 40;
-    const wWidth = Number.isFinite(this.worldWidth) && this.worldWidth > 200 ? this.worldWidth : (this.canvas?.width || 1200);
-    if (!Number.isFinite(b.x) || b.x <= 40 || b.x >= wWidth - 40) {
-      b.x = wWidth * 0.5;
+    const currentScreenWidth = (typeof screenWidth === 'number' && screenWidth > 200) ? screenWidth : (this.canvas?.clientWidth || this.worldWidth || 1200);
+    if (!Number.isFinite(b.x) || b.x <= 40 || b.x >= currentScreenWidth - 40) {
+      b.x = currentScreenWidth * 0.5;
     }
+    b.x = Math.max(80, Math.min(currentScreenWidth - 80, b.x));
     if (!Number.isFinite(b.y)) b.y = surfaceY - 14;
     if (!Number.isFinite(b.angle)) b.angle = 0;
     const drawBoatY = isSurface ? (surfaceY - 14 + (Number.isFinite(b.bobOffset) ? b.bobOffset : 0)) : (b.y - effectiveCameraY);

@@ -28,7 +28,7 @@ export const NATIVE_ROSTERS = {
 
 const SALVAGE_IDS = new Set(['driftwood_branch', 'kelp_strand', 'rusty_can', 'mangrove_roots', 'glowing_moss', 'sunken_artifact', 'phosphor_crystal', 'sunken_anchor', 'abyssal_vent', 'lava_geode', 'obsidian_rock']);
 const VOLCANIC_IDS = new Set(['obsidian_pike', 'magma_ray', 'fire_conch', 'cinder_coelacanth']);
-export const VALUE_BY_RARITY = { common: 1, uncommon: 2, rare: 5, epic: 12, legendary: 42 };
+export const VALUE_BY_RARITY = { common: 1, uncommon: 2, rare: 5, epic: 12, legendary: 84 };
 export const isSalvageSpecies = species => SALVAGE_IDS.has(species.id);
 
 export function buildRealmFish(originals) {
@@ -211,7 +211,7 @@ export const REALM_HAZARDS = FANTASY_SEAS.flatMap(sea => HAZARDS[sea.id].map((na
   damage: 1 + Math.floor((sea.id + i) / 3), knockback: 22 + sea.id * 5 + i * 4,
   radius: i === 3 ? 48 : 18 + i * 6, isColossal: i === 3,
   pulseHazard: sea.id === 6 && i === 0 || sea.id === 2 && i === 1,
-  color: REALM_PROFILES[sea.id].colors[i], glow: REALM_PROFILES[sea.id].colors[(i + 1) % 5],
+  color: sea.id === 7 ? '#ef4444' : REALM_PROFILES[sea.id].colors[i], glow: sea.id === 7 ? '#ff3366' : REALM_PROFILES[sea.id].colors[(i + 1) % 5],
 })));
 export const REALM_TREASURES = FANTASY_SEAS.flatMap(sea => {
   const profile = REALM_PROFILES[sea.id];

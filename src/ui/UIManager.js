@@ -12,7 +12,7 @@ import { Treasure } from '../entities/Treasure.js';
 import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization, drawAngler, drawAquariumDecor, BOAT_TRINKETS, BOAT_SKIN_OPTIONS, drawBoatTrinket } from '../data/CustomizationData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
-import { FISH_SPECIES, DEPTH_ZONES, RARITY_CONFIG } from '../data/FishData.js';
+import { FISH_SPECIES, DEPTH_ZONES, RARITY_CONFIG, getSpeciesIcon } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { RELIC_TYPES } from '../data/RelicsData.js';
@@ -73,6 +73,17 @@ export class UIManager {
       this.showToast(`⭐ LEVEL UP! You reached Angler Level ${newLevel}! (+$${Math.min(750, newLevel * 100)})`);
       soundManager.playUpgrade();
     };
+
+    this.syncMuteButton();
+  }
+
+  syncMuteButton() {
+    const muteBtn = document.getElementById('btn-mute');
+    if (!muteBtn) return;
+    const isMuted = Boolean(this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted);
+    soundManager.setMuted(isMuted);
+    muteBtn.innerHTML = hudIcon(isMuted ? 'muted' : 'sound');
+    muteBtn.title = isMuted ? 'Unmute Sound' : 'Mute Sound';
   }
 
   setChatManager(manager) {
@@ -367,7 +378,7 @@ export class UIManager {
         <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">${hudIcon('radio')} <span class="btn-label">Radio</span></button>
         <button class="icon-btn" id="btn-settings" title="Settings">${hudIcon('settings')}</button>
         <button class="icon-btn" id="btn-tutorial" title="How to Play">${hudIcon('help')}</button>
-        <button class="icon-btn" id="btn-mute" title="Toggle Sound">${hudIcon('sound')}</button>
+        <button class="icon-btn" id="btn-mute" title="${(this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted) ? 'Unmute Sound' : 'Mute Sound'}">${hudIcon((this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted) ? 'muted' : 'sound')}</button>
       </div>
     `;
     document.body.appendChild(hud);
@@ -1527,12 +1538,14 @@ export class UIManager {
           : Math.max(1, Math.round(baseVal * sellMultiplier));
         subtotal += itemVal;
 
-        const isRelic = !!item.isRelic;
+        const isSafe = !!item.isSunkenSafe || item.category === 'safe' || item.id === 'sunken_safe';
+        const isRelic = !!item.isRelic || item.category === 'relic';
         const isFossil = item.category === 'fossil' || item.type === 'fossil';
-        const isTreasure = item.isTreasure && !isCrate;
-        const isFish = !isCrate && !isRelic && !isFossil && !isTreasure;
+        const isTreasure = (item.isTreasure || item.category === 'treasure') && !isCrate && !isSafe;
+        const isFish = !isCrate && !isRelic && !isFossil && !isTreasure && !isSafe;
 
-        const rarityBadge = `<span class="rarity-tag rarity-${item.rarity}">${item.isGodTier ? 'GOD TIER' : item.rarity.toUpperCase()}</span>`;
+        const itemRarity = item.rarity || item.species?.rarity || 'common';
+        const rarityBadge = `<span class="rarity-tag rarity-${itemRarity}">${item.isGodTier ? 'GOD TIER' : itemRarity.toUpperCase()}</span>`;
         const shinyTag = item.isShiny ? `<span class="shiny-tag"><svg viewBox="0 0 24 24" width="11" height="11" fill="#1e1b4b" style="vertical-align:middle;margin-right:2px;"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>SHINY</span>` : '';
         const fossilTag = isFossil ? `<span class="fossil-tag"><span style="display:inline-block;width:11px;height:11px;vertical-align:middle;margin-right:2px;">${JOURNAL_TAB_ART.fossils}</span>FOSSIL</span>` : '';
         const relicTag = isRelic ? `<span class="relic-tag" style="background:#854d0e;color:#fef08a;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;"><span style="display:inline-block;width:11px;height:11px;vertical-align:middle;margin-right:2px;">${JOURNAL_TAB_ART.relics}</span>${item.restored ? 'RESTORED' : 'RELIC'}</span>` : '';
@@ -1558,7 +1571,8 @@ export class UIManager {
           ? `<span class="aberration-tag" style="background:#581c87;color:#f3e8ff;border:1px solid #c084fc;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:800;">ABERRATION (${item.aberrationMult || 4.0}x)</span>`
           : '';
 
-        const instId = item.inventoryRef?.instanceId;
+        const instId = item.inventoryRef?.instanceId || item.instanceId || item._summaryId || (`catch_${itemIdx}`);
+        item._summaryId = instId;
 
         // Custom artwork slot: real canvas for fish, bespoke vector illustration for crates, fossils, relics, and treasures
         let iconHtml = '';
@@ -1566,18 +1580,20 @@ export class UIManager {
           iconHtml = `<canvas class="catch-item-canvas" id="catch-summary-canvas-${itemIdx}" width="112" height="88"></canvas>`;
         } else if (isCrate) {
           iconHtml = `<div class="catch-item-art-icon" style="transform: scale(0.65);">${crateArtwork(item.crateRank || 1)}</div>`;
+        } else if (isSafe) {
+          iconHtml = `<div class="catch-item-art-icon" style="font-size: 2.2rem; display: flex; align-items: center; justify-content: center;">🔒</div>`;
         } else if (isFossil) {
           iconHtml = `<div class="catch-item-art-icon">${FOSSIL_ART.boneFragment || JOURNAL_TAB_ART.fossils}</div>`;
         } else if (isRelic) {
           iconHtml = `<div class="catch-item-art-icon">${JOURNAL_TAB_ART.relics}</div>`;
         } else if (isTreasure) {
-          iconHtml = `<div class="catch-item-art-icon">${getTreasureArt(item)}</div>`;
+          iconHtml = `<div class="catch-item-art-icon">${getTreasureArt(item) || `<span style="font-size:2.2rem;">${getSpeciesIcon(item)}</span>`}</div>`;
         } else {
-          iconHtml = `<div class="catch-item-art-icon">${SHOP_ART.personalAquarium || JOURNAL_TAB_ART.almanac}</div>`;
+          iconHtml = `<div class="catch-item-art-icon" style="font-size: 2.2rem; display: flex; align-items: center; justify-content: center;">${getSpeciesIcon(item)}</div>`;
         }
 
         listHtml += `
-          <div class="catch-item-card rarity-border-${item.rarity}" id="catch-card-${instId}">
+          <div class="catch-item-card rarity-border-${itemRarity}" id="catch-card-${instId}">
             <div class="catch-item-icon">
               ${iconHtml}
             </div>
@@ -1589,12 +1605,14 @@ export class UIManager {
                     ? `<span>Rank ${item.crateRank || 1} Mystery Loot Crate • ${item.unboxed ? `Loot: <strong>${item.loot?.name || 'Claimed'}</strong>` : 'Crack open to claim loot!'}</span>`
                     : item.isBottle || item.id === 'bottle'
                     ? `<span>Drift Message in a Bottle • Uncork to read secret note!</span>`
-                    : !isTreasure && !isRelic
-                    ? `<span><strong>${item.size} cm</strong></span> <span>${item.weight} kg</span> ${item.crown ? `<span>• Size Record</span>` : ''}`
+                    : !isTreasure && !isRelic && !isSafe
+                    ? `<span><strong>${item.size || 0} cm</strong></span> <span>${item.weight || 0} kg</span> ${item.crown ? `<span>• Size Record</span>` : ''}`
                     : isRelic
                     ? `<span>Archaeological Artifact (${item.relicType?.era || 'Ancient'}) • ${item.restored ? 'Restored' : 'Needs Cleaning'}</span>`
                     : isFossil
                     ? `<span>Prehistoric Museum Specimen</span>`
+                    : isSafe
+                    ? `<span>Sunken Reinforced Lockbox</span>`
                     : `<span>Sunken Dredged Treasure</span>`
                 }
               </div>
@@ -1613,18 +1631,18 @@ export class UIManager {
                     : `+$${itemVal.toLocaleString()}`
                 }
               </div>
-              ${!isCrate && instId ? `
+              ${!isCrate ? `
                 <div class="catch-item-actions-row" id="catch-actions-${instId}">
                   ${item.isBottle || item.id === 'bottle' ? `
                     <button class="btn btn-sm btn-primary btn-catch-read-bottle" data-id="${instId}" style="background:#06b6d4; border-color:#0891b2; color:#fff;" title="Uncork and read message">
                       🍾 Read Message
                     </button>
                   ` : ''}
-                  <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" title="Keep safe in tackle box">
+                  <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" data-idx="${itemIdx}" title="Keep safe in tackle box">
                     <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.inventory}</span> Keep
                   </button>
                   ${!(item.isBottle || item.id === 'bottle') ? `
-                    <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-val="${itemVal}" title="Sell immediately for gold">
+                    <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-idx="${itemIdx}" data-val="${itemVal}" title="Sell immediately for gold">
                       <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sell Now
                     </button>
                   ` : ''}
@@ -1688,19 +1706,31 @@ export class UIManager {
 
     this.openModal('Dive Completed', modalBody);
 
-    // Render authentic fish previews onto summary canvases
+    // Render authentic fish previews onto summary canvases with bulletproof fallback icon
     hook.caughtItems.forEach((item, itemIdx) => {
       const canvas = document.getElementById(`catch-summary-canvas-${itemIdx}`);
-      if (!canvas) return;
+      if (!canvas || typeof canvas.getContext !== 'function') return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const fish = specimen(item, canvas.width / 2, canvas.height / 2);
-      if (fish) {
-        fish.scale = 1.35;
-        fish.direction = 1;
-        fish.render(ctx, 0);
+      let drawn = false;
+      try {
+        const fish = specimen(item, canvas.width / 2, canvas.height / 2);
+        if (fish) {
+          fish.scale = 1.35;
+          fish.direction = 1;
+          fish.render(ctx, 0);
+          drawn = true;
+        }
+      } catch (err) {
+        console.warn('Error drawing catch summary specimen canvas:', err);
+      }
+      if (!drawn) {
+        ctx.font = '36px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(getSpeciesIcon(item), canvas.width / 2, canvas.height / 2);
       }
     });
 
@@ -1733,7 +1763,7 @@ export class UIManager {
     document.querySelectorAll('.btn-catch-read-bottle').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const instId = e.currentTarget.dataset.id;
-        const caught = hook.caughtItems.find(i => (i.instanceId === instId || i._instanceId === instId || i.id === 'bottle'));
+        const caught = hook.caughtItems.find(i => (i.instanceId === instId || i._summaryId === instId || i.id === 'bottle'));
         const msg = caught?.bottleMessage || getRandomBottleMessage();
         this.showBottleMessage(msg);
       });
@@ -1751,6 +1781,17 @@ export class UIManager {
     document.querySelectorAll('.btn-catch-keep').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const instId = e.currentTarget.dataset.id;
+        const itemIdx = Number(e.currentTarget.dataset.idx);
+        const item = hook.caughtItems.find((i, idx) => (i.inventoryRef?.instanceId === instId || i._summaryId === instId || idx === itemIdx));
+        if (item && !item.inventoryRef) {
+          const added = this.saveSystem.addItemToInventory(item);
+          if (added) {
+            item.inventoryRef = added;
+          } else {
+            this.showToast('⚠️ Tackle box is full! Sell some items first.', { dismissOnFishing: true });
+            return;
+          }
+        }
         const actionsDiv = document.getElementById(`catch-actions-${instId}`);
         if (actionsDiv) {
           actionsDiv.innerHTML = `<span class="status-badge kept-badge"><span style="display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.inventory}</span> In Tackle Box</span>`;
@@ -1763,19 +1804,37 @@ export class UIManager {
     document.querySelectorAll('.btn-catch-sell').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const instId = e.currentTarget.dataset.id;
+        const itemIdx = Number(e.currentTarget.dataset.idx);
         if (soldIds.has(instId)) return;
-        const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
-        if (res) {
+        const item = hook.caughtItems.find((i, idx) => (i.inventoryRef?.instanceId === instId || i._summaryId === instId || idx === itemIdx));
+        let soldGold = 0;
+        let soldItemName = item?.name || 'Catch';
+
+        if (item?.inventoryRef?.instanceId) {
+          const res = this.saveSystem.sellInventoryItem(item.inventoryRef.instanceId, sellMultiplier);
+          if (res) {
+            soldGold = res.gold;
+            soldItemName = res.item.name;
+          }
+        }
+        if (soldGold === 0 && item) {
+          const baseVal = Number.isFinite(item.value) ? item.value : (item.loot && Number.isFinite(item.loot.coins) ? item.loot.coins : 350);
+          soldGold = Math.max(1, Math.round(baseVal * sellMultiplier));
+          this.saveSystem.addCoins(soldGold);
+        }
+
+        if (soldGold > 0) {
           soldIds.add(instId);
+          if (item) item._isSold = true;
           soundManager.playCoin();
           const actionsDiv = document.getElementById(`catch-actions-${instId}`);
           if (actionsDiv) {
-            actionsDiv.innerHTML = `<span class="status-badge sold-badge"><span style="display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sold (+$${res.gold.toLocaleString()})</span>`;
+            actionsDiv.innerHTML = `<span class="status-badge sold-badge"><span style="display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sold (+$${soldGold.toLocaleString()})</span>`;
           }
-          remainingGold = Math.max(0, remainingGold - res.gold);
+          remainingGold = Math.max(0, remainingGold - soldGold);
           const totalEl = document.getElementById('summary-total-cash');
           if (totalEl) totalEl.textContent = `+$${remainingGold.toLocaleString()}`;
-          this.showToast(`🪙 Sold ${res.item.name} for +$${res.gold.toLocaleString()}!`, { dismissOnFishing: true });
+          this.showToast(`🪙 Sold ${soldItemName} for +$${soldGold.toLocaleString()}!`, { dismissOnFishing: true });
         }
       });
     });
@@ -1783,25 +1842,67 @@ export class UIManager {
     // Keep All Catches
     document.getElementById('btn-keep-all-catches')?.addEventListener('click', () => {
       soundManager.playButtonClick();
+      let autoSoldTotal = 0;
+      let autoSoldCount = 0;
+      hook.caughtItems.forEach((item, itemIdx) => {
+        if (item.isCrate || item._isSold) return;
+        const instId = item.inventoryRef?.instanceId || item.instanceId || item._summaryId || (`catch_${itemIdx}`);
+        if (soldIds.has(instId)) return;
+        if (!item.inventoryRef) {
+          const added = this.saveSystem.addItemToInventory(item);
+          if (added) {
+            item.inventoryRef = added;
+          } else {
+            // Cannot fit into full tackle box, auto-sell so haul is not permanently lost
+            const baseVal = Number.isFinite(item.value) ? item.value : (item.loot && Number.isFinite(item.loot.coins) ? item.loot.coins : 350);
+            const gold = Math.max(1, Math.round(baseVal * sellMultiplier));
+            this.saveSystem.addCoins(gold);
+            soldIds.add(instId);
+            item._isSold = true;
+            autoSoldTotal += gold;
+            autoSoldCount++;
+          }
+        }
+      });
+      if (autoSoldCount > 0) {
+        soundManager.playCoin();
+        this.showToast(`⚠️ Tackle box full! Auto-sold ${autoSoldCount} overflow catches for +$${autoSoldTotal.toLocaleString()}!`, { dismissOnFishing: true });
+      }
+      const cont = onContinue;
       this._onCatchSummaryContinue = null;
       this.closeModal();
-      if (onContinue) onContinue();
+      if (typeof cont === 'function') {
+        cont();
+      }
     });
 
     // Sell All Catches Now
     document.getElementById('btn-sell-all-catches')?.addEventListener('click', () => {
       let soldCount = 0;
       let totalSoldGold = 0;
-      hook.caughtItems.forEach((item) => {
+      hook.caughtItems.forEach((item, itemIdx) => {
         if (item.isCrate) return;
-        const instId = item.inventoryRef?.instanceId;
-        if (instId && !soldIds.has(instId)) {
-          const res = this.saveSystem.sellInventoryItem(instId, sellMultiplier);
+        const instId = item.inventoryRef?.instanceId || item.instanceId || item._summaryId || (`catch_${itemIdx}`);
+        if (soldIds.has(instId) || item._isSold) return;
+
+        let gold = 0;
+        if (item.inventoryRef?.instanceId) {
+          const res = this.saveSystem.sellInventoryItem(item.inventoryRef.instanceId, sellMultiplier);
           if (res) {
-            soldIds.add(instId);
-            soldCount++;
-            totalSoldGold += res.gold;
+            gold = res.gold;
           }
+        }
+        if (gold === 0) {
+          const baseVal = Number.isFinite(item.value) ? item.value : (item.loot && Number.isFinite(item.loot.coins) ? item.loot.coins : 350);
+          gold = Math.max(1, Math.round(baseVal * sellMultiplier));
+          this.saveSystem.addCoins(gold);
+        }
+
+        if (gold > 0) {
+          soldIds.add(instId);
+          item._isSold = true;
+          soldCount++;
+          totalSoldGold += gold;
         }
       });
       if (soldCount > 0) {
@@ -1810,10 +1911,11 @@ export class UIManager {
       } else if (hook.caughtItems.some(i => i.isCrate && i.unboxed)) {
         this.showToast('🪙 Crate loot has been claimed and added to your purse!');
       }
+      const cont = onContinue;
       this._onCatchSummaryContinue = null;
       this.closeModal();
-      if (typeof onContinue === 'function') {
-        onContinue();
+      if (typeof cont === 'function') {
+        cont();
       }
     });
 
@@ -2417,6 +2519,7 @@ export class UIManager {
             <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
               <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
                 <h4 style="margin: 0; color: #f8fafc; font-size: 1.05rem; text-align: center;">${q.title}</h4>
+                ${q.rarity === 'rare' ? `<span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(240, 171, 252, 0.2); color: #f0abfc; border: 1px solid rgba(240, 171, 252, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700;">✨ RARE QUEST</span>` : ''}
                 <span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${q.category}</span>
                 <span style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.15); color: #facc15; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${q.realmIcon || '🏝️'} Sea ${q.realmId}: ${q.realmName || 'Sunlit Shoals'}</span>
               </div>
@@ -2433,7 +2536,7 @@ export class UIManager {
 
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%;">
             <div style="font-size: 0.95rem; color: #fef08a; font-weight: 700; text-align: center;">
-              💰 +${q.rewardCoins.toLocaleString()} Coins • ⭐ +${q.rewardXp} XP
+              💰 +${q.rewardCoins.toLocaleString()} Coins • ⭐ +${q.rewardXp} XP ${q.rewardGems ? `• <span style="color:#f0abfc;">💎 +${q.rewardGems} Gem${q.rewardGems > 1 ? 's' : ''}</span>` : ''}
               ${q.realmId > 1 ? `<span style="display: block; font-size: 0.76rem; color: #38bdf8; font-weight: 600; margin-top: 2px;">⚡ Scaled for ${q.realmName}</span>` : ''}
             </div>
             ${
@@ -2466,7 +2569,8 @@ export class UIManager {
         const claimed = this.questSystem.claimQuest(qId);
         if (claimed) {
           soundManager.playQuestComplete();
-          this.showToast(`🎉 Quest Claimed! ${claimed.title} (+${claimed.rewardCoins.toLocaleString()} • +${claimed.rewardXp} XP)!`);
+          const gemsText = claimed.rewardGems ? ` • +${claimed.rewardGems} Gems` : '';
+          this.showToast(`🎉 Quest Claimed! ${claimed.title} (+${claimed.rewardCoins.toLocaleString()} • +${claimed.rewardXp} XP${gemsText})!`);
           this.openQuestsModal();
         }
       };
@@ -4207,7 +4311,7 @@ export class UIManager {
           <div class="inventory-card rarity-border-${item.rarity} ${isLocked ? 'item-locked-border' : ''}">
             <div class="inv-card-header">
               <div class="inv-card-icon ${isFish ? 'inv-card-icon-canvas' : ''}" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
-                ${isFish ? `<canvas id="inv-fish-canvas-${item.instanceId}" width="64" height="48" class="inv-specimen-canvas" aria-label="${item.name}"></canvas>` : (item.icon || (isRelic ? '🏺' : isFossil ? '🦴' : '🐟'))}
+                ${isFish ? `<canvas id="inv-fish-canvas-${item.instanceId}" width="64" height="48" class="inv-specimen-canvas" aria-label="${item.name}"></canvas>` : (item.icon || getSpeciesIcon(item))}
               </div>
               <div class="inv-card-title-col">
                 <div class="inv-card-name">${item.name}</div>
@@ -4232,7 +4336,9 @@ export class UIManager {
 
             <div class="inv-card-actions">
               ${item.isCrate && !item.unboxed ? `<button class="btn btn-sm btn-primary btn-inv-open-crate" data-id="${item.instanceId}">Open Crate</button>` : ''}
-              <button class="btn btn-sm btn-outline btn-inspect-item" data-id="${item.instanceId}" title="Inspect details, lore, and records">🔍 Inspect</button>
+              <button class="btn btn-sm btn-outline btn-inspect-item" data-id="${item.instanceId}" title="Inspect ${item.name} details, lore & records">
+                <svg viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;margin-right:3px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6" stroke-width="1.8"/></svg>Inspect
+              </button>
 
               ${inTank ? `
                 <button class="btn btn-sm btn-secondary btn-tank-remove" data-id="${item.instanceId}" title="Remove from personal aquarium back to tackle box"><svg viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;margin-right:3px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Return</button>
@@ -4311,19 +4417,31 @@ export class UIManager {
 
     this.openModal("🎒 Inventory", modalBody);
 
-    // Render authentic specimen fish images on inventory cards
+    // Render authentic specimen fish images on inventory cards with bulletproof fallback icon
     filteredItems.forEach((item) => {
       if (item.type === 'fish' || item.species) {
         const canvas = document.getElementById(`inv-fish-canvas-${item.instanceId}`);
-        if (!canvas) return;
+        if (!canvas || typeof canvas.getContext !== 'function') return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const fish = specimen(item, canvas.width / 2, canvas.height / 2);
-        if (fish) {
-          fish.scale = 1.05;
-          fish.direction = 1;
-          fish.render(ctx, 0);
+        let drawn = false;
+        try {
+          const fish = specimen(item, canvas.width / 2, canvas.height / 2);
+          if (fish) {
+            fish.scale = 1.05;
+            fish.direction = 1;
+            fish.render(ctx, 0);
+            drawn = true;
+          }
+        } catch (err) {
+          console.warn('Error drawing inventory specimen canvas:', err);
+        }
+        if (!drawn) {
+          ctx.font = '24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(getSpeciesIcon(item), canvas.width / 2, canvas.height / 2);
         }
       }
     });
@@ -4499,6 +4617,15 @@ export class UIManager {
     const hasAq = save.hasAquarium();
     const tankFull = save.getAquariumItems().length >= save.getAquariumCapacity();
 
+    const sea = FANTASY_SEAS.find((s) => s.id === (item.zone || item.species?.zone || 1)) || FANTASY_SEAS[0];
+    const realmName = sea?.name || 'Sunlit Shoals';
+    const realmIcon = sea?.icon || '🏝️';
+
+    const journalEntry = save.data.journal?.[item.speciesId || item.id];
+    const isPbSize = journalEntry && item.size && item.size >= (journalEntry.maxSize || 0);
+    const isPbWeight = journalEntry && item.weight && item.weight >= (journalEntry.maxWeight || 0);
+    const pbBadge = (isPbSize || isPbWeight) ? `<span style="background: rgba(250, 204, 21, 0.2); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.5); padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">🏆 PERSONAL RECORD</span>` : '';
+
     const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
     const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
     const crownTag = item.crown === 'gold'
@@ -4510,23 +4637,27 @@ export class UIManager {
 
     const modalBody = `
       <div class="inspect-item-container">
-        <div class="inspect-item-hero rarity-border-${item.rarity}">
-          <div class="inspect-item-icon" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 4rem;">
-            ${item.icon || (isRelic ? '🏺' : isFossil ? '🦴' : '🐟')}
-          </div>
-          <div class="inspect-item-titles">
-            <h2>${item.name}</h2>
-            <div class="inspect-item-tags">${rarityBadge} ${shinyTag} ${mythicTag} ${crownTag}</div>
+        <div class="inspect-specimen-viewport" style="position:relative; width:100%; height:140px; background:radial-gradient(ellipse at center, rgba(15, 23, 42, 0.6) 0%, rgba(2, 6, 23, 0.95) 100%); border-radius:12px; margin-bottom:14px; overflow:hidden; border:1px solid ${item.primaryColor || '#38bdf8'}44; display:flex; align-items:center; justify-content:center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
+          <canvas id="inspect-specimen-canvas" width="340" height="140" style="width:100%; max-width:340px; height:140px; display:block;"></canvas>
+        </div>
+
+        <div class="inspect-item-hero rarity-border-${item.rarity}" style="margin-top:0;">
+          <div class="inspect-item-titles" style="text-align: center; width: 100%;">
+            <h2 style="margin: 0 0 6px 0; font-size: 1.35rem; color: #f8fafc;">${item.name}</h2>
+            <div class="inspect-item-tags" style="justify-content: center; display: flex; gap: 6px; flex-wrap: wrap;">
+              ${rarityBadge} ${shinyTag} ${mythicTag} ${crownTag} ${pbBadge}
+            </div>
           </div>
         </div>
 
         <div class="inspect-item-body">
-          ${item.lore ? `<p class="inspect-item-lore">${item.lore}</p>` : ''}
+          ${item.lore ? `<p class="inspect-item-lore" style="text-align: center; font-style: italic; color: #94a3b8; margin: 10px 0 14px 0; line-height: 1.45;">“${item.lore}”</p>` : ''}
 
           <div class="inspect-specs-grid">
+            <div class="inspect-spec"><span class="lbl">Origin Realm</span><strong>${realmIcon} ${realmName}</strong></div>
             ${isFish ? `
-              <div class="inspect-spec"><span class="lbl">Length</span><strong>${item.size || 0} cm</strong></div>
-              <div class="inspect-spec"><span class="lbl">Weight</span><strong>${item.weight || 0} kg</strong></div>
+              <div class="inspect-spec"><span class="lbl">Length</span><strong>${item.size || 0} cm ${isPbSize ? '⭐ PB' : ''}</strong></div>
+              <div class="inspect-spec"><span class="lbl">Weight</span><strong>${item.weight || 0} kg ${isPbWeight ? '⭐ PB' : ''}</strong></div>
               <div class="inspect-spec"><span class="lbl">Trophy Rank</span><strong>${item.crown ? `${item.crown.toUpperCase()} CROWN` : 'Standard'}</strong></div>
             ` : ''}
             ${isRelic ? `
@@ -4537,18 +4668,19 @@ export class UIManager {
             <div class="inspect-spec"><span class="lbl">Base Market Value</span><strong>$${(item.value || 0).toLocaleString()}</strong></div>
             <div class="inspect-spec"><span class="lbl">With Rod Bonus</span><strong style="color:#facc15;">🪙 $${itemVal.toLocaleString()}</strong></div>
             <div class="inspect-spec"><span class="lbl">Storage Status</span><strong>${inTank ? '🐠 In Personal Aquarium' : '🎒 In Tackle Box'}</strong></div>
+            <div class="inspect-spec"><span class="lbl">Lock Status</span><strong>${isLocked ? '🔒 Protected' : '🔓 Unlocked'}</strong></div>
           </div>
 
           <div class="inspect-actions-row">
             ${item.isBottle || item.id === 'bottle' ? '<button class="btn btn-primary" id="btn-inspect-open-bottle" style="background:#06b6d4; border-color:#0891b2; color:#fff;">🍾 Read Message in Bottle</button>' : ''}
             ${(item.isCrate || item.category === 'crate') && !item.unboxed ? '<button class="btn btn-primary" id="btn-inspect-open-crate">Open Mystery Crate</button>' : ''}
-            <button class="btn btn-secondary" id="btn-inspect-toggle-lock">${isLocked ? '🔓 Unlock Item' : '🔒 Lock Item'}</button>
+            <button class="btn btn-secondary" id="btn-inspect-toggle-lock"><svg viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;margin-right:4px;stroke:currentColor;fill:none;stroke-width:2;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${isLocked ? 'Unlock Item' : 'Lock Item'}</button>
 
             ${inTank ? `
-              <button class="btn btn-warning" id="btn-inspect-tank"><svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Return from Aquarium</button>
+              <button class="btn btn-warning" id="btn-inspect-tank"><svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Return from Tank</button>
             ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
               ${hasAq ? `
-                <button class="btn btn-primary" id="btn-inspect-tank" ${tankFull ? 'disabled title="Aquarium is full"' : ''}>🐠 Move to Aquarium</button>
+                <button class="btn btn-primary" id="btn-inspect-tank" ${tankFull ? 'disabled title="Aquarium is full"' : ''}>🐠 Move to Tank</button>
               ` : `
                 <button class="btn btn-disabled" disabled title="Unlock Personal Aquarium in Tackle Shop">🔒 Aquarium Locked</button>
               `}
@@ -4564,6 +4696,50 @@ export class UIManager {
     `;
 
     this.openModal(`🔍 Inspecting Catch: ${item.name}`, modalBody);
+
+    const canvas = document.getElementById('inspect-specimen-canvas');
+    if (canvas && typeof canvas.getContext === 'function') {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        if (isFish) {
+          const liveFish = specimen(item, 170, 70);
+          if (liveFish) {
+            let animHandle = null;
+            const animateSpecimen = () => {
+              if (this.activeModal !== 'inspectItem' || !document.getElementById('inspect-specimen-canvas')) {
+                if (animHandle) cancelAnimationFrame(animHandle);
+                return;
+              }
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              const spot = ctx.createRadialGradient(170, 70, 10, 170, 70, 140);
+              spot.addColorStop(0, `${item.primaryColor || '#38bdf8'}33`);
+              spot.addColorStop(1, 'rgba(0,0,0,0)');
+              ctx.fillStyle = spot;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+              liveFish.wiggleTimer = (liveFish.wiggleTimer || 0) + 0.04;
+              liveFish.x = 170;
+              liveFish.y = 70;
+              liveFish.render(ctx, 0);
+              animHandle = requestAnimationFrame(animateSpecimen);
+            };
+            animateSpecimen();
+          }
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const spot = ctx.createRadialGradient(170, 70, 10, 170, 70, 120);
+          spot.addColorStop(0, 'rgba(250, 204, 21, 0.22)');
+          spot.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = spot;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.font = '64px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(item.icon || getSpeciesIcon(item), 170, 70);
+        }
+      }
+    }
 
     document.getElementById('btn-inspect-open-bottle')?.addEventListener('click', () => {
       const msg = item.bottleMessage || getRandomBottleMessage();
