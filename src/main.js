@@ -459,7 +459,7 @@ function handlePointerMove(e) {
     oceanWorld.hoveredCompanion = null;
     if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
     lastSteerMode = 'mouse';
-    hook.setTargetX(mousePos.x);
+    hook.setTargetX(mousePos.x, screenWidth);
   }
 }
 
@@ -510,7 +510,7 @@ window.addEventListener('touchmove', (e) => {
   handlePointerMove(e);
   if (gameState === 'DESCENDING' || gameState === 'REELING') {
     lastSteerMode = 'mouse';
-    hook.setTargetX(mousePos.x);
+    hook.setTargetX(mousePos.x, screenWidth);
   }
 }, { passive: false });
 
@@ -637,13 +637,15 @@ const update = (dt) => {
 
   if (gameState === 'DESCENDING' || gameState === 'REELING') {
     if (isArrowLeft) {
-      hook.steer(-1, deltaSec);
+      hook.steer(-1, deltaSec, screenWidth);
     }
     if (isArrowRight) {
-      hook.steer(1, deltaSec);
+      hook.steer(1, deltaSec, screenWidth);
     }
     if (lastSteerMode === 'keyboard') {
       hook.targetX = hook.x;
+    } else if (lastSteerMode === 'mouse' && Number.isFinite(mousePos.x)) {
+      hook.setTargetX(mousePos.x, screenWidth);
     }
   }
 
@@ -1000,20 +1002,29 @@ const update = (dt) => {
     targetCameraY = 0;
     if (cameraY < 1 && cameraY > -1) cameraY = 0;
   } else if (gameState === 'REELING') {
-    // Keep hook lower on screen (~84% down) so player has a wide view of hazards and fish above
-    const verticalOffset = screenHeight * 0.84;
+    // Keep hook smoothly framed in lower-middle screen (~60% down) during fast reel-up
+    const verticalOffset = screenHeight * 0.60;
     const hookY = Number.isFinite(hook.y) ? hook.y : 0;
     targetCameraY = Math.max(0, hookY - verticalOffset);
   } else {
-    // CASTING or DESCENDING: Keep hook at ~38% down so player can see deeper waters below
-    const verticalOffset = screenHeight * 0.38;
+    // CASTING or DESCENDING: Keep hook at ~42% down so player can see deeper waters below
+    const verticalOffset = screenHeight * 0.42;
     const hookY = Number.isFinite(hook.y) ? hook.y : 0;
     targetCameraY = Math.max(0, hookY - verticalOffset);
   }
   if (!Number.isFinite(targetCameraY)) targetCameraY = 0;
   if (!Number.isFinite(cameraY)) cameraY = 0;
-  cameraY += (targetCameraY - cameraY) * 7.5 * deltaSec;
+  cameraY += (targetCameraY - cameraY) * 12.0 * deltaSec;
   if (!Number.isFinite(cameraY)) cameraY = 0;
+
+  // HARD SAFETY CLAMP: Keep hook strictly within visible viewport at all times
+  // Hook drawY is (hook.y - cameraY). Clamping ensures hook is NEVER pushed off-screen.
+  if (!isSurfaceState && Number.isFinite(hook.y) && hook.y > 0) {
+    const minHookScreenY = screenHeight * 0.15;
+    const maxHookScreenY = screenHeight * 0.85;
+    cameraY = Math.max(hook.y - maxHookScreenY, Math.min(hook.y - minHookScreenY, cameraY));
+    cameraY = Math.max(0, cameraY);
+  }
 
   // Physics/rendering stay at full speed; DOM counters only need 15 updates/sec.
   hudElapsed += dt;

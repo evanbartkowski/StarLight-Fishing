@@ -28,6 +28,7 @@ export class Hazard {
     const isVoidConfig = typeConfig.realmStyle === 'void' || typeConfig.zone === 7 || (typeConfig.id && String(typeConfig.id).includes('_7_'));
     this.glow = isVoidConfig ? '#ef4444' : (typeConfig.glow || '#ef4444');
     this.isColossal = !!typeConfig.isColossal;
+    this.isBlackHole = !!typeConfig.isBlackHole || (typeConfig.realmStyle === 'void' && (typeConfig.variant % 4 === 1)) || typeConfig.id === 'abyssal_black_hole';
     const isCaldera = this.realmStyle === 'caldera' || this.zone === 6 || typeConfig.zone === 6 || typeConfig.realmId === 6 || (this.type && String(this.type).includes('caldera')) || (this.name && /caldera|magma|volcan|obsidian|pyroclast/i.test(this.name));
     const isVolcanoObstacle = isCaldera && (this.type === 'caldera_lava_pillar' || (this.name && /volcan|chimney|sulfur vent|lava pillar/i.test(this.name)));
     const calderaScale = isVolcanoObstacle ? 2.85 : (isCaldera ? 1.65 : 1.0);
@@ -49,6 +50,20 @@ export class Hazard {
   update(dt, worldWidth, hook = null) {
     const deltaSec = dt / 1000;
     this.timer += this.pulseSpeed * deltaSec;
+
+    // Gravitational accretion pull from black hole obstacles on the fishing line/hook
+    if (this.isBlackHole && hook && ['DESCENDING', 'REELING'].includes(hook.state)) {
+      const gDx = this.x - hook.x;
+      const gDy = this.y - hook.y;
+      const gDist = Math.hypot(gDx, gDy);
+      const pullRange = this.radius * 3.6;
+      if (gDist > 10 && gDist < pullRange) {
+        const pullFactor = (1 - gDist / pullRange);
+        const pullSpeed = pullFactor * (this.isColossal ? 180 : 130) * deltaSec;
+        hook.x += (gDx / gDist) * pullSpeed;
+        hook.y += (gDy / gDist) * pullSpeed * 0.45;
+      }
+    }
     if (this.marineKind && hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.abs(hook.x - this.x) > 1) {
       this.facing = Math.sign(hook.x - this.x);
     }
@@ -163,6 +178,157 @@ export class Hazard {
       + ((y - this.y) / (verticalRadius + hookRadius)) ** 2 < 1;
   }
 
+  renderUnderwaterBlackHole(ctx, r) {
+    ctx.save();
+    const t = this.timer || 0;
+    const spin = t * 1.6;
+    const rs = r * 0.44; // Event horizon radius
+    const rPhoton = rs * 1.5; // Photon ring radius
+    const rDisk = r * 1.1; // Outer accretion disk radius
+
+    // 1. Outer Gravitational Lensing Halo (Einstein Ring)
+    ctx.save();
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 18;
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 1.05, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Secondary warped lensing arcs
+    for (let l = 0; l < 4; l++) {
+      const lAngle = spin * 0.6 + l * (Math.PI / 2);
+      ctx.strokeStyle = l % 2 === 0 ? 'rgba(56, 189, 248, 0.55)' : 'rgba(244, 63, 94, 0.65)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * (0.85 + (l % 2) * 0.15), lAngle, lAngle + 0.9);
+      ctx.stroke();
+    }
+
+    // 2. Relativistic Plasma Jets along rotation axis
+    ctx.save();
+    for (const jetDir of [-1, 1]) {
+      const jetLen = r * 1.25;
+      const jetGrad = ctx.createLinearGradient(0, 0, 0, jetDir * jetLen);
+      jetGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      jetGrad.addColorStop(0.25, 'rgba(56, 189, 248, 0.85)');
+      jetGrad.addColorStop(0.65, 'rgba(168, 85, 247, 0.6)');
+      jetGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+      ctx.strokeStyle = jetGrad;
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(0, jetDir * rs * 0.5);
+      ctx.lineTo(0, jetDir * jetLen);
+      ctx.stroke();
+
+      // Synchrotron shock diamonds
+      for (let s = 1; s <= 3; s++) {
+        const sy = jetDir * (rs * 0.7 + s * (r * 0.28));
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, sy, Math.max(1.2, 2.8 - s * 0.6), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    // 3. Rear Gravitational Lensing of the Accretion Disk (Loops over top & bottom of Event Horizon)
+    ctx.save();
+    const topLensGrad = ctx.createLinearGradient(-rDisk, 0, rDisk, 0);
+    topLensGrad.addColorStop(0, 'rgba(56, 189, 248, 0.85)'); // Approaching (Doppler blue-shifted)
+    topLensGrad.addColorStop(0.45, 'rgba(254, 240, 138, 0.95)');
+    topLensGrad.addColorStop(0.7, 'rgba(249, 115, 22, 0.85)');
+    topLensGrad.addColorStop(1, 'rgba(220, 38, 38, 0.55)'); // Receding (Doppler red-shifted)
+    ctx.strokeStyle = topLensGrad;
+    ctx.lineWidth = r * 0.22;
+    ctx.beginPath();
+    ctx.ellipse(0, -rs * 0.35, r * 0.82, rs * 1.15, 0, Math.PI, 0);
+    ctx.stroke();
+
+    // Bottom warped lensing arc
+    ctx.strokeStyle = 'rgba(244, 63, 94, 0.5)';
+    ctx.lineWidth = r * 0.14;
+    ctx.beginPath();
+    ctx.ellipse(0, rs * 0.35, r * 0.82, rs * 1.05, 0, 0, Math.PI);
+    ctx.stroke();
+    ctx.restore();
+
+    // 4. Front Tilted 3D Relativistic Accretion Disk
+    ctx.save();
+    const diskTilt = 0.28;
+    ctx.rotate(diskTilt);
+    const diskGrad = ctx.createLinearGradient(-rDisk, 0, rDisk, 0);
+    diskGrad.addColorStop(0, '#38bdf8'); // Approaching: bright cyan/blue
+    diskGrad.addColorStop(0.2, '#fef08a'); // Superheated inner edge
+    diskGrad.addColorStop(0.5, '#f97316'); // Core orange
+    diskGrad.addColorStop(0.85, '#ef4444'); // Receding crimson
+    diskGrad.addColorStop(1, '#991b1b');
+    ctx.strokeStyle = diskGrad;
+    ctx.shadowColor = '#f43f5e';
+    ctx.shadowBlur = 12;
+    ctx.lineWidth = r * 0.28;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rDisk, rDisk * 0.38, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Swirling matter filaments in accretion disk
+    for (let f = 0; f < 6; f++) {
+      const fAngle = spin * 1.4 + f * 1.05;
+      const fRad = r * (0.6 + (f % 3) * 0.16);
+      ctx.strokeStyle = f % 2 === 0 ? 'rgba(255, 255, 255, 0.8)' : 'rgba(254, 240, 138, 0.7)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, fRad, fRad * 0.36, fAngle, 0, 1.2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 5. Photon Sphere Ring (1.5 Rs)
+    ctx.save();
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = 14;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, rPhoton, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, rPhoton + 1.8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // 6. Event Horizon: Absolute pitch-black singularity core
+    ctx.fillStyle = '#020108';
+    ctx.beginPath();
+    ctx.arc(0, 0, rs, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Sharp silhouette border
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2.0;
+    ctx.stroke();
+
+    // 7. Inward spiraling relativistic dust particles
+    for (let p = 0; p < 7; p++) {
+      const progress = ((t * 45 + p * 20) % 100) / 100;
+      const pDist = rs + (1 - progress) * (r * 0.65);
+      const pAngle = spin * 2.2 + p * 0.9 + progress * 3.0;
+      ctx.fillStyle = p % 2 === 0 ? '#ffffff' : (p % 3 === 0 ? '#38bdf8' : '#ff2b55');
+      ctx.beginPath();
+      ctx.arc(Math.cos(pAngle) * pDist, Math.sin(pAngle) * pDist * 0.6, 2.0 * (1 - progress * 0.5), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   renderRealmHazard(ctx) {
     const isVoid = this.realmStyle === 'void' || this.zone === 7 || this.behavior?.zone === 7;
     const r = this.radius / this.sizeScale;
@@ -185,249 +351,337 @@ export class Hazard {
         ctx.lineTo(x + 9, r * 0.55); ctx.closePath(); ctx.fill(); ctx.stroke();
       }
     } else if (this.realmStyle === 'lava') {
-      // Magma Caldera Trench: Active volcanic obstacles to avoid
+      // Magma Caldera Trench: Distinct, recognizable volcanic obstacles
       const lavaVariant = (this.variant || 0) % 4;
       const t = this.timer || 0;
       const pulseLava = 0.5 + 0.5 * Math.sin(t * 3.5);
 
       if (lavaVariant === 0) {
-        // 0. Boiling Sulfur Vent: Volcanic chimney cone bubbling violently with sulfurous steam & molten sulfur crust
+        // 0. Submarine Volcano Caldera Cone: Distinct volcanic cone with caldera crater lake, magma cascades & billowing steam
         ctx.save();
-        // Basalt cone gradient
-        const coneGrad = ctx.createLinearGradient(-r * 0.75, 0, r * 0.75, 0);
-        coneGrad.addColorStop(0, '#1c1917');
-        coneGrad.addColorStop(0.3, '#292524');
-        coneGrad.addColorStop(0.7, '#1c1917');
-        coneGrad.addColorStop(1, '#0c0a09');
+        const coneBaseW = r * 0.95;
+        const coneTopW = r * 0.44;
+
+        // Basalt cone silhouette with stratified rock gradient
+        const coneGrad = ctx.createLinearGradient(-coneBaseW, 0, coneBaseW, 0);
+        coneGrad.addColorStop(0, '#09090b');
+        coneGrad.addColorStop(0.2, '#1c1917');
+        coneGrad.addColorStop(0.5, '#292524');
+        coneGrad.addColorStop(0.8, '#1c1917');
+        coneGrad.addColorStop(1, '#09090b');
         ctx.fillStyle = coneGrad;
         ctx.strokeStyle = '#44403c';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.4;
+
         ctx.beginPath();
-        ctx.moveTo(-r * 0.75, r * 0.65);
-        ctx.lineTo(-r * 0.35, -r * 0.55);
-        ctx.quadraticCurveTo(0, -r * 0.45, r * 0.35, -r * 0.55);
-        ctx.lineTo(r * 0.75, r * 0.65);
+        ctx.moveTo(-coneBaseW, r * 0.75);
+        ctx.lineTo(-coneBaseW * 0.85, r * 0.2); // Jagged stepped terrace
+        ctx.lineTo(-coneTopW, -r * 0.6);
+        ctx.quadraticCurveTo(0, -r * 0.5, coneTopW, -r * 0.6);
+        ctx.lineTo(coneBaseW * 0.85, r * 0.2);
+        ctx.lineTo(coneBaseW, r * 0.75);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        // Layered rock ridges on vent cone
-        ctx.strokeStyle = '#292524';
+        // Horizontal tephra/ash stratification lines
+        ctx.strokeStyle = '#1c1917';
         ctx.lineWidth = 1.6;
-        for (let l = -2; l <= 2; l++) {
+        for (let s = -2; s <= 2; s++) {
+          const sy = r * 0.15 + s * (r * 0.22);
+          const sw = coneBaseW * (0.85 - s * 0.12);
           ctx.beginPath();
-          ctx.moveTo(l * r * 0.25 - r * 0.1, r * 0.6);
-          ctx.lineTo(l * r * 0.12, -r * 0.4);
+          ctx.moveTo(-sw, sy);
+          ctx.lineTo(sw, sy + s * 2);
           ctx.stroke();
         }
 
-        // Bubbling molten sulfur caldera lake at top
-        ctx.fillStyle = '#eab308';
-        ctx.shadowColor = '#facc15';
+        // Glowing magma fissures spilling down volcanic flanks
+        ctx.strokeStyle = '#ef4444';
+        ctx.shadowColor = '#f97316';
         ctx.shadowBlur = 10;
+        ctx.lineWidth = 2.8;
         ctx.beginPath();
-        ctx.ellipse(0, -r * 0.55, r * 0.35, r * 0.12, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fef08a';
-        ctx.beginPath();
-        ctx.ellipse(0, -r * 0.56, r * 0.22, r * 0.07, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Magma fissures running down the basalt flank
-        ctx.strokeStyle = '#f97316';
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 6;
-        ctx.lineWidth = 2.2;
-        ctx.beginPath();
-        ctx.moveTo(-r * 0.15, -r * 0.5); ctx.lineTo(-r * 0.25, 0); ctx.lineTo(-r * 0.4, r * 0.4);
-        ctx.moveTo(r * 0.1, -r * 0.5); ctx.lineTo(r * 0.2, -r * 0.1); ctx.lineTo(r * 0.35, r * 0.35);
+        ctx.moveTo(-coneTopW * 0.6, -r * 0.55);
+        ctx.lineTo(-r * 0.35, -r * 0.1);
+        ctx.lineTo(-r * 0.55, r * 0.45);
+        ctx.moveTo(coneTopW * 0.5, -r * 0.55);
+        ctx.lineTo(r * 0.25, -r * 0.15);
+        ctx.lineTo(r * 0.42, r * 0.5);
         ctx.stroke();
+
         ctx.strokeStyle = '#fef08a';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.2;
         ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        // Rising sulfur bubbles and hot cinder steam
-        ctx.fillStyle = `rgba(250, 204, 21, ${0.75 + pulseLava * 0.25})`;
+        // Boiling molten sulfur/magma caldera lake inside summit crater
+        const craterGrad = ctx.createRadialGradient(0, -r * 0.6, 2, 0, -r * 0.6, coneTopW);
+        craterGrad.addColorStop(0, '#ffffff');
+        craterGrad.addColorStop(0.3, '#fef08a');
+        craterGrad.addColorStop(0.65, '#ea580c');
+        craterGrad.addColorStop(1, '#7f1d1d');
+        ctx.fillStyle = craterGrad;
         ctx.shadowColor = '#f59e0b';
-        ctx.shadowBlur = 4;
-        for (let b = 0; b < 4; b++) {
-          const by = -r * 0.65 - ((t * 40 + b * 22) % (r * 0.85));
-          const bx = Math.sin(t * 4 + b * 1.8) * (r * 0.2);
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.6, coneTopW, r * 0.18, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Billowing translucent sulfur steam plumes & volcanic cavitation gas bubbles
+        for (let b = 0; b < 6; b++) {
+          const by = -r * 0.7 - ((t * 48 + b * 26) % (r * 1.1));
+          const bx = Math.sin(t * 3.5 + b * 1.6) * (r * 0.28);
+          const bRad = Math.max(2.5, r * 0.08 - (by / (-r * 1.5)) * 2);
+          ctx.fillStyle = b % 2 === 0 ? 'rgba(254, 240, 138, 0.75)' : 'rgba(251, 146, 60, 0.65)';
           ctx.beginPath();
-          ctx.arc(bx, by, Math.max(2, r * 0.055 - (by / (-r * 1.2)) * 1.5), 0, Math.PI * 2);
+          ctx.arc(bx, by, bRad, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
       } else if (lavaVariant === 1) {
-        // 1. Erupting Basalt Spikes: Sharp clustered obsidian basalt needles with glowing molten red lava channels
+        // 1. Columnar Basalt & Obsidian Needles: Prismatic hexagonal columns with glowing magma seams and razor obsidian tips
         ctx.save();
-        const numSpikes = 5;
-        for (let s = 0; s < numSpikes; s++) {
-          const sx = (s / (numSpikes - 1) - 0.5) * r * 1.5;
-          const sh = r * (0.7 + Math.sin(s * 3.7 + 1) * 0.35);
-          
-          // Obsidian spike core
-          const spikeGrad = ctx.createLinearGradient(sx - r * 0.18, 0, sx + r * 0.18, 0);
-          spikeGrad.addColorStop(0, '#0c0a09');
-          spikeGrad.addColorStop(0.5, '#292524');
-          spikeGrad.addColorStop(1, '#1c1917');
-          ctx.fillStyle = spikeGrad;
+        const numCols = 5;
+        const colWidth = r * 0.32;
+        for (let c = 0; c < numCols; c++) {
+          const cx = (c - (numCols - 1) / 2) * colWidth * 0.88;
+          const colHeight = r * (0.8 + Math.sin(c * 2.8 + 0.8) * 0.35);
+          const topY = -colHeight;
+          const botY = r * 0.75;
+
+          // 3D Hexagonal Columnar Basalt Body
+          const bGrad = ctx.createLinearGradient(cx - colWidth * 0.5, 0, cx + colWidth * 0.5, 0);
+          bGrad.addColorStop(0, '#0c0a09');
+          bGrad.addColorStop(0.3, '#1c1917');
+          bGrad.addColorStop(0.7, '#292524');
+          bGrad.addColorStop(1, '#0c0a09');
+          ctx.fillStyle = bGrad;
           ctx.strokeStyle = '#44403c';
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 1.8;
+
           ctx.beginPath();
-          ctx.moveTo(sx - r * 0.18, r * 0.65);
-          ctx.lineTo(sx - r * 0.04, -sh);
-          ctx.lineTo(sx + r * 0.18, r * 0.65);
+          ctx.moveTo(cx - colWidth * 0.5, botY);
+          ctx.lineTo(cx - colWidth * 0.5, topY);
+          ctx.lineTo(cx, topY - colWidth * 0.35); // Sharp prismatic needle top
+          ctx.lineTo(cx + colWidth * 0.5, topY);
+          ctx.lineTo(cx + colWidth * 0.5, botY);
           ctx.closePath();
           ctx.fill();
           ctx.stroke();
 
-          // Glassy reflection facet
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+          // Hexagonal facet ridge down column center
+          ctx.strokeStyle = '#1c1917';
+          ctx.lineWidth = 1.4;
           ctx.beginPath();
-          ctx.moveTo(sx - r * 0.04, -sh);
-          ctx.lineTo(sx + r * 0.08, r * 0.65);
-          ctx.lineTo(sx - r * 0.04, r * 0.65);
+          ctx.moveTo(cx, topY - colWidth * 0.35);
+          ctx.lineTo(cx, botY);
+          ctx.stroke();
+
+          // Glossy glassy obsidian facet reflection
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+          ctx.beginPath();
+          ctx.moveTo(cx, topY - colWidth * 0.35);
+          ctx.lineTo(cx + colWidth * 0.45, topY + colWidth * 0.2);
+          ctx.lineTo(cx, botY);
           ctx.closePath();
           ctx.fill();
 
-          // Searing lava artery up the spike spine
+          // Molten magma artery in column crevice
           ctx.strokeStyle = '#ef4444';
           ctx.shadowColor = '#f97316';
           ctx.shadowBlur = 8;
-          ctx.lineWidth = 2.4;
+          ctx.lineWidth = 2.2;
           ctx.beginPath();
-          ctx.moveTo(sx - r * 0.04, -sh);
-          ctx.lineTo(sx, -sh * 0.4);
-          ctx.lineTo(sx - r * 0.05, r * 0.3);
+          ctx.moveTo(cx - colWidth * 0.1, topY + colWidth * 0.1);
+          ctx.lineTo(cx, topY + colHeight * 0.5);
+          ctx.lineTo(cx - colWidth * 0.15, botY);
           ctx.stroke();
-
           ctx.strokeStyle = '#fef08a';
-          ctx.lineWidth = 1.0;
-          ctx.beginPath();
-          ctx.moveTo(sx - r * 0.04, -sh);
-          ctx.lineTo(sx, -sh * 0.4);
+          ctx.lineWidth = 0.9;
           ctx.stroke();
+          ctx.shadowBlur = 0;
 
-          // Molten hot tip spark
+          // Searing needle apex spark
           ctx.fillStyle = '#fde047';
           ctx.beginPath();
-          ctx.arc(sx - r * 0.04, -sh, Math.max(2.5, r * 0.045), 0, Math.PI * 2);
+          ctx.arc(cx, topY - colWidth * 0.35, 2.8, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
       } else if (lavaVariant === 2) {
-        // 2. Molten Chain Cluster: Incandescent slag boulders wrapped in red-hot glowing forged chains
+        // 2. Chained Molten Planetary Core: Fractured incandescent magma sphere tightly bound by heavy titan forged iron chains
         ctx.save();
-        // Fiery mantle halo
-        ctx.fillStyle = '#450a0a';
-        ctx.beginPath();
-        ctx.ellipse(0, 0, r * 0.68, r * 0.58, 0.2, 0, Math.PI * 2);
-        ctx.fill();
+        const coreR = r * 0.72;
 
-        ctx.fillStyle = '#ea580c';
-        ctx.shadowColor = '#f97316';
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, r * 0.48, r * 0.4, 0.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Hardened jagged basalt crust plates
-        ctx.fillStyle = '#1c1917';
-        ctx.beginPath();
-        ctx.arc(-r * 0.2, -r * 0.1, r * 0.24, 0, Math.PI * 2);
-        ctx.arc(r * 0.25, r * 0.12, r * 0.26, 0, Math.PI * 2);
-        ctx.arc(0, r * 0.25, r * 0.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#44403c';
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-
-        // Red-hot glowing forged iron chains
-        ctx.strokeStyle = '#facc15';
+        // Searing liquid magma core with intense thermal glow
+        const coreGrad = ctx.createRadialGradient(0, 0, coreR * 0.1, 0, 0, coreR);
+        coreGrad.addColorStop(0, '#ffffff');
+        coreGrad.addColorStop(0.25, '#fef08a');
+        coreGrad.addColorStop(0.55, '#f97316');
+        coreGrad.addColorStop(0.85, '#dc2626');
+        coreGrad.addColorStop(1, '#450a0a');
+        ctx.fillStyle = coreGrad;
         ctx.shadowColor = '#ea580c';
-        ctx.shadowBlur = 8;
-        ctx.lineWidth = 3.2;
+        ctx.shadowBlur = 18;
         ctx.beginPath();
-        ctx.moveTo(-r * 0.65, -r * 0.2);
-        ctx.quadraticCurveTo(0, -r * 0.4, r * 0.65, -r * 0.1);
-        ctx.moveTo(-r * 0.55, r * 0.25);
-        ctx.quadraticCurveTo(0, r * 0.45, r * 0.55, r * 0.2);
-        ctx.stroke();
+        ctx.arc(0, 0, coreR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
 
-        // Chain link links
+        // Hardened jagged basalt tectonic crust plates floating over magma
+        const plates = [
+          { x: -coreR * 0.45, y: -coreR * 0.35, r: coreR * 0.42 },
+          { x: coreR * 0.42, y: -coreR * 0.28, r: coreR * 0.38 },
+          { x: -coreR * 0.25, y: coreR * 0.42, r: coreR * 0.45 },
+          { x: coreR * 0.38, y: coreR * 0.36, r: coreR * 0.40 },
+          { x: 0, y: 0, r: coreR * 0.32 },
+        ];
+        ctx.fillStyle = '#1c1917';
+        ctx.strokeStyle = '#44403c';
         ctx.lineWidth = 1.8;
-        ctx.strokeStyle = '#78350f';
-        for (let l = -3; l <= 3; l++) {
+        for (const plate of plates) {
           ctx.beginPath();
-          ctx.arc(l * r * 0.18, -r * 0.25 + Math.abs(l) * r * 0.05, 3.5, 0, Math.PI * 2);
+          ctx.arc(plate.x, plate.y, plate.r, 0, Math.PI * 2);
+          ctx.fill();
           ctx.stroke();
+        }
+
+        // Molten lava fissures glowing between the crust plates
+        ctx.strokeStyle = '#fde047';
+        ctx.shadowColor = '#f97316';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.moveTo(-coreR * 0.6, 0); ctx.lineTo(-coreR * 0.15, -coreR * 0.1); ctx.lineTo(coreR * 0.2, coreR * 0.1); ctx.lineTo(coreR * 0.65, 0);
+        ctx.moveTo(0, -coreR * 0.6); ctx.lineTo(-coreR * 0.08, 0); ctx.lineTo(0, coreR * 0.6);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Heavy titan forged iron chains binding the magma core
+        const chainPaths = [
+          [-coreR * 0.85, -coreR * 0.3, 0, -coreR * 0.55, coreR * 0.85, -coreR * 0.2],
+          [-coreR * 0.8, coreR * 0.35, 0, coreR * 0.6, coreR * 0.8, coreR * 0.3],
+          [-coreR * 0.3, -coreR * 0.85, 0, 0, coreR * 0.35, coreR * 0.85],
+        ];
+
+        for (const [x1, y1, cx, cy, x2, y2] of chainPaths) {
+          // Glow beneath chain
+          ctx.strokeStyle = 'rgba(234, 88, 12, 0.7)';
+          ctx.lineWidth = 5.0;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(cx, cy, x2, y2);
+          ctx.stroke();
+
+          // Dark iron chain body
+          ctx.strokeStyle = '#27272a';
+          ctx.lineWidth = 3.6;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.quadraticCurveTo(cx, cy, x2, y2);
+          ctx.stroke();
+
+          // Individual interlocking chain links and rivets
+          const steps = 7;
+          for (let st = 0; st <= steps; st++) {
+            const ratio = st / steps;
+            const lx = (1 - ratio) * (1 - ratio) * x1 + 2 * (1 - ratio) * ratio * cx + ratio * ratio * x2;
+            const ly = (1 - ratio) * (1 - ratio) * y1 + 2 * (1 - ratio) * ratio * cy + ratio * ratio * y2;
+            ctx.fillStyle = st % 2 === 0 ? '#ea580c' : '#71717a';
+            ctx.beginPath();
+            ctx.arc(lx, ly, 3.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#09090b';
+            ctx.lineWidth = 1.0;
+            ctx.stroke();
+          }
         }
         ctx.restore();
       } else {
-        // 3. Caldera Lava Chimney (Colossal): Massive volcanic spire with cascading liquid lava flutes
+        // 3. Colossal Hydrothermal Black Smoker Spire: Towering deepsea volcanic chimney with billowing black smoker plumes & lava flumes
         ctx.save();
-        // Colossal volcanic spire silhouette with basalt rock shading
-        const spireGrad = ctx.createLinearGradient(-r * 0.8, 0, r * 0.8, 0);
-        spireGrad.addColorStop(0, '#0c0a09');
-        spireGrad.addColorStop(0.35, '#27272a');
-        spireGrad.addColorStop(0.7, '#18181b');
+        const spireBaseW = r * 0.88;
+        const spireTopW = r * 0.48;
+
+        // Mineral sulfide chimney silhouette with jagged terraces
+        const spireGrad = ctx.createLinearGradient(-spireBaseW, 0, spireBaseW, 0);
+        spireGrad.addColorStop(0, '#09090b');
+        spireGrad.addColorStop(0.2, '#18181b');
+        spireGrad.addColorStop(0.5, '#27272a');
+        spireGrad.addColorStop(0.8, '#18181b');
         spireGrad.addColorStop(1, '#09090b');
         ctx.fillStyle = spireGrad;
         ctx.strokeStyle = '#3f3f46';
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2.4;
+
         ctx.beginPath();
-        ctx.moveTo(-r * 0.8, r * 0.8);
-        ctx.lineTo(-r * 0.5, -r * 0.7);
-        ctx.lineTo(r * 0.5, -r * 0.7);
-        ctx.lineTo(r * 0.8, r * 0.8);
+        ctx.moveTo(-spireBaseW, r * 0.85);
+        ctx.lineTo(-spireBaseW * 0.75, r * 0.35); // Lower terrace
+        ctx.lineTo(-spireBaseW * 0.55, -r * 0.1); // Middle terrace
+        ctx.lineTo(-spireTopW, -r * 0.75); // Summit chimney rim
+        ctx.lineTo(spireTopW, -r * 0.75);
+        ctx.lineTo(spireBaseW * 0.55, -r * 0.1);
+        ctx.lineTo(spireBaseW * 0.75, r * 0.35);
+        ctx.lineTo(spireBaseW, r * 0.85);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
+        // Sulfide mineral crusting (pyrite and sulfur deposits) on chimney walls
+        ctx.fillStyle = '#ca8a04';
+        for (const pos of [-0.4, -0.15, 0.25, 0.5]) {
+          ctx.beginPath();
+          ctx.arc(pos * spireBaseW * 0.7, r * 0.2 + pos * 15, r * 0.12, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
         // Cascading incandescent liquid lava waterfall flutes
-        ctx.strokeStyle = '#dc2626';
+        ctx.strokeStyle = '#ef4444';
         ctx.shadowColor = '#f97316';
         ctx.shadowBlur = 14;
         ctx.lineWidth = r * 0.14;
         ctx.beginPath();
-        ctx.moveTo(-r * 0.2, -r * 0.65);
-        ctx.lineTo(-r * 0.35, 0);
-        ctx.lineTo(-r * 0.4, r * 0.75);
-        ctx.moveTo(r * 0.2, -r * 0.65);
-        ctx.lineTo(r * 0.25, r * 0.1);
-        ctx.lineTo(r * 0.35, r * 0.75);
+        ctx.moveTo(-spireTopW * 0.5, -r * 0.7);
+        ctx.lineTo(-r * 0.28, 0);
+        ctx.lineTo(-r * 0.35, r * 0.8);
+        ctx.moveTo(spireTopW * 0.4, -r * 0.7);
+        ctx.lineTo(r * 0.22, 0.1);
+        ctx.lineTo(r * 0.32, r * 0.8);
         ctx.stroke();
 
-        ctx.strokeStyle = '#facc15';
+        ctx.strokeStyle = '#fef08a';
         ctx.lineWidth = r * 0.05;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Active hydrothermal vent orifices at summit
+        ctx.fillStyle = '#1c1917';
         ctx.beginPath();
-        ctx.moveTo(-r * 0.2, -r * 0.65);
-        ctx.lineTo(-r * 0.35, 0);
-        ctx.lineTo(-r * 0.4, r * 0.75);
-        ctx.moveTo(r * 0.2, -r * 0.65);
-        ctx.lineTo(r * 0.25, r * 0.1);
-        ctx.lineTo(r * 0.35, r * 0.75);
+        ctx.ellipse(0, -r * 0.75, spireTopW, r * 0.16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ca8a04';
+        ctx.lineWidth = 2.0;
         ctx.stroke();
 
-        // Boiling caldera crater mouth
-        ctx.fillStyle = '#ea580c';
-        ctx.beginPath();
-        ctx.ellipse(0, -r * 0.7, r * 0.48, r * 0.15, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fde047';
-        ctx.beginPath();
-        ctx.ellipse(0, -r * 0.7, r * 0.32, r * 0.09, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Erupting magma cinders & ash motes
-        ctx.fillStyle = `rgba(251, 146, 60, ${0.75 + pulseLava * 0.25})`;
-        for (let e = 0; e < 5; e++) {
-          const ex = Math.sin(t * 3.5 + e * 1.5) * (r * 0.6);
-          const ey = -r * 0.75 - ((t * 35 + e * 30) % (r * 0.6));
+        // Billowing superheated "Black Smoker" mineral particle clouds erupting into water
+        for (let sm = 0; sm < 8; sm++) {
+          const sy = -r * 0.82 - ((t * 52 + sm * 28) % (r * 1.2));
+          const sx = Math.sin(t * 3.8 + sm * 1.5) * (r * 0.35);
+          const sRad = Math.max(3.5, r * 0.12 + ((-sy - r * 0.82) / r) * 6);
+          ctx.fillStyle = sm % 2 === 0 ? 'rgba(24, 24, 27, 0.85)' : 'rgba(39, 39, 42, 0.75)';
           ctx.beginPath();
-          ctx.arc(ex, ey, Math.max(1.5, r * 0.035), 0, Math.PI * 2);
+          ctx.arc(sx, sy, sRad, 0, Math.PI * 2);
           ctx.fill();
+
+          // Incandescent thermal cinders embedded in the plume
+          if (sm % 2 === 0) {
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.arc(sx * 0.6, sy + 3, 2.0, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
         ctx.restore();
       }
@@ -910,57 +1164,8 @@ export class Hazard {
         ctx.shadowBlur = 0;
         ctx.restore();
       } else if (voidVariant === 1) {
-        // 1. Gravity Snare: Swirling celestial micro-singularity with bright red danger accretion ring
-        ctx.save();
-        const spin = t * 1.8;
-
-        // Danger crimson outer accretion warning ring
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 16;
-        ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
-        ctx.lineWidth = 2.8;
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Swirling iridescent & crimson accretion arcs
-        for (let a = 0; a < 6; a++) {
-          const aAngle = spin + (a / 6) * Math.PI * 2;
-          const hue = (t * 50 + a * 60) % 360;
-          ctx.strokeStyle = a % 2 === 0 ? 'rgba(255, 30, 60, 0.85)' : `hsla(${hue}, 85%, 68%, 0.65)`;
-          ctx.lineWidth = 3.2;
-          ctx.beginPath();
-          ctx.arc(0, 0, r * (0.65 + (a % 3) * 0.14), aAngle, aAngle + 1.2);
-          ctx.stroke();
-        }
-
-        // Event Horizon: pitch-black core with glowing celestial danger red photon ring
-        ctx.fillStyle = '#05010d';
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 18;
-        ctx.beginPath();
-        ctx.arc(0, 0, r * 0.44, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = '#ff3366';
-        ctx.lineWidth = 2.6;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Inward spiraling cosmic danger stardust sparks
-        for (let s = 0; s < 6; s++) {
-          const dist = r * (0.45 + ((s * 17 + t * 40) % 55) / 100);
-          const sAngle = spin * 1.5 + s * 1.05;
-          ctx.fillStyle = s % 2 === 0 ? '#ff2555' : '#f43f5e';
-          ctx.shadowColor = '#ef4444';
-          ctx.shadowBlur = 6;
-          ctx.beginPath();
-          ctx.arc(Math.cos(sAngle) * dist, Math.sin(sAngle) * dist, 2.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.shadowBlur = 0;
-        ctx.restore();
+        // 1. Abyssal Black Hole: Relativistic gravitational singularity with accretion disk & photon ring
+        this.renderUnderwaterBlackHole(ctx, r);
       } else if (voidVariant === 2) {
         // 2. Entropy Tendrils: Undulating ethereal ribbons with prominent danger ruby-red tips & warning glow
         ctx.save();
@@ -1633,6 +1838,9 @@ export class Hazard {
           ctx.fill();
         }
         ctx.restore();
+      } else if (this.type === 'abyssal_black_hole' || (this.isBlackHole && !this.realmStyle)) {
+        // Colossal Abyssal Black Hole Singularity Obstacle
+        this.renderUnderwaterBlackHole(ctx, 44);
       } else if (this.type === 'eldritch_monolith') {
         // Colossal Abyssal Chrono Monolith & Space-Time Singularity Obelisk
         ctx.save();

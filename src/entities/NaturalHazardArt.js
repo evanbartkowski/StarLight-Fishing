@@ -7,10 +7,197 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.fillStyle = '#475569'; ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(-r * .5, -r); ctx.lineTo(r * .5, -r); ctx.lineTo(0, r); ctx.closePath(); ctx.fill(); ctx.stroke();
   } else if (kind === 'probe') {
-    ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(0, 0, r * .7, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.moveTo(0, -r); ctx.lineTo(0, r); ctx.stroke();
-    ctx.fillStyle = '#f43f5e'; ctx.beginPath(); ctx.arc(0, 0, r * .2, 0, Math.PI * 2); ctx.fill();
+    // Automated Abyss Probe: Advanced deep-sea autonomous exploration drone with sweeping laser sensor, ducted thrusters & titanium armor
+    ctx.save();
+    const bob = Math.sin(time * 3.5) * (r * 0.08);
+    const tilt = Math.cos(time * 2.8) * 0.08;
+    ctx.translate(0, bob);
+    ctx.rotate(tilt);
+
+    // 1. Sweeping Forward Sensor Scanner Beam (conical targeting sweep)
+    const scanAngle = Math.sin(time * 2.2) * 0.35;
+    ctx.save();
+    ctx.rotate(scanAngle);
+    const scanGrad = ctx.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 2.4);
+    scanGrad.addColorStop(0, 'rgba(239, 68, 68, 0.45)');
+    scanGrad.addColorStop(0.35, 'rgba(244, 63, 94, 0.22)');
+    scanGrad.addColorStop(0.75, 'rgba(239, 68, 68, 0.08)');
+    scanGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+    ctx.fillStyle = scanGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, r * 2.4, -0.38, 0.38);
+    ctx.closePath();
+    ctx.fill();
+
+    // Laser scanning reticle arc
+    ctx.strokeStyle = 'rgba(255, 60, 90, 0.65)';
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 2.0, -0.35, 0.35);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // 2. Four Articulated Drone Thruster Arms (at 45-degree angles)
+    for (let i = 0; i < 4; i++) {
+      const armAngle = (i * Math.PI) / 2 + Math.PI / 4;
+      const cosA = Math.cos(armAngle);
+      const sinA = Math.sin(armAngle);
+      const armDist = r * 0.78;
+
+      // Heavy titanium pylon arm
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = r * 0.16;
+      ctx.beginPath();
+      ctx.moveTo(cosA * (r * 0.45), sinA * (r * 0.45));
+      ctx.lineTo(cosA * armDist, sinA * armDist);
+      ctx.stroke();
+
+      // Ducted Hydro-Thruster Pod
+      ctx.save();
+      ctx.translate(cosA * armDist, sinA * armDist);
+      ctx.rotate(armAngle + Math.PI / 2);
+
+      // Thruster housing
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(-r * 0.14, -r * 0.22, r * 0.28, r * 0.44, r * 0.06);
+      } else {
+        ctx.rect(-r * 0.14, -r * 0.22, r * 0.28, r * 0.44);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      // Yellow industrial hazard stripes on thruster cowl
+      ctx.strokeStyle = '#eab308';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.12, -r * 0.08); ctx.lineTo(r * 0.12, -r * 0.08);
+      ctx.moveTo(-r * 0.12, r * 0.08); ctx.lineTo(r * 0.12, r * 0.08);
+      ctx.stroke();
+
+      // Ion Propulsion Glow / Cavitation Jet
+      const jetPulse = 0.5 + 0.5 * Math.sin(time * 12 + i * 1.5);
+      const ionGrad = ctx.createLinearGradient(0, r * 0.2, 0, r * (0.45 + jetPulse * 0.25));
+      ionGrad.addColorStop(0, 'rgba(56, 189, 248, 0.85)');
+      ionGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.45)');
+      ionGrad.addColorStop(1, 'rgba(2, 132, 199, 0)');
+      ctx.fillStyle = ionGrad;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.1, r * 0.2);
+      ctx.lineTo(r * 0.1, r * 0.2);
+      ctx.lineTo(0, r * (0.45 + jetPulse * 0.25));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 3. Main Titanium Pressure Sphere (Spherical robotic hull)
+    const hullGrad = ctx.createRadialGradient(-r * 0.22, -r * 0.22, r * 0.1, 0, 0, r * 0.72);
+    hullGrad.addColorStop(0, '#94a3b8');
+    hullGrad.addColorStop(0.45, '#475569');
+    hullGrad.addColorStop(0.85, '#1e293b');
+    hullGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = hullGrad;
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.70, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Reinforced armor segments & circumferential panel seams
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.56, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Heavy hex bolts on armor perimeter
+    ctx.fillStyle = '#cbd5e1';
+    for (let b = 0; b < 8; b++) {
+      const bAngle = (b / 8) * Math.PI * 2;
+      const bx = Math.cos(bAngle) * (r * 0.63);
+      const by = Math.sin(bAngle) * (r * 0.63);
+      ctx.beginPath();
+      ctx.arc(bx, by, r * 0.035, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 4. Central Optical Sensor Eye (Robotic Cyclopean Lens with Targeting Reticle)
+    // Dark recessed lens housing
+    ctx.fillStyle = '#090d16';
+    ctx.strokeStyle = '#f43f5e';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.38, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Concentric sensor rings
+    ctx.strokeStyle = 'rgba(244, 63, 94, 0.45)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Glowing Iris Sensor Core with pulse
+    const eyePulse = 0.5 + 0.5 * Math.sin(time * 5.0);
+    const eyeGrad = ctx.createRadialGradient(0, 0, r * 0.04, 0, 0, r * 0.22);
+    eyeGrad.addColorStop(0, '#ffffff');
+    eyeGrad.addColorStop(0.3, '#f43f5e');
+    eyeGrad.addColorStop(0.75, '#be123c');
+    eyeGrad.addColorStop(1, '#881337');
+    ctx.fillStyle = eyeGrad;
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 12 + eyePulse * 6;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Glowing pupil dot
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.07, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Curved lens glass reflection arc
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.32, -Math.PI * 0.8, -Math.PI * 0.3);
+    ctx.stroke();
+
+    // 5. Top Telemetry Antenna Mast with Flashing Navigation Strobe
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.70);
+    ctx.lineTo(0, -r * 1.05);
+    ctx.stroke();
+
+    ctx.fillStyle = '#475569';
+    ctx.beginPath();
+    ctx.arc(0, -r * 1.05, r * 0.065, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Flashing red emergency beacon on tip
+    const strobe = (Math.sin(time * 8.0) > 0.3) ? 1 : 0.25;
+    ctx.fillStyle = `rgba(239, 68, 68, ${strobe})`;
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = strobe * 10;
+    ctx.beginPath();
+    ctx.arc(0, -r * 1.05, r * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.restore();
   } else if (kind === 'diver') {
     // Authentic Human Scuba Diver with swim fins, air tank, diving mask, and flashlight beam
     const light = ctx.createLinearGradient(r * .5, 0, r * 4.5, 0);

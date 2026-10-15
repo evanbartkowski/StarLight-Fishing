@@ -239,6 +239,37 @@ The diamond beside gold opens daily login rewards for captain accounts: a 30-day
 - Integrated distinct surface and underwater music tracks from `public/music/` across Realms 2 through 7 with clean state transitions and mutual exclusion to prevent track overlap.
 - **Realm 1 (Sunlit Shoals) original soundtrack remains completely unchanged** (`/sprites/seamusic.mp3` on the surface and `/sprites/oceanmusic2.mp3` underwater).
 
+### 15. Realm 7 Fishing Reel Stability & Hard Safety Bounds Clamp
+- Resolved the deep abyss camera tracking issue where rapid vertical reel retrieval at extreme depths (~3,000m) could push the hook off-screen.
+- Implemented responsive vertical offset interpolation (`12.0 * deltaSec`) and an unbreachable hard safety viewport clamp ensuring the hook is mathematically locked within the active viewport (between 15% and 85% of screen height) at all depths.
+
+### 16. Ultra-Responsive Mouse & Touch Reel Tracking
+- Completely overhauled mouse steering responsiveness: horizontal tracking speed factor increased to `8.5 * agility` with immediate acceleration (`14.0 * deltaSec`).
+- Fixed screen boundary clamping so high-resolution and ultra-wide displays track the cursor across the entire screen width.
+- Catching fish or treasures now cleanly dampens velocity without overwriting `targetX`, preventing sluggish pauses or cursor freezes during active retrieval.
+
+### 17. Surface Background Black Hole Visual Overhaul & Reduced Frequency
+- Overhauled the Realm 7 surface background black hole with realistic relativistic astrophysics: Einstein gravitational lensing ring, dual collimated plasma jets with synchrotron shock diamonds, Doppler-boosted 3D accretion disk (approaching blue-shifted matter on left, receding red-shifted matter on right), photon sphere ($1.5 R_s$), and obsidian event horizon.
+- Reduced surface spawn frequency to a cinematic 120-second cycle (active for 24s) to preserve rarity and atmosphere.
+
+### 18. Underwater Black Hole Obstacle & Gravitational Accretion Pull
+- Added an interactive underwater **Abyssal Black Hole** obstacle to Realm 7.
+- Features complete relativistic canvas rendering (accretion disk, photon sphere, and Einstein lensing halo) and active **gravitational accretion pull** that smoothly draws nearby fishing gear toward the singularity.
+
+### 19. Magma Caldera Trench Obstacle Clarifications & Overhaul
+- Overhauled all 4 Magma Caldera Trench obstacles into distinct, instantly recognizable volcanic formations:
+  1. **Submarine Volcano Caldera Cone**: Stratified basalt tephra base with summit crater lake of boiling molten sulfur and billowing cavitation steam.
+  2. **Columnar Basalt & Obsidian Needles**: Geometric hexagonal basalt columns (Giant's Causeway style) with razor-sharp obsidian needles and glowing magma fissures.
+  3. **Chained Molten Planetary Core**: Massive fractured magma sphere bound in heavy forged titan iron chain links and glowing tension shackles.
+  4. **Colossal Hydrothermal Black Smoker Spire**: Towering stepped mineral chimney erupting superheated black smoker particle plumes with cascading liquid lava flumes.
+
+### 20. Automated Abyss Probe Complete Visual Redesign
+- Completely overhauled the deep-sea Automated Abyss Probe (`automated_probe`) from a plain circular outline into a high-tech robotic exploration drone:
+  - 4 articulated titanium thruster arms with ducted cowls, ion cavitation jets, and hazard stripes.
+  - Sweeping forward laser sensor scanner beam with dynamic conical reticle sweep.
+  - Reinforced titanium pressure sphere with hex bolts and circumferential panel seams.
+  - Glowing cyclopean optical sensor eye with pupil, reflection glint, and top antenna with flashing red strobe warning beacon.
+
 ## Music
 
 The original `seamusic.mp3` and `oceanmusic2.mp3` play in Sunlit Shoals and remain strictly unchanged. Realms 2 through 7 feature unique, curated surface and underwater soundtracks from `public/music/` (including Aquarain, Meditation, Peaceful, Ocean Waves, Tropical House, Ocean Vibes, and atmospheric variations). Transitions between surface and diving modes are seamlessly managed without audio overlap, and muted preferences persist reliably across sessions. Radio overrides realm music until switched off. Sound effects are 20% quieter at the same slider setting.

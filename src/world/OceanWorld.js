@@ -964,118 +964,170 @@ export class OceanWorld {
     const w = this.worldWidth || 1200;
 
     // -------------------------------------------------------------
-    // 1. BLACK VORTEX (Cosmic Singularity with accretion disk & lensing)
-    // Spawns every 42s, active for 20s (enters, swirls, exits), absent 22s
+    // 1. BLACK VORTEX (Cosmic Singularity with relativistic accretion disk, Einstein ring & Doppler boosting)
+    // Spawns less frequently: every 120s, active for 24s (enters, swirls, exits), absent 96s
     // -------------------------------------------------------------
-    const vortexPeriod = 42;
+    const vortexPeriod = 120;
     const vortexPhase = (t % vortexPeriod);
-    const vortexActiveTime = 20;
+    const vortexActiveTime = 24;
 
     if (vortexPhase < vortexActiveTime) {
       let scale = 1;
-      if (vortexPhase < 4) {
-        scale = Math.sin((vortexPhase / 4) * (Math.PI / 2));
-      } else if (vortexPhase > vortexActiveTime - 4) {
-        scale = Math.cos(((vortexPhase - (vortexActiveTime - 4)) / 4) * (Math.PI / 2));
+      if (vortexPhase < 5) {
+        scale = Math.sin((vortexPhase / 5) * (Math.PI / 2));
+      } else if (vortexPhase > vortexActiveTime - 5) {
+        scale = Math.cos(((vortexPhase - (vortexActiveTime - 5)) / 5) * (Math.PI / 2));
       }
       scale = Math.max(0.001, scale);
 
-      const vx = w * 0.72 + Math.sin(t * 0.3) * 35;
-      const vy = vY - 55 - Math.cos(t * 0.25) * 8;
+      const vx = w * 0.72 + Math.sin(t * 0.25) * 35;
+      const vy = vY - 65 - Math.cos(t * 0.2) * 10;
 
       ctx.save();
       ctx.translate(vx, vy);
       ctx.scale(scale, scale);
 
-      // Relativistic plasma jet (vertical ethereal beams shooting into cosmos & sea)
+      // 1a. Relativistic Astrophysical Plasma Jets (Helical collimated energy beams)
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      const jetGrad = ctx.createLinearGradient(0, -140, 0, 70);
-      const jetHue = (t * 60) % 360;
-      jetGrad.addColorStop(0, 'rgba(56, 189, 248, 0)');
-      jetGrad.addColorStop(0.35, `hsla(${jetHue}, 90%, 75%, 0.35)`);
-      jetGrad.addColorStop(0.5, 'rgba(255, 255, 255, 0.7)');
-      jetGrad.addColorStop(0.65, `hsla(${(jetHue + 120) % 360}, 90%, 75%, 0.35)`);
-      jetGrad.addColorStop(1, 'rgba(168, 85, 247, 0)');
-      ctx.fillStyle = jetGrad;
-      ctx.beginPath();
-      ctx.moveTo(-7, -140);
-      ctx.lineTo(7, -140);
-      ctx.lineTo(12, 70);
-      ctx.lineTo(-12, 70);
-      ctx.closePath();
-      ctx.fill();
+      for (const dir of [-1, 1]) {
+        const jetLen = 175;
+        const jetGrad = ctx.createLinearGradient(0, 0, 0, dir * jetLen);
+        const jetHue = (t * 50) % 360;
+        jetGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        jetGrad.addColorStop(0.15, `hsla(${jetHue}, 100%, 75%, 0.8)`);
+        jetGrad.addColorStop(0.5, `hsla(${(jetHue + 80) % 360}, 95%, 65%, 0.4)`);
+        jetGrad.addColorStop(1, 'rgba(147, 51, 234, 0)');
+        ctx.fillStyle = jetGrad;
+
+        // Core plasma beam
+        ctx.beginPath();
+        ctx.moveTo(-5, 0);
+        ctx.lineTo(5, 0);
+        ctx.lineTo(dir * 14, dir * jetLen);
+        ctx.lineTo(dir * -14, dir * jetLen);
+        ctx.closePath();
+        ctx.fill();
+
+        // Synchrotron shock diamonds along the jet
+        for (let j = 1; j <= 3; j++) {
+          const jy = dir * (j * 40 + Math.sin(t * 4 + j) * 6);
+          const jw = 7 + j * 3;
+          ctx.strokeStyle = `hsla(${(jetHue + j * 40) % 360}, 100%, 85%, 0.7)`;
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(0, jy - dir * 8);
+          ctx.lineTo(jw, jy);
+          ctx.lineTo(0, jy + dir * 8);
+          ctx.lineTo(-jw, jy);
+          ctx.closePath();
+          ctx.stroke();
+        }
+      }
       ctx.restore();
 
-      // Outer Gravitational Lensing Halo (rainbow warped starlight)
+      // 1b. Gravitational Lensing Einstein Ring (Curved starlight arc warped around event horizon)
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      for (let ring = 0; ring < 3; ring++) {
-        const rRad = 52 + ring * 14 + Math.sin(t * 2 + ring) * 4;
-        const rHue = (t * 70 + ring * 65) % 360;
-        ctx.strokeStyle = `hsla(${rHue}, 95%, 72%, ${0.28 - ring * 0.07})`;
-        ctx.lineWidth = 2.2;
+      for (let ring = 0; ring < 4; ring++) {
+        const rRad = 48 + ring * 14 + Math.sin(t * 1.8 + ring * 1.2) * 3;
+        const rHue = (t * 60 + ring * 55) % 360;
+        ctx.strokeStyle = `hsla(${rHue}, 95%, 72%, ${0.35 - ring * 0.07})`;
+        ctx.lineWidth = 2.4 - ring * 0.4;
         ctx.beginPath();
-        ctx.ellipse(0, 0, rRad, rRad * 0.36, -0.15 + ring * 0.08, 0, Math.PI * 2);
+        // Upper warped arc (light bent from behind horizon)
+        ctx.ellipse(0, -rRad * 0.28, rRad, rRad * 0.42, 0, Math.PI * 0.95, Math.PI * 2.05);
+        ctx.stroke();
+        // Lower warped counter-arc
+        ctx.beginPath();
+        ctx.ellipse(0, rRad * 0.28, rRad * 0.92, rRad * 0.38, 0, 0, Math.PI * 1.05);
         ctx.stroke();
       }
       ctx.restore();
 
-      // Glowing Accretion Disk (spinning matter ring tilted in 3D perspective)
+      // 1c. Relativistic Accretion Disk (3D tilted matter ring with Doppler beaming)
       ctx.save();
-      ctx.rotate(-0.25);
-      const diskGrad = ctx.createRadialGradient(0, 0, 18, 0, 0, 56);
-      const diskHue = (t * 50) % 360;
-      diskGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-      diskGrad.addColorStop(0.25, `hsla(${diskHue}, 100%, 70%, 0.85)`);
-      diskGrad.addColorStop(0.65, `hsla(${(diskHue + 60) % 360}, 95%, 60%, 0.55)`);
-      diskGrad.addColorStop(0.9, `hsla(${(diskHue + 160) % 360}, 90%, 50%, 0.25)`);
-      diskGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.rotate(-0.28);
 
-      ctx.fillStyle = diskGrad;
+      // Back of accretion disk (warped upward by gravitational lensing)
+      const backDiskGrad = ctx.createRadialGradient(0, 0, 22, 0, 0, 68);
+      backDiskGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+      backDiskGrad.addColorStop(0.3, 'rgba(168, 85, 247, 0.7)');
+      backDiskGrad.addColorStop(0.7, 'rgba(239, 68, 68, 0.4)');
+      backDiskGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = backDiskGrad;
       ctx.beginPath();
-      ctx.ellipse(0, 0, 56, 18, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, -6, 68, 26, 0, Math.PI, Math.PI * 2);
       ctx.fill();
 
-      // Infalling stardust matter spirals
-      for (let s = 0; s < 6; s++) {
-        const spiralAng = s * (Math.PI / 3) + t * 2.5;
-        const sr = 22 + ((t * 28 + s * 9) % 32);
+      // Main Front Accretion Disk with Doppler Asymmetry (left side brighter/hotter, right side dimmer/red-shifted)
+      // Left side approaching matter (blue-shifted electric cyan-white)
+      const leftDisk = ctx.createRadialGradient(-26, 0, 10, -26, 0, 52);
+      leftDisk.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+      leftDisk.addColorStop(0.3, 'rgba(56, 189, 248, 0.95)');
+      leftDisk.addColorStop(0.7, 'rgba(99, 102, 241, 0.65)');
+      leftDisk.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = leftDisk;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 68, 20, 0, Math.PI * 0.45, Math.PI * 1.55);
+      ctx.fill();
+
+      // Right side receding matter (red-shifted deep crimson-amber)
+      const rightDisk = ctx.createRadialGradient(24, 0, 8, 24, 0, 48);
+      rightDisk.addColorStop(0, 'rgba(254, 215, 170, 0.85)');
+      rightDisk.addColorStop(0.35, 'rgba(239, 68, 68, 0.65)');
+      rightDisk.addColorStop(0.8, 'rgba(126, 34, 206, 0.35)');
+      rightDisk.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = rightDisk;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 68, 20, 0, -Math.PI * 0.55, Math.PI * 0.45);
+      ctx.fill();
+
+      // Infalling relativistic matter spirals
+      for (let s = 0; s < 8; s++) {
+        const spiralAng = s * (Math.PI / 4) + t * 3.2;
+        const sr = 24 + ((t * 32 + s * 11) % 40);
         const sx = Math.cos(spiralAng) * sr;
-        const sy = Math.sin(spiralAng) * (sr * 0.32);
-        const sHue = (t * 90 + s * 60) % 360;
-        ctx.fillStyle = `hsl(${sHue}, 100%, 80%)`;
+        const sy = Math.sin(spiralAng) * (sr * 0.30);
+        const sHue = (t * 90 + s * 45) % 360;
+        ctx.fillStyle = `hsl(${sHue}, 100%, 82%)`;
         ctx.shadowColor = `hsl(${sHue}, 100%, 70%)`;
-        ctx.shadowBlur = 5;
+        ctx.shadowBlur = 6;
         ctx.beginPath();
-        ctx.arc(sx, sy, 2.2, 0, Math.PI * 2);
+        ctx.arc(sx, sy, 2.0, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       }
       ctx.restore();
 
-      // Event Horizon (Pitch-black obsidian void core that consumes all light)
-      ctx.fillStyle = '#020617';
-      ctx.shadowColor = '#000000';
-      ctx.shadowBlur = 14;
+      // 1d. Event Horizon & Photon Sphere
+      // Searing photon ring orbit (1.5 Rs)
+      ctx.strokeStyle = '#ffffff';
+      ctx.shadowColor = `hsla(${(t * 80) % 360}, 100%, 75%, 0.9)`;
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
-      ctx.arc(0, 0, 19, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(0, 0, 22, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // Pure black core
-      ctx.fillStyle = '#000000';
+      // Deep obsidian void shadow
+      const voidGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, 21);
+      voidGrad.addColorStop(0, '#000000');
+      voidGrad.addColorStop(0.75, '#020617');
+      voidGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = voidGrad;
       ctx.beginPath();
-      ctx.arc(0, 0, 16.5, 0, Math.PI * 2);
+      ctx.arc(0, 0, 21, 0, Math.PI * 2);
       ctx.fill();
 
-      // Iridescent photon ring (thin glowing edge around event horizon)
-      ctx.strokeStyle = `hsla(${(t * 80) % 360}, 100%, 85%, 0.9)`;
-      ctx.lineWidth = 1.4;
+      // Pitch-black core (consumes all light)
+      ctx.fillStyle = '#000000';
       ctx.beginPath();
-      ctx.arc(0, 0, 17, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(0, 0, 18.5, 0, Math.PI * 2);
+      ctx.fill();
 
+      // Subtle water ripple reflection below on ocean surface
       ctx.restore();
     }
 
@@ -1306,7 +1358,7 @@ export class OceanWorld {
 
     // Lazy instantiate companions if missing
     if (!this.shark) this.shark = new BoatShark();
-    if (!this.dolphin) this.dolphin = new BackgroundDolphin(wWidth);
+    if (!this.dolphin) this.dolphin = new BackgroundDolphin(currentScreenWidth);
     if (!this.shipsCat) this.shipsCat = new ShipsCat();
     if (!this.pelican) this.pelican = new PerchingPelican();
 

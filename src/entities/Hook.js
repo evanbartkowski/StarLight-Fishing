@@ -159,9 +159,10 @@ export class Hook {
     this.targetX = this.x;
   }
 
-  setTargetX(targetX, worldWidth = 1200) {
+  setTargetX(targetX, worldWidth) {
     if (Number.isFinite(targetX)) {
-      const maxX = Math.max(100, (worldWidth || 1200) - 30);
+      const w = worldWidth || (typeof window !== 'undefined' ? window.innerWidth : 1200);
+      const maxX = Math.max(100, w - 30);
       this.targetX = Math.max(30, Math.min(maxX, targetX));
     }
   }
@@ -169,9 +170,8 @@ export class Hook {
   addCatch(entity, particles) {
     if (this.caughtItems.length >= this.capacity) return false;
 
-    // Stabilize hook horizontal velocity on catch to prevent uncontrollable overshoot
+    // Dampen abrupt horizontal jerk on catch while preserving active target tracking
     this.vx *= 0.25;
-    this.targetX = this.x;
 
     this.caughtItems.push(entity);
     entity.hookTo(this, this.caughtItems.length - 1);
@@ -316,8 +316,8 @@ export class Hook {
 
       const steerDiff = this.targetX - this.x;
       const maxSteerSpeed = 450 * this.agility;
-      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 4.0 * this.agility));
-      this.vx += (desiredVx - this.vx) * 6 * deltaSec;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 8.5 * this.agility));
+      this.vx += (desiredVx - this.vx) * 14 * deltaSec;
       this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
       this.x += this.vx * deltaSec;
@@ -375,9 +375,9 @@ export class Hook {
 
       // Agile steering during auto-reel
       const steerDiff = this.targetX - this.x;
-      const maxSteerSpeed = 420 * this.agility;
-      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 3.6 * this.agility));
-      this.vx += (desiredVx - this.vx) * 6 * deltaSec;
+      const maxSteerSpeed = 450 * this.agility;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 8.0 * this.agility));
+      this.vx += (desiredVx - this.vx) * 14 * deltaSec;
       this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
       this.x += this.vx * deltaSec;
@@ -451,7 +451,7 @@ export class Hook {
         const totalDy = (drawHookY - drawRodY) || 1;
         const t = Math.max(0, Math.min(1, (0 - drawRodY) / totalDy));
         const entryX = rodTipX + (hookX - rodTipX) * t;
-        const canvasW = ctx.canvas ? ctx.canvas.width : 1200;
+        const canvasW = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : (ctx.canvas ? ctx.canvas.width : 1200);
         const clampedEntryX = Math.max(-40, Math.min(canvasW + 40, entryX));
         const sagX = (clampedEntryX + hookX) / 2 + dragOffset + microSway;
         const sagY = Math.max(0, drawHookY * 0.5);

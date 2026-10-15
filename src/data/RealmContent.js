@@ -193,7 +193,7 @@ const HAZARDS = {
   4: ['Collapsing Marble Arch', 'Clockwork Saw Array', 'Imperial Chain Curtain', 'Sunken Palace Gate'],
   5: ['Thunderhead Bloom', 'Shearing Wind Funnel', 'Skyroot Tangle', 'Falling Aether Island'],
   6: ['Boiling Sulfur Vent', 'Erupting Basalt Spikes', 'Molten Chain Cluster', 'Caldera Lava Chimney'],
-  7: ['Temporal Fracture', 'Gravity Snare', 'Entropy Tendrils', 'Event Horizon Monolith'],
+  7: ['Temporal Fracture', 'Abyssal Black Hole', 'Entropy Tendrils', 'Event Horizon Monolith'],
 };
 const TREASURES = {
   1: ['Rose Coral Cameo', 'Abalone Music Box', 'Sunbleached Pearl Comb', 'Lagoon Amber', 'Fossil Coral Fan', 'Reef King Crown'],
@@ -210,6 +210,7 @@ export const REALM_HAZARDS = FANTASY_SEAS.flatMap(sea => HAZARDS[sea.id].map((na
   maxDepth: 3000,
   damage: 1 + Math.floor((sea.id + i) / 3), knockback: 22 + sea.id * 5 + i * 4,
   radius: i === 3 ? 48 : 18 + i * 6, isColossal: i === 3,
+  isBlackHole: sea.id === 7 && i === 1,
   pulseHazard: sea.id === 6 && i === 0 || sea.id === 2 && i === 1,
   color: sea.id === 7 ? '#ef4444' : REALM_PROFILES[sea.id].colors[i], glow: sea.id === 7 ? '#ff3366' : REALM_PROFILES[sea.id].colors[(i + 1) % 5],
 })));

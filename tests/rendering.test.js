@@ -10,10 +10,12 @@ import { QUEST_POOL } from '../src/data/QuestsData.js';
 import { QuestSystem, questReward } from '../src/systems/QuestSystem.js';
 import { SoundManager } from '../src/audio/SoundManager.js';
 import { Hook } from '../src/entities/Hook.js';
-import { VALUE_BY_RARITY } from '../src/data/RealmContent.js';
+import { VALUE_BY_RARITY, REALM_HAZARDS } from '../src/data/RealmContent.js';
+import { HAZARD_TYPES } from '../src/data/TreasureData.js';
 import { LEGENDARY_SPECIES } from '../src/data/legendaries.js';
 import { FISH_SPECIES } from '../src/data/FishData.js';
 import { Hazard } from '../src/entities/Hazard.js';
+import { drawNaturalHazard } from '../src/entities/NaturalHazardArt.js';
 
 test('depth scenery preserves the shallow view and fixes rare landmarks to deep world depths', () => {
   const calls = [];
@@ -1109,6 +1111,65 @@ test('15 improvements verification: sound persistence, rare quest gems, NPC real
   assert.ok(colossalHazard.isColossal, 'Hazard should be colossal');
   colossalHazard.update(100, 1200, { state: 'DESCENDING', x: 500, y: 300, vx: 0, vy: 50 });
   assert.ok(colossalHazard.smoothFacing !== undefined, 'Colossal hazard should update smoothFacing smoothly');
+});
+
+test('Realm 7 deep dive reel stability, mouse tracking responsiveness, underwater black hole obstacle and gravitational pull, caldera obstacle overhauls, and automated probe drone visual redesign', () => {
+  // 1. Verify Realm 7 Abyssal Black Hole hazard
+  const realm7BlackHole = REALM_HAZARDS.find(h => h.zone === 7 && h.variant === 1);
+  assert.ok(realm7BlackHole, 'Realm 7 variant 1 must exist');
+  assert.equal(realm7BlackHole.name, 'Abyssal Black Hole', 'Realm 7 hazard 1 must be named Abyssal Black Hole');
+  assert.equal(realm7BlackHole.isBlackHole, true, 'Realm 7 hazard 1 must have isBlackHole flag set');
+
+  const abyssalBHType = HAZARD_TYPES.find(h => h.id === 'abyssal_black_hole');
+  assert.ok(abyssalBHType, 'abyssal_black_hole must exist in HAZARD_TYPES');
+  assert.ok(abyssalBHType.isBlackHole, 'abyssal_black_hole must have isBlackHole true');
+  assert.ok(abyssalBHType.seas?.includes(7), 'abyssal_black_hole must spawn in Realm 7');
+
+  // 2. Verify gravitational accretion pull on hook
+  const bhHazard = new Hazard({ id: 'abyssal_black_hole', isBlackHole: true, radius: 40 }, 500, 1000);
+  const testHook = new Hook();
+  testHook.x = 450;
+  testHook.y = 1000;
+  testHook.state = 'DESCENDING';
+  const initialHookX = testHook.x;
+  bhHazard.update(100, 1200, testHook);
+  assert.ok(testHook.x > initialHookX, 'Black hole must gravitationally pull the hook toward its singularity center');
+
+  // 3. Verify hook mouse tracking does not freeze on catch
+  testHook.setTargetX(850, 1920);
+  assert.equal(testHook.targetX, 850, 'setTargetX must support wide screen coordinates beyond 1200px');
+  testHook.addCatch({ name: 'Luminescent Squid', size: 15, weight: 1.0, primaryColor: '#f43f5e', hookTo() {}, draw() {} });
+  assert.equal(testHook.targetX, 850, 'targetX must NOT be reset to hook.x on catch, preserving active mouse cursor tracking');
+
+  // 4. Verify mock canvas rendering of automated probe drone
+  const createMockCtx = () => {
+    const gradient = { addColorStop() {} };
+    return new Proxy({
+      globalAlpha: 1,
+      createLinearGradient: () => gradient,
+      createRadialGradient: () => gradient,
+    }, {
+      get: (target, key) => key in target ? target[key] : () => {},
+      set: (target, key, value) => { target[key] = value; return true; },
+    });
+  };
+  const mockCtx = createMockCtx();
+  assert.doesNotThrow(() => {
+    drawNaturalHazard(mockCtx, 'probe', 30, 2.5);
+  }, 'Automated probe drone redesign must render without error');
+
+  // 5. Verify mock canvas rendering of all 4 Caldera Trench obstacles
+  for (let v = 0; v < 4; v++) {
+    const calderaHaz = new Hazard({ id: `caldera_test_${v}`, realmStyle: 'lava', variant: v, radius: 40 }, 400, 400);
+    assert.doesNotThrow(() => {
+      calderaHaz.renderRealmHazard(mockCtx);
+    }, `Caldera trench hazard variant ${v} must render cleanly without error`);
+  }
+
+  // 6. Verify mock canvas rendering of underwater black hole
+  assert.doesNotThrow(() => {
+    bhHazard.renderUnderwaterBlackHole(mockCtx, 40);
+  }, 'renderUnderwaterBlackHole must render cleanly without error');
 });
 
 
