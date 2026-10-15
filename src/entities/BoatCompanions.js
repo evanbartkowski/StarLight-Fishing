@@ -94,7 +94,8 @@ export class ShipsCat {
     const pos = this.getDeckPosition(vessel);
 
     ctx.save();
-    ctx.translate(pos.x, pos.y);
+    try {
+      ctx.translate(pos.x, pos.y);
 
     // Cozy knitted cushion berth
     ctx.fillStyle = '#0f766e';
@@ -221,8 +222,11 @@ export class ShipsCat {
       ctx.font = '10px sans-serif';
       ctx.fillText('🎁', -2, -12 + Math.sin(this.tailTimer * 3) * 2);
     }
-
-    ctx.restore();
+    } catch (err) {
+      console.warn('ShipsCat render error:', err);
+    } finally {
+      ctx.restore();
+    }
   }
 }
 
@@ -289,98 +293,102 @@ export class PerchingPelican {
     const pos = this.getBowspritPosition(vessel);
 
     ctx.save();
-    ctx.translate(pos.x, pos.y);
+    try {
+      ctx.translate(pos.x, pos.y);
 
-    // Body (white/grey pelican with subtle feather shading)
-    const bodyGrad = ctx.createLinearGradient(-10, -5, 10, 8);
-    bodyGrad.addColorStop(0, '#ffffff');
-    bodyGrad.addColorStop(0.7, '#f1f5f9');
-    bodyGrad.addColorStop(1, '#cbd5e1');
-    ctx.fillStyle = bodyGrad;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 11, 7.5, 0.2, 0, Math.PI * 2);
-    ctx.fill();
+      // Body (white/grey pelican with subtle feather shading)
+      const bodyGrad = ctx.createLinearGradient(-10, -5, 10, 8);
+      bodyGrad.addColorStop(0, '#ffffff');
+      bodyGrad.addColorStop(0.7, '#f1f5f9');
+      bodyGrad.addColorStop(1, '#cbd5e1');
+      ctx.fillStyle = bodyGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 11, 7.5, 0.2, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Grey wing with detailed primary feather tips
-    ctx.scale(1.2, 1.2);
-    const wingFlap = this.isFlapping ? Math.sin(this.flapTimer * 15) * 8 : 0;
-    ctx.fillStyle = '#64748b';
-    ctx.beginPath();
-    ctx.ellipse(-2, -1 - wingFlap * 0.5, 7.5, 4.5 + Math.abs(wingFlap), -0.2, 0, Math.PI * 2);
-    ctx.fill();
-    // Wing highlight
-    ctx.fillStyle = '#94a3b8';
-    ctx.beginPath();
-    ctx.ellipse(-2, -2 - wingFlap * 0.5, 5, 2.5, -0.2, 0, Math.PI * 2);
-    ctx.fill();
+      // Grey wing with detailed primary feather tips
+      ctx.scale(1.2, 1.2);
+      const wingFlap = this.isFlapping ? Math.sin(this.flapTimer * 15) * 8 : 0;
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.ellipse(-2, -1 - wingFlap * 0.5, 7.5, 4.5 + Math.abs(wingFlap), -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      // Wing highlight
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.ellipse(-2, -2 - wingFlap * 0.5, 5, 2.5, -0.2, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Head
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.arc(8, -6, 5.5, 0, Math.PI * 2);
-    ctx.fill();
+      // Head
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.arc(8, -6, 5.5, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Expressive eye
-    ctx.fillStyle = '#0f172a';
-    ctx.beginPath();
-    ctx.arc(9, -7, 1.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(8.6, -7.4, 0.6, 0, Math.PI * 2);
-    ctx.fill();
+      // Expressive eye
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(9, -7, 1.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(8.6, -7.4, 0.6, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Large beak with realistic down-curved tip hook
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.moveTo(11, -8);
-    ctx.lineTo(23, -4);
-    ctx.quadraticCurveTo(24, -2, 22, -1);
-    ctx.quadraticCurveTo(16, 2, 10, -3);
-    ctx.closePath();
-    ctx.fill();
+      // Large beak with realistic down-curved tip hook
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.moveTo(11, -8);
+      ctx.lineTo(23, -4);
+      ctx.quadraticCurveTo(24, -2, 22, -1);
+      ctx.quadraticCurveTo(16, 2, 10, -3);
+      ctx.closePath();
+      ctx.fill();
 
-    // Yellow distensible pouch with shadow
-    const pouchGrad = ctx.createLinearGradient(12, -2, 16, 3);
-    pouchGrad.addColorStop(0, '#fbbf24');
-    pouchGrad.addColorStop(1, '#d97706');
-    ctx.fillStyle = pouchGrad;
-    ctx.beginPath();
-    ctx.arc(15, -2, 4, 0, Math.PI);
-    ctx.fill();
+      // Yellow distensible pouch with shadow
+      const pouchGrad = ctx.createLinearGradient(12, -2, 16, 3);
+      pouchGrad.addColorStop(0, '#fbbf24');
+      pouchGrad.addColorStop(1, '#d97706');
+      ctx.fillStyle = pouchGrad;
+      ctx.beginPath();
+      ctx.arc(15, -2, 4, 0, Math.PI);
+      ctx.fill();
 
-    // Bill ridge line
-    ctx.strokeStyle = '#b45309';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(12, -6);
-    ctx.lineTo(22, -3);
-    ctx.stroke();
+      // Bill ridge line
+      ctx.strokeStyle = '#b45309';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(12, -6);
+      ctx.lineTo(22, -3);
+      ctx.stroke();
 
-    // Strong webbed feet clutching wood
-    ctx.strokeStyle = '#d97706';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-1, 5); ctx.lineTo(-1, 9);
-    ctx.moveTo(3, 5); ctx.lineTo(3, 9);
-    ctx.stroke();
+      // Strong webbed feet clutching wood
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-1, 5); ctx.lineTo(-1, 9);
+      ctx.moveTo(3, 5); ctx.lineTo(3, 9);
+      ctx.stroke();
 
-    // Trust badge if hovered / high trust
-    if (this.trust >= 70) {
-      ctx.fillStyle = '#f43f5e';
-      ctx.font = '8px sans-serif';
-      ctx.fillText('♥', 0, -12);
+      // Trust badge if hovered / high trust
+      if (this.trust >= 70) {
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = '8px sans-serif';
+        ctx.fillText('♥', 0, -12);
+      }
+    } catch (err) {
+      console.warn('Pelican render error:', err);
+    } finally {
+      ctx.restore();
     }
-
-    ctx.restore();
   }
 }
 
 export class BackgroundDolphin {
   constructor(worldWidth) {
-    this.worldWidth = worldWidth;
+    this.worldWidth = Number.isFinite(worldWidth) && worldWidth > 100 ? worldWidth : 800;
     this.active = true;
-    this.x = worldWidth * .72;
+    this.x = this.worldWidth * .72;
     this.y = 0;
     this.arcY = 0;
     this.arcTimer = 0;
@@ -391,44 +399,59 @@ export class BackgroundDolphin {
   }
 
   update(dt, surfaceY, weather) {
+    if (!Number.isFinite(dt) || dt <= 0) return;
     this.timer += dt / 1000;
     this.active = true;
+    const surfY = Number.isFinite(surfaceY) ? surfaceY : 220;
+    const width = Number.isFinite(this.worldWidth) && this.worldWidth > 100 ? this.worldWidth : 800;
     const phase = this.timer * .48;
-    const radius = Math.min(100, Math.max(20, this.worldWidth * .15));
-    this.x = Math.max(35, Math.min(this.worldWidth - 35, this.worldWidth * .65 + Math.sin(phase) * radius));
+    const radius = Math.min(100, Math.max(20, width * .15));
+    this.x = Math.max(35, Math.min(width - 35, width * .65 + Math.sin(phase) * radius));
     const verticalPhase = phase * 1.4;
-    this.y = surfaceY + 56 + Math.sin(verticalPhase) * 16;
+    this.y = surfY + 56 + Math.sin(verticalPhase) * 16;
     const horizontalVelocity = Math.cos(phase) * radius * .48;
     this.direction = horizontalVelocity >= 0 ? 1 : -1;
     const cycle = this.timer % 18;
     this.arcTimer = cycle;
     const jumping = cycle < this.arcDuration;
-    const jumpPhase = cycle / this.arcDuration * Math.PI;
+    const jumpPhase = (cycle / this.arcDuration) * Math.PI;
     this.arcY = jumping ? -(Math.sin(jumpPhase) ** 2) * 78 : 0;
-    const jumpVelocity = jumping ? -78 * Math.PI / this.arcDuration * Math.sin(jumpPhase * 2) : 0;
+    const jumpVelocity = jumping ? (-78 * Math.PI / this.arcDuration) * Math.sin(jumpPhase * 2) : 0;
     const verticalVelocity = Math.cos(verticalPhase) * 16 * 1.4 + jumpVelocity;
-    this.rotation = Math.atan2(verticalVelocity, Math.abs(horizontalVelocity)) * .7;
+    this.rotation = Math.atan2(verticalVelocity, Math.max(0.001, Math.abs(horizontalVelocity))) * .7;
   }
 
   render(ctx, cameraY = 0) {
     if (!this.active) return;
 
-    const drawY = (this.y + this.arcY) - cameraY;
+    const safeTimer = Number.isFinite(this.timer) ? this.timer : 0;
+    const safeX = Number.isFinite(this.x) ? this.x : (this.worldWidth || 800) * 0.7;
+    const safeY = Number.isFinite(this.y) ? this.y : 220;
+    const safeArcY = Number.isFinite(this.arcY) ? this.arcY : 0;
+    const drawY = (safeY + safeArcY) - (Number.isFinite(cameraY) ? cameraY : 0);
     if (drawY < -80 || drawY > 1200) return;
 
-    const progress = this.arcTimer / this.arcDuration;
-    const rot = this.rotation; // rotates from nose-up to nose-down
+    const rot = Number.isFinite(this.rotation) ? this.rotation : 0;
+    const dir = this.direction === -1 ? -1 : 1;
 
     ctx.save();
-    ctx.translate(this.x, drawY);
-    ctx.rotate(rot);
-    ctx.scale(this.direction * 0.88, 0.88);
+    try {
+      ctx.translate(safeX, drawY);
+      ctx.rotate(rot);
+      ctx.scale(dir * 0.88, 0.88);
 
-    drawMarinePet(ctx, 'dolphin', this.timer);
+      drawMarinePet(ctx, 'dolphin', safeTimer);
+    } catch (err) {
+      console.warn('Dolphin render error:', err);
+    } finally {
+      ctx.restore();
+    }
 
-    ctx.restore();
-
-    if (this.isHovered) drawPetNameplate(ctx, this.x, drawY - 32, 'Gracie the Dolphin');
+    if (this.isHovered) {
+      try {
+        drawPetNameplate(ctx, safeX, drawY - 32, 'Gracie the Dolphin');
+      } catch (e) {}
+    }
   }
 
   checkHover(mouseX, mouseY, cameraY = 0) {
@@ -453,14 +476,17 @@ export class BackgroundDolphin {
 export class BoatShark {
   constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; this.rotation = 0; this.isHovered = false; }
   update(dt, boat, surfaceY) {
+    if (!Number.isFinite(dt) || dt <= 0) return;
     this.timer += dt / 1000;
+    const boatX = (boat && Number.isFinite(boat.x)) ? boat.x : 400;
+    const surfY = Number.isFinite(surfaceY) ? surfaceY : 220;
     const phase = this.timer * .42;
     const horizontalVelocity = Math.cos(phase) * 125 * .42;
     const verticalVelocity = Math.cos(phase * 1.6) * 18 * .42 * 1.6;
-    this.x = boat.x + Math.sin(phase) * 125;
-    this.y = surfaceY + 82 + Math.sin(phase * 1.6) * 18;
+    this.x = boatX + Math.sin(phase) * 125;
+    this.y = surfY + 82 + Math.sin(phase * 1.6) * 18;
     this.direction = horizontalVelocity >= 0 ? 1 : -1;
-    this.rotation = Math.atan2(verticalVelocity, Math.abs(horizontalVelocity)) * .65;
+    this.rotation = Math.atan2(verticalVelocity, Math.max(0.001, Math.abs(horizontalVelocity))) * .65;
   }
   checkHover(x, y, cameraY = 0) {
     const dx = x - this.x, dy = y - this.y + cameraY;
@@ -470,8 +496,29 @@ export class BoatShark {
     return this.isHovered;
   }
   render(ctx, cameraY = 0) {
-    ctx.save(); ctx.translate(this.x, this.y - cameraY); ctx.rotate(this.rotation); ctx.scale(this.direction * 0.96, 0.96);
-    drawMarinePet(ctx, 'shark', this.timer); ctx.restore();
-    if (this.isHovered) drawPetNameplate(ctx, this.x, this.y - cameraY + 32, 'Irene the Shark');
+    const safeTimer = Number.isFinite(this.timer) ? this.timer : 0;
+    const safeX = Number.isFinite(this.x) ? this.x : 0;
+    const safeY = Number.isFinite(this.y) ? this.y : 300;
+    const drawY = safeY - (Number.isFinite(cameraY) ? cameraY : 0);
+    const rot = Number.isFinite(this.rotation) ? this.rotation : 0;
+    const dir = this.direction === -1 ? -1 : 1;
+
+    ctx.save();
+    try {
+      ctx.translate(safeX, drawY);
+      ctx.rotate(rot);
+      ctx.scale(dir * 0.96, 0.96);
+      drawMarinePet(ctx, 'shark', safeTimer);
+    } catch (err) {
+      console.warn('Shark render error:', err);
+    } finally {
+      ctx.restore();
+    }
+
+    if (this.isHovered) {
+      try {
+        drawPetNameplate(ctx, safeX, drawY + 32, 'Irene the Shark');
+      } catch (e) {}
+    }
   }
 }

@@ -30,6 +30,7 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
   const h = (bH > 0 ? bH : 40);
 
   ctx.save();
+  try {
 
   if (v >= 8) {
     // ==========================================
@@ -946,7 +947,7 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
   }
 
   // Cosmetic hull stripe follows the boat transform on every vessel tier.
-  if (skinColor) {
+  if (typeof skinColor === 'string' && skinColor) {
     ctx.fillStyle = skinColor;
     ctx.fillRect(-hw * 0.35, 4, hw * 0.7, 6);
   }
@@ -963,6 +964,21 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
     ctx.fill();
     ctx.shadowBlur = 0;
   }
-
-  ctx.restore();
+  } catch (err) {
+    console.error('Fatal drawVesselHull error:', err);
+    // Resilient fallback hull so boat is never invisible
+    ctx.fillStyle = '#78350f';
+    ctx.beginPath();
+    ctx.moveTo(-hw, -8);
+    ctx.lineTo(-hw * 0.84, h * 0.6);
+    ctx.quadraticCurveTo(0, h * 0.8, hw * 0.88, h * 0.5);
+    ctx.lineTo(hw, -8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#451a03';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  } finally {
+    ctx.restore();
+  }
 }

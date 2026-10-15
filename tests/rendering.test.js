@@ -157,3 +157,107 @@ test('high tier vessels and cloud save structures render completely with finite 
   }
 });
 
+test('bulletproof vessel, companions, angler, and pet nameplate rendering across all environments', async () => {
+  const { drawVesselHull } = await import('../src/rendering/VesselRenderer.js');
+  const { drawAngler, drawBoatTrinket, normalizeCustomization, ANGLER_OPTIONS } = await import('../src/data/CustomizationData.js');
+  const { drawMarinePet, drawPetNameplate } = await import('../src/rendering/MarinePetArt.js');
+  const { ShipsCat, PerchingPelican, BackgroundDolphin, BoatShark } = await import('../src/entities/BoatCompanions.js');
+
+  // Helper mock canvas context tracking save/restore balance and drawing operations
+  function createMockCtx(hasRoundRect = false) {
+    let saveCount = 0;
+    let restoreCount = 0;
+    const base = {
+      globalAlpha: 1,
+      globalCompositeOperation: 'source-over',
+      fillStyle: '#000',
+      strokeStyle: '#000',
+      lineWidth: 1,
+      font: '10px sans-serif',
+      textAlign: 'left',
+      textBaseline: 'top',
+      shadowBlur: 0,
+      shadowColor: '#000',
+      lineCap: 'round',
+      lineJoin: 'round',
+    };
+    if (hasRoundRect) {
+      base.roundRect = () => {};
+    }
+    return new Proxy(base, {
+      get(target, key) {
+        if (key === '__saveCount') return saveCount;
+        if (key === '__restoreCount') return restoreCount;
+        if (key in target) return target[key];
+        if (key === 'save') return () => { saveCount++; };
+        if (key === 'restore') return () => { restoreCount++; };
+        if (key === 'measureText') return (text) => ({ width: (text || '').length * 7 });
+        if (String(key).startsWith('create')) return () => ({ addColorStop() {} });
+        return () => {};
+      },
+      set(target, key, val) {
+        target[key] = val;
+        return true;
+      }
+    });
+  }
+
+  // 1. Verify drawPetNameplate functions flawlessly both with and WITHOUT ctx.roundRect
+  const ctxWithRoundRect = createMockCtx(true);
+  drawPetNameplate(ctxWithRoundRect, 100, 200, 'Gracie the Dolphin');
+  assert.equal(ctxWithRoundRect.__saveCount, ctxWithRoundRect.__restoreCount, 'save/restore must balance with roundRect');
+
+  const ctxWithoutRoundRect = createMockCtx(false);
+  drawPetNameplate(ctxWithoutRoundRect, 100, 200, 'Irene the Shark');
+  assert.equal(ctxWithoutRoundRect.__saveCount, ctxWithoutRoundRect.__restoreCount, 'save/restore must balance WITHOUT roundRect (fallback)');
+
+  // 2. Verify drawAngler handles null, undefined, and corrupted appearance gracefully
+  for (const app of [null, undefined, {}, { coat: 'invalid', hat: 'none' }, { skin: null }]) {
+    const ctx = createMockCtx(false);
+    drawAngler(ctx, app, 0, 0);
+    assert.equal(ctx.__saveCount, ctx.__restoreCount, 'drawAngler must balance save/restore for any input');
+  }
+
+  // 3. Verify drawBoatTrinket handles all trinket IDs and edge cases
+  const trinkets = ['lucky_cat', 'rubber_duck', 'wind_chime', 'ship_bell', 'pirate_parrot', 'crystal_orb', 'unknown'];
+  for (const t of trinkets) {
+    const ctx = createMockCtx(false);
+    drawBoatTrinket(ctx, t, 4, 1.5, 140, 40);
+    assert.equal(ctx.__saveCount, ctx.__restoreCount, `drawBoatTrinket(${t}) must balance save/restore`);
+  }
+
+  // 4. Verify all 4 Companions render and balance canvas state
+  const cat = new ShipsCat();
+  const pelican = new PerchingPelican();
+  const dolphin = new BackgroundDolphin(1200);
+  const shark = new BoatShark();
+
+  for (let tier = 0; tier <= 8; tier++) {
+    const ctx = createMockCtx(false);
+    cat.render(ctx, tier);
+    assert.equal(ctx.__saveCount, ctx.__restoreCount, `ShipsCat.render tier ${tier} balanced`);
+
+    const ctxP = createMockCtx(false);
+    pelican.render(ctxP, tier);
+    assert.equal(ctxP.__saveCount, ctxP.__restoreCount, `Pelican.render tier ${tier} balanced`);
+  }
+
+  const ctxD = createMockCtx(false);
+  dolphin.update(16, 220, 'CLEAR');
+  dolphin.render(ctxD, 0);
+  assert.equal(ctxD.__saveCount, ctxD.__restoreCount, 'BackgroundDolphin.render balanced');
+
+  const ctxS = createMockCtx(false);
+  shark.update(16, { x: 600, y: 206 }, 220);
+  shark.render(ctxS, 0);
+  assert.equal(ctxS.__saveCount, ctxS.__restoreCount, 'BoatShark.render balanced');
+
+  // 5. Verify drawVesselHull maintains balanced save/restore across all 9 tiers
+  for (let tier = 0; tier <= 8; tier++) {
+    const ctxH = createMockCtx(false);
+    drawVesselHull(ctxH, tier, 140, 40, 0, '#fbbf24');
+    assert.equal(ctxH.__saveCount, ctxH.__restoreCount, `drawVesselHull tier ${tier} balanced save/restore`);
+  }
+});
+
+

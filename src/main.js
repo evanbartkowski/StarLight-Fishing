@@ -245,6 +245,8 @@ uiManager.onModalClosed = () => {
 
 minimapUI.onSailToSea = (sea) => {
   gameState = 'SURFACE_IDLE';
+  cameraY = 0;
+  targetCameraY = 0;
   const preservedCatches = Array.isArray(hook.caughtItems) ? [...hook.caughtItems] : [];
   hook.applyUpgrades(save);
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
@@ -563,6 +565,7 @@ function triggerCast() {
 
 function startDive() {
   cameraY = 0;
+  targetCameraY = 0;
   oceanWorld.populateWorld(save);
   hook.applyUpgrades(save);
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
@@ -938,18 +941,25 @@ const update = (dt) => {
   particles.update(dt, oceanWorld.surfaceY);
 
   // Camera vertical dampening
-  if (gameState === 'SURFACE_IDLE' || gameState === 'AIMING') {
+  const isSurfaceState = (gameState === 'SURFACE_IDLE' || gameState === 'AIMING' || gameState === 'CATCH_SUMMARY');
+  if (isSurfaceState) {
     targetCameraY = 0;
+    if (cameraY < 1 && cameraY > -1) cameraY = 0;
   } else if (gameState === 'REELING') {
     // Keep hook lower on screen (~84% down) so player has a wide view of hazards and fish above
     const verticalOffset = screenHeight * 0.84;
-    targetCameraY = Math.max(0, hook.y - verticalOffset);
+    const hookY = Number.isFinite(hook.y) ? hook.y : 0;
+    targetCameraY = Math.max(0, hookY - verticalOffset);
   } else {
     // CASTING or DESCENDING: Keep hook at ~38% down so player can see deeper waters below
     const verticalOffset = screenHeight * 0.38;
-    targetCameraY = Math.max(0, hook.y - verticalOffset);
+    const hookY = Number.isFinite(hook.y) ? hook.y : 0;
+    targetCameraY = Math.max(0, hookY - verticalOffset);
   }
+  if (!Number.isFinite(targetCameraY)) targetCameraY = 0;
+  if (!Number.isFinite(cameraY)) cameraY = 0;
   cameraY += (targetCameraY - cameraY) * 7.5 * deltaSec;
+  if (!Number.isFinite(cameraY)) cameraY = 0;
 
   // Physics/rendering stay at full speed; DOM counters only need 15 updates/sec.
   hudElapsed += dt;
@@ -970,105 +980,160 @@ const render = () => {
   ctx.scale(dpr, dpr);
 
   // Apply screen shake
-  const shakeX = particles.shakeOffsetX;
-  const shakeY = particles.shakeOffsetY;
+  const shakeX = Number.isFinite(particles.shakeOffsetX) ? particles.shakeOffsetX : 0;
+  const shakeY = Number.isFinite(particles.shakeOffsetY) ? particles.shakeOffsetY : 0;
   ctx.translate(shakeX, shakeY);
 
   // Clear canvas
   ctx.clearRect(0, 0, screenWidth, screenHeight);
 
   // 1. Sky & Sun
-  oceanWorld.renderSky(ctx, cameraY);
+  try {
+    oceanWorld.renderSky(ctx, cameraY);
+  } catch (e) {
+    console.warn('Error in renderSky:', e);
+  }
 
   // 2. 7 Seas Underwater Background
-  oceanWorld.renderUnderwaterBackground(ctx, cameraY, screenHeight);
+  try {
+    oceanWorld.renderUnderwaterBackground(ctx, cameraY, screenHeight);
+  } catch (e) {
+    console.warn('Error in renderUnderwaterBackground:', e);
+  }
 
   // 3. Animated Water Surface
-  oceanWorld.renderWaterSurface(ctx, cameraY);
+  try {
+    oceanWorld.renderWaterSurface(ctx, cameraY);
+  } catch (e) {
+    console.warn('Error in renderWaterSurface:', e);
+  }
 
   // 4. Hazards (reactive flora drawn first so it sits behind obstacles)
-  (oceanWorld.entities.flora || []).forEach((flora) => {
-    if (flora.y - cameraY > -80 && flora.y - cameraY < screenHeight + 80) flora.render(ctx, cameraY);
-  });
-  (oceanWorld.entities.powerups || []).forEach((p) => {
-    if (p.y - cameraY > -40 && p.y - cameraY < screenHeight + 40) p.render(ctx, cameraY);
-  });
-  oceanWorld.entities.hazards.forEach((hazard) => {
-    hazard.renderAttacks(ctx, cameraY, screenHeight);
-    if (hazard.y - cameraY > -hazard.radius * 2 - 20 && hazard.y - cameraY < screenHeight + hazard.radius * 2 + 20) {
-      hazard.render(ctx, cameraY);
-    }
-  });
-
-  // 4b. Shipwreck Haunts (Sunken Galleons & Lurking Haunt Creatures)
-  (oceanWorld.entities.shipwrecks || []).forEach((wreck) => {
-    wreck.render(ctx, cameraY);
-  });
-
-  // 5. Treasures & Prehistoric Fossils
-  oceanWorld.entities.treasures.forEach((treasure) => {
-    if (treasure.y - cameraY > -60 && treasure.y - cameraY < screenHeight + 60) {
-      treasure.render(ctx, cameraY);
-    }
-  });
-
-  // 5b. Sunken Archaeological Relics
-  if (oceanWorld.entities.relics) {
-    oceanWorld.entities.relics.forEach((relic) => {
-      if (relic.y - cameraY > -60 && relic.y - cameraY < screenHeight + 60) {
-        relic.render(ctx, cameraY);
+  try {
+    (oceanWorld.entities.flora || []).forEach((flora) => {
+      if (flora.y - cameraY > -80 && flora.y - cameraY < screenHeight + 80) flora.render(ctx, cameraY);
+    });
+    (oceanWorld.entities.powerups || []).forEach((p) => {
+      if (p.y - cameraY > -40 && p.y - cameraY < screenHeight + 40) p.render(ctx, cameraY);
+    });
+    oceanWorld.entities.hazards.forEach((hazard) => {
+      hazard.renderAttacks(ctx, cameraY, screenHeight);
+      if (hazard.y - cameraY > -hazard.radius * 2 - 20 && hazard.y - cameraY < screenHeight + hazard.radius * 2 + 20) {
+        hazard.render(ctx, cameraY);
       }
     });
+  } catch (e) {
+    console.warn('Error in hazards/flora render:', e);
+  }
+
+  // 4b. Shipwreck Haunts (Sunken Galleons & Lurking Haunt Creatures)
+  try {
+    (oceanWorld.entities.shipwrecks || []).forEach((wreck) => {
+      wreck.render(ctx, cameraY);
+    });
+  } catch (e) {
+    console.warn('Error in shipwrecks render:', e);
+  }
+
+  // 5. Treasures & Prehistoric Fossils
+  try {
+    oceanWorld.entities.treasures.forEach((treasure) => {
+      if (treasure.y - cameraY > -60 && treasure.y - cameraY < screenHeight + 60) {
+        treasure.render(ctx, cameraY);
+      }
+    });
+    if (oceanWorld.entities.relics) {
+      oceanWorld.entities.relics.forEach((relic) => {
+        if (relic.y - cameraY > -60 && relic.y - cameraY < screenHeight + 60) {
+          relic.render(ctx, cameraY);
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('Error in treasures/relics render:', e);
   }
 
   // 6. Fish (with dynamic size scaling, shapes, and uncalibrated sonar silhouettes)
-  oceanWorld.entities.fish.forEach((fish) => {
-    if (fish.y - cameraY > -fish.scale * 130 && fish.y - cameraY < screenHeight + fish.scale * 130) {
-      fish.render(ctx, cameraY, hook);
-    }
-  });
+  try {
+    oceanWorld.entities.fish.forEach((fish) => {
+      if (fish.y - cameraY > -fish.scale * 130 && fish.y - cameraY < screenHeight + fish.scale * 130) {
+        fish.render(ctx, cameraY, hook);
+      }
+    });
+  } catch (e) {
+    console.warn('Error in fish render:', e);
+  }
 
   // 7. Abyssal Darkness & Hook Lantern Light Cone
-  oceanWorld.renderAbyssalDarkness(ctx, cameraY, screenHeight, hook);
+  try {
+    oceanWorld.renderAbyssalDarkness(ctx, cameraY, screenHeight, hook);
+  } catch (e) {
+    console.warn('Error in abyssal darkness render:', e);
+  }
 
   // 8. Fishing Line, Hook, and Tethered Catches
-  hook.renderLine(ctx, oceanWorld.rodTip.x, oceanWorld.rodTip.y, cameraY);
-  hook.render(ctx, cameraY);
-
-  // Render catches tethered to line (stays on the line a bit above the hook and follows it)
-  hook.caughtItems.forEach((item) => {
-    item.render(ctx, cameraY);
-  });
+  try {
+    hook.renderLine(ctx, oceanWorld.rodTip.x, oceanWorld.rodTip.y, cameraY);
+    hook.render(ctx, cameraY);
+    hook.caughtItems.forEach((item) => {
+      item.render(ctx, cameraY);
+    });
+  } catch (e) {
+    console.warn('Error in hook/line render:', e);
+  }
 
   // 9. Boat and Fisherman (supporting left/right cast orientation)
-  oceanWorld.renderBoatAndFisherman(ctx, cameraY);
+  try {
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    const isSurface = gameState === 'SURFACE_IDLE' || gameState === 'AIMING' || gameState === 'CATCH_SUMMARY';
+    oceanWorld.renderBoatAndFisherman(ctx, cameraY, isSurface);
+  } catch (boatErr) {
+    console.error('Fatal boat and fisherman render error:', boatErr);
+  }
 
   // 10. Aiming Trajectory Preview Arc (dual-sided)
   if (gameState === 'AIMING') {
-    const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[save.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
-    oceanWorld.renderAimingTrajectory(
-      ctx,
-      oceanWorld.rodTip.x,
-      oceanWorld.rodTip.y,
-      mousePos.x,
-      mousePos.y,
-      cameraY,
-      rodTier
-    );
+    try {
+      const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[save.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
+      oceanWorld.renderAimingTrajectory(
+        ctx,
+        oceanWorld.rodTip.x,
+        oceanWorld.rodTip.y,
+        mousePos.x,
+        mousePos.y,
+        cameraY,
+        rodTier
+      );
+    } catch (e) {
+      console.warn('Error in aiming trajectory render:', e);
+    }
   }
 
   // 10b. Zone Atmospheric Shaders (Mangrove fog wisps, Abyssal vignette, Caldera heat haze ripples, and Transition screen wipes)
   if (zoneManager) {
-    zoneManager.renderAtmosphere(ctx, cameraY, screenWidth, screenHeight);
+    try {
+      zoneManager.renderAtmosphere(ctx, cameraY, screenWidth, screenHeight);
+    } catch (e) {
+      console.warn('Error in zone atmosphere render:', e);
+    }
   }
 
   // 11. Particles (splashes, bubbles, sparkles, floating text)
-  particles.render(ctx, cameraY);
+  try {
+    particles.render(ctx, cameraY);
+  } catch (e) {
+    console.warn('Error in particles render:', e);
+  }
 
   // 12. Directional Sonar Radar
   if ((hook.sonarLevel === 'Radar' || hook.sonarLevel === 'SonarPulse' || hook.sonarLevel === 'MagnetSonar') &&
       (gameState === 'DESCENDING' || gameState === 'REELING')) {
-    renderSonarRadarPings();
+    try {
+      renderSonarRadarPings();
+    } catch (e) {
+      console.warn('Error in sonar radar pings render:', e);
+    }
   }
 
   ctx.restore();

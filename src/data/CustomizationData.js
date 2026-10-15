@@ -19,24 +19,38 @@ export const AQUARIUM_PRICES = {
   theme: { reef: 0, abyss: 4, atlantis: 6, nebula: 8 },
 };
 export function normalizeCustomization(options, values = {}) {
-  return Object.fromEntries(Object.entries(options).map(([key, config]) => [key, config.choices.some(([value]) => value === values?.[key]) ? values[key] : config.default]));
+  const safeValues = (values && typeof values === 'object') ? values : {};
+  return Object.fromEntries(
+    Object.entries(options || {}).map(([key, config]) => [
+      key,
+      config?.choices?.some(([value]) => value === safeValues[key]) ? safeValues[key] : (config?.default || '#eab308')
+    ])
+  );
 }
 export function drawAngler(ctx, appearance, x = 0, y = 0) {
-  const look = normalizeCustomization(ANGLER_OPTIONS, appearance);
-  ctx.save(); ctx.translate(x, y);
-  ctx.fillStyle = look.coat;
-  ctx.beginPath(); ctx.moveTo(-9, -26); ctx.lineTo(9, -26); ctx.lineTo(11, -2); ctx.lineTo(-11, -2); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = look.skin; ctx.beginPath(); ctx.arc(0, -32, 7, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = look.hair; ctx.beginPath(); ctx.arc(0, -34, 7, Math.PI, Math.PI * 2); ctx.fill(); ctx.fillRect(-7, -34, 3, 7);
-  if (look.hat !== 'none') {
-    ctx.fillStyle = look.hatColor; ctx.beginPath(); ctx.arc(0, -35, look.hat === 'beanie' ? 8 : 9, Math.PI, 0); ctx.fill();
-    if (look.hat === 'rainhat') ctx.fillRect(-13, -35, 26, 4);
-    else if (look.hat === 'cap') ctx.fillRect(-7, -35, 23, 3);
-    else { ctx.fillRect(-8, -36, 16, 4); ctx.beginPath(); ctx.arc(0, -45, 3, 0, Math.PI * 2); ctx.fill(); }
+  const safeX = Number.isFinite(x) ? x : 0;
+  const safeY = Number.isFinite(y) ? y : 0;
+  ctx.save();
+  try {
+    ctx.translate(safeX, safeY);
+    const look = normalizeCustomization(ANGLER_OPTIONS, appearance);
+    ctx.fillStyle = look.coat || '#eab308';
+    ctx.beginPath(); ctx.moveTo(-9, -26); ctx.lineTo(9, -26); ctx.lineTo(11, -2); ctx.lineTo(-11, -2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = look.skin || '#fde6c8'; ctx.beginPath(); ctx.arc(0, -32, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = look.hair || '#713f12'; ctx.beginPath(); ctx.arc(0, -34, 7, Math.PI, Math.PI * 2); ctx.fill(); ctx.fillRect(-7, -34, 3, 7);
+    if (look.hat && look.hat !== 'none') {
+      ctx.fillStyle = look.hatColor || '#ca8a04'; ctx.beginPath(); ctx.arc(0, -35, look.hat === 'beanie' ? 8 : 9, Math.PI, 0); ctx.fill();
+      if (look.hat === 'rainhat') ctx.fillRect(-13, -35, 26, 4);
+      else if (look.hat === 'cap') ctx.fillRect(-7, -35, 23, 3);
+      else { ctx.fillRect(-8, -36, 16, 4); ctx.beginPath(); ctx.arc(0, -45, 3, 0, Math.PI * 2); ctx.fill(); }
+    }
+    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(3, -32, 1, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = look.coat || '#eab308'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(22, -16); ctx.stroke();
+  } catch (err) {
+    console.warn('drawAngler render error:', err);
+  } finally {
+    ctx.restore();
   }
-  ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(3, -32, 1, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = look.coat; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(22, -16); ctx.stroke();
-  ctx.restore();
 }
 
 export function drawAquariumDecor(ctx, width, height, options, time) {
@@ -311,8 +325,8 @@ export const BOAT_TRINKETS = {
 export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, bH = 34) {
   if (!trinketId || trinketId === 'none') return;
   ctx.save();
-
-  if (trinketId === 'lucky_cat') {
+  try {
+    if (trinketId === 'lucky_cat') {
     const cx = bW * 0.32;
     const cy = -9;
     ctx.translate(cx, cy);
@@ -544,17 +558,19 @@ export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, 
     ctx.fill();
     ctx.fillRect(-5, -11, 10, 2);
     // Levitating pulsating glowing crystal orb
-    const hoverY = -18 + Math.sin(time * 3) * 2;
+    const hoverY = Number.isFinite(time) ? -18 + Math.sin(time * 3) * 2 : -18;
     // Outer magical aura
-    const pulseRadius = 9 + Math.sin(time * 5) * 1.5;
-    const auraGrad = ctx.createRadialGradient(0, hoverY, 1, 0, hoverY, pulseRadius);
-    auraGrad.addColorStop(0, 'rgba(56, 189, 248, 0.85)');
-    auraGrad.addColorStop(0.5, 'rgba(129, 140, 248, 0.4)');
-    auraGrad.addColorStop(1, 'rgba(99, 102, 241, 0)');
-    ctx.fillStyle = auraGrad;
-    ctx.beginPath();
-    ctx.arc(0, hoverY, pulseRadius, 0, Math.PI * 2);
-    ctx.fill();
+    const pulseRadius = Number.isFinite(time) ? 9 + Math.sin(time * 5) * 1.5 : 9;
+    try {
+      const auraGrad = ctx.createRadialGradient(0, hoverY, 1, 0, hoverY, pulseRadius);
+      auraGrad.addColorStop(0, 'rgba(56, 189, 248, 0.85)');
+      auraGrad.addColorStop(0.5, 'rgba(129, 140, 248, 0.4)');
+      auraGrad.addColorStop(1, 'rgba(99, 102, 241, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(0, hoverY, pulseRadius, 0, Math.PI * 2);
+      ctx.fill();
+    } catch (e) {}
     // Crystal sphere core
     ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
@@ -566,7 +582,10 @@ export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, 
     ctx.arc(-1.5, hoverY - 1.5, 1.2, 0, Math.PI * 2);
     ctx.fill();
   }
-
-  ctx.restore();
+  } catch (err) {
+    console.warn('drawBoatTrinket error:', err);
+  } finally {
+    ctx.restore();
+  }
 }
 

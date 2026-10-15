@@ -91,12 +91,16 @@ export class OceanWorld {
   }
 
   resize(width, height) {
-    this.worldWidth = width;
-    this.boat.x = width * 0.5;
+    this.worldWidth = Number.isFinite(width) && width > 200 ? width : (this.canvas?.width || 800);
+    if (!this.boat) {
+      this.boat = { x: this.worldWidth * 0.5, y: this.surfaceY - 14, width: 140, height: 40, angle: 0, bobOffset: 0, vesselLevel: 0 };
+    } else {
+      this.boat.x = this.worldWidth * 0.5;
+    }
     this.updateRodTip();
-    if (this.driftItems) this.driftItems.resize(width);
-    if (this.dolphin) this.dolphin.worldWidth = width;
-    if (this.hotspotManager) this.hotspotManager.worldWidth = width;
+    if (this.driftItems) this.driftItems.resize(this.worldWidth);
+    if (this.dolphin) this.dolphin.worldWidth = this.worldWidth;
+    if (this.hotspotManager) this.hotspotManager.worldWidth = this.worldWidth;
   }
 
   setSaveSystem(saveSys) {
@@ -450,7 +454,7 @@ export class OceanWorld {
         this.pendingBottleMessage = { type: 'pelican_retrieve', value: pelicanResult.value };
       }
     }
-    if (this.saveSystem?.isPetEquipped('shark')) this.shark.update(dt, this.boat, this.surfaceY);
+    if (this.shark && this.saveSystem?.isPetEquipped('shark')) this.shark.update(dt, this.boat, this.surfaceY);
     if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) {
       this.dolphin.update(dt, this.surfaceY, worldCycle.getWeather());
     }
@@ -951,10 +955,13 @@ export class OceanWorld {
     }
   }
 
-  renderBoatAndFisherman(ctx, cameraY = 0) {
+  renderBoatAndFisherman(ctx, cameraY = 0, isSurface = false) {
     if (!Number.isFinite(cameraY)) cameraY = 0;
     const surfaceY = Number.isFinite(this.surfaceY) ? this.surfaceY : 220;
-    if (cameraY > surfaceY + 140) return;
+
+    // Never cull the boat if on the surface!
+    const effectiveCameraY = isSurface ? 0 : cameraY;
+    if (!isSurface && effectiveCameraY > surfaceY + 220) return;
 
     if (!this.boat) {
       this.boat = { x: (this.worldWidth || 1200) * 0.5, y: surfaceY - 14, width: 140, height: 40, angle: 0, bobOffset: 0, vesselLevel: 0 };
@@ -962,23 +969,33 @@ export class OceanWorld {
     const b = this.boat;
     b.width = Number.isFinite(b.width) && b.width > 0 ? b.width : 140;
     b.height = Number.isFinite(b.height) && b.height > 0 ? b.height : 40;
-    if (!Number.isFinite(b.x) || b.x <= 0 || (this.worldWidth && b.x >= this.worldWidth)) {
-      b.x = (this.worldWidth || 1200) * 0.5;
+    const wWidth = Number.isFinite(this.worldWidth) && this.worldWidth > 200 ? this.worldWidth : (this.canvas?.width || 1200);
+    if (!Number.isFinite(b.x) || b.x <= 40 || b.x >= wWidth - 40) {
+      b.x = wWidth * 0.5;
     }
     if (!Number.isFinite(b.y)) b.y = surfaceY - 14;
     if (!Number.isFinite(b.angle)) b.angle = 0;
-    const drawBoatY = b.y - cameraY;
+    const drawBoatY = isSurface ? (surfaceY - 14 + (Number.isFinite(b.bobOffset) ? b.bobOffset : 0)) : (b.y - effectiveCameraY);
+
+    // If completely off-screen above or below, cull only when diving
+    if (!isSurface && (drawBoatY < -280 || drawBoatY > (this.canvas?.height || 1200) + 160)) return;
 
     const vesselNum = Number(this.saveSystem?.getUpgradeLevel?.('boatVessel') ?? b.vesselLevel ?? 0);
     const vessel = Number.isFinite(vesselNum) ? Math.max(0, Math.floor(vesselNum)) : 0;
     b.vesselLevel = vessel;
 
+    // Lazy instantiate companions if missing
+    if (!this.shark) this.shark = new BoatShark();
+    if (!this.dolphin) this.dolphin = new BackgroundDolphin(wWidth);
+    if (!this.shipsCat) this.shipsCat = new ShipsCat();
+    if (!this.pelican) this.pelican = new PerchingPelican();
+
     try {
-      if (this.saveSystem?.isPetEquipped('shark') && this.shark) this.shark.render(ctx, cameraY);
+      if (this.saveSystem?.isPetEquipped('shark') && this.shark) this.shark.render(ctx, effectiveCameraY);
     } catch (e) { console.warn('Pet shark render error:', e); }
 
     try {
-      if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) this.dolphin.render(ctx, cameraY);
+      if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) this.dolphin.render(ctx, effectiveCameraY);
     } catch (e) { console.warn('Pet dolphin render error:', e); }
 
     ctx.save();
@@ -988,7 +1005,10 @@ export class OceanWorld {
       ctx.globalCompositeOperation = 'source-over';
       ctx.rotate(b.angle);
 
-      const skinColor = BOAT_SKIN_OPTIONS[this.saveSystem?.data?.boatSkin]?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[this.saveSystem?.data?.boatSkin] || null;
+      const rawSkin = this.saveSystem?.data?.boatSkin;
+      const skinColor = typeof rawSkin === 'string'
+        ? (BOAT_SKIN_OPTIONS[rawSkin]?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[rawSkin] || null)
+        : null;
 
       try {
         drawVesselHull(ctx, vessel, b.width, b.height, this.waveTimer || 0, skinColor);
@@ -1006,7 +1026,7 @@ export class OceanWorld {
 
       // Equipped Boat Trinket
       try {
-        const equippedTrinket = this.saveSystem?.data.boatTrinket || 'none';
+        const equippedTrinket = this.saveSystem?.data?.boatTrinket || 'none';
         if (equippedTrinket && equippedTrinket !== 'none') {
           drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height);
         }
@@ -1019,26 +1039,31 @@ export class OceanWorld {
           if (this.hoveredCompanion === 'angela') {
             const catPos = this.shipsCat.getDeckPosition(vessel);
             ctx.save();
-            ctx.translate(catPos.x - 55, catPos.y - 30);
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-            ctx.strokeStyle = '#f59e0b';
-            ctx.lineWidth = 1.5;
-            const text = '🐱 Angela the Cat';
-            ctx.font = 'bold 11px Outfit, sans-serif';
-            const tw = ctx.measureText(text).width;
-            ctx.beginPath();
-            if (typeof ctx.roundRect === 'function') {
-              ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
-            } else {
-              ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+            try {
+              ctx.translate(catPos.x - 55, catPos.y - 30);
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+              ctx.strokeStyle = '#f59e0b';
+              ctx.lineWidth = 1.5;
+              const text = '🐱 Angela the Cat';
+              ctx.font = 'bold 11px Outfit, sans-serif';
+              const tw = ctx.measureText(text).width;
+              ctx.beginPath();
+              if (typeof ctx.roundRect === 'function') {
+                ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+              } else {
+                ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+              }
+              ctx.fill();
+              ctx.stroke();
+              ctx.fillStyle = '#fef3c7';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(text, 0, 0);
+            } catch (err) {
+              console.warn('Angela tooltip error:', err);
+            } finally {
+              ctx.restore();
             }
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = '#fef3c7';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(text, 0, 0);
-            ctx.restore();
           }
         }
       } catch (e) { console.warn('Cat render error:', e); }
@@ -1049,26 +1074,31 @@ export class OceanWorld {
           if (this.hoveredCompanion === 'evan') {
             const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
             ctx.save();
-            ctx.translate(birdPos.x + 55, birdPos.y - 32);
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 1.5;
-            const text = '🦤 Evan the Bird';
-            ctx.font = 'bold 11px Outfit, sans-serif';
-            const tw = ctx.measureText(text).width;
-            ctx.beginPath();
-            if (typeof ctx.roundRect === 'function') {
-              ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
-            } else {
-              ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+            try {
+              ctx.translate(birdPos.x + 55, birdPos.y - 32);
+              ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+              ctx.strokeStyle = '#38bdf8';
+              ctx.lineWidth = 1.5;
+              const text = '🦤 Evan the Bird';
+              ctx.font = 'bold 11px Outfit, sans-serif';
+              const tw = ctx.measureText(text).width;
+              ctx.beginPath();
+              if (typeof ctx.roundRect === 'function') {
+                ctx.roundRect(-tw / 2 - 7, -10, tw + 14, 18, 6);
+              } else {
+                ctx.rect(-tw / 2 - 7, -10, tw + 14, 18);
+              }
+              ctx.fill();
+              ctx.stroke();
+              ctx.fillStyle = '#e0f2fe';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(text, 0, 0);
+            } catch (err) {
+              console.warn('Evan tooltip error:', err);
+            } finally {
+              ctx.restore();
             }
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = '#e0f2fe';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(text, 0, 0);
-            ctx.restore();
           }
         }
       } catch (e) { console.warn('Pelican render error:', e); }
@@ -1076,7 +1106,8 @@ export class OceanWorld {
       // 2. Fisherman (flips left or right based on aimDirection)
       ctx.save();
       try {
-        ctx.scale(this.aimDirection || 1, 1);
+        const aimDir = this.aimDirection === -1 ? -1 : 1;
+        ctx.scale(aimDir, 1);
 
         const fX = -2;
         const fY = -12;
@@ -1108,8 +1139,8 @@ export class OceanWorld {
     }
 
     // Drift items on water surface (rendered in world space, not boat-relative)
-    if (this.driftItems && cameraY <= this.surfaceY + 50) {
-      this.driftItems.render(ctx, cameraY);
+    if (this.driftItems && effectiveCameraY <= this.surfaceY + 50) {
+      this.driftItems.render(ctx, effectiveCameraY);
     }
   }
 

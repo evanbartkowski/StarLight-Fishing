@@ -5,13 +5,14 @@ export function drawMarinePet(ctx, kind, time = 0) {
   const isDolphin = kind === 'dolphin';
 
   ctx.save();
-  if (isDolphin) {
-    // Gracie the Bottlenose Dolphin:
-    // Sleek periwinkle-blue body (#6583be), gentle bottle snout, rounded melon forehead,
-    // graceful falcate dorsal fin, white chest/pectoral flipper, soft belly countershading,
-    // cute dark eye with glossy glint, soft blush, and fluked tail with fluid swimming motion.
-    const swimWave = Math.sin(time * 5.0);
-    const tailFlukeWave = Math.sin(time * 5.0 - 0.7);
+  try {
+    if (isDolphin) {
+      // Gracie the Bottlenose Dolphin:
+      // Sleek periwinkle-blue body (#6583be), gentle bottle snout, rounded melon forehead,
+      // graceful falcate dorsal fin, white chest/pectoral flipper, soft belly countershading,
+      // cute dark eye with glossy glint, soft blush, and fluked tail with fluid swimming motion.
+      const swimWave = Math.sin(time * 5.0);
+      const tailFlukeWave = Math.sin(time * 5.0 - 0.7);
 
     ctx.save();
     // Smooth undulation of tail relative to head
@@ -265,24 +266,35 @@ export function drawMarinePet(ctx, kind, time = 0) {
 
     ctx.restore();
   }
-  ctx.restore();
+  } finally {
+    ctx.restore();
+  }
 }
 
 export function drawPetNameplate(ctx, x, y, text) {
   ctx.save();
-  ctx.translate(x, y);
-  ctx.font = 'bold 11px Outfit, sans-serif';
-  const width = ctx.measureText(text).width + 18;
-  ctx.fillStyle = 'rgba(15,23,42,.92)';
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(-width / 2, -11, width, 22, 6);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#e0f2fe';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 0, 0);
-  ctx.restore();
+  try {
+    ctx.translate(x, y);
+    ctx.font = 'bold 11px Outfit, sans-serif';
+    const width = ctx.measureText(text).width + 18;
+    ctx.fillStyle = 'rgba(15,23,42,.92)';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(-width / 2, -11, width, 22, 6);
+    } else {
+      ctx.rect(-width / 2, -11, width, 22);
+    }
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#e0f2fe';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 0, 0);
+  } catch (err) {
+    console.warn('drawPetNameplate error:', err);
+  } finally {
+    ctx.restore();
+  }
 }
