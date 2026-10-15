@@ -721,6 +721,91 @@ test('Sea 5-7 enemy balancing, Megalodons, Void aesthetic enemies, Realm 7 merma
   }
 });
 
+test('Performance lag reduction, Realm 7 rainbow fish with selective stars, mobile finger follow controls, boat color schemes, and fishing visuals', async () => {
+  const { Fish, drawRainbowStarSparkle } = await import('../src/entities/Fish.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { BOAT_SKIN_OPTIONS } = await import('../src/data/CustomizationData.js');
+  const { MARINE_THREATS } = await import('../src/data/MarineThreats.js');
+  const { Hook } = await import('../src/entities/Hook.js');
+  const { drawVesselHull } = await import('../src/rendering/VesselRenderer.js');
+
+  // 1. drawRainbowStarSparkle does not force expensive rasterizer shadowBlur
+  const sparkleCalls = [];
+  const mockCtx = new Proxy({}, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      return (...args) => sparkleCalls.push({ key, args });
+    },
+    set: (target, key, val) => {
+      sparkleCalls.push({ key, val });
+      target[key] = val;
+      return true;
+    },
+  });
+  drawRainbowStarSparkle(mockCtx, 10, 10, 8, 0, 180, 1);
+  const shadowBlurCalls = sparkleCalls.filter(c => c.key === 'shadowBlur' && c.val > 0);
+  assert.equal(shadowBlurCalls.length, 0, 'drawRainbowStarSparkle must not use heavy shadowBlur');
+
+  // 2. Normal fish in Realm 7 are rainbow, but not all of them have rotating stars
+  const r7Species = FISH_SPECIES.find(f => f.zone === 7 && f.rarity === 'common') || FISH_SPECIES.find(f => f.zone === 7);
+  assert.ok(r7Species, 'Must find Realm 7 fish species');
+
+  const fishList = [];
+  for (let i = 0; i < 20; i++) {
+    fishList.push(new Fish(r7Species, 100 + i * 37, 200 + i * 23, { zone: 7 }));
+  }
+  const withStars = fishList.filter(f => f.hasOrbitingStars);
+  const withoutStars = fishList.filter(f => !f.hasOrbitingStars);
+  assert.ok(withStars.length > 0, 'Some Realm 7 normal fish must have orbiting stars');
+  assert.ok(withoutStars.length > 0, 'Not all Realm 7 normal fish have orbiting stars');
+
+  // 3. Extended boat color schemes exist in BOAT_SKIN_OPTIONS
+  const expectedSkins = ['celestial', 'obsidian', 'pearl', 'crimson', 'amethyst', 'midnight', 'rose_gold'];
+  for (const sId of expectedSkins) {
+    assert.ok(BOAT_SKIN_OPTIONS[sId], `BOAT_SKIN_OPTIONS must contain ${sId}`);
+    assert.ok(BOAT_SKIN_OPTIONS[sId].color, `${sId} must have color string defined`);
+  }
+
+  // 4. VesselRenderer renders boat skin with sheer contour curves
+  const vesselCalls = [];
+  const vesselCtx = new Proxy({}, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      return (...args) => vesselCalls.push({ key, args });
+    },
+    set: (target, key, val) => {
+      vesselCalls.push({ key, val });
+      target[key] = val;
+      return true;
+    },
+  });
+  drawVesselHull(vesselCtx, 3, 140, 40, 0, '#c084fc');
+  assert.ok(vesselCalls.some(c => c.key === 'strokeStyle' && c.val === '#c084fc'), 'drawVesselHull must apply custom color scheme');
+
+  // 5. Hook and fishing line render without erratic high-frequency jitter
+  const hook = new Hook();
+  hook.state = 'DESCENDING';
+  hook.x = 200;
+  hook.y = 800;
+  const lineCalls = [];
+  const lineCtx = new Proxy({}, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      return (...args) => lineCalls.push({ key, args });
+    },
+    set: (target, key, val) => { target[key] = val; return true; },
+  });
+  hook.renderLine(lineCtx, 200, 220, 500);
+  assert.ok(lineCalls.some(c => c.key === 'quadraticCurveTo'), 'Fishing line must render smooth curve');
+
+  // 6. Enemy speeds across realms are lowered for fair and readable dodging
+  const specialistNautilus = MARINE_THREATS.find(m => m.name === 'Chronovore Nautilus');
+  assert.ok(specialistNautilus.speed <= 300, 'Chronovore Nautilus speed must be <= 300');
+  const voidMegalodon = MARINE_THREATS.find(m => m.name === 'Celestial Void Megalodon');
+  assert.ok(voidMegalodon.speed <= 150, 'Celestial Void Megalodon speed must be <= 150');
+});
+
+
 
 
 

@@ -20,9 +20,11 @@ export function drawRainbowStarSparkle(ctx, x, y, size, rotation, hue, alpha = 1
   const color = `hsl(${Math.round(hue) % 360}, 100%, 75%)`;
   const coreColor = '#ffffff';
 
-  // Radiant rainbow star halo
-  ctx.shadowColor = color;
-  ctx.shadowBlur = Math.max(4, size * 2.2);
+  // Fast luminous chromatic halo without heavy GPU shadowBlur pipeline raster stall
+  ctx.fillStyle = `hsla(${Math.round(hue) % 360}, 100%, 75%, 0.32)`;
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 1.4, 0, Math.PI * 2);
+  ctx.fill();
 
   // 4-pointed radiant diamond star
   ctx.fillStyle = color;
@@ -54,7 +56,6 @@ export function drawRainbowStarSparkle(ctx, x, y, size, rotation, hue, alpha = 1
 
   // Brilliant bright white diamond glint center
   ctx.fillStyle = coreColor;
-  ctx.shadowBlur = 0;
   ctx.beginPath();
   const centerR = size * 0.35;
   ctx.moveTo(0, -centerR);
@@ -125,6 +126,9 @@ export class Fish {
     this.isCaldera = isCaldera;
     const isVoidRealm = this.zone === 7 || species.zone === 7 || species.realmId === 7 || (species.id && species.id.startsWith('realm_7_')) || (species.id && species.id.includes('chrono'));
     this.isVoidRealm = isVoidRealm;
+    // Subset (~20%) of normal Chrono Void fish have orbiting stars to eliminate lag
+    const starSeed = Math.abs(Math.sin((this.x * 12.9898 + this.y * 78.233)) * 43758.5453);
+    this.hasOrbitingStars = (starSeed % 1) < 0.22;
     const calderaFishMult = isCaldera ? 1.6 : 1.0;
 
     const isFirst3Realms = (this.zone >= 1 && this.zone <= 3) || (species.zone >= 1 && species.zone <= 3) || (species.realmId >= 1 && species.realmId <= 3);
@@ -630,11 +634,10 @@ export class Fish {
     this.isCamouflaged = false;
     this.deflectWave = 0;
 
-    // Fish stays on the line a bit above the hook:
-    // Slot 0 sits 22px above hook, slot 1 sits 48px above, slot 2 sits 74px above
-    const verticalOffset = -22 - slotIndex * 26;
+    // Fish stays on the line neatly spaced above the hook:
+    const verticalOffset = -22 - slotIndex * 32;
     const side = slotIndex % 2 === 0 ? 1 : -1;
-    const horizontalOffset = side * 3; // slight alternation directly on the line
+    const horizontalOffset = side * 8; // clean alternation left and right of the line
 
     this.hookOffset = {
       x: horizontalOffset,
@@ -671,24 +674,24 @@ export class Fish {
       ctx.lineWidth = Math.max(1, 3.5 * (1 - this.deflectWave / 75));
       ctx.globalAlpha = Math.max(0, 1 - this.deflectWave / 75);
       ctx.shadowColor = this.deflectColor || '#38bdf8';
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.arc(posX, drawY, this.deflectWave, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
 
-    // Leader monofilament line from hook up to fish
+    // Leader branch line from main hook axis to fish clip
     if (isHooked && this.hook) {
       ctx.save();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(this.hook.x, this.hook.y - cameraY);
+      ctx.moveTo(this.hook.x, drawY);
       ctx.lineTo(posX, drawY);
       ctx.stroke();
 
-      // Shiny silver tackle clip where fish attaches to the line
+      // Shiny silver tackle clip where fish's mouth is secured to the line
       ctx.fillStyle = '#e2e8f0';
       ctx.beginPath();
       ctx.arc(posX, drawY, 2.5, 0, Math.PI * 2);
@@ -705,10 +708,11 @@ export class Fish {
     }
 
     if (isHooked) {
-      // Fish is hooked along the line, facing upwards toward surface with lively wiggling
+      // Fish is hooked by its mouth at the tackle clip, body angling naturally with lively wiggle
       const side = this.hookIndex % 2 === 0 ? 1 : -1;
-      const hangAngle = -Math.PI / 2 + Math.sin(this.wiggleTimer) * 0.22 + side * 0.1;
+      const hangAngle = -Math.PI / 2 + side * 0.22 + Math.sin(this.wiggleTimer * 2.5) * 0.12;
       ctx.rotate(hangAngle);
+      ctx.translate(-16, 0); // Aligns fish mouth directly at (posX, drawY)
     } else {
       ctx.scale(this.direction, 1);
       if (this.swimAngle) {
@@ -822,7 +826,7 @@ export class Fish {
       ctx.restore();
     }
 
-    // Super mythical ethereal celestial aura and orbiting stardust motes for Realm 7 (Chrono Void) normal fish
+    // Super mythical ethereal celestial aura and selective orbiting stardust motes for Realm 7 normal fish
     if (isVoidFish && !isLegendary) {
       ctx.save();
       const auraRadius = s.isLeviathan ? 88 : 46;
@@ -831,9 +835,9 @@ export class Fish {
       // 1. Iridescent undulating cosmic bloom
       const voidGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, auraRadius);
       const cycleHue = (t * 45) % 360;
-      voidGrad.addColorStop(0, `hsla(${cycleHue}, 90%, 85%, 0.42)`);
-      voidGrad.addColorStop(0.35, `hsla(${(cycleHue + 60) % 360}, 95%, 70%, 0.26)`);
-      voidGrad.addColorStop(0.7, `hsla(${(cycleHue + 140) % 360}, 85%, 60%, 0.14)`);
+      voidGrad.addColorStop(0, `hsla(${cycleHue}, 90%, 85%, 0.38)`);
+      voidGrad.addColorStop(0.4, `hsla(${(cycleHue + 60) % 360}, 95%, 70%, 0.22)`);
+      voidGrad.addColorStop(0.8, `hsla(${(cycleHue + 140) % 360}, 85%, 60%, 0.1)`);
       voidGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
 
       ctx.save();
@@ -844,20 +848,22 @@ export class Fish {
       ctx.fill();
       ctx.restore();
 
-      // 2. Orbiting stardust motes & prismatic celestial sparks
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      for (let m = 0; m < 5; m++) {
-        const moteAngle = m * (Math.PI * 2 / 5) + t * 0.9;
-        const moteDistX = (auraRadius * 0.72) + Math.sin(t * 2 + m) * 6;
-        const moteDistY = (auraRadius * 0.42) + Math.cos(t * 1.8 + m) * 4;
-        const mx = Math.cos(moteAngle) * moteDistX;
-        const my = Math.sin(moteAngle) * moteDistY;
-        const mHue = (t * 70 + m * 72) % 360;
-        const mSize = 2.6 + Math.sin(t * 3.5 + m) * 0.9;
-        drawRainbowStarSparkle(ctx, mx, my, mSize, t * 1.2 + m, mHue, 0.78);
+      // 2. Orbiting stardust motes & prismatic celestial sparks (only a select few normal fish carry these!)
+      if (this.hasOrbitingStars) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let m = 0; m < 4; m++) {
+          const moteAngle = m * (Math.PI * 2 / 4) + t * 0.9;
+          const moteDistX = (auraRadius * 0.72) + Math.sin(t * 2 + m) * 6;
+          const moteDistY = (auraRadius * 0.42) + Math.cos(t * 1.8 + m) * 4;
+          const mx = Math.cos(moteAngle) * moteDistX;
+          const my = Math.sin(moteAngle) * moteDistY;
+          const mHue = (t * 70 + m * 90) % 360;
+          const mSize = 2.4 + Math.sin(t * 3.5 + m) * 0.8;
+          drawRainbowStarSparkle(ctx, mx, my, mSize, t * 1.2 + m, mHue, 0.75);
+        }
+        ctx.restore();
       }
-      ctx.restore();
       ctx.restore();
     }
 
@@ -1012,14 +1018,17 @@ export class Fish {
       gradient.addColorStop(1, this.bodyColors[1]);
       primary = gradient;
     } else if (isVoidFish && !s.isLeviathan && !this.mutation && !this.isShiny) {
-      const vHue = (this.wiggleTimer * 40 + this.x * 0.08) % 360;
-      const gradient = ctx.createLinearGradient(-25, -12, 25, 12);
-      gradient.addColorStop(0, `hsl(${vHue}, 75%, 45%)`);
-      gradient.addColorStop(0.5, `hsl(${(vHue + 55) % 360}, 85%, 62%)`);
-      gradient.addColorStop(1, `hsl(${(vHue + 120) % 360}, 75%, 50%)`);
+      const vHue = (this.wiggleTimer * 50 + (this.x || 0) * 0.12) % 360;
+      const gradient = ctx.createLinearGradient(-28, -14, 28, 14);
+      gradient.addColorStop(0.0, `hsl(${vHue}, 92%, 56%)`);
+      gradient.addColorStop(0.2, `hsl(${(vHue + 60) % 360}, 95%, 62%)`);
+      gradient.addColorStop(0.4, `hsl(${(vHue + 120) % 360}, 92%, 56%)`);
+      gradient.addColorStop(0.6, `hsl(${(vHue + 180) % 360}, 95%, 62%)`);
+      gradient.addColorStop(0.8, `hsl(${(vHue + 240) % 360}, 92%, 58%)`);
+      gradient.addColorStop(1.0, `hsl(${(vHue + 300) % 360}, 90%, 56%)`);
       primary = gradient;
-      secondary = `hsl(${(vHue + 160) % 360}, 95%, 78%)`;
-      finColor = `hsla(${(vHue + 70) % 360}, 90%, 75%, 0.8)`;
+      secondary = `hsl(${(vHue + 180) % 360}, 95%, 78%)`;
+      finColor = `hsla(${(vHue + 80) % 360}, 95%, 72%, 0.85)`;
     }
 
     const isCustomTailLeviathan = [
@@ -2381,8 +2390,8 @@ export class Fish {
       ctx.restore();
     }
 
-    // Eldritch Chrono Void: Super mythical, unique celestial constellation artwork & star eye for Realm 7 fish
-    if (isVoidFish && !isHooked) {
+    // Eldritch Chrono Void: Super mythical celestial constellation artwork for select Realm 7 fish
+    if (isVoidFish && !isHooked && this.hasOrbitingStars) {
       ctx.save();
       const t = this.wiggleTimer;
 

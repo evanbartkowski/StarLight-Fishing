@@ -946,10 +946,41 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
     ctx.fillRect(ow * 0.25, -10, 4, 3);
   }
 
-  // Cosmetic hull stripe follows the boat transform on every vessel tier.
+  // Custom Hull Color Scheme: High-fidelity contoured hull sheer strake, waterline ribbon, and stem/stern flourishes
   if (typeof skinColor === 'string' && skinColor) {
+    ctx.save();
+    // 1. Sleek hydrodynamic hull stripe following the sheer curve
+    ctx.strokeStyle = skinColor;
+    ctx.lineWidth = Math.max(3, h * 0.12);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-hw * 0.88, 2);
+    ctx.quadraticCurveTo(0, h * 0.38, hw * 0.9, 2);
+    ctx.stroke();
+
+    // 2. Fine secondary pinstripe accent
+    ctx.strokeStyle = skinColor;
+    ctx.lineWidth = Math.max(1.5, h * 0.05);
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.moveTo(-hw * 0.75, h * 0.22);
+    ctx.quadraticCurveTo(0, h * 0.52, hw * 0.78, h * 0.22);
+    ctx.stroke();
+
+    // 3. Subtle ambient hull glow
+    ctx.strokeStyle = skinColor;
+    ctx.lineWidth = Math.max(5, h * 0.2);
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath();
+    ctx.moveTo(-hw * 0.86, 2);
+    ctx.quadraticCurveTo(0, h * 0.38, hw * 0.88, 2);
+    ctx.stroke();
+
+    // 4. Solid center deck accent block
     ctx.fillStyle = skinColor;
-    ctx.fillRect(-hw * 0.35, 4, hw * 0.7, 6);
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(-hw * 0.35, 4, hw * 0.7, 5);
+    ctx.restore();
   }
 
   // Lantern on bow/stern for tiers 0 through 4

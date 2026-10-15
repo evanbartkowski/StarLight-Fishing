@@ -310,6 +310,13 @@ export const BOAT_SKIN_OPTIONS = {
   indigo: { id: 'indigo', label: 'Deep Indigo', desc: 'Abyssal royal indigo racing stripe.', cost: 20, color: '#818cf8' },
   emerald: { id: 'emerald', label: 'Sea Emerald', desc: 'Luminescent seafoam emerald accent line.', cost: 25, color: '#34d399' },
   gold: { id: 'gold', label: 'Gilded Gilt', desc: 'Opulent sunken galleon gold trim.', cost: 40, color: '#fbbf24' },
+  celestial: { id: 'celestial', label: 'Celestial Starlight', desc: 'Iridescent starfall violet & stellar cosmic glow.', cost: 45, color: '#c084fc', secondaryColor: '#e0e7ff', glow: '#a855f7' },
+  obsidian: { id: 'obsidian', label: 'Molten Obsidian', desc: 'Volcanic black basalt with glowing magma vein accents.', cost: 40, color: '#ea580c', secondaryColor: '#1c1917', glow: '#f97316' },
+  pearl: { id: 'pearl', label: 'Iridescent Pearl', desc: 'Shimmering lustrous moonlit nacre luster.', cost: 35, color: '#f1f5f9', secondaryColor: '#bae6fd', glow: '#38bdf8' },
+  crimson: { id: 'crimson', label: 'Crimson Phantom', desc: 'Ghostly blood ruby and deep shadow scarlet trim.', cost: 30, color: '#f43f5e', secondaryColor: '#881337', glow: '#fb7185' },
+  amethyst: { id: 'amethyst', label: 'Royal Amethyst', desc: 'Imperial deep royal purple and gilded crystal hue.', cost: 35, color: '#9333ea', secondaryColor: '#581c87', glow: '#c084fc' },
+  midnight: { id: 'midnight', label: 'Midnight Abyss', desc: 'Stealth dark abyssal slate with electric cyan piping.', cost: 25, color: '#06b6d4', secondaryColor: '#0f172a', glow: '#22d3ee' },
+  rose_gold: { id: 'rose_gold', label: 'Rose Gold Sunset', desc: 'Warm metallic sunset copper and blush rose gold trim.', cost: 30, color: '#fb7185', secondaryColor: '#fbcfe8', glow: '#fda4af' },
 };
 
 export const BOAT_TRINKETS = {

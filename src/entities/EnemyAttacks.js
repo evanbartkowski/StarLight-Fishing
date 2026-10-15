@@ -35,12 +35,12 @@ export function updateAttack(enemy, dt, hook, width) {
     if (enemy.shots.length < 2) enemy.shots.push({ x: enemy.x, y: enemy.y, vx: attack.x * 480, vy: attack.y * 480, life: 2.5 });
     enemy.attackState = null; enemy.attackCooldown = 3.2;
   } else {
-    // High-speed committed charge along committed vector
+    // Committed charge along committed vector
     const totalDuration = 0.75;
     const elapsed = totalDuration - attack.remaining;
-    // Speed curve: explosive acceleration up front, overshooting past hook, followed by compensatory braking glide
-    const speedMultiplier = elapsed < 0.35 ? 1.35 : elapsed < 0.58 ? 0.95 : 0.55;
-    const currentSpeed = 520 * speedMultiplier;
+    // Speed curve: acceleration up front, followed by compensatory braking glide
+    const speedMultiplier = elapsed < 0.35 ? 1.25 : elapsed < 0.58 ? 0.9 : 0.5;
+    const currentSpeed = 385 * speedMultiplier;
 
     enemy.x += attack.x * currentSpeed * step;
     enemy.y += attack.y * currentSpeed * step;
@@ -53,8 +53,8 @@ export function updateAttack(enemy, dt, hook, width) {
     attack.remaining -= step;
     if (attack.remaining <= 0) {
       enemy.attackState = null;
-      enemy.attackCooldown = 2.6;
-      enemy.restTime = 1.5;
+      enemy.attackCooldown = 3.2;
+      enemy.restTime = 1.6;
       // Re-orient facing toward active hook to resume tracking
       if (active && Math.abs(hook.x - enemy.x) > 1) {
         enemy.facing = Math.sign(hook.x - enemy.x);

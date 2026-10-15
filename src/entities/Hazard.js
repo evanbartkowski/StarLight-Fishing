@@ -102,13 +102,13 @@ export class Hazard {
       const dx = targetX - this.x, dy = targetY - this.y;
       const length = Math.hypot(dx, dy) || 1;
 
-      // Realistic hydrodynamic acceleration and fluid drag - boosted tracking speed
-      const maxSpd = config.speed * (pursuing ? (isCalderaShark ? 1.25 : 1.35) : 0.32);
+      // Realistic hydrodynamic acceleration and fluid drag - balanced tracking speed
+      const maxSpd = config.speed * (pursuing ? (isCalderaShark ? 1.05 : 1.12) : 0.28);
       const desiredVx = (dx / length) * maxSpd;
       const desiredVy = (dy / length) * maxSpd;
 
-      // Smooth turning response when pursuing hook (caldera sharks glide with natural fluid arcs)
-      const accelFactor = isCalderaShark ? (pursuing ? 9.5 : 2.5) : (this.isColossal ? (pursuing ? 7.5 : 2.0) : (pursuing ? 18.0 : 4.5));
+      // Smooth turning response when pursuing hook (smooth hydrodynamic glide)
+      const accelFactor = isCalderaShark ? (pursuing ? 6.5 : 2.2) : (this.isColossal ? (pursuing ? 5.5 : 1.8) : (pursuing ? 12.0 : 3.8));
       this.vx += (desiredVx - this.vx) * Math.min(1, accelFactor * deltaSec);
       this.vy += (desiredVy - this.vy) * Math.min(1, accelFactor * deltaSec);
 

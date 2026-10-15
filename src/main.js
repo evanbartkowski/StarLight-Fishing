@@ -398,10 +398,6 @@ function handlePointerDown(e) {
     isMouseDown = true;
     lastSteerMode = 'mouse';
     hook.setTargetX(mousePos.x);
-    if (gameState === 'DESCENDING' || hook.state === 'DESCENDING') {
-      hook.startReel();
-      particles.addFloatingText('REELING UP!', hook.x, hook.y - 25, '#38bdf8', 16);
-    }
   }
 }
 
@@ -455,10 +451,8 @@ function handlePointerMove(e) {
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     oceanWorld.hoveredCompanion = null;
     if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
-    // Only steer hook to mouse if the mouse is actively being moved
-    if (lastSteerMode === 'mouse') {
-      hook.setTargetX(mousePos.x);
-    }
+    lastSteerMode = 'mouse';
+    hook.setTargetX(mousePos.x);
   }
 }
 
@@ -491,7 +485,7 @@ const clearPetHover = () => {
 canvas.addEventListener('pointerleave', clearPetHover);
 canvas.addEventListener('mouseleave', clearPetHover);
 
-// Touch events for mobile/tablet
+// Touch events for mobile/tablet: follow finger directly
 canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
   handlePointerDown(e);
@@ -507,6 +501,10 @@ window.addEventListener('touchmove', (e) => {
     if (e.cancelable) e.preventDefault();
   }
   handlePointerMove(e);
+  if (gameState === 'DESCENDING' || gameState === 'REELING') {
+    lastSteerMode = 'mouse';
+    hook.setTargetX(mousePos.x);
+  }
 }, { passive: false });
 
 window.addEventListener('touchend', (e) => {
@@ -962,9 +960,12 @@ const update = (dt) => {
       }
     }
   } else {
-    // Keep hook resting at rod tip on surface
+    // Keep hook resting at rod tip on surface with natural sway
     hook.x = oceanWorld.rodTip.x;
-    hook.y = oceanWorld.rodTip.y + 12;
+    hook.y = oceanWorld.rodTip.y + 6;
+    hook.prevX = hook.x;
+    hook.prevY = hook.y;
+    hook.tiltAngle = (oceanWorld.boat.angle || 0) * 0.4;
     hook.rodTip = oceanWorld.rodTip;
     hook.updateCaughtItems(dt, screenWidth);
   }

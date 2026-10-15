@@ -413,9 +413,6 @@ export class Hook {
     const drawRodY = rodTipY - cameraY;
 
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.lineWidth = 1.5;
-
     ctx.beginPath();
     ctx.moveTo(rodTipX, drawRodY);
 
@@ -424,10 +421,17 @@ export class Hook {
       const midY = Math.min(drawRodY, drawHookY) - 30;
       ctx.quadraticCurveTo(midX, midY, this.x, drawHookY);
     } else {
-      const sagX = (rodTipX + this.x) / 2 + Math.sin(this.y * 0.01) * 8;
+      // Natural fluid hydrodynamics: curve smoothly against velocity with gentle micro-drift
+      const dragOffset = -(this.vx || 0) * 0.04;
+      const microSway = Math.sin((this.bubbleTimer || 0) * 1.6) * 2.5;
+      const sagX = (rodTipX + this.x) / 2 + dragOffset + microSway;
       const sagY = (drawRodY + drawHookY) / 2;
       ctx.quadraticCurveTo(sagX, sagY, this.x, drawHookY);
     }
+
+    // High-visibility braided line with subtle clean sheen
+    ctx.strokeStyle = 'rgba(240, 249, 255, 0.9)';
+    ctx.lineWidth = 1.6;
     ctx.stroke();
     ctx.restore();
   }
