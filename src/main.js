@@ -309,6 +309,7 @@ function getCanvasCoords(e) {
 }
 
 function handlePointerDown(e) {
+  if (gameState === 'ENDGAME_SCENE') return;
   // If user clicks while modal is actively visible, ignore
   const overlay = document.getElementById('modal-overlay');
   if (uiManager.activeModal && overlay && overlay.classList.contains('modal-overlay-visible')) {
@@ -405,6 +406,7 @@ function handlePointerDown(e) {
 }
 
 function handlePointerMove(e) {
+  if (gameState === 'ENDGAME_SCENE') return;
   const coords = getCanvasCoords(e);
   const deltaMove = Math.hypot(coords.x - lastPointerPos.x, coords.y - lastPointerPos.y);
   if (deltaMove > 3) {
@@ -461,6 +463,7 @@ function handlePointerMove(e) {
 }
 
 function handlePointerUp(e) {
+  if (gameState === 'ENDGAME_SCENE') return;
   if (e) {
     const coords = getCanvasCoords(e);
     mousePos.x = coords.x;
@@ -650,7 +653,7 @@ const update = (dt) => {
   }
 
   // Update Hook
-  if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING') {
+  if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING' && gameState !== 'ENDGAME_SCENE') {
     hook.rodTip = oceanWorld.rodTip;
     hook.update(dt, oceanWorld.surfaceY, screenWidth, particles, isReelingInput, zoneManager);
     soundManager.keepAliveUnderwaterMusic?.();
@@ -717,6 +720,47 @@ const update = (dt) => {
           }
         }
       }
+    }
+
+    // Check for Endgame Trigger on the last realm (Sea 7: Eldritch Chrono Void)
+    const isLastRealm = (save.getCurrentSea ? save.getCurrentSea() : save.data.currentSea) === 7;
+    const reachedMaxReelDepth = (hook.depthMeters >= hook.maxDepthMeters - 1) || (hook.maxDepthReachedThisDive >= hook.maxDepthMeters - 1);
+
+    if (isLastRealm && reachedMaxReelDepth && !save.hasSeenEndgame() && gameState === 'DESCENDING') {
+      gameState = 'ENDGAME_SCENE';
+      hook.state = 'SURFACE_IDLE';
+
+      uiManager.triggerEndgameScene(() => {
+        save.markEndgameSeen();
+        accountManager.syncCloudSave();
+
+        // Preserve any catches acquired on this dive
+        let ranOutOfStorage = false;
+        hook.caughtItems.forEach((item) => {
+          if (!item._recordedInInventory) {
+            save.recordCatchItem(item);
+            item.inventoryRef = save.addItemToInventory(item);
+            if (!item.inventoryRef) ranOutOfStorage = true;
+            item._recordedInInventory = true;
+          }
+        });
+
+        // Record dive stats
+        save.recordDiveStats({
+          maxDepth: hook.maxDepthReachedThisDive,
+          tookDamage: hook.tookDamage,
+        });
+
+        // Reset to surface ready for next cast
+        hook.reset(oceanWorld.rodTip.x, oceanWorld.surfaceY);
+        gameState = 'SURFACE_IDLE';
+        cameraY = 0;
+        targetCameraY = 0;
+        soundManager.setMusicMode('surface');
+        soundManager.setSeaTrack(save.getCurrentSea ? save.getCurrentSea() : 7);
+        uiManager.showToast('🌌 Epilogue complete: Abyss memories unlocked in Settings.');
+      });
+      return;
     }
 
     // Hook reached max depth or began reeling
@@ -941,7 +985,7 @@ const update = (dt) => {
   particles.update(dt, oceanWorld.surfaceY);
 
   // Camera vertical dampening
-  const isSurfaceState = (gameState === 'SURFACE_IDLE' || gameState === 'AIMING' || gameState === 'CATCH_SUMMARY');
+  const isSurfaceState = (gameState === 'SURFACE_IDLE' || gameState === 'AIMING' || gameState === 'CATCH_SUMMARY' || gameState === 'ENDGAME_SCENE');
   if (isSurfaceState) {
     targetCameraY = 0;
     if (cameraY < 1 && cameraY > -1) cameraY = 0;

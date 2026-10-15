@@ -1,4 +1,24 @@
 import { REALM_MUSIC } from './RealmMusic.js';
+
+const createAudioElement = (src) => {
+  if (typeof Audio !== 'undefined') {
+    try {
+      return new Audio(src);
+    } catch (_) {}
+  }
+  return {
+    src,
+    volume: 1,
+    loop: false,
+    paused: true,
+    currentTime: 0,
+    addEventListener() {},
+    play() { return Promise.resolve(); },
+    pause() {},
+    load() {},
+  };
+};
+
 // Web Audio API procedural sound synthesizer + HTML5 Audio music manager
 export class SoundManager {
   constructor() {
@@ -8,10 +28,10 @@ export class SoundManager {
     this.musicVolume = 0.5;
 
     // HTML5 Audio tracks
-    this.surfaceMusic = new Audio("/sprites/seamusic.mp3");
-    this.underwaterMusic = new Audio("/sprites/oceanmusic2.mp3");
-    this.bubbleSfx = new Audio("/sprites/bubble.mp3");
-    this.bubbleSfx2 = new Audio("/sprites/bubble2.mp3");
+    this.surfaceMusic = createAudioElement("/sprites/seamusic.mp3");
+    this.underwaterMusic = createAudioElement("/sprites/oceanmusic2.mp3");
+    this.bubbleSfx = createAudioElement("/sprites/bubble.mp3");
+    this.bubbleSfx2 = createAudioElement("/sprites/bubble2.mp3");
 
     this.surfaceMusic.loop = true;
     this.underwaterMusic.loop = true;
@@ -59,6 +79,12 @@ export class SoundManager {
     this.seaGain = null;
     this.seaNodes = [];
     this.seaTimers = [];
+
+    // Endgame Special Music & Synth
+    this.endgameTrack = null;
+    this.endgameGain = null;
+    this.endgameNodes = [];
+    this.endgameTimers = [];
   }
 
   init() {
@@ -122,6 +148,12 @@ export class SoundManager {
     }
     if (this.seaGain && this.audioCtx) {
       this.seaGain.gain.setValueAtTime(this.isMuted || this.activeStation || this.currentMusicMode === 'none' ? 0 : this.musicVolume * 0.38, this.audioCtx.currentTime);
+    }
+    if (this.endgameTrack) {
+      this.endgameTrack.volume = vol * 0.75;
+    }
+    if (this.endgameGain && this.audioCtx) {
+      this.endgameGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.55, this.audioCtx.currentTime);
     }
   }
 
@@ -210,7 +242,7 @@ export class SoundManager {
     } else {
       const names = { 2: 'aquarain', 3: 'meditation', 4: 'peaceful', 5: 'ocean-waves', 6: 'tropical', 7: 'ocean-vibes' };
       if (!this.realmTracks.has(this.currentSeaId)) {
-        const audio = new Audio(`/music/${names[this.currentSeaId] || 'aquarain'}.mp3`);
+        const audio = createAudioElement(`/music/${names[this.currentSeaId] || 'aquarain'}.mp3`);
         audio.loop = true;
         audio.preload = 'none';
         this.realmTracks.set(this.currentSeaId, audio);
@@ -931,7 +963,7 @@ export class SoundManager {
     if (!stations[stationId]) return;
     this.activeStation = stationId;
     this.syncRecordedMusic();
-    this.radioTrack = new Audio(stations[stationId]);
+    this.radioTrack = createAudioElement(stations[stationId]);
     this.radioTrack.loop = true;
     this.applyVolumes();
     this.radioTrack.play()?.catch(() => {});
@@ -1192,6 +1224,115 @@ export class SoundManager {
     this.seaTimers.push(setInterval(tick, beat * 1000));
   }
 
+  // ========================================================
+  // SPECIAL END CREDITS & ENDGAME SCENE MUSIC
+  // Atmospheric, celestial audio track with layered procedural synth
+  // ========================================================
+  playEndgameMusic() {
+    this.ensureAudio();
+    this.stopEndgameMusic();
+
+    // Pause all regular surface, underwater, realm, and radio audio
+    this.surfaceMusic.pause?.();
+    this.underwaterMusic.pause?.();
+    for (const track of this.realmTracks?.values() || []) track.pause?.();
+    if (this.radioTrack) this.radioTrack.pause?.();
+    this.stopRadioStation();
+
+    // Stop realm ambient theme timers
+    for (const timer of this.seaTimers) clearInterval(timer);
+    this.seaTimers = [];
+
+    // 1. Layered HTML5 Audio playback (celestial deep ambient meditation track)
+    try {
+      this.endgameTrack = createAudioElement('/music/meditation.mp3');
+      this.endgameTrack.loop = true;
+      this.endgameTrack.volume = this.isMuted ? 0 : this.musicVolume * 0.75;
+      this.endgameTrack.play?.()?.catch?.(() => {});
+    } catch (_) {}
+
+    // 2. Web Audio procedural starry chime & deep abyssal drone layer
+    this._startEndgameSynth();
+  }
+
+  stopEndgameMusic() {
+    if (this.endgameTrack) {
+      try {
+        this.endgameTrack.pause?.();
+        this.endgameTrack.currentTime = 0;
+      } catch (_) {}
+      this.endgameTrack = null;
+    }
+    this._clearEndgameSynth();
+  }
+
+  _startEndgameSynth() {
+    if (!this.audioCtx) return;
+    const ctx = this.audioCtx;
+
+    try {
+      this.endgameGain = ctx.createGain();
+      this.endgameGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.5, ctx.currentTime);
+      this.endgameGain.connect(ctx.destination);
+
+      // Warm deep sub-bass drone
+      const droneOsc = ctx.createOscillator();
+      const droneGain = ctx.createGain();
+      droneOsc.type = 'sine';
+      droneOsc.frequency.setValueAtTime(55.0, ctx.currentTime); // A1 note
+      droneGain.gain.setValueAtTime(0.18, ctx.currentTime);
+      droneOsc.connect(droneGain);
+      droneGain.connect(this.endgameGain);
+      try { droneOsc.start(); } catch (_) {}
+      this.endgameNodes.push(droneOsc, droneGain);
+
+      // Starry bell arpeggios in celestial D Lydian / A Major pentatonic
+      const celestialNotes = [293.66, 329.63, 369.99, 440.00, 493.88, 554.37, 587.33, 659.25, 739.99, 880.00];
+      let noteIdx = 0;
+
+      const chimeInterval = setInterval(() => {
+        if (!this.endgameGain || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        const noteFreq = celestialNotes[noteIdx % celestialNotes.length];
+        noteIdx = (noteIdx + Math.floor(Math.random() * 3) + 1);
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = Math.random() < 0.6 ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(noteFreq, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.1, now + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 2.2);
+
+        osc.connect(gain);
+        gain.connect(this.endgameGain);
+
+        try {
+          osc.start(now);
+          osc.stop(now + 2.3);
+        } catch (_) {}
+      }, 500);
+
+      this.endgameTimers.push(chimeInterval);
+    } catch (_) {}
+  }
+
+  _clearEndgameSynth() {
+    for (const timer of this.endgameTimers) clearInterval(timer);
+    this.endgameTimers = [];
+    for (const node of this.endgameNodes) {
+      try {
+        node.stop?.();
+        node.disconnect?.();
+      } catch (_) {}
+    }
+    this.endgameNodes = [];
+    if (this.endgameGain) {
+      try { this.endgameGain.disconnect?.(); } catch (_) {}
+      this.endgameGain = null;
+    }
+  }
 }
 
 export const soundManager = new SoundManager();

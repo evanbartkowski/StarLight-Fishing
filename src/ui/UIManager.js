@@ -27,6 +27,7 @@ import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 import { drawVesselHull, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
+import { EndgameScene } from './EndgameScene.js';
 
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -57,6 +58,7 @@ export class UIManager {
 
     this.activeModal = null;
     this.toastTimer = null;
+    this.endgameScene = null;
 
     this.createDomElements();
     this.bindEvents();
@@ -5179,6 +5181,18 @@ export class UIManager {
           <p class="customize-note">For an older local account, sign in once on the original laptop to migrate your progress.</p>
         </div>
 
+        ${this.saveSystem.hasSeenEndgame() ? `
+        <div class="settings-section" style="border: 1px solid rgba(168, 85, 247, 0.45); background: radial-gradient(circle at top left, rgba(88, 28, 135, 0.35), rgba(15, 23, 42, 0.7)); box-shadow: 0 0 20px rgba(168, 85, 247, 0.18);">
+          <h3><span class="settings-sec-icon">🌌</span> Abyss Epilogue & End Credits</h3>
+          <p style="color: #cbd5e1; font-size: 0.92rem; margin-bottom: 12px; line-height: 1.5;">
+            You reached the bottom of the Seven Seas. Relive the journey into the cosmic abyss and the quote inscribed beneath the stars.
+          </p>
+          <button class="btn btn-primary" id="btn-rewatch-endgame" style="background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); border: 1px solid #c084fc; box-shadow: 0 0 16px rgba(168, 85, 247, 0.5); font-weight: 700; padding: 10px 22px;">
+            ✨ Rewatch End Credits
+          </button>
+        </div>
+        ` : ''}
+
         <div class="settings-section">
           <h3><span class="settings-sec-icon">${SETTINGS_ART.angler}</span> Vessel & Angler Customization</h3>
           <p>Customize your boat hull accents & deck trinkets, or change your angler colors, coat style, and headwear.</p>
@@ -5252,6 +5266,13 @@ export class UIManager {
 
     document.getElementById('btn-customize-boat')?.addEventListener('click', () => this.openBoatCustomization());
     document.getElementById('btn-customize-angler')?.addEventListener('click', () => this.openAppearance());
+    document.getElementById('btn-rewatch-endgame')?.addEventListener('click', () => {
+      this.closeModal();
+      this.triggerEndgameScene(() => {
+        soundManager.setMusicMode('surface');
+        soundManager.setSeaTrack(this.saveSystem.getCurrentSea ? this.saveSystem.getCurrentSea() : 1);
+      });
+    });
     document.getElementById('btn-cloud-save')?.addEventListener('click', async () => {
       this.saveSystem.save();
       await accountManager.syncCloudSave();
@@ -5389,5 +5410,12 @@ export class UIManager {
     document.getElementById('btn-tutorial-ready').addEventListener('click', () => {
       this.closeModal();
     });
+  }
+
+  triggerEndgameScene(onComplete) {
+    if (!this.endgameScene) {
+      this.endgameScene = new EndgameScene(this.saveSystem);
+    }
+    this.endgameScene.show(onComplete);
   }
 }

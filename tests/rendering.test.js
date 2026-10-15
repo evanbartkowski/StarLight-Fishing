@@ -260,4 +260,83 @@ test('bulletproof vessel, companions, angler, and pet nameplate rendering across
   }
 });
 
+test('endgame scene, quote verification, special audio controls, and rewatch setting in last realm', async () => {
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { soundManager } = await import('../src/audio/SoundManager.js');
+  const { EndgameScene } = await import('../src/ui/EndgameScene.js');
+
+  // 1. Verify SaveSystem default data and hasSeenEndgame methods
+  const save = new SaveSystem();
+  assert.equal(save.hasSeenEndgame(), false, 'Default save should not have seen endgame');
+  save.markEndgameSeen();
+  assert.equal(save.hasSeenEndgame(), true, 'markEndgameSeen should set hasSeenEndgame to true');
+
+  // 2. Verify soundManager endgame music starts and stops without error
+  assert.doesNotThrow(() => soundManager.playEndgameMusic(), 'playEndgameMusic should execute safely');
+  assert.doesNotThrow(() => soundManager.stopEndgameMusic(), 'stopEndgameMusic should execute safely');
+
+  // 3. Verify EndgameScene DOM generation and exact requested quote
+  let completed = false;
+  const mockSave = {
+    markEndgameSeen: () => { mockSave._seen = true; },
+    hasSeenEndgame: () => Boolean(mockSave._seen),
+    _seen: false,
+  };
+
+  if (typeof document === 'undefined') {
+    global.document = {
+      createElement: (tag) => {
+        const el = {
+          tagName: tag.toUpperCase(),
+          children: [],
+          classList: { add() {}, remove() {}, contains() { return false; } },
+          setAttribute() {},
+          addEventListener(event, fn) { el[`_on_${event}`] = fn; },
+          querySelector(sel) {
+            return el.children.find(c => c.id === sel.replace('#', '') || c.className === sel.replace('.', '')) || {
+              classList: { add() {}, remove() {}, contains() { return false; } },
+              addEventListener() {},
+              scrollTo() {},
+              getContext() { return { createLinearGradient() { return { addColorStop() {} }; }, fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, save() {}, restore() {}, arc() {}, ellipse() {} }; },
+            };
+          },
+          remove() {},
+          innerHTML: '',
+        };
+        return el;
+      },
+      body: {
+        appendChild(child) {
+          global.document.body._lastChild = child;
+        }
+      }
+    };
+    global.window = {
+      innerWidth: 1920,
+      innerHeight: 1080,
+      addEventListener() {},
+      removeEventListener() {},
+    };
+    global.requestAnimationFrame = (fn) => setTimeout(fn, 16);
+    global.cancelAnimationFrame = (id) => clearTimeout(id);
+  }
+
+  const scene = new EndgameScene(mockSave);
+  scene.show(() => { completed = true; });
+
+  const quoteExpectedPart1 = 'Perhaps the abyss was never empty. Perhaps it holds everything we once buried, all the dreams, memories, and broken pieces of ourselves too heavy for the surface to bear.';
+  const quoteExpectedPart2 = 'I wonder how many stars have fallen into the ocean, mistaking their own reflections for a place to call home, only to sink into depths where even their light could no longer reach.';
+  const quoteExpectedPart3 = 'And yet, as I drifted into the darkness, I realized something beautiful and tragic... Even at the bottom of the ocean, surrounded by everything the world had forgotten, I was still beneath a sea of stars.';
+  const authorExpected = 'created by : Evan Bartkowski';
+
+  assert.ok(scene.container.innerHTML.includes(quoteExpectedPart1), 'Endgame scene must include quote part 1');
+  assert.ok(scene.container.innerHTML.includes(quoteExpectedPart2), 'Endgame scene must include quote part 2');
+  assert.ok(scene.container.innerHTML.includes(quoteExpectedPart3), 'Endgame scene must include quote part 3');
+  assert.ok(scene.container.innerHTML.includes(authorExpected), 'Endgame scene must include author credit: created by : Evan Bartkowski');
+
+  scene.close();
+  assert.equal(mockSave._seen, true, 'EndgameScene.close should mark endgame as seen in save');
+});
+
+
 

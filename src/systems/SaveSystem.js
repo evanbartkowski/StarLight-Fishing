@@ -119,6 +119,7 @@ export class SaveSystem {
         alwaysAskOnCatch: true,
         hideSeabedTraps: false,
       },
+      hasSeenEndgame: false,
     };
   }
 
@@ -316,6 +317,7 @@ export class SaveSystem {
         zonePerks: parsed.zonePerks || {},
         aberrations: parsed.aberrations || {},
         settings: { ...def.settings, ...(parsed.settings || {}) },
+        hasSeenEndgame: Boolean(parsed.hasSeenEndgame),
       };
 
       if (!parsed.gemEconomyVersion) {
@@ -1260,6 +1262,16 @@ export class SaveSystem {
       this.save();
     }
     return tips;
+  }
+
+  hasSeenEndgame() {
+    return Boolean(this.data?.hasSeenEndgame);
+  }
+
+  markEndgameSeen() {
+    if (!this.data) return;
+    this.data.hasSeenEndgame = true;
+    this.save();
   }
 }
 
