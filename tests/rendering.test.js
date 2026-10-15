@@ -481,6 +481,36 @@ test('secret /gems1000 chat command adds 1000 gems without broadcasting to publi
   assert.equal(backendSendCalled, true, 'Normal message must reach backend');
 });
 
+test('secret /gold1 chat command adds 1,000,000 gold without broadcasting to public chat', async () => {
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { ChatManager } = await import('../src/systems/ChatManager.js');
+
+  const save = new SaveSystem();
+  save.data.coins = 250;
+  save.data.stats.totalGoldEarned = 250;
+
+  const chatManager = new ChatManager(save);
+  let backendSendCalled = false;
+  chatManager.loadBackend = async () => ({
+    send: async () => { backendSendCalled = true; return true; },
+    subscribe: async () => () => {},
+  });
+
+  // Test lowercase
+  const res1 = await chatManager.sendMessage('/gold1');
+  assert.deepEqual(res1, { secret: true, command: 'gold1', amount: 1000000 });
+  assert.equal(save.data.coins, 1000250, 'Must award 1,000,000 gold on /gold1');
+  assert.equal(save.data.stats.totalGoldEarned, 1000250, 'Must increase totalGoldEarned');
+  assert.equal(backendSendCalled, false, 'Must never send secret /gold1 command to network backend');
+
+  // Test uppercase and untrimmed
+  const res2 = await chatManager.sendMessage('   /GOLD1   ');
+  assert.deepEqual(res2, { secret: true, command: 'gold1', amount: 1000000 });
+  assert.equal(save.data.coins, 2000250, 'Must award another 1,000,000 gold on /GOLD1');
+  assert.equal(backendSendCalled, false, 'Must not send to backend');
+});
+
+
 
 
 
