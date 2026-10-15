@@ -2399,6 +2399,7 @@ export class UIManager {
               <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
                 <h4 style="margin: 0; color: #f8fafc; font-size: 1.05rem; text-align: center;">${q.title}</h4>
                 <span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${q.category}</span>
+                <span style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.15); color: #facc15; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${q.realmIcon || '🏝️'} Sea ${q.realmId}: ${q.realmName || 'Sunlit Shoals'}</span>
               </div>
               <p style="margin: 6px 0 10px 0; color: #cbd5e1; font-size: 0.88rem; line-height: 1.4; text-align: center; max-width: 520px;">${q.description}</p>
 
@@ -2412,8 +2413,9 @@ export class UIManager {
           </div>
 
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%;">
-            <div style="font-size: 0.9rem; color: #fef08a; font-weight: 700; text-align: center;">
-              +${q.rewardCoins.toLocaleString()} • +${q.rewardXp} XP
+            <div style="font-size: 0.95rem; color: #fef08a; font-weight: 700; text-align: center;">
+              💰 +${q.rewardCoins.toLocaleString()} Coins • ⭐ +${q.rewardXp} XP
+              ${q.realmId > 1 ? `<span style="display: block; font-size: 0.76rem; color: #38bdf8; font-weight: 600; margin-top: 2px;">⚡ Scaled for ${q.realmName}</span>` : ''}
             </div>
             ${
               isComplete

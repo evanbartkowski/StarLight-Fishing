@@ -156,8 +156,9 @@ export const QUEST_POOL = [
     target: 1,
     rewardCoins: 280,
     rewardXp: 120,
-    check: (event, current) => {
-      if (event.type === 'catch_fish' && event.fish.weight >= 15.0) return current + 1;
+    check: (event, current, target, realmId = 1) => {
+      const minWeight = getHeavyweightTarget(realmId);
+      if (event.type === 'catch_fish' && event.fish.weight >= minWeight) return current + 1;
       return current;
     },
   },
@@ -207,6 +208,34 @@ export const QUEST_POOL = [
     },
   },
   {
+    id: 'aether_skies_contract',
+    title: 'Whispering Aether Contract',
+    category: 'fantasy',
+    icon: '☁️',
+    description: 'Catch 2 cloud-dwelling or celestial specimens from Sea 5: Whispering Aether Sea.',
+    target: 2,
+    rewardCoins: 520,
+    rewardXp: 220,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && (event.fish.zone === 5 || event.fish.speciesId?.includes('aether') || event.fish.speciesId?.includes('cloud'))) return current + 1;
+      return current;
+    },
+  },
+  {
+    id: 'caldera_lava_contract',
+    title: 'Magma Caldera Expedition',
+    category: 'fantasy',
+    icon: '🌋',
+    description: 'Catch 2 molten or volcanic creatures from Sea 6: Magma Caldera Trench.',
+    target: 2,
+    rewardCoins: 580,
+    rewardXp: 250,
+    check: (event, current) => {
+      if (event.type === 'catch_fish' && (event.fish.zone === 6 || event.fish.speciesId?.includes('caldera') || event.fish.speciesId?.includes('lava') || event.fish.speciesId?.includes('magma'))) return current + 1;
+      return current;
+    },
+  },
+  {
     id: 'void_titan_contract',
     title: 'Chrono Void Expedition',
     category: 'fantasy',
@@ -223,7 +252,6 @@ export const QUEST_POOL = [
   },
 ];
 
-
 // Additional short contracts use the same catch and dive events as the noticeboard.
 QUEST_POOL.push(
   { id: 'harbor_supper', title: 'Supper for the Harbor', category: 'fishing', icon: '\uD83C\uDF72', description: 'Catch 6 fish of any kind.', target: 6, rewardCoins: 180, rewardXp: 80,
@@ -239,3 +267,98 @@ QUEST_POOL.push(
   { id: 'three_good_trips', title: 'Three Good Trips', category: 'exploration', icon: '\uD83E\uDDED', description: 'Return from 3 dives carrying at least one catch.', target: 3, rewardCoins: 220, rewardXp: 100,
     check: (event, current) => event.type === 'dive_completed' && event.catchesCount > 0 ? current + 1 : current },
 );
+
+/**
+ * Returns realm-tailored target sounding depths that fit naturally within each sea's bathymetry.
+ */
+export function getSoundingTarget(realmId = 1) {
+  const depths = { 1: 30, 2: 80, 3: 180, 4: 280, 5: 420, 6: 650, 7: 1000 };
+  return depths[realmId] || 90;
+}
+
+/**
+ * Returns realm-tailored minimum fish weight thresholds scaled to local species sizes.
+ */
+export function getHeavyweightTarget(realmId = 1) {
+  const weights = { 1: 2.0, 2: 6.0, 3: 14.0, 4: 25.0, 5: 40.0, 6: 65.0, 7: 100.0 };
+  return weights[realmId] || 15.0;
+}
+
+/**
+ * Scales quest objective targets to reflect the depth, scale, and difficulty of the contracted realm.
+ */
+export function getQuestTargetForRealm(def, realmId = 1) {
+  if (!def) return 1;
+  const r = Math.max(1, Math.min(7, Number(realmId) || 1));
+  switch (def.id) {
+    case 'deep_sounder':
+      return getSoundingTarget(r);
+    case 'harbor_supper':
+      // Scales 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
+      return 3 + r;
+    case 'silver_scales':
+      // Scales 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8
+      return 1 + r;
+    case 'salvage_patrol':
+      return r <= 2 ? 2 : r <= 4 ? 3 : 4;
+    case 'steady_hands':
+      return r <= 2 ? 2 : r <= 4 ? 3 : 4;
+    case 'three_good_trips':
+      return r <= 2 ? 3 : r <= 4 ? 4 : 5;
+    case 'trap_tender':
+      return r <= 2 ? 2 : r <= 4 ? 3 : 4;
+    case 'crate_salvager':
+      return r <= 3 ? 1 : 2;
+    case 'apex_hunter':
+      return r <= 3 ? 1 : 2;
+    case 'sealed_surprise':
+      return r <= 3 ? 1 : 2;
+    default:
+      return def.target || 1;
+  }
+}
+
+/**
+ * Returns a realm-tailored, dynamic description matching the contracted objective.
+ */
+export function getQuestDescriptionForRealm(def, realmId = 1, target = null) {
+  if (!def) return '';
+  const r = Math.max(1, Math.min(7, Number(realmId) || 1));
+  const t = target || getQuestTargetForRealm(def, r);
+
+  if (def.id === 'deep_sounder') {
+    return `Descend to at least ${t} meters in a single dive.`;
+  }
+  if (def.id === 'heavyweight_champ') {
+    const minW = getHeavyweightTarget(r);
+    return `Catch any fish weighing ${minW.toFixed(1)} kg or heavier.`;
+  }
+  if (def.id === 'harbor_supper') {
+    return `Catch ${t} fish of any kind.`;
+  }
+  if (def.id === 'silver_scales') {
+    return `Catch ${t} uncommon or rare fish.`;
+  }
+  if (def.id === 'salvage_patrol') {
+    return `Bring up ${t} treasures, fossils, or crates.`;
+  }
+  if (def.id === 'steady_hands') {
+    return `Finish ${t} dives with at least one catch and no hazard hits.`;
+  }
+  if (def.id === 'three_good_trips') {
+    return `Return from ${t} dives carrying at least one catch.`;
+  }
+  if (def.id === 'trap_tender') {
+    return `Harvest ${t} catches from your passive seabed drift pots.`;
+  }
+  if (def.id === 'crate_salvager') {
+    return `Hook and haul up ${t} mystery loot ${t > 1 ? 'crates or treasure chests' : 'crate or treasure chest'}.`;
+  }
+  if (def.id === 'apex_hunter') {
+    return `Reel in ${t} Epic, Legendary, Mythic, or Deep Titan ${t > 1 ? 'specimens' : 'fish'}.`;
+  }
+  if (def.id === 'sealed_surprise') {
+    return `Open ${t} mystery ${t > 1 ? 'crates' : 'crate'} from your inventory.`;
+  }
+  return def.description;
+}

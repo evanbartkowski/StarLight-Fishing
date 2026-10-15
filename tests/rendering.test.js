@@ -403,5 +403,39 @@ test('legendary fish and animal noticeable glow, rainbow star sparkles, and catc
   assert.ok(particles.sparkles.some(sp => typeof sp.color === 'string' && sp.color.startsWith('hsl(')), 'Sparkles must have rainbow hues');
 });
 
+test('quests and rewards scale dynamically with realm depth, difficulty, and economy', async () => {
+  const { QuestSystem, questReward } = await import('../src/systems/QuestSystem.js');
+  const { QUEST_POOL, getQuestTargetForRealm, getQuestDescriptionForRealm, getSoundingTarget, getHeavyweightTarget } = await import('../src/data/QuestsData.js');
+
+  // 1. Verify sounding depth scales with sea bathymetry (Sea 1 is 30m to fit within 45m; Sea 7 reaches 1000m)
+  assert.equal(getSoundingTarget(1), 30);
+  assert.equal(getSoundingTarget(7), 1000);
+  assert.ok(getSoundingTarget(7) > getSoundingTarget(1) * 20);
+
+  // 2. Verify heavyweight requirements scale by realm fish size (Sea 1: 2.0 kg; Sea 7: 100.0 kg)
+  assert.equal(getHeavyweightTarget(1), 2.0);
+  assert.equal(getHeavyweightTarget(7), 100.0);
+
+  // 3. Verify general noticeboard quest targets scale from shallow to deep realms
+  const supper = QUEST_POOL.find(q => q.id === 'harbor_supper');
+  assert.equal(getQuestTargetForRealm(supper, 1), 4);
+  assert.equal(getQuestTargetForRealm(supper, 7), 10);
+  assert.ok(getQuestDescriptionForRealm(supper, 7, 10).includes('10 fish'));
+
+  // 4. Verify contracts exist for all 7 fantasy realms
+  assert.ok(QUEST_POOL.some(q => q.id === 'aether_skies_contract'), 'Sea 5 Aether Skies contract must exist');
+  assert.ok(QUEST_POOL.some(q => q.id === 'caldera_lava_contract'), 'Sea 6 Caldera Lava contract must exist');
+
+  // 5. Verify rewards scale up proportionally with realm multipliers and quest scale
+  for (const q of [supper, QUEST_POOL.find(q => q.id === 'deep_sounder')]) {
+    const r1 = questReward(q, 1);
+    const r3 = questReward(q, 3);
+    const r7 = questReward(q, 7);
+    assert.ok(r7.rewardCoins > r3.rewardCoins, `Realm 7 coins must exceed Realm 3 for ${q.id}`);
+    assert.ok(r3.rewardCoins > r1.rewardCoins, `Realm 3 coins must exceed Realm 1 for ${q.id}`);
+    assert.ok(r7.rewardXp > r1.rewardXp, `Realm 7 XP must exceed Realm 1 for ${q.id}`);
+  }
+});
+
 
 
