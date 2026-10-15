@@ -292,12 +292,19 @@ test('endgame scene, quote verification, special audio controls, and rewatch set
           classList: { add() {}, remove() {}, contains() { return false; } },
           setAttribute() {},
           addEventListener(event, fn) { el[`_on_${event}`] = fn; },
+          getContext() {
+            return {
+              createLinearGradient() { return { addColorStop() {} }; },
+              createRadialGradient() { return { addColorStop() {} }; },
+              fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {}, save() {}, restore() {}, arc() {}, ellipse() {},
+            };
+          },
           querySelector(sel) {
             return el.children.find(c => c.id === sel.replace('#', '') || c.className === sel.replace('.', '')) || {
               classList: { add() {}, remove() {}, contains() { return false; } },
               addEventListener() {},
               scrollTo() {},
-              getContext() { return { createLinearGradient() { return { addColorStop() {} }; }, fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, save() {}, restore() {}, arc() {}, ellipse() {} }; },
+              getContext() { return { createLinearGradient() { return { addColorStop() {} }; }, createRadialGradient() { return { addColorStop() {} }; }, fillRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {}, stroke() {}, save() {}, restore() {}, arc() {}, ellipse() {} }; },
             };
           },
           remove() {},
@@ -336,6 +343,64 @@ test('endgame scene, quote verification, special audio controls, and rewatch set
 
   scene.close();
   assert.equal(mockSave._seen, true, 'EndgameScene.close should mark endgame as seen in save');
+});
+
+test('legendary fish and animal noticeable glow, rainbow star sparkles, and catch particles', async () => {
+  const { Fish, drawRainbowStarSparkle } = await import('../src/entities/Fish.js');
+  const { Hook } = await import('../src/entities/Hook.js');
+  const { ParticleSystem } = await import('../src/systems/ParticleSystem.js');
+  const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
+
+  // 1. Verify drawRainbowStarSparkle renders balanced 4-pointed radiant star with needles and center
+  const sparkleCalls = [];
+  const sparkleCtx = new Proxy({ globalAlpha: 1 }, {
+    get: (target, key) => {
+      if (key in target) return target[key];
+      return (...args) => sparkleCalls.push({ key, args });
+    },
+    set: (target, key, val) => { target[key] = val; return true; },
+  });
+  drawRainbowStarSparkle(sparkleCtx, 50, 60, 8, 0.5, 180, 0.9);
+  assert.ok(sparkleCalls.some(c => c.key === 'moveTo'), 'drawRainbowStarSparkle must draw star paths');
+  assert.ok(sparkleCalls.some(c => c.key === 'lineTo'), 'drawRainbowStarSparkle must have facet points');
+  assert.ok(sparkleCalls.some(c => c.key === 'stroke'), 'drawRainbowStarSparkle must draw needle flares');
+  assert.ok(sparkleCalls.some(c => c.key === 'fill'), 'drawRainbowStarSparkle must fill radiant star and core');
+  assert.ok(sparkleCalls.some(c => c.key === 'save'), 'drawRainbowStarSparkle must save state');
+  assert.ok(sparkleCalls.some(c => c.key === 'restore'), 'drawRainbowStarSparkle must restore state');
+
+  // 2. Verify all legendary and mythic species render balanced canvas state with radiant aura and body sparkles
+  for (const species of LEGENDARY_SPECIES) {
+    const fish = new Fish(species, 300, 400);
+    assert.equal(fish.isLegendary, true, `${species.name} must be identified as legendary`);
+
+    let saveCount = 0;
+    let restoreCount = 0;
+    const fishCalls = [];
+    const fishCtx = new Proxy({ globalAlpha: 1 }, {
+      get: (target, key) => {
+        if (key === '__saveCount') return saveCount;
+        if (key === '__restoreCount') return restoreCount;
+        if (key in target) return target[key];
+        if (key === 'save') return () => { saveCount++; };
+        if (key === 'restore') return () => { restoreCount++; };
+        if (typeof key === 'string' && key.startsWith('create')) return () => ({ addColorStop() {} });
+        return (...args) => fishCalls.push({ key, args });
+      },
+      set: (target, key, val) => { target[key] = val; return true; },
+    });
+
+    fish.render(fishCtx, 0);
+    assert.equal(saveCount, restoreCount, `${species.name} Fish.render must have balanced save/restore`);
+    assert.ok(fishCalls.length > 50, `${species.name} Fish.render must render noticeable aura and sparkles`);
+  }
+
+  // 3. Verify Hook emits rainbow star sparkles when catching legendary species
+  const hook = new Hook(null, { x: 300, y: 300 });
+  const particles = new ParticleSystem();
+  const testLegendary = new Fish(LEGENDARY_SPECIES[0], 300, 300);
+  hook.addCatch(testLegendary, particles);
+  assert.ok(particles.sparkles.length >= 35, 'Hook must emit at least 35 sparkles on legendary catch');
+  assert.ok(particles.sparkles.some(sp => typeof sp.color === 'string' && sp.color.startsWith('hsl(')), 'Sparkles must have rainbow hues');
 });
 
 

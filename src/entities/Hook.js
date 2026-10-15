@@ -181,7 +181,11 @@ export class Hook {
 
     if (particles) {
       const glow = entity.isShiny ? '#fef08a' : (entity.rarityGlow || (entity.isSpecialDeep ? '#38bdf8' : '#fde047'));
-      particles.emitSparkles(this.x, this.y, entity.isShiny ? 26 : (entity.isSpecialDeep ? 22 : 16), glow);
+      if (rarity === 'legendary' || entity.isMythic || entity.isLegendary) {
+        particles.emitSparkles(this.x, this.y, 36, 'rainbow');
+      } else {
+        particles.emitSparkles(this.x, this.y, entity.isShiny ? 26 : (entity.isSpecialDeep ? 22 : 16), glow);
+      }
 
       const crownTag = entity.crown === 'gold' ? ' 👑' : entity.crown === 'silver' ? ' 🥈' : '';
       const deepTitanTag = entity.isSpecialDeep ? ' [DEEP TITAN]' : '';

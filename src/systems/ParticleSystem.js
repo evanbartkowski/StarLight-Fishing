@@ -52,12 +52,13 @@ export class ParticleSystem {
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 1.0 + Math.random() * 3.0;
+      const particleColor = color === 'rainbow' ? `hsl(${Math.floor(Math.random() * 360)}, 100%, 75%)` : color;
       this.sparkles.push({
         x,
         y,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        color,
+        color: particleColor,
         size: 3 + Math.random() * 4,
         alpha: 1.0,
         decay: 0.03 + Math.random() * 0.02,
@@ -189,6 +190,11 @@ export class ParticleSystem {
       ctx.globalAlpha = Math.max(0, sp.alpha);
       ctx.fillStyle = sp.color;
 
+      if (typeof sp.color === 'string' && sp.color.startsWith('hsl')) {
+        ctx.shadowColor = sp.color;
+        ctx.shadowBlur = 5;
+      }
+
       // 4-point sparkle star
       const sz = sp.size;
       ctx.beginPath();
@@ -202,6 +208,29 @@ export class ParticleSystem {
       ctx.lineTo(-sz * 0.25, -sz * 0.25);
       ctx.closePath();
       ctx.fill();
+
+      // Star needles
+      ctx.strokeStyle = sp.color;
+      ctx.lineWidth = Math.max(0.6, sz * 0.15);
+      ctx.beginPath();
+      ctx.moveTo(-sz * 1.3, 0);
+      ctx.lineTo(sz * 1.3, 0);
+      ctx.moveTo(0, -sz * 1.3);
+      ctx.lineTo(0, sz * 1.3);
+      ctx.stroke();
+
+      // White glint center
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      const cSz = sz * 0.32;
+      ctx.moveTo(0, -cSz);
+      ctx.lineTo(cSz, 0);
+      ctx.lineTo(0, cSz);
+      ctx.lineTo(-cSz, 0);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.restore();
     }
     ctx.restore();

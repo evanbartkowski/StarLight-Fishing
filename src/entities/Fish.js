@@ -6,6 +6,67 @@ import { soundManager } from '../audio/SoundManager.js';
 import { rollCatchTraits, depthRewardMultiplier } from '../systems/CatchTraits.js';
 import { drawMarineCreature } from '../rendering/MarineCreatureSilhouettes.js';
 
+/**
+ * Draws a brilliant faceted 4-point diamond star sparkle with needle flares,
+ * luminous rainbow chromatic aura, and pure white diamond core.
+ */
+export function drawRainbowStarSparkle(ctx, x, y, size, rotation, hue, alpha = 1.0) {
+  if (size <= 0.2 || alpha <= 0.02) return;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.globalAlpha *= Math.min(1.0, Math.max(0, alpha));
+
+  const color = `hsl(${Math.round(hue) % 360}, 100%, 75%)`;
+  const coreColor = '#ffffff';
+
+  // Radiant rainbow star halo
+  ctx.shadowColor = color;
+  ctx.shadowBlur = Math.max(4, size * 2.2);
+
+  // 4-pointed radiant diamond star
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  const innerR = size * 0.22;
+  const outerR = size;
+  for (let i = 0; i < 4; i++) {
+    const ang = (i * Math.PI) / 2;
+    const nextAng = ang + Math.PI / 4;
+    if (i === 0) {
+      ctx.moveTo(Math.cos(ang) * outerR, Math.sin(ang) * outerR);
+    } else {
+      ctx.lineTo(Math.cos(ang) * outerR, Math.sin(ang) * outerR);
+    }
+    ctx.lineTo(Math.cos(nextAng) * innerR, Math.sin(nextAng) * innerR);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // Fine cardinal needle flares along horizontal and vertical axes
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(0.75, size * 0.16);
+  ctx.beginPath();
+  ctx.moveTo(-outerR * 1.35, 0);
+  ctx.lineTo(outerR * 1.35, 0);
+  ctx.moveTo(0, -outerR * 1.35);
+  ctx.lineTo(0, outerR * 1.35);
+  ctx.stroke();
+
+  // Brilliant bright white diamond glint center
+  ctx.fillStyle = coreColor;
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  const centerR = size * 0.35;
+  ctx.moveTo(0, -centerR);
+  ctx.lineTo(centerR, 0);
+  ctx.lineTo(0, centerR);
+  ctx.lineTo(-centerR, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
 export class Fish {
   constructor(species, x, y, options = {}) {
     this.species = species;
@@ -18,6 +79,7 @@ export class Fish {
     this.isGodTier = !!species.isGodTier;
     this.isMythic = !!species.isMythic;
     this.isSpecialDeep = !!species.isSpecialDeep;
+    this.isLegendary = species.rarity === 'legendary' || !!species.isLegendary || this.isMythic || this.isGodTier || !!species.isLeviathan;
 
     this.x = x;
     this.y = y;
@@ -205,6 +267,11 @@ export class Fish {
     if (this.state === 'SWIMMING') {
       let vx = 0;
       let vy = 0;
+
+      // Trailing ocean rainbow star sparkles for swimming legendary fish / animals
+      if (this.isLegendary && particles && Math.random() < 0.20) {
+        particles.emitSparkles(this.x - this.direction * 18, this.y + (Math.random() - 0.5) * 10, 1, 'rainbow');
+      }
 
       // Jet-Propelled Bursts: Squids and octopuses moving with sudden horizontal/diagonal impulses followed by gentle decelerations
       if (this.isCephalopod || this.movementType === 'jet_burst') {
@@ -674,10 +741,76 @@ export class Fish {
     const isRainbow = s.isRainbow;
     const isEpic = s.rarity === 'epic';
     const isRare = s.rarity === 'rare';
+    const isLegendary = this.isLegendary || s.rarity === 'legendary' || this.rarity === 'legendary' || !!s.isLegendary || !!this.isMythic || !!s.isMythic || !!this.isGodTier || !!s.isLeviathan;
 
     if (s.rarity !== 'common' || isRainbow || this.isMythic || this.isSpecialDeep || s.glowColor) {
       const color = RARITY_CONFIG[s.rarity]?.color || '#a78bfa';
-      drawAura(ctx, this.auraTime, color, s.isLeviathan ? 77 : 60, 0.64);
+      const auraRadius = s.isLeviathan ? (isLegendary ? 115 : 77) : (isLegendary ? 90 : 60);
+      drawAura(ctx, this.auraTime, isLegendary ? '#facc15' : color, auraRadius, 0.64);
+    }
+
+    // Noticeable radiant celestial glow aura and surrounding rainbow star sparkles for legendary creatures
+    if (isLegendary) {
+      ctx.save();
+      const auraRadius = s.isLeviathan ? 122 : 94;
+      const t = this.wiggleTimer;
+
+      // 1. Broad soft luminous bloom with golden core and iridescent rainbow outer rim
+      const bloomGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, auraRadius);
+      bloomGrad.addColorStop(0, 'rgba(255, 253, 231, 0.65)');   // brilliant golden-white core
+      bloomGrad.addColorStop(0.24, 'rgba(250, 204, 21, 0.46)'); // radiant amber gold
+      bloomGrad.addColorStop(0.55, 'rgba(249, 115, 22, 0.26)'); // warm sunburst
+      bloomGrad.addColorStop(0.82, 'rgba(217, 70, 239, 0.16)'); // shimmering magenta-violet outer rim
+      bloomGrad.addColorStop(1.0, 'rgba(234, 179, 8, 0)');      // smooth translucent fadeout
+
+      ctx.save();
+      ctx.scale(1, 0.72);
+      ctx.fillStyle = bloomGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, auraRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 2. Rotating celestial sunbeam halo (8 prismatic rays)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let r = 0; r < 8; r++) {
+        const beamAngle = r * (Math.PI / 4) + t * 0.22;
+        const rayHue = (t * 60 + r * 45) % 360;
+        ctx.strokeStyle = `hsla(${rayHue}, 100%, 75%, 0.24)`;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(beamAngle) * 12, Math.sin(beamAngle) * 8);
+        ctx.lineTo(Math.cos(beamAngle) * auraRadius * 0.92, Math.sin(beamAngle) * auraRadius * 0.64);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 3. Floating rainbow star sparkles within the radiant aura halo
+      const haloSparkles = [
+        { x: -38, y: -24, baseSize: 6.2, phase: 0.2 },
+        { x: -16, y: -32, baseSize: 5.4, phase: 1.1 },
+        { x: 14, y: -28, baseSize: 6.8, phase: 2.3 },
+        { x: 36, y: -16, baseSize: 5.6, phase: 3.4 },
+        { x: 44, y: 12, baseSize: 6.5, phase: 4.2 },
+        { x: 24, y: 26, baseSize: 5.8, phase: 5.1 },
+        { x: -12, y: 30, baseSize: 6.4, phase: 0.8 },
+        { x: -34, y: 20, baseSize: 5.2, phase: 2.7 },
+      ];
+      for (let i = 0; i < haloSparkles.length; i++) {
+        const hs = haloSparkles[i];
+        const st = t * 2.8 + hs.phase;
+        const twinkle = Math.sin(st);
+        const size = (hs.baseSize * (s.isLeviathan ? 1.3 : 1.0)) * (0.65 + 0.35 * twinkle);
+        const rot = t * 0.75 + i * 0.9;
+        const hue = (t * 75 + i * 45) % 360;
+        const alpha = Math.max(0.15, 0.75 + 0.25 * Math.sin(st * 1.3));
+        const ox = hs.x + Math.sin(t * 1.2 + i) * 4;
+        const oy = hs.y + Math.cos(t * 1.4 + i) * 3;
+        drawRainbowStarSparkle(ctx, ox, oy, size, rot, hue, alpha);
+      }
+
+      ctx.restore();
     }
 
     if (this.isGodTier) {
@@ -692,20 +825,17 @@ export class Fish {
       }
       ctx.restore();
     }
-    // Trailing rainbow/stardust particle motes for rare/epic/legendary fish
-    if (isRainbow || s.rarity === 'legendary') {
+    // Trailing rainbow/stardust star sparkles for rare/epic/legendary fish
+    if (isRainbow || isLegendary) {
       ctx.save();
       const t = this.wiggleTimer;
       for (let p = 0; p < 4; p++) {
         const px = -28 - p * 9 + Math.sin(t * 3 + p) * 4;
         const py = Math.sin(t * 4 + p * 2) * 7;
         const sparkHue = (this.wiggleTimer * 80 + p * 60) % 360;
-        ctx.fillStyle = `hsl(${sparkHue}, 100%, 70%)`;
-        ctx.shadowColor = `hsl(${sparkHue}, 100%, 60%)`;
-        ctx.shadowBlur = 0;
-        ctx.beginPath();
-        ctx.arc(px, py, 2.2, 0, Math.PI * 2);
-        ctx.fill();
+        const pSize = 4.2 + Math.sin(t * 4 + p) * 1.4;
+        const pRot = t * 1.5 + p;
+        drawRainbowStarSparkle(ctx, px, py, pSize, pRot, sparkHue, 0.85);
       }
       ctx.restore();
     } else if (isEpic) {
@@ -2191,6 +2321,29 @@ export class Fish {
       }
 
       ctx.restore();
+    }
+
+    // Shimmering rainbow star sparkles directly ON and IN the body of the legendary fish / marine animal
+    if (isLegendary) {
+      const bodySparkles = [
+        { x: 18, y: -2, baseSize: 7.2, phase: 0.5 },  // Rostrum / snout
+        { x: 10, y: -8, baseSize: 6.2, phase: 1.7 },  // Forehead / eye crest
+        { x: -2, y: -10, baseSize: 6.8, phase: 2.9 }, // Dorsal spine
+        { x: 2, y: 1, baseSize: 7.4, phase: 4.1 },    // Central flank core
+        { x: -5, y: 7, baseSize: 5.6, phase: 0.9 },   // Ventral belly
+        { x: -16, y: -2, baseSize: 6.3, phase: 2.2 }, // Caudal peduncle
+        { x: -28, y: -4, baseSize: 6.6, phase: 3.5 }, // Caudal tail fin
+      ];
+      for (let i = 0; i < bodySparkles.length; i++) {
+        const bs = bodySparkles[i];
+        const st = this.wiggleTimer * 3.2 + bs.phase;
+        const twinkle = Math.sin(st);
+        const size = (bs.baseSize * (s.isLeviathan ? 1.3 : 1.0)) * (0.7 + 0.3 * twinkle);
+        const rot = this.wiggleTimer * 0.9 + i * 1.2;
+        const hue = (this.wiggleTimer * 85 + i * 50) % 360;
+        const alpha = Math.max(0.2, 0.82 + 0.18 * Math.cos(st));
+        drawRainbowStarSparkle(ctx, bs.x, bs.y, size, rot, hue, alpha);
+      }
     }
 
     ctx.restore();
