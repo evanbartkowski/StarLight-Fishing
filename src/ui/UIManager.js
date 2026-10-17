@@ -3266,27 +3266,11 @@ export class UIManager {
     };
     if (defaultSubTab === 'crew') bindCrewEvents();
     const bindAlmanacEvents = () => {
-      document.querySelectorAll('canvas[data-species]').forEach(canvas => {
-        const species = allSpecies.find(fish => fish.id === canvas.dataset.species);
-        if (!species) return;
-        const fish = new Fish(species, 0, 0);
-        fish.x = 0; fish.y = 0;
-        fish.isShiny = false; fish.crown = null; fish.scale = 0.65;
-        const ctx = canvas.getContext('2d');
-        const isSilhouette = canvas.classList.contains('silhouette');
-        if (isSilhouette) {
-          ctx.save();
-          ctx.filter = 'brightness(0) contrast(100%) opacity(0.35)';
-        }
-        ctx.translate(120, 50); fish.render(ctx, 0);
-        if (isSilhouette) {
-          ctx.restore();
-        }
-      });
       document.querySelectorAll('.almanac-pill-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
           soundManager.playButtonClick();
           const zKey = e.currentTarget.getAttribute('data-zone');
+          currentAlmanacZone = zKey;
           document.getElementById('journal-tab-content').innerHTML = renderAlmanacHtml(zKey);
           bindAlmanacEvents();
         });
@@ -3306,23 +3290,32 @@ export class UIManager {
           }
         });
       });
-    };
 
-    if (primaryMenu === 'journal') {
-      if (defaultSubTab === 'relics') {
-        this.renderCabinShelfTab();
-      } else if (defaultSubTab === 'fossils') {
-        this.renderFossilMuseumTab();
-      } else if (defaultSubTab === 'aquarium') {
-        this.renderAquariumTab();
-      } else if (defaultSubTab === 'scoreboard') {
-        this.renderScoreboardTab('level');
-      } else if (defaultSubTab === 'traps') {
-        this.bindTrapsTabEvents();
-      } else if (defaultSubTab === 'fieldlog') {
-        bindAlmanacEvents();
-      }
-    }
+      document.querySelectorAll('canvas[data-species]').forEach(canvas => {
+        const species = allSpecies.find(fish => fish.id === canvas.dataset.species);
+        if (!species) return;
+        try {
+          const fish = new Fish(species, 0, 0);
+          fish.x = 0; fish.y = 0;
+          fish.isShiny = false; fish.crown = null; fish.scale = 0.65;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          const isSilhouette = canvas.classList.contains('silhouette');
+          ctx.save();
+          try {
+            if (isSilhouette) {
+              ctx.filter = 'brightness(0) contrast(100%) opacity(0.35)';
+            }
+            ctx.translate(120, 50);
+            fish.render(ctx, 0);
+          } finally {
+            ctx.restore();
+          }
+        } catch (err) {
+          console.warn('Almanac preview render error for', species.id, err);
+        }
+      });
+    };
 
     const setupTabListeners = () => {
       const activateTab = (tabId) => {
@@ -3386,6 +3379,22 @@ export class UIManager {
     };
 
     setupTabListeners();
+
+    if (primaryMenu === 'journal') {
+      if (defaultSubTab === 'relics') {
+        this.renderCabinShelfTab();
+      } else if (defaultSubTab === 'fossils') {
+        this.renderFossilMuseumTab();
+      } else if (defaultSubTab === 'aquarium') {
+        this.renderAquariumTab();
+      } else if (defaultSubTab === 'scoreboard') {
+        this.renderScoreboardTab('level');
+      } else if (defaultSubTab === 'traps') {
+        this.bindTrapsTabEvents();
+      } else if (defaultSubTab === 'fieldlog') {
+        bindAlmanacEvents();
+      }
+    }
   }
 
   bindTrapsTabEvents() {

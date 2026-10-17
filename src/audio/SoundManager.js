@@ -45,19 +45,31 @@ export class SoundManager {
     this.bubbleSfx = createAudioElement("/sprites/bubble.mp3");
     this.bubbleSfx2 = createAudioElement("/sprites/bubble2.mp3");
 
-    this.surfaceMusic.loop = true;
-    this.underwaterMusic.loop = true;
+    this.surfaceMusic.loop = false;
+    this.underwaterMusic.loop = false;
 
-    // Resilient looping & error auto-recovery so underwater music never stops/disappears
+    // Realm 1 (Sunlit Shoals) alternates between its main theme and the former Whispering Aether Sea song in a loop
     this.underwaterMusic.addEventListener?.('ended', () => {
       if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
+        const curSrc = this.underwaterMusic.src || '';
+        const nextSrc = curSrc.includes('faespencer-island-heartbeat-211013.mp3')
+          ? '/sprites/oceanmusic2.mp3'
+          : '/music/faespencer-island-heartbeat-211013.mp3';
+        this.underwaterMusic.src = nextSrc;
         this.underwaterMusic.currentTime = 0;
+        this.applyVolumes();
         this.underwaterMusic.play?.()?.catch?.(() => {});
       }
     });
     this.surfaceMusic.addEventListener?.('ended', () => {
       if (this.currentMusicMode === 'surface' && !this.isMuted && !this.activeStation) {
+        const curSrc = this.surfaceMusic.src || '';
+        const nextSrc = curSrc.includes('faespencer-island-heartbeat-211013.mp3')
+          ? '/sprites/seamusic.mp3'
+          : '/music/faespencer-island-heartbeat-211013.mp3';
+        this.surfaceMusic.src = nextSrc;
         this.surfaceMusic.currentTime = 0;
+        this.applyVolumes();
         this.surfaceMusic.play?.()?.catch?.(() => {});
       }
     });
@@ -158,29 +170,55 @@ export class SoundManager {
     this.applyVolumes();
   }
 
+  // Per-track loudness normalization so no realm is way louder than others
+  getTrackScale(src = '', mode = 'surface') {
+    const s = String(src);
+    if (s.includes('chrono-void-fishing')) return 0.25;
+    if (s.includes('onecinematicstudio')) return 0.26;
+    if (s.includes('desifreemusic')) return 0.27;
+    if (s.includes('tropical.mp3')) return 0.26;
+    if (s.includes('ocean-vibes.mp3')) return 0.26;
+    if (s.includes('peaceful.mp3')) return 0.30;
+    if (s.includes('faespencer-island-heartbeat')) return 0.31;
+    if (s.includes('aether-ethereal-1')) return 0.33;
+    if (s.includes('aether-ethereal-2')) return 0.33;
+    if (s.includes('juliush-relax')) return 0.32;
+    if (s.includes('alex-morgan-underwater-dreamscape')) return 0.34;
+    if (s.includes('aquarain.mp3')) return 0.33;
+    if (s.includes('meditation.mp3')) return 0.35;
+    if (s.includes('oceanmusic2.mp3')) return 0.36;
+    if (s.includes('seamusic.mp3')) return 0.34;
+    return mode === 'underwater' ? 0.34 : 0.32;
+  }
+
   applyVolumes() {
     const vol = this.isMuted ? 0 : this.musicVolume;
-    for (const track of this.realmTracks?.values() || []) track.volume = vol * .45;
-    if (this.radioTrack) this.radioTrack.volume = vol * .45;
-    this.surfaceMusic.volume = vol * 0.4;
-    this.underwaterMusic.volume = vol * 0.6;
+    for (const [key, track] of this.realmTracks?.entries() || []) {
+      const mode = String(key).endsWith('_underwater') ? 'underwater' : 'surface';
+      track.volume = vol * this.getTrackScale(track.src, mode);
+    }
+    if (this.radioTrack) {
+      this.radioTrack.volume = vol * this.getTrackScale(this.radioTrack.src, 'surface');
+    }
+    this.surfaceMusic.volume = vol * this.getTrackScale(this.surfaceMusic.src, 'surface');
+    this.underwaterMusic.volume = vol * this.getTrackScale(this.underwaterMusic.src, 'underwater');
     this.bubbleSfx.volume = this.isMuted ? 0 : this.sfxVolume * .28 * 0.5;
     this.bubbleSfx2.volume = this.isMuted ? 0 : this.sfxVolume * .28 * 0.5;
 
     if (this.ambientSurfGain && this.audioCtx) {
-      this.ambientSurfGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.12, this.audioCtx.currentTime);
+      this.ambientSurfGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.08, this.audioCtx.currentTime);
     }
     if (this.radioGain && this.audioCtx) {
-      this.radioGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.45, this.audioCtx.currentTime);
+      this.radioGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.34, this.audioCtx.currentTime);
     }
     if (this.seaGain && this.audioCtx) {
-      this.seaGain.gain.setValueAtTime(this.isMuted || this.activeStation || this.currentMusicMode === 'none' ? 0 : this.musicVolume * 0.38, this.audioCtx.currentTime);
+      this.seaGain.gain.setValueAtTime(this.isMuted || this.activeStation || this.currentMusicMode === 'none' ? 0 : this.musicVolume * 0.28, this.audioCtx.currentTime);
     }
     if (this.endgameTrack) {
-      this.endgameTrack.volume = vol * 0.75;
+      this.endgameTrack.volume = vol * 0.38;
     }
     if (this.endgameGain && this.audioCtx) {
-      this.endgameGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.55, this.audioCtx.currentTime);
+      this.endgameGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.35, this.audioCtx.currentTime);
     }
   }
 
@@ -196,7 +234,7 @@ export class SoundManager {
         2: '/music/aquarain.mp3',
         3: '/music/meditation.mp3',
         4: '/music/peaceful.mp3',
-        5: '/music/faespencer-island-heartbeat-211013.mp3',
+        5: '/music/aether-ethereal-1.mp3',
         6: '/music/tropical.mp3',
         7: '/music/ocean-vibes.mp3',
       };
@@ -204,16 +242,24 @@ export class SoundManager {
         2: '/music/juliush-relax-chill-out-music-for-landscapes-under-water-animals-forests-8105.mp3',
         3: '/music/alex-morgan-underwater-dreamscape-537486.mp3',
         4: '/music/onecinematicstudio-the-lost-city-of-atlantis-_-mystical-underwater-cinematic-music-529056.mp3',
-        5: '/music/ocean-waves.mp3',
+        5: '/music/aether-ethereal-2.mp3',
         6: '/music/desifreemusic-ocean-documentary-background-music-with-calm-cinematic-ambience-569283.mp3',
         7: '/music/chrono-void-fishing.mp3',
       };
       const src = isUnderwater ? (fishingTracks[id] || '/music/chrono-void-fishing.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
       const audio = createAudioElement(src);
-      audio.loop = true;
+      // Realm 5 (Whispering Aether Sea) loops by alternating between both ethereal tracks
+      audio.loop = id !== 5;
       audio.preload = 'none';
       audio.addEventListener?.('ended', () => {
         if (this.currentMusicMode === (isUnderwater ? 'underwater' : 'surface') && this.currentSeaId === id && !this.isMuted && !this.activeStation) {
+          if (id === 5) {
+            const curSrc = audio.src || '';
+            audio.src = curSrc.includes('aether-ethereal-1.mp3')
+              ? '/music/aether-ethereal-2.mp3'
+              : '/music/aether-ethereal-1.mp3';
+            this.applyVolumes();
+          }
           audio.currentTime = 0;
           audio.play?.()?.catch?.(() => {});
         }
@@ -253,7 +299,7 @@ export class SoundManager {
     }
 
     const vol = this.isMuted ? 0 : this.musicVolume;
-    const targetVol = toMode === 'underwater' ? vol * 0.6 : vol * 0.45;
+    const targetVol = vol * this.getTrackScale(toTrack.src, toMode);
 
     // Node.js test runner / headless environment: immediate synchronous pause/play
     if (typeof window === 'undefined' || typeof requestAnimationFrame === 'undefined') {
@@ -291,9 +337,10 @@ export class SoundManager {
   }
 
   keepAliveUnderwaterMusic() {
+    if (this._fadeInterval) return;
     if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
       const track = this.getTrackForMode(this.currentSeaId, 'underwater');
-      const vol = this.musicVolume * 0.6;
+      const vol = this.musicVolume * this.getTrackScale(track?.src, 'underwater');
       if (track && track.paused) {
         track.volume = vol;
         track.play?.()?.catch?.(() => {});

@@ -1,4 +1,5 @@
 import { soundManager } from '../audio/SoundManager.js';
+import { leaderboardManager } from '../systems/LeaderboardManager.js';
 
 export class EndgameScene {
   constructor(saveSystem) {
@@ -25,8 +26,89 @@ export class EndgameScene {
     soundManager.playEndgameMusic();
 
     this.createDom();
+    this.loadTopThreePlayers();
     this.initCanvas();
     this.startSequence();
+  }
+
+  getFallbackTopPlayers() {
+    let entries = [];
+    try {
+      if (this.saveSystem && typeof this.saveSystem.getScoreboardData === 'function') {
+        entries = this.saveSystem.getScoreboardData('level') || [];
+      }
+    } catch (_) {}
+    if (!Array.isArray(entries) || entries.length < 3) {
+      const playerName = this.saveSystem?.data?.profile?.name || 'Captain Mariner';
+      const playerLevel = this.saveSystem?.getLevel ? this.saveSystem.getLevel() : 50;
+      entries = [
+        { name: playerName, value: Math.max(playerLevel, 55), isPlayer: true },
+        { name: 'tonyanth', value: 52 },
+        { name: 'randomusername', value: 49 },
+      ];
+    }
+    return entries.slice(0, 3);
+  }
+
+  renderTopPlayersHtml(players) {
+    const medals = ['🥇 #1 Champion', '🥈 #2 Sovereign', '🥉 #3 Voyager'];
+    const classes = ['rank-1', 'rank-2', 'rank-3'];
+    const safeEsc = (str) => String(str || 'Captain')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    const cardsHtml = players.slice(0, 3).map((p, i) => {
+      const name = safeEsc(p.name || p.username || `Captain #${i + 1}`);
+      const lvl = Number.isFinite(Number(p.value)) ? `Lv. ${Number(p.value).toLocaleString()}` : (p.level ? `Lv. ${p.level}` : 'Master Angler');
+      return `
+        <div class="endgame-podium-card ${classes[i] || ''}">
+          <div class="endgame-podium-rank">${medals[i] || `#${i + 1}`}</div>
+          <div class="endgame-podium-name">${name}</div>
+          <div class="endgame-podium-stat">${lvl}</div>
+        </div>
+      `;
+    }).join('');
+
+    const namesList = players.slice(0, 3).map(p => safeEsc(p.name || p.username || 'Captain')).join(', ');
+    return `
+      <div class="endgame-podium-grid">
+        ${cardsHtml}
+      </div>
+      <div class="endgame-thanks-note">
+        Eternal gratitude to our top 3 players — <strong>${namesList}</strong> — and to every mariner who cast their line into the starlit abyss.
+      </div>
+    `;
+  }
+
+  loadTopThreePlayers() {
+    const fallback = this.getFallbackTopPlayers();
+    const mount = this.container?.querySelector('#endgame-top-players-mount');
+    if (mount) {
+      mount.innerHTML = this.renderTopPlayersHtml(fallback);
+    }
+
+    try {
+      if (leaderboardManager && typeof leaderboardManager.getBoard === 'function') {
+        leaderboardManager.getBoard(this.saveSystem, 'level')
+          .then((res) => {
+            if (this.isClosing || !this.container) return;
+            const entries = res?.entries;
+            if (Array.isArray(entries) && entries.length > 0) {
+              const top3 = entries.slice(0, 3);
+              while (top3.length < 3 && fallback[top3.length]) {
+                top3.push(fallback[top3.length]);
+              }
+              const target = this.container.querySelector('#endgame-top-players-mount');
+              if (target) {
+                target.innerHTML = this.renderTopPlayersHtml(top3);
+              }
+            }
+          })
+          .catch(() => {});
+      }
+    } catch (_) {}
   }
 
   createDom() {
@@ -34,13 +116,15 @@ export class EndgameScene {
     this.container.id = 'endgame-scene-overlay';
     this.container.className = 'endgame-scene-overlay';
 
+    const initialTop3 = this.getFallbackTopPlayers();
+
     this.container.innerHTML = `
       <canvas id="endgame-canvas" class="endgame-canvas"></canvas>
       <button type="button" id="endgame-skip-btn" class="endgame-skip-btn" title="Skip to surface">Skip ⏭</button>
       
       <div class="endgame-scroll-wrapper" id="endgame-scroll-wrapper">
         <div class="endgame-prelude-badge" id="endgame-prelude">
-          <span>🌌</span> <span>Realm VII · Eldritch Chrono Void</span>
+          <span>🌌</span> <span>Realm VII · Eldritch Chrono Void · Finale</span>
         </div>
 
         <div class="endgame-quote-container">
@@ -64,34 +148,39 @@ export class EndgameScene {
         <div class="endgame-divider" id="endgame-divider"></div>
 
         <div class="endgame-credits-block" id="endgame-credits">
+          <div class="endgame-crown-emblem">👑 ✨ ⚓</div>
           <h2 class="endgame-title">STARLIGHT FISHING</h2>
-          <div class="endgame-subtitle">The Seven Seas · Abyss Epilogue</div>
+          <div class="endgame-subtitle">The Seven Seas · Celestial Abyss Epilogue</div>
 
-          <div class="endgame-credit-item">
-            <div class="endgame-credit-role">Created & Developed By</div>
-            <div class="endgame-credit-name">Evan Bartkowski</div>
+          <div class="endgame-credits-grid">
+            <div class="endgame-credit-item">
+              <div class="endgame-credit-role">Created &amp; Developed By</div>
+              <div class="endgame-credit-name">Evan Bartkowski</div>
+            </div>
+
+            <div class="endgame-credit-item">
+              <div class="endgame-credit-role">Game Design &amp; Programming</div>
+              <div class="endgame-credit-name">Evan Bartkowski</div>
+            </div>
+
+            <div class="endgame-credit-item">
+              <div class="endgame-credit-role">Original Music &amp; Sound Direction</div>
+              <div class="endgame-credit-name">Evan Bartkowski</div>
+            </div>
           </div>
 
-          <div class="endgame-credit-item">
-            <div class="endgame-credit-role">Game Design & Programming</div>
-            <div class="endgame-credit-name">Evan Bartkowski</div>
-          </div>
-
-          <div class="endgame-credit-item">
-            <div class="endgame-credit-role">Original Music & Sound Direction</div>
-            <div class="endgame-credit-name">Evan Bartkowski</div>
-          </div>
-
-          <div class="endgame-credit-item">
-            <div class="endgame-credit-role">Special Thanks</div>
-            <div class="endgame-credit-name" style="font-size: 0.95rem; color: #cbd5e1; max-width: 500px; margin: 0 auto; line-height: 1.5;">
-              To tonyanth, randomusername, and every mariner who cast their line into the eternal tides.
+          <div class="endgame-top-players-section">
+            <div class="endgame-credit-role" style="color: #fde047; font-size: 0.85rem; margin-bottom: 12px;">
+              🏆 Special Thanks to the Top 3 Players of the Game 🏆
+            </div>
+            <div id="endgame-top-players-mount">
+              ${this.renderTopPlayersHtml(initialTop3)}
             </div>
           </div>
         </div>
 
         <button type="button" class="endgame-finish-btn" id="endgame-finish-btn">
-          ⚓ Return to Surface & Continue Journey
+          ⚓ Return to Surface &amp; Continue Journey
         </button>
       </div>
     `;
@@ -137,9 +226,9 @@ export class EndgameScene {
     window.addEventListener('resize', resize);
     this._windowResizeHandler = resize;
 
-    // Generate cosmic abyss stars
+    // Generate cosmic abyss stars (optimized count, no shadowBlur lag)
     this.stars = [];
-    const starCount = Math.min(180, Math.floor((window.innerWidth * window.innerHeight) / 6000));
+    const starCount = Math.min(130, Math.floor((window.innerWidth * window.innerHeight) / 8000));
     for (let i = 0; i < starCount; i++) {
       this.stars.push({
         x: Math.random() * window.innerWidth,
@@ -148,7 +237,7 @@ export class EndgameScene {
         color: ['#ffffff', '#bae6fd', '#c7d2fe', '#fef08a', '#e9d5ff'][Math.floor(Math.random() * 5)],
         twinkleSpeed: Math.random() * 2 + 1,
         twinkleOffset: Math.random() * Math.PI * 2,
-        driftY: -(Math.random() * 12 + 4), // drift upward gently like bioluminescent marine snow
+        driftY: -(Math.random() * 12 + 4),
         driftX: (Math.random() - 0.5) * 6,
       });
     }
@@ -174,35 +263,43 @@ export class EndgameScene {
     // Deep void cosmic gradient
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, '#020617');
-    grad.addColorStop(0.45, '#0b0f29');
-    grad.addColorStop(0.85, '#1e1035');
-    grad.addColorStop(1, '#020617');
+    grad.addColorStop(0.42, '#090d26');
+    grad.addColorStop(0.78, '#1b1038');
+    grad.addColorStop(1, '#030712');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // Flowing ethereal aurora wave in the abyss
+    // Flowing ethereal aurora ribbons in the abyss
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    for (let a = 0; a < 2; a++) {
+    for (let a = 0; a < 3; a++) {
       ctx.beginPath();
-      const waveY = h * (0.4 + a * 0.25);
+      const waveY = h * (0.32 + a * 0.22);
       ctx.moveTo(0, waveY);
-      for (let x = 0; x <= w; x += 30) {
-        const y = waveY + Math.sin(x * 0.003 + this.auroraTime * 0.6 + a) * 45 + Math.cos(x * 0.006 - this.auroraTime * 0.4) * 25;
+      for (let x = 0; x <= w; x += 36) {
+        const y = waveY
+          + Math.sin(x * 0.0028 + this.auroraTime * 0.55 + a * 1.4) * 42
+          + Math.cos(x * 0.0055 - this.auroraTime * 0.35 + a) * 24;
         ctx.lineTo(x, y);
       }
       ctx.lineTo(w, h);
       ctx.lineTo(0, h);
       ctx.closePath();
-      const auroraGrad = ctx.createLinearGradient(0, waveY - 50, 0, waveY + 120);
-      auroraGrad.addColorStop(0, a === 0 ? 'rgba(56, 189, 248, 0.08)' : 'rgba(168, 85, 247, 0.06)');
+      const auroraGrad = ctx.createLinearGradient(0, waveY - 60, 0, waveY + 140);
+      const colors = [
+        'rgba(56, 189, 248, 0.09)',
+        'rgba(192, 132, 252, 0.08)',
+        'rgba(250, 204, 21, 0.05)'
+      ];
+      auroraGrad.addColorStop(0, colors[a]);
       auroraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = auroraGrad;
       ctx.fill();
     }
     ctx.restore();
 
-    // Drifting glowing stars & abyssal motes
+    // Drifting glowing stars & abyssal motes (fast soft halo circles instead of expensive shadowBlur)
+    ctx.save();
     for (const star of this.stars) {
       star.y += star.driftY * dt;
       star.x += star.driftX * dt;
@@ -210,34 +307,50 @@ export class EndgameScene {
       if (star.x < -10) star.x = w + 10;
       if (star.x > w + 10) star.x = -10;
 
-      const alpha = 0.35 + 0.55 * Math.sin(this.auroraTime * star.twinkleSpeed + star.twinkleOffset);
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+      const alpha = Math.max(0.08, Math.min(1, 0.38 + 0.55 * Math.sin(this.auroraTime * star.twinkleSpeed + star.twinkleOffset)));
       ctx.fillStyle = star.color;
-      ctx.shadowColor = star.color;
-      ctx.shadowBlur = star.radius > 1.4 ? 8 : 4;
+      if (star.radius > 1.35) {
+        ctx.globalAlpha = alpha * 0.22;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius * 2.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = alpha;
       ctx.beginPath();
       ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     }
+    ctx.restore();
 
-    // Distant cosmic space-whale silhouette drifting across deep background
+    // Distant cosmic space-whale silhouette swimming forward across the starlit background
     const whaleSpeed = 22;
-    const whaleX = ((this.auroraTime * whaleSpeed) % (w + 400)) - 200;
-    const whaleY = h * 0.72 + Math.sin(this.auroraTime * 0.3) * 15;
+    const whaleX = ((this.auroraTime * whaleSpeed) % (w + 480)) - 240;
+    const whaleY = h * 0.74 + Math.sin(this.auroraTime * 0.4) * 16;
+    const pitch = Math.cos(this.auroraTime * 0.4) * 0.05;
     ctx.save();
-    ctx.globalAlpha = 0.08;
-    ctx.fillStyle = '#67e8f9';
+    ctx.translate(whaleX, whaleY);
+    ctx.rotate(pitch);
+    ctx.globalAlpha = 0.14;
+    const wGrad = ctx.createLinearGradient(-110, -20, 120, 20);
+    wGrad.addColorStop(0, '#0284c7');
+    wGrad.addColorStop(0.5, '#38bdf8');
+    wGrad.addColorStop(1, '#c084fc');
+    ctx.fillStyle = wGrad;
     ctx.beginPath();
-    ctx.ellipse(whaleX, whaleY, 110, 28, 0.08, 0, Math.PI * 2);
+    ctx.moveTo(-115, 0);
+    ctx.quadraticCurveTo(-60, -30, 40, -28);
+    ctx.quadraticCurveTo(110, -22, 125, 0);
+    ctx.quadraticCurveTo(110, 26, 40, 24);
+    ctx.quadraticCurveTo(-50, 22, -115, 0);
+    ctx.closePath();
     ctx.fill();
     // Tail fluke
+    const flukeWave = Math.sin(this.auroraTime * 1.8) * 8;
     ctx.beginPath();
-    ctx.moveTo(whaleX - 95, whaleY);
-    ctx.lineTo(whaleX - 130, whaleY - 22);
-    ctx.lineTo(whaleX - 120, whaleY);
-    ctx.lineTo(whaleX - 130, whaleY + 22);
+    ctx.moveTo(-115, 0);
+    ctx.lineTo(-145, -24 + flukeWave);
+    ctx.quadraticCurveTo(-132, flukeWave * 0.5, -152, flukeWave);
+    ctx.quadraticCurveTo(-132, flukeWave * 0.5, -145, 24 + flukeWave);
     ctx.closePath();
     ctx.fill();
     ctx.restore();

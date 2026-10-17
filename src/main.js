@@ -133,7 +133,7 @@ const mousePos = { x: screenWidth * 0.5, y: screenHeight * 0.5 };
 let isMouseDown = false;
 const keysDown = {};
 const touchControls = createTouchControls(keysDown, () => { if (gameState === 'DESCENDING') hook.startReel(); });
-let lastSteerMode = 'none'; // 'keyboard' | 'mouse'
+let lastSteerMode = 'mouse'; // 'keyboard' | 'mouse'
 const lastPointerPos = { x: 0, y: 0 };
 
 // Core quest system
@@ -721,13 +721,25 @@ const update = (dt) => {
               itemType: 'relic',
               category: 'relic',
               unlocked: false,
+              x: hook.x,
+              y: hook.y - 20,
               hookTo: (h, idx) => {
                 safeItem.hook = h;
                 safeItem.hookIndex = idx;
+                safeItem.x = h.x;
+                safeItem.y = h.y - 20 - idx * 18;
+              },
+              update: () => {
+                if (safeItem.hook) {
+                  safeItem.x = safeItem.hook.x;
+                  safeItem.y = safeItem.hook.y - 20 - (safeItem.hookIndex || 0) * 18;
+                }
               },
               render: (ctx, camY) => {
+                const sx = safeItem.hook ? safeItem.hook.x : (safeItem.x || 0);
+                const sy = (safeItem.hook ? safeItem.hook.y - 20 - (safeItem.hookIndex || 0) * 18 : (safeItem.y || 0)) - camY;
                 ctx.save();
-                ctx.translate(safeItem.x, safeItem.y - camY);
+                ctx.translate(sx, sy);
                 ctx.font = '24px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('🔒', 0, 0);
@@ -1135,7 +1147,14 @@ const render = () => {
   try {
     oceanWorld.entities.fish.forEach((fish) => {
       if (fish.y - cameraY > -fish.scale * 130 && fish.y - cameraY < screenHeight + fish.scale * 130) {
-        fish.render(ctx, cameraY, hook);
+        ctx.save();
+        try {
+          fish.render(ctx, cameraY, hook);
+        } catch (fishErr) {
+          console.warn('Error rendering fish:', fishErr);
+        } finally {
+          ctx.restore();
+        }
       }
     });
   } catch (e) {
@@ -1155,10 +1174,13 @@ const render = () => {
     hook.render(ctx, cameraY);
     hook.caughtItems.forEach((item) => {
       if (item && typeof item.render === 'function') {
+        ctx.save();
         try {
           item.render(ctx, cameraY);
         } catch (itemErr) {
           console.warn('Caught item render error:', itemErr);
+        } finally {
+          ctx.restore();
         }
       }
     });

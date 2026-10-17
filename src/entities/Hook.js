@@ -170,7 +170,8 @@ export class Hook {
   }
 
   addCatch(entity, particles) {
-    if (this.caughtItems.length >= this.capacity) return false;
+    const effectiveCapacity = this.capacity + (this.capacityBoost || 0);
+    if (this.caughtItems.length >= effectiveCapacity) return false;
 
     // Dampen abrupt horizontal jerk on catch while preserving active target tracking
     this.vx *= 0.25;
@@ -218,7 +219,6 @@ export class Hook {
       }
     }
 
-    const effectiveCapacity = this.capacity + (this.capacityBoost || 0);
     if (this.caughtItems.length >= effectiveCapacity && this.state === 'DESCENDING') {
       this.startReel();
       if (particles) {
@@ -286,7 +286,8 @@ export class Hook {
       }
     }
 
-    this.vx = (Math.random() < 0.5 ? -1 : 1) * hazard.knockback * 1.3 * (1 - (this.knockbackResistance || 0));
+    const kb = Math.min(180, (hazard.knockback || 120) * 0.45);
+    this.vx = (Math.random() < 0.5 ? -1 : 1) * kb * (1 - (this.knockbackResistance || 0));
   }
 
   update(dt, surfaceY, worldWidth, particles, isReelingInput = true, zoneManager = null) {
@@ -306,6 +307,7 @@ export class Hook {
         this.y = surfaceY + 2;
         this.vy = 200;
         this.vx *= 0.4;
+        this.targetX = this.x;
         soundManager.playSplash();
         if (particles) {
           particles.emitSplash(this.x, surfaceY, 28, 1.2);

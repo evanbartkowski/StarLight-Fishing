@@ -56,19 +56,15 @@ export class Hazard {
       const gDx = this.x - hook.x;
       const gDy = this.y - hook.y;
       const gDist = Math.hypot(gDx, gDy);
-      const pullRange = this.radius * 3.6;
-      if (gDist > 12 && gDist < pullRange) {
+      const pullRange = this.radius * 3.0;
+      if (gDist > 16 && gDist < pullRange) {
         const pullFactor = (1 - gDist / pullRange);
-        const pullSpeed = pullFactor * (this.isColossal ? 120 : 85) * deltaSec;
+        const pullSpeed = pullFactor * (this.isColossal ? 52 : 38) * deltaSec;
         const normX = gDx / gDist;
         const normY = gDy / gDist;
         if (Number.isFinite(normX) && Number.isFinite(normY)) {
           hook.x += normX * pullSpeed;
-          hook.y += normY * pullSpeed * 0.35;
-          if (hook.vx !== undefined) {
-            hook.vx += normX * pullSpeed * 4.0;
-            hook.vx = Math.max(-650, Math.min(650, hook.vx));
-          }
+          hook.y += normY * pullSpeed * 0.25;
           const maxX = Math.max(50, (worldWidth || 1200) - 12);
           hook.x = Math.max(12, Math.min(maxX, hook.x));
         }

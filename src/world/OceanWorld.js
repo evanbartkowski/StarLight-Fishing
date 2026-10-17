@@ -2410,20 +2410,34 @@ export class OceanWorld {
       ctx.fill();
     }
 
-    // 3. Majestic Background Celestial Space-Whales gracefully gliding through the deep cosmos
-    const whaleSpeed = 22;
-    const whalePeriod = (w + 600) / whaleSpeed;
-    for (let wIdx = 0; wIdx < 2; wIdx++) {
-      const wPhase = (time * 18 + wIdx * (whalePeriod * 0.5)) % (w + 600);
-      const wx = (w + 300) - wPhase; // Gliding gracefully right-to-left
-      const wy = voidY + 160 + wIdx * 240 + Math.sin(time * 0.6 + wIdx * 2) * 28;
-      const wPitch = Math.cos(time * 0.6 + wIdx * 2) * 0.08;
-      const wScale = wIdx === 0 ? 1.35 : 0.95;
+    // 3. Majestic Background Celestial Space-Whales gracefully gliding forward through the deep cosmos
+    const h = screenHeight || 800;
+    const spanX = w + 640;
+    const parallaxY = Math.max(0, cameraY - this.surfaceY) * 0.30;
+    const vSpan = 1650;
+    const whaleConfigs = [
+      { dir: 1, speed: 24, scale: 1.32, baseY: 220, phaseOffset: 0 },
+      { dir: -1, speed: 19, scale: 0.98, baseY: 560, phaseOffset: 420 },
+      { dir: 1, speed: 21, scale: 1.15, baseY: 940, phaseOffset: 860 },
+      { dir: -1, speed: 17, scale: 0.88, baseY: 1340, phaseOffset: 1240 },
+    ];
+    for (let wIdx = 0; wIdx < whaleConfigs.length; wIdx++) {
+      const cfg = whaleConfigs[wIdx];
+      const wPhase = (time * cfg.speed + cfg.phaseOffset) % spanX;
+      // Snout is drawn at +125 (right) and tail flukes at -155 (left).
+      // When dir === 1 (entering from left, moving right), scale(+wScale, wScale) so snout leads forward (+X).
+      // When dir === -1 (entering from right, moving left), scale(-wScale, wScale) so snout leads forward (-X).
+      const wx = cfg.dir === 1 ? (-320 + wPhase) : ((w + 320) - wPhase);
+      const scrolledY = (((cfg.baseY - parallaxY) % vSpan) + vSpan) % vSpan - 200;
+      const wy = voidY + scrolledY + Math.sin(time * 0.6 + wIdx * 2) * 22;
+      if (wy < -180 || wy > h + 180) continue;
+      const wPitch = Math.cos(time * 0.6 + wIdx * 2) * 0.06 * cfg.dir;
+      const wScale = cfg.scale;
 
       ctx.save();
       ctx.translate(wx, wy);
       ctx.rotate(wPitch);
-      ctx.scale(wScale, wScale);
+      ctx.scale(cfg.dir * wScale, wScale);
       ctx.globalAlpha = 0.28;
 
       // Whale Body Silhouette (deep cosmic indigo with bioluminescent constellation)
@@ -2434,11 +2448,11 @@ export class OceanWorld {
       wGrad.addColorStop(1, '#c084fc');
       ctx.fillStyle = wGrad;
 
-      // Smooth whale body
+      // Smooth whale body (tail at -115, snout at +125)
       ctx.beginPath();
       ctx.moveTo(-115, 0); // Tail junction
       ctx.quadraticCurveTo(-60, -32, 40, -30); // Dorsal curve
-      ctx.quadraticCurveTo(110, -24, 125, 0); // Rostrum / snout
+      ctx.quadraticCurveTo(110, -24, 125, 0); // Rostrum / snout (leading forward)
       ctx.quadraticCurveTo(110, 28, 40, 26); // Ventral jaw / throat
       ctx.quadraticCurveTo(-50, 24, -115, 0); // Belly to fluke
       ctx.closePath();

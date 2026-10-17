@@ -588,10 +588,12 @@ export class Fish {
       }
     } else if (type === 'repel') {
       soundManager.playAuraDeflect();
-      const pushAngle = Math.atan2(hook.y - this.y, hook.x - this.x);
-      const force = this.evasion.force || 190;
-      hook.vx += Math.cos(pushAngle) * force;
-      hook.vy += Math.sin(pushAngle) * (force * 0.55);
+      const recoilAngle = Math.atan2(this.y - hook.y, this.x - hook.x);
+      this.direction = Math.cos(recoilAngle) >= 0 ? 1 : -1;
+      this.isDashing = true;
+      this.dashTimer = 0.5;
+      this.speed = this.baseSpeed * 3.2;
+      this.y += Math.sin(recoilAngle) * 18;
 
       this.deflectWave = 14;
       this.deflectColor = this.rarityGlow || '#38bdf8';
@@ -635,7 +637,7 @@ export class Fish {
     this.deflectWave = 0;
 
     // Fish stays on the line neatly spaced above the hook:
-    const verticalOffset = -22 - slotIndex * 32;
+    const verticalOffset = -18 - Math.min(slotIndex, 6) * 18 - Math.max(0, slotIndex - 6) * 8;
     const side = slotIndex % 2 === 0 ? 1 : -1;
     const horizontalOffset = side * 8; // clean alternation left and right of the line
 
@@ -657,15 +659,17 @@ export class Fish {
     let posY = this.y;
     if (isHooked && this.hook) {
       const offsetX = this.hookOffset ? this.hookOffset.x : 0;
-      const offsetY = this.hookOffset ? this.hookOffset.y : -22;
+      const offsetY = this.hookOffset ? this.hookOffset.y : -18;
       posX = this.hook.x + offsetX;
       posY = this.hook.y + offsetY;
       this.x = posX;
       this.y = posY;
     }
 
-    const drawY = posY - cameraY;
+    if (!Number.isFinite(posX) || !Number.isFinite(posY)) return;
+    const drawY = posY - (Number.isFinite(cameraY) ? cameraY : 0);
     const s = this.species;
+    if (!s) return;
 
     // Render expanding kinetic forcefield ripple when repelling
     if (this.deflectWave > 0) {
@@ -700,6 +704,7 @@ export class Fish {
     }
 
     ctx.save();
+    try {
     ctx.translate(posX, drawY);
 
     // Apply camouflage opacity if cloaked
@@ -714,7 +719,7 @@ export class Fish {
       ctx.rotate(hangAngle);
       ctx.translate(-16, 0); // Aligns fish mouth directly at (posX, drawY)
     } else {
-      ctx.scale(this.direction, 1);
+      ctx.scale(this.direction || 1, 1);
       if (this.swimAngle) {
         ctx.rotate(this.swimAngle);
       }
@@ -1006,7 +1011,7 @@ export class Fish {
     }
 
     if (isRainbow && !this.mutation && !this.isShiny) {
-      const hue = (this.wiggleTimer * 65 + this.x * 0.15) % 360;
+      const hue = (((this.wiggleTimer || 0) * 65 + (this.x || 0) * 0.15) % 360 + 360) % 360;
       const rainbowGrad = ctx.createLinearGradient(-30, -15, 30, 15);
       rainbowGrad.addColorStop(0, `hsl(${hue}, 95%, 60%)`);
       rainbowGrad.addColorStop(0.2, `hsl(${(hue + 55) % 360}, 95%, 62%)`);
@@ -1030,7 +1035,7 @@ export class Fish {
       gradient.addColorStop(1, this.bodyColors[1]);
       primary = gradient;
     } else if (isVoidFish && !s.isLeviathan && !this.mutation && !this.isShiny) {
-      const vHue = (this.wiggleTimer * 50 + (this.x || 0) * 0.12) % 360;
+      const vHue = (((this.wiggleTimer || 0) * 50 + (this.x || 0) * 0.12) % 360 + 360) % 360;
       const gradient = ctx.createLinearGradient(-28, -14, 28, 14);
       gradient.addColorStop(0.0, `hsl(${vHue}, 92%, 56%)`);
       gradient.addColorStop(0.2, `hsl(${(vHue + 60) % 360}, 95%, 62%)`);
@@ -2468,7 +2473,8 @@ export class Fish {
         drawRainbowStarSparkle(ctx, bs.x, bs.y, size, rot, hue, alpha);
       }
     }
-
-    ctx.restore();
+    } finally {
+      ctx.restore();
+    }
   }
 }

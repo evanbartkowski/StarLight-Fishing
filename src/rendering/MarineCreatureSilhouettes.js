@@ -7,6 +7,9 @@
 
 export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wiggle, wiggleTimer, species = null, fish = null) {
   const t = wiggleTimer;
+  const safeColor = (val, fallback) => (typeof val === 'string' && val ? val : fallback);
+  ctx.save();
+  try {
   switch (shape) {
     case 'cuttlefish': {
       // Broad mantle with undulating skirt fin and clustered front arms
@@ -1752,9 +1755,9 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       // 1. Aquatic Equine Tail (Graceful hippocampus / dolphin lower body)
       ctx.save();
       const tailGrad = ctx.createLinearGradient(0, 0, -36, tailWave3);
-      tailGrad.addColorStop(0, primary || '#fdf4ff');
-      tailGrad.addColorStop(0.5, secondary || '#f0abfc');
-      tailGrad.addColorStop(1, finColor || '#c084fc');
+      tailGrad.addColorStop(0, safeColor(primary, species?.primaryColor || '#fdf4ff'));
+      tailGrad.addColorStop(0.5, safeColor(secondary, species?.secondaryColor || '#f0abfc'));
+      tailGrad.addColorStop(1, safeColor(finColor, species?.finColor || '#c084fc'));
       ctx.fillStyle = tailGrad;
 
       ctx.beginPath();
@@ -1958,9 +1961,9 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       // 1. Iridescent Scaled Lower Mermaid Tail (Graceful undulating S-curve)
       ctx.save();
       const tailGrad = ctx.createLinearGradient(0, 0, -38, tailWave3);
-      tailGrad.addColorStop(0, primary || '#0284c7');
-      tailGrad.addColorStop(0.35, secondary || '#38bdf8');
-      tailGrad.addColorStop(0.75, finColor || '#a855f7');
+      tailGrad.addColorStop(0, safeColor(primary, species?.primaryColor || '#0284c7'));
+      tailGrad.addColorStop(0.35, safeColor(secondary, species?.secondaryColor || '#38bdf8'));
+      tailGrad.addColorStop(0.75, safeColor(finColor, species?.finColor || '#a855f7'));
       tailGrad.addColorStop(1, '#ec4899');
       ctx.fillStyle = tailGrad;
 
@@ -1999,8 +2002,8 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       // 2. Translucent Flowing Caudal Flukes (Tail Fins) with delicate ray flutes
       ctx.save();
       const flukeGrad = ctx.createLinearGradient(-40, tailWave3, -64, tailWave3);
-      flukeGrad.addColorStop(0, finColor || '#38bdf8');
-      flukeGrad.addColorStop(0.6, secondary || '#a855f7');
+      flukeGrad.addColorStop(0, safeColor(finColor, species?.finColor || '#38bdf8'));
+      flukeGrad.addColorStop(0.6, safeColor(secondary, species?.secondaryColor || '#a855f7'));
       flukeGrad.addColorStop(1, '#f472b6');
       ctx.fillStyle = flukeGrad;
       ctx.globalAlpha = 0.82;
@@ -2238,5 +2241,8 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
 
     default:
       return false;
+  }
+  } finally {
+    ctx.restore();
   }
 }

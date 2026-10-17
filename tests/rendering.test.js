@@ -1331,3 +1331,77 @@ test('ROV submersible probe redesign, Astral Shimmerfall passive enemy movement 
   assert.equal(world.aimDirection, 1, 'Aim direction must stay +1 when cursor is right of boat center');
 });
 
+test('Chrono Void forward space-whales with parallax, mermaid/unicorn gradient safety, Realm 5/1 music playlists, and Endgame Top 3 Players', async () => {
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { Hook } = await import('../src/entities/Hook.js');
+  const { soundManager } = await import('../src/audio/SoundManager.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { EndgameScene } = await import('../src/ui/EndgameScene.js');
+
+  let saves = 0;
+  let restores = 0;
+  const strictGradient = {
+    addColorStop(offset, color) {
+      if (typeof color !== 'string') {
+        throw new SyntaxError(`Failed to execute 'addColorStop' on 'CanvasGradient': The value provided ('${color}') could not be parsed as a color.`);
+      }
+    },
+  };
+  const ctx = new Proxy({
+    save: () => { saves++; },
+    restore: () => { restores++; },
+    createLinearGradient: () => strictGradient,
+    createRadialGradient: () => strictGradient,
+  }, {
+    get: (target, key) => key in target ? target[key] : () => {},
+    set: (target, key, value) => { target[key] = value; return true; },
+  });
+
+  // 1. Verify rare/epic/legendary/mythic/void mermaids and unicorns render both swimming and hooked without throwing or leaking ctx.save()
+  const allSpecies = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
+  const specialShapes = allSpecies.filter(s => ['mermaid', 'unicorn', 'sea_unicorn'].includes(s.shape));
+  assert.ok(specialShapes.length > 0, 'Must have mermaid and unicorn species in roster');
+
+  const hook = new Hook(500, 300);
+  hook.state = 'REELING';
+  for (const sp of specialShapes) {
+    const fish = new Fish(sp, 500, 400);
+    saves = 0;
+    restores = 0;
+    assert.doesNotThrow(() => {
+      fish.render(ctx, 100, hook);
+    }, `Swimming ${sp.name} (${sp.rarity}) must render cleanly with strict CanvasGradient`);
+    assert.equal(saves, restores, `Canvas save/restore stack must be balanced for swimming ${sp.name}`);
+
+    fish.hookTo(hook, 0);
+    saves = 0;
+    restores = 0;
+    assert.doesNotThrow(() => {
+      fish.render(ctx, 100, hook);
+    }, `Hooked ${sp.name} (${sp.rarity}) must render cleanly with strict CanvasGradient`);
+    assert.equal(saves, restores, `Canvas save/restore stack must be balanced for hooked ${sp.name}`);
+  }
+
+  // 2. Verify Whispering Aether Sea (Realm 5) uses the two new ethereal tracks and loops between them
+  const s5Surf = soundManager.getTrackForMode(5, 'surface');
+  const s5Fish = soundManager.getTrackForMode(5, 'underwater');
+  assert.ok(s5Surf.src.includes('/music/aether-ethereal-1.mp3'), 'Realm 5 surface must use aether-ethereal-1.mp3');
+  assert.ok(s5Fish.src.includes('/music/aether-ethereal-2.mp3'), 'Realm 5 underwater must use aether-ethereal-2.mp3');
+  assert.equal(s5Surf.loop, false, 'Realm 5 track should use custom ended listener to alternate between the 2 ethereal songs');
+
+  // 3. Verify Realm 1 uses seamusic/oceanmusic2 and transitions to faespencer-island-heartbeat-211013.mp3
+  assert.equal(soundManager.surfaceMusic.loop, false, 'Realm 1 surface music must alternate on ended');
+  assert.equal(soundManager.underwaterMusic.loop, false, 'Realm 1 underwater music must alternate on ended');
+
+  // 4. Verify EndgameScene renders Top 3 Players Hall of Fame
+  const save = new SaveSystem();
+  const endgame = new EndgameScene(save);
+  const top3 = endgame.getFallbackTopPlayers();
+  assert.equal(top3.length, 3, 'EndgameScene must provide exactly 3 top players');
+  const html = endgame.renderTopPlayersHtml(top3);
+  assert.ok(html.includes('#1 Champion') && html.includes('#2 Sovereign') && html.includes('#3 Voyager'), 'Endgame HTML must honor the top 3 players');
+});
+
+

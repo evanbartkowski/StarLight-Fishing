@@ -5205,6 +5205,12 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   transform: translateY(20px);
   transition: opacity 1.6s ease, transform 1.6s ease;
   margin-bottom: 30px;
+  padding: 28px 24px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.72), rgba(30, 27, 75, 0.58));
+  border: 1px solid rgba(165, 180, 252, 0.25);
+  box-shadow: 0 12px 45px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
 }
 
 .endgame-credits-block.active {
@@ -5212,11 +5218,18 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   transform: translateY(0);
 }
 
+.endgame-crown-emblem {
+  font-size: 1.45rem;
+  letter-spacing: 6px;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.5));
+}
+
 .endgame-title {
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-weight: 800;
-  letter-spacing: 4px;
-  background: linear-gradient(135deg, #f8fafc, #93c5fd, #c084fc);
+  letter-spacing: 4.5px;
+  background: linear-gradient(135deg, #fef08a, #93c5fd, #e9d5ff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 6px;
@@ -5224,27 +5237,112 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 
 .endgame-subtitle {
   font-size: 0.95rem;
-  color: #94a3b8;
-  letter-spacing: 2px;
-  margin-bottom: 25px;
+  color: #cbd5e1;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.endgame-credits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 26px;
 }
 
 .endgame-credit-item {
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .endgame-credit-role {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
-  letter-spacing: 2.5px;
-  color: #818cf8;
-  margin-bottom: 4px;
+  letter-spacing: 2.2px;
+  color: #93c5fd;
+  margin-bottom: 5px;
+  font-weight: 700;
 }
 
 .endgame-credit-name {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.endgame-top-players-section {
+  margin-top: 18px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(250, 204, 21, 0.25);
+}
+
+.endgame-podium-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 14px;
+  margin: 12px 0 16px 0;
+}
+
+.endgame-podium-card {
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.endgame-podium-card.rank-1 {
+  background: linear-gradient(145deg, rgba(113, 63, 18, 0.55), rgba(30, 41, 59, 0.8));
+  border-color: rgba(250, 204, 21, 0.65);
+  box-shadow: 0 0 22px rgba(250, 204, 21, 0.25);
+}
+
+.endgame-podium-card.rank-2 {
+  background: linear-gradient(145deg, rgba(51, 65, 85, 0.65), rgba(30, 41, 59, 0.8));
+  border-color: rgba(203, 213, 225, 0.55);
+  box-shadow: 0 0 18px rgba(148, 163, 184, 0.2);
+}
+
+.endgame-podium-card.rank-3 {
+  background: linear-gradient(145deg, rgba(124, 45, 18, 0.5), rgba(30, 41, 59, 0.8));
+  border-color: rgba(251, 146, 60, 0.55);
+  box-shadow: 0 0 18px rgba(251, 146, 60, 0.2);
+}
+
+.endgame-podium-rank {
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #fde047;
+}
+
+.endgame-podium-name {
   font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  word-break: break-word;
+}
+
+.endgame-podium-stat {
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #f1f5f9;
+  color: #bae6fd;
+}
+
+.endgame-thanks-note {
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  max-width: 580px;
+  margin: 0 auto;
+  line-height: 1.6;
 }
 
 .endgame-finish-btn {
@@ -5274,6 +5372,11 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 0 35px rgba(168, 85, 247, 0.7), 0 6px 16px rgba(0,0,0,0.6);
   background: linear-gradient(135deg, #6366f1, #a855f7);
+}
+
+.journal-tab-icon-svg,
+.almanac-pill-art {
+  pointer-events: none;
 }
 
 @keyframes endgamePulse {

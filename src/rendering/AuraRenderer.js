@@ -6,8 +6,8 @@ const LIMIT = 32;
 
 function texture(color) {
   if (textures.has(color)) return textures.get(color);
-  const canvas = globalThis.document?.createElement('canvas');
-  if (!canvas) return null;
+  const canvas = globalThis.document?.createElement?.('canvas');
+  if (!canvas || typeof canvas.getContext !== 'function') return null;
   canvas.width = canvas.height = SIZE;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
