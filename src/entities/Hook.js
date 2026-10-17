@@ -154,7 +154,7 @@ export class Hook {
     const maxSteer = 950 * this.agility;
     this.vx = Math.max(-maxSteer, Math.min(maxSteer, this.vx));
     this.x += dir * steerForce * deltaSec;
-    const maxX = Math.max(100, (worldWidth || 1200) - 30);
+    const maxX = Math.max(50, (worldWidth || 1200) - 30);
     this.x = Math.max(30, Math.min(maxX, this.x));
     this.targetX = this.x;
   }
@@ -318,11 +318,17 @@ export class Hook {
 
       const steerDiff = this.targetX - this.x;
       const maxSteerSpeed = 950 * this.agility;
-      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 14 * this.agility));
-      this.vx += (desiredVx - this.vx) * 20 * deltaSec;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 12 * Math.sqrt(this.agility)));
+      this.vx += (desiredVx - this.vx) * Math.min(1, 26 * deltaSec);
       this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
-      this.x += this.vx * deltaSec;
+      const nextX = this.x + this.vx * deltaSec;
+      if ((this.targetX - this.x) * (this.targetX - nextX) <= 0 && Math.abs(steerDiff) < 36) {
+        this.x = this.targetX;
+        this.vx = 0;
+      } else {
+        this.x = nextX;
+      }
       this.y += this.vy * deltaSec;
       const maxX = Math.max(50, (worldWidth || 1200) - 12);
       this.x = Math.max(12, Math.min(maxX, this.x));
@@ -376,14 +382,20 @@ export class Hook {
 
       this.vy += (targetReelSpeed - this.vy) * 8 * deltaSec;
 
-      // Agile steering during auto-reel
+      // Agile steering during auto-reel (critically damped without overshoot)
       const steerDiff = this.targetX - this.x;
       const maxSteerSpeed = 950 * this.agility;
-      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 14 * this.agility));
-      this.vx += (desiredVx - this.vx) * 20 * deltaSec;
+      const desiredVx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, steerDiff * 12 * Math.sqrt(this.agility)));
+      this.vx += (desiredVx - this.vx) * Math.min(1, 26 * deltaSec);
       this.vx = Math.max(-maxSteerSpeed, Math.min(maxSteerSpeed, this.vx));
 
-      this.x += this.vx * deltaSec;
+      const nextX = this.x + this.vx * deltaSec;
+      if ((this.targetX - this.x) * (this.targetX - nextX) <= 0 && Math.abs(steerDiff) < 36) {
+        this.x = this.targetX;
+        this.vx = 0;
+      } else {
+        this.x = nextX;
+      }
       this.y += this.vy * deltaSec;
       const maxX = Math.max(50, (worldWidth || 1200) - 12);
       this.x = Math.max(12, Math.min(maxX, this.x));

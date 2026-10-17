@@ -1267,3 +1267,67 @@ test('Hook right-edge wall-free tracking, responsive steer speed, giant predator
     world.renderEldritchVoidWhales?.(mockCtx, 1500, 720);
   }, 'OceanWorld Realm 7 void backdrop and singularity must render cleanly without error');
 });
+
+test('ROV submersible probe redesign, Astral Shimmerfall passive enemy movement & falling ship removal, mythic/legendary depth & shape variety, Almanac rarity sorting, and rod aiming stability', async () => {
+  const { EXPEDITION_HAZARDS } = await import('../src/data/ExpeditionHazards.js');
+  const { HAZARD_TYPES } = await import('../src/data/TreasureData.js');
+  const { Hazard } = await import('../src/entities/Hazard.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { LEGENDARY_SPECIES } = await import('../src/data/legendaries.js');
+  const { UIManager } = await import('../src/ui/UIManager.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+
+  // 1. Falling ship (falling_starglass) is removed from Astral Shimmerfall (Realm 3)
+  const fallingStarglass = EXPEDITION_HAZARDS.find(h => h.id === 'falling_starglass');
+  assert.ok(fallingStarglass && !fallingStarglass.seas.includes(3), 'Falling ship/starglass hazard must not spawn in Astral Shimmerfall');
+
+  // 2. Astral Shimmerfall dash enemies actively patrol when idle instead of standing still
+  const astralEnemies = HAZARD_TYPES.filter(h => h.zone === 3 && h.marineKind);
+  assert.ok(astralEnemies.length >= 3, 'Astral Shimmerfall has marine enemies');
+  for (const config of astralEnemies) {
+    const enemy = new Hazard(config, 500, 2500);
+    const startX = enemy.x;
+    const idleHook = { x: 500, y: 100, state: 'SURFACE_IDLE' };
+    for (let f = 0; f < 90; f++) {
+      enemy.update(16, 1280, idleHook);
+    }
+    assert.ok(Math.abs(enemy.x - startX) > 8, `${config.name} must actively patrol when not attacking (moved ${Math.abs(enemy.x - startX)}px)`);
+  }
+
+  // 3. Legendary & Mythic variety (no squid monopoly on deep_1, and mythics spawn in mid-to-deep waters)
+  const deepOnes = FISH_SPECIES.filter(f => f.id.endsWith('_deep_1'));
+  assert.equal(deepOnes.filter(f => f.shape === 'squid').length, 0, 'deep_1 legendaries no longer default to squid across odd realms');
+  assert.ok(LEGENDARY_SPECIES.every(m => m.minDepth >= 250 && m.maxDepth >= 1500), 'Mythic species spawn across mid-to-deep waters instead of only 80-250m');
+
+  // 4. Anglers Almanac sorts fish by rarity
+  const save = new SaveSystem();
+  save.data.currentSea = 1;
+  FISH_SPECIES.filter(f => f.zone === 1).forEach(f => { save.data.journal[f.id] = { count: 1 }; });
+  LEGENDARY_SPECIES.filter(f => f.zone === 1).forEach(f => { save.data.journal[f.id] = { count: 1 }; });
+  const ui = Object.create(UIManager.prototype);
+  ui.saveSystem = save;
+  let almanacHtml = '';
+  ui.openModal = (title, body) => { almanacHtml = body; };
+  ui.openJournalLogbook('journal', 'fieldlog');
+  const commonPos = almanacHtml.indexOf('rarity-common');
+  const uncommonPos = almanacHtml.indexOf('rarity-uncommon');
+  const rarePos = almanacHtml.indexOf('rarity-rare');
+  const epicPos = almanacHtml.indexOf('rarity-epic');
+  const legendaryPos = almanacHtml.indexOf('rarity-legendary');
+  assert.ok(commonPos > 0 && commonPos < uncommonPos && uncommonPos < rarePos && rarePos < epicPos && epicPos < legendaryPos, 'Almanac fish cards must be sorted by rarity');
+
+  // 5. Fishing rod aiming stability: cursor near boat does not flip-flop aimDirection
+  const gradient = { addColorStop() {} };
+  const mockCtx = new Proxy({}, {
+    get: (target, key) => key.includes('Gradient') ? () => gradient : () => {},
+    set: () => true,
+  });
+  const world = new OceanWorld({ width: 1280, height: 720, clientWidth: 1280, clientHeight: 720, getContext: () => mockCtx });
+  world.boat.x = 600;
+  world.setAimDirection(1);
+  // Cursor at x=630 (right of boat.x=600, even though left of old rodTip=670) must keep aimDirection === 1!
+  world.renderAimingTrajectory(mockCtx, world.rodTip.x, world.rodTip.y, 630, 260, 0);
+  assert.equal(world.aimDirection, 1, 'Aim direction must stay +1 when cursor is right of boat center');
+});
+

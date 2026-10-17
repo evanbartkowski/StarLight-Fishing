@@ -126,11 +126,15 @@ export class OceanWorld {
   }
 
   updateRodTip() {
-    const rodBaseX = this.boat.x + this.aimDirection * 28;
-    const rodBaseY = this.boat.y - 18;
+    const dir = this.aimDirection === -1 ? -1 : 1;
+    const angle = Number.isFinite(this.boat?.angle) ? this.boat.angle : 0;
+    const localX = dir * 52;
+    const localY = -68;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
     this.rodTip = {
-      x: rodBaseX + this.aimDirection * 42,
-      y: rodBaseY - 50,
+      x: this.boat.x + (localX * cos - localY * sin),
+      y: this.boat.y + (localX * sin + localY * cos),
     };
   }
 
@@ -2544,22 +2548,30 @@ export class OceanWorld {
   }
 
   renderAimingTrajectory(ctx, startX, startY, mouseX, mouseY, cameraY = 0, rodTier = null) {
+    const boatX = Number.isFinite(this.boat?.x) ? this.boat.x : startX;
+    const boatDx = mouseX - boatX;
+    if (Math.abs(boatDx) > 10) {
+      this.setAimDirection(boatDx < 0 ? -1 : 1);
+    }
+    const dir = this.aimDirection === -1 ? -1 : 1;
+    this.updateRodTip();
+    startX = this.rodTip.x;
+    startY = this.rodTip.y;
+
     const drawStartY = startY - cameraY;
     const drawMouseY = mouseY - cameraY;
 
-    let dx = mouseX - startX;
-    let dy = drawMouseY - drawStartY;
+    const dx = mouseX - startX;
+    const dy = drawMouseY - drawStartY;
+    const castDx = Math.max(14, dir * dx);
 
-    const dir = dx < 0 ? -1 : 1;
-    this.setAimDirection(dir);
-
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.sqrt(castDx * castDx + dy * dy);
     const minPower = 120;
     const maxPower = 340;
     const castRange = rodTier ? rodTier.castRange : 1.0;
     const power = Math.min(maxPower * castRange, Math.max(minPower, dist * 1.35));
 
-    const angle = Math.atan2(Math.max(-50, dy), Math.abs(dx));
+    const angle = Math.atan2(Math.max(-50, dy), castDx);
     const vx = dir * Math.cos(angle) * power;
     const vy = Math.sin(angle) * power - 45;
 

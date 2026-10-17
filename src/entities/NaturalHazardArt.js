@@ -7,195 +7,249 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.fillStyle = '#475569'; ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(-r * .5, -r); ctx.lineTo(r * .5, -r); ctx.lineTo(0, r); ctx.closePath(); ctx.fill(); ctx.stroke();
   } else if (kind === 'probe') {
-    // Automated Abyss Probe: Advanced deep-sea autonomous exploration drone with sweeping laser sensor, ducted thrusters & titanium armor
+    // Automated Abyss Probe: Sleek Horizontal Autonomous Deep-Sea ROV Submersible with Front Robotic Claws, Rear Shrouded Propeller & Sweeping Laser Array
     ctx.save();
-    const bob = Math.sin(time * 3.5) * (r * 0.08);
-    const tilt = Math.cos(time * 2.8) * 0.08;
+    const bob = Math.sin(time * 3.2) * (r * 0.06);
+    const pitch = Math.sin(time * 2.1) * 0.05;
     ctx.translate(0, bob);
-    ctx.rotate(tilt);
+    ctx.rotate(pitch);
 
-    // 1. Sweeping Forward Sensor Scanner Beam (conical targeting sweep)
-    const scanAngle = Math.sin(time * 2.2) * 0.35;
+    // 1. Forward Sweeping Bathymetric Laser Cone (emanating from front sensor dome)
+    const scanSweep = Math.sin(time * 2.6) * 0.22;
     ctx.save();
-    ctx.rotate(scanAngle);
-    const scanGrad = ctx.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 2.4);
-    scanGrad.addColorStop(0, 'rgba(239, 68, 68, 0.45)');
-    scanGrad.addColorStop(0.35, 'rgba(244, 63, 94, 0.22)');
-    scanGrad.addColorStop(0.75, 'rgba(239, 68, 68, 0.08)');
-    scanGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
-    ctx.fillStyle = scanGrad;
+    ctx.translate(r * 0.78, 0);
+    ctx.rotate(scanSweep);
+    const beamGrad = ctx.createLinearGradient(0, 0, r * 2.5, 0);
+    beamGrad.addColorStop(0, 'rgba(244, 63, 94, 0.55)');
+    beamGrad.addColorStop(0.45, 'rgba(239, 68, 68, 0.24)');
+    beamGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+    ctx.fillStyle = beamGrad;
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.arc(0, 0, r * 2.4, -0.38, 0.38);
+    ctx.lineTo(r * 2.5, -r * 0.72);
+    ctx.lineTo(r * 2.5, r * 0.72);
     ctx.closePath();
     ctx.fill();
 
-    // Laser scanning reticle arc
-    ctx.strokeStyle = 'rgba(255, 60, 90, 0.65)';
-    ctx.lineWidth = 1.6;
-    ctx.setLineDash([4, 4]);
+    // Laser grid scanlines inside cone
+    ctx.strokeStyle = 'rgba(255, 90, 120, 0.65)';
+    ctx.lineWidth = 1.3;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 2.0, -0.35, 0.35);
+    ctx.moveTo(r * 0.9, -r * 0.24);
+    ctx.lineTo(r * 0.9, r * 0.24);
+    ctx.moveTo(r * 1.6, -r * 0.44);
+    ctx.lineTo(r * 1.6, r * 0.44);
     ctx.stroke();
-    ctx.setLineDash([]);
     ctx.restore();
 
-    // 2. Four Articulated Drone Thruster Arms (at 45-degree angles)
-    for (let i = 0; i < 4; i++) {
-      const armAngle = (i * Math.PI) / 2 + Math.PI / 4;
-      const cosA = Math.cos(armAngle);
-      const sinA = Math.sin(armAngle);
-      const armDist = r * 0.78;
+    // 2. Rear Shrouded Kort-Nozzle Propeller & Cavitation Wake (at stern x = -r * 1.05)
+    const jetPulse = 0.5 + 0.5 * Math.sin(time * 16);
+    const wakeGrad = ctx.createLinearGradient(-r * 0.95, 0, -r * (1.85 + jetPulse * 0.35), 0);
+    wakeGrad.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+    wakeGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.45)');
+    wakeGrad.addColorStop(1, 'rgba(2, 132, 199, 0)');
+    ctx.fillStyle = wakeGrad;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.95, -r * 0.22);
+    ctx.lineTo(-r * (1.85 + jetPulse * 0.35), -r * 0.42);
+    ctx.lineTo(-r * (1.85 + jetPulse * 0.35), r * 0.42);
+    ctx.lineTo(-r * 0.95, r * 0.22);
+    ctx.closePath();
+    ctx.fill();
 
-      // Heavy titanium pylon arm
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = r * 0.16;
+    // Trailing cavitation micro-bubbles
+    ctx.fillStyle = 'rgba(186, 230, 253, 0.75)';
+    for (let b = 0; b < 4; b++) {
+      const bx = -r * (1.15 + ((time * 1.8 + b * 0.25) % 0.85));
+      const by = Math.sin(time * 8 + b * 2.1) * (r * 0.18);
       ctx.beginPath();
-      ctx.moveTo(cosA * (r * 0.45), sinA * (r * 0.45));
-      ctx.lineTo(cosA * armDist, sinA * armDist);
-      ctx.stroke();
+      ctx.arc(bx, by, r * (0.045 - b * 0.006), 0, Math.PI * 2);
+      ctx.fill();
+    }
 
-      // Ducted Hydro-Thruster Pod
+    // Rear Kort Nozzle Shroud & Spinning Rotor Blades
+    ctx.fillStyle = '#1e293b';
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.72, -r * 0.28);
+    ctx.lineTo(-r * 1.04, -r * 0.36);
+    ctx.lineTo(-r * 1.04, r * 0.36);
+    ctx.lineTo(-r * 0.72, r * 0.28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Spinning propeller blades inside nozzle
+    const bladeScale = Math.sin(time * 24);
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.88, 0, r * 0.06, Math.abs(bladeScale) * r * 0.30 + r * 0.04, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Dual Articulated Front Robotic Manipulator Claws (extending forward from lower bow)
+    const pinch = Math.sin(time * 4.2) * 0.14;
+    for (const side of [-1, 1]) {
       ctx.save();
-      ctx.translate(cosA * armDist, sinA * armDist);
-      ctx.rotate(armAngle + Math.PI / 2);
-
-      // Thruster housing
-      ctx.fillStyle = '#1e293b';
-      ctx.strokeStyle = '#64748b';
-      ctx.lineWidth = 1.4;
+      ctx.translate(r * 0.48, side * r * 0.34);
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = r * 0.10;
       ctx.beginPath();
-      if (typeof ctx.roundRect === 'function') {
-        ctx.roundRect(-r * 0.14, -r * 0.22, r * 0.28, r * 0.44, r * 0.06);
-      } else {
-        ctx.rect(-r * 0.14, -r * 0.22, r * 0.28, r * 0.44);
-      }
-      ctx.fill();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(r * 0.36, side * r * 0.10);
+      ctx.lineTo(r * 0.64, side * r * 0.03);
       ctx.stroke();
 
-      // Yellow industrial hazard stripes on thruster cowl
-      ctx.strokeStyle = '#eab308';
-      ctx.lineWidth = 1.5;
+      // Hydraulic joint bolt
+      ctx.fillStyle = '#f59e0b';
       ctx.beginPath();
-      ctx.moveTo(-r * 0.12, -r * 0.08); ctx.lineTo(r * 0.12, -r * 0.08);
-      ctx.moveTo(-r * 0.12, r * 0.08); ctx.lineTo(r * 0.12, r * 0.08);
-      ctx.stroke();
-
-      // Ion Propulsion Glow / Cavitation Jet
-      const jetPulse = 0.5 + 0.5 * Math.sin(time * 12 + i * 1.5);
-      const ionGrad = ctx.createLinearGradient(0, r * 0.2, 0, r * (0.45 + jetPulse * 0.25));
-      ionGrad.addColorStop(0, 'rgba(56, 189, 248, 0.85)');
-      ionGrad.addColorStop(0.5, 'rgba(14, 165, 233, 0.45)');
-      ionGrad.addColorStop(1, 'rgba(2, 132, 199, 0)');
-      ctx.fillStyle = ionGrad;
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.1, r * 0.2);
-      ctx.lineTo(r * 0.1, r * 0.2);
-      ctx.lineTo(0, r * (0.45 + jetPulse * 0.25));
-      ctx.closePath();
+      ctx.arc(r * 0.36, side * r * 0.10, r * 0.055, 0, Math.PI * 2);
       ctx.fill();
+
+      // Dual opposing pincer jaws
+      ctx.save();
+      ctx.translate(r * 0.64, side * r * 0.03);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(r * 0.22, -r * (0.11 + pinch * 0.3));
+      ctx.lineTo(r * 0.30, -r * 0.03);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(r * 0.22, r * (0.11 + pinch * 0.3));
+      ctx.lineTo(r * 0.30, r * 0.03);
+      ctx.stroke();
+      ctx.restore();
       ctx.restore();
     }
 
-    // 3. Main Titanium Pressure Sphere (Spherical robotic hull)
-    const hullGrad = ctx.createRadialGradient(-r * 0.22, -r * 0.22, r * 0.1, 0, 0, r * 0.72);
-    hullGrad.addColorStop(0, '#94a3b8');
-    hullGrad.addColorStop(0.45, '#475569');
-    hullGrad.addColorStop(0.85, '#1e293b');
-    hullGrad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = hullGrad;
+    // 4. Ventral Ballast Skids & Hydro-Pontoons (sleek horizontal undercarriage)
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.68, r * 0.48);
+    ctx.lineTo(r * 0.52, r * 0.48);
+    ctx.lineTo(r * 0.66, r * 0.36);
+    ctx.lineTo(-r * 0.78, r * 0.36);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Vertical strut stanchions connecting skids to hull
     ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.70, 0, Math.PI * 2);
+    ctx.moveTo(-r * 0.42, r * 0.22); ctx.lineTo(-r * 0.42, r * 0.40);
+    ctx.moveTo(r * 0.24, r * 0.22); ctx.lineTo(r * 0.24, r * 0.40);
+    ctx.stroke();
+
+    // 5. Dorsal Hydrophone Fin & Twin Flashing Telemetry Beacons
+    ctx.fillStyle = '#1e293b';
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.55, -r * 0.32);
+    ctx.lineTo(-r * 0.28, -r * 0.68);
+    ctx.lineTo(r * 0.12, -r * 0.68);
+    ctx.lineTo(r * 0.28, -r * 0.34);
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Reinforced armor segments & circumferential panel seams
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 1.4;
+    // Telemetry antenna whip
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.56, 0, Math.PI * 2);
+    ctx.moveTo(-r * 0.18, -r * 0.68);
+    ctx.lineTo(-r * 0.32, -r * 0.98);
     ctx.stroke();
 
-    // Heavy hex bolts on armor perimeter
-    ctx.fillStyle = '#cbd5e1';
-    for (let b = 0; b < 8; b++) {
-      const bAngle = (b / 8) * Math.PI * 2;
-      const bx = Math.cos(bAngle) * (r * 0.63);
-      const by = Math.sin(bAngle) * (r * 0.63);
+    const strobe = Math.sin(time * 9.0) > 0.15 ? 1 : 0.25;
+    ctx.fillStyle = `rgba(244, 63, 94, ${strobe})`;
+    ctx.shadowColor = '#f43f5e';
+    ctx.shadowBlur = strobe * 12;
+    ctx.beginPath();
+    ctx.arc(-r * 0.32, -r * 0.98, r * 0.065, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 6. Streamlined Horizontal ROV Main Fuselage (Industrial Syntactic-Foam Yellow & Titanium Armor)
+    const hullGrad = ctx.createLinearGradient(0, -r * 0.46, 0, r * 0.42);
+    hullGrad.addColorStop(0, '#facc15');
+    hullGrad.addColorStop(0.38, '#eab308');
+    hullGrad.addColorStop(0.55, '#334155');
+    hullGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = hullGrad;
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.78, -r * 0.26);
+    ctx.quadraticCurveTo(-r * 0.20, -r * 0.48, r * 0.48, -r * 0.36);
+    ctx.quadraticCurveTo(r * 0.92, -r * 0.24, r * 0.92, 0);
+    ctx.quadraticCurveTo(r * 0.92, r * 0.26, r * 0.48, r * 0.34);
+    ctx.lineTo(-r * 0.74, r * 0.30);
+    ctx.quadraticCurveTo(-r * 0.88, 0, -r * 0.78, -r * 0.26);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Diagonal Black/Yellow Industrial Hazard Chevrons along mid-hull
+    ctx.fillStyle = '#0f172a';
+    for (let c = 0; c < 3; c++) {
+      const cx = -r * 0.45 + c * (r * 0.26);
       ctx.beginPath();
-      ctx.arc(bx, by, r * 0.035, 0, Math.PI * 2);
+      ctx.moveTo(cx, -r * 0.04);
+      ctx.lineTo(cx + r * 0.11, -r * 0.04);
+      ctx.lineTo(cx + r * 0.03, r * 0.18);
+      ctx.lineTo(cx - r * 0.08, r * 0.18);
+      ctx.closePath();
       ctx.fill();
     }
 
-    // 4. Central Optical Sensor Eye (Robotic Cyclopean Lens with Targeting Reticle)
-    // Dark recessed lens housing
+    // Lateral Vectored Attitude Thruster Fan (recessed into side armor)
     ctx.fillStyle = '#090d16';
-    ctx.strokeStyle = '#f43f5e';
-    ctx.lineWidth = 2.0;
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.38, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // Concentric sensor rings
-    ctx.strokeStyle = 'rgba(244, 63, 94, 0.45)';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.28, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Glowing Iris Sensor Core with pulse
-    const eyePulse = 0.5 + 0.5 * Math.sin(time * 5.0);
-    const eyeGrad = ctx.createRadialGradient(0, 0, r * 0.04, 0, 0, r * 0.22);
-    eyeGrad.addColorStop(0, '#ffffff');
-    eyeGrad.addColorStop(0.3, '#f43f5e');
-    eyeGrad.addColorStop(0.75, '#be123c');
-    eyeGrad.addColorStop(1, '#881337');
-    ctx.fillStyle = eyeGrad;
-    ctx.shadowColor = '#ef4444';
-    ctx.shadowBlur = 12 + eyePulse * 6;
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.20, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Glowing pupil dot
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.07, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Curved lens glass reflection arc
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(0, 0, r * 0.32, -Math.PI * 0.8, -Math.PI * 0.3);
+    ctx.arc(-r * 0.48, -r * 0.14, r * 0.14, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
 
-    // 5. Top Telemetry Antenna Mast with Flashing Navigation Strobe
-    ctx.strokeStyle = '#64748b';
-    ctx.lineWidth = 2.0;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.4;
+    for (let f = 0; f < 3; f++) {
+      const fa = time * 10 + (f * Math.PI * 2) / 3;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.48, -r * 0.14);
+      ctx.lineTo(-r * 0.48 + Math.cos(fa) * r * 0.11, -r * 0.14 + Math.sin(fa) * r * 0.11);
+      ctx.stroke();
+    }
+
+    // 7. Forward Hemispherical Crimson Optical Dome & Laser Turret (at bow x = +r * 0.62)
+    const domeGrad = ctx.createRadialGradient(r * 0.68, -r * 0.06, r * 0.03, r * 0.60, 0, r * 0.30);
+    domeGrad.addColorStop(0, '#ffffff');
+    domeGrad.addColorStop(0.28, '#fb7185');
+    domeGrad.addColorStop(0.65, '#e11d48');
+    domeGrad.addColorStop(1, '#4c0519');
+    ctx.fillStyle = domeGrad;
+    ctx.strokeStyle = '#fda4af';
+    ctx.lineWidth = 1.8;
+    ctx.shadowColor = '#f43f5e';
+    ctx.shadowBlur = 12;
     ctx.beginPath();
-    ctx.moveTo(0, -r * 0.70);
-    ctx.lineTo(0, -r * 1.05);
+    ctx.arc(r * 0.58, 0, r * 0.25, -Math.PI * 0.55, Math.PI * 0.55);
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
-
-    ctx.fillStyle = '#475569';
-    ctx.beginPath();
-    ctx.arc(0, -r * 1.05, r * 0.065, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Flashing red emergency beacon on tip
-    const strobe = (Math.sin(time * 8.0) > 0.3) ? 1 : 0.25;
-    ctx.fillStyle = `rgba(239, 68, 68, ${strobe})`;
-    ctx.shadowColor = '#ef4444';
-    ctx.shadowBlur = strobe * 10;
-    ctx.beginPath();
-    ctx.arc(0, -r * 1.05, r * 0.05, 0, Math.PI * 2);
-    ctx.fill();
     ctx.shadowBlur = 0;
+
+    // Specular glass highlight on forward dome
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(r * 0.58, 0, r * 0.19, -Math.PI * 0.42, -Math.PI * 0.10);
+    ctx.stroke();
 
     ctx.restore();
   } else if (kind === 'diver') {
@@ -523,6 +577,23 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.beginPath();
     ctx.ellipse(r * 0.32, -r * 0.28, r * 0.32, r * 0.09, 0.12, 0, Math.PI * 2);
     ctx.fill();
+  } else if (kind === 'starglass') {
+    // Astral Starglass Crystal Shard
+    const grad = ctx.createLinearGradient(-r * 0.5, -r, r * 0.5, r);
+    grad.addColorStop(0, '#e0e7ff');
+    grad.addColorStop(0.5, '#a855f7');
+    grad.addColorStop(1, '#3b0764');
+    ctx.fillStyle = grad;
+    ctx.strokeStyle = '#f0abfc';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 0.95);
+    ctx.lineTo(r * 0.45, -r * 0.15);
+    ctx.lineTo(0, r * 0.95);
+    ctx.lineTo(-r * 0.45, -r * 0.15);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
   } else {
     // Broken Coastal Wreck with shattered timber ribs, brass lantern mount, tattered sail cloth, and swaying seaweed
     ctx.rotate(0.12);

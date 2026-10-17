@@ -24,8 +24,8 @@ export function updateAttack(enemy, dt, hook, width) {
     enemy.attackState = { x, y, warning: .45, remaining: .75 };
   }
   const attack = enemy.attackState;
-  if (!attack) return true;
-  if (!active) { enemy.attackState = null; enemy.attackCooldown = 2; return true; }
+  if (!attack) return !enemy.marineKind;
+  if (!active) { enemy.attackState = null; enemy.attackCooldown = 2; return !enemy.marineKind; }
   if (attack.warning > 0) {
     attack.warning -= step;
     return true;

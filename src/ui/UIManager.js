@@ -2925,7 +2925,24 @@ export class UIManager {
           <div class="journal-grid">
       `;
 
-      zoneData.speciesIds.forEach((spId) => {
+      const rarityOrder = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
+      const getAlmanacRarityRank = (sp) => {
+        if (!sp) return 99;
+        if (sp.isGodTier) return 6;
+        if (sp.isMythic) return 5;
+        return rarityOrder[sp.rarity] ?? 0;
+      };
+      const sortedSpeciesIds = [...zoneData.speciesIds].sort((aId, bId) => {
+        const spA = FISH_SPECIES.find((s) => s.id === aId) || LEGENDARY_SPECIES.find((s) => s.id === aId);
+        const spB = FISH_SPECIES.find((s) => s.id === bId) || LEGENDARY_SPECIES.find((s) => s.id === bId);
+        const rankDiff = getAlmanacRarityRank(spA) - getAlmanacRarityRank(spB);
+        if (rankDiff !== 0) return rankDiff;
+        const depthDiff = (spA?.minDepth ?? 0) - (spB?.minDepth ?? 0);
+        if (depthDiff !== 0) return depthDiff;
+        return String(spA?.name || aId).localeCompare(String(spB?.name || bId));
+      });
+
+      sortedSpeciesIds.forEach((spId) => {
         const species = FISH_SPECIES.find((s) => s.id === spId) || LEGENDARY_SPECIES.find((s) => s.id === spId);
         if (!species) return;
 

@@ -72,13 +72,15 @@ export function buildRealmFish(originals) {
       6: ['Fireglass Dragonfish', 'Diamond Furnace Ray', 'Molten Crown Behemoth'],
       7: ['Paradox Mirror Eel', 'Event Horizon Oracle', 'Eternity World Serpent'],
     };
+    const deepZeroShapes = ['angelfish', 'eel', 'disc', 'oval', 'swordfish', 'eel', 'eel'];
+    const deepOneShapes = ['nautilus', 'ray', 'siren_ray', 'swordfish', 'ray', 'ray', 'seahorse'];
     deepNames[sea.id].forEach((name, i) => natives.push({
       id: `realm_${sea.id}_deep_${i}`, name, zone: sea.id,
       rarity: i === 0 ? 'epic' : 'legendary', minDepth: [380, 800, 1400][i], maxDepth: 3000,
       isSpecialDeep: i === 2, isLeviathan: i === 2, spawnChance: i === 2 ? .24 : undefined,
       baseValue: profile.commonValue * [35, 75, 180][i], xpMultiplier: profile.xpMultiplier * (1.3 + i * .3),
       baseWeight: [8, 40, 650][i], sizeRange: [[40, 100], [150, 350], [800, 1800]][i],
-      scaleFactor: [1.3, 2.8, 6][i], shape: i === 2 ? (sea.id % 2 ? 'world_serpent' : 'megalodon_behemoth') : i === 1 ? (sea.id % 2 ? 'squid' : 'ray') : (sea.id % 2 ? 'disc' : 'eel'),
+      scaleFactor: [1.3, 2.8, 6][i], shape: i === 2 ? (sea.id % 2 ? 'world_serpent' : 'megalodon_behemoth') : i === 1 ? deepOneShapes[sea.id - 1] : deepZeroShapes[sea.id - 1],
       primaryColor: profile.colors[(i + 1) % 5], secondaryColor: profile.colors[(i + 3) % 5],
       finColor: profile.colors[i], eyeColor: '#fef3c7', pattern: 'diamonds', fantasyTrail: profile.trail,
       swimSpeed: [1.1, .8, .55][i], wiggleSpeed: 3, movementType: i === 2 ? 'sine_wave' : 'horizontal',
@@ -157,9 +159,9 @@ export function buildRealmFish(originals) {
           habIdx = fish.rarity === 'legendary' ? 3 : fish.rarity === 'epic' ? 2 : fish.rarity === 'rare' ? 2 : (index % 2);
         }
       } else {
-        // Other realms: Zone-based distribution where rarer fish spawn in deeper waters
+        // Other realms: Zone-based distribution where rarer fish spawn in mid-deep to deep waters
         if (fish.rarity === 'legendary') {
-          habIdx = 3;
+          habIdx = index % 2 === 0 ? 3 : 2;
         } else if (fish.rarity === 'epic') {
           habIdx = index % 2 === 0 ? 3 : 2;
         } else if (fish.rarity === 'rare') {

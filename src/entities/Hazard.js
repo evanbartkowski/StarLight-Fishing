@@ -89,8 +89,12 @@ export class Hazard {
       return;
     }
     if (this.behavior.motion === 'probe') {
-      this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.homeX + Math.sin(this.timer) * 100));
+      const prevX = this.x;
+      this.x = Math.max(this.radius, Math.min(worldWidth - this.radius, this.homeX + Math.sin(this.timer) * 140));
       this.y = this.homeY + Math.cos(this.timer * .7) * 70;
+      if (Math.abs(this.x - prevX) > 0.01) {
+        this.facing = this.x >= prevX ? 1 : -1;
+      }
       return;
     }
     if (this.behavior.expedition) {
@@ -1379,7 +1383,13 @@ export class Hazard {
       if (this.marineKind) {
         drawMarineThreat(ctx, this);
       } else if (this.naturalKind) {
+        ctx.save();
+        if (this.naturalKind === 'probe' || this.naturalKind === 'submarine' || this.naturalKind === 'diver') {
+          const dir = Math.abs(this.smoothFacing) < 0.18 ? (this.facing || 1) * 0.18 : (this.smoothFacing || this.facing || 1);
+          ctx.scale(dir, 1);
+        }
         drawNaturalHazard(ctx, this.naturalKind, this.radius / this.sizeScale, this.timer);
+        ctx.restore();
       } else if (this.realmStyle) {
         this.renderRealmHazard(ctx);
       } else if (this.type === 'boot') {

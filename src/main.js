@@ -402,7 +402,9 @@ function handlePointerDown(e) {
 
     gameState = 'AIMING';
     const aimDx = mousePos.x - oceanWorld.boat.x;
-    oceanWorld.setAimDirection(aimDx < 0 ? -1 : 1);
+    if (Math.abs(aimDx) > 10) {
+      oceanWorld.setAimDirection(aimDx < 0 ? -1 : 1);
+    }
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     isMouseDown = true;
     lastSteerMode = 'mouse';
@@ -455,8 +457,10 @@ function handlePointerMove(e) {
       if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
     }
 
-    // Dynamically update fisherman orientation (left or right side of boat)
-    oceanWorld.setAimDirection(dx < 0 ? -1 : 1);
+    // Dynamically update fisherman orientation (left or right side of boat) with hysteresis
+    if (Math.abs(dx) > 10) {
+      oceanWorld.setAimDirection(dx < 0 ? -1 : 1);
+    }
   } else if (gameState === 'DESCENDING' || gameState === 'REELING') {
     oceanWorld.hoveredCompanion = null;
     if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
@@ -548,22 +552,27 @@ window.addEventListener('keyup', (e) => {
 function triggerCast() {
   if (gameState !== 'AIMING') return;
 
+  const boatDx = mousePos.x - oceanWorld.boat.x;
+  if (Math.abs(boatDx) > 10) {
+    oceanWorld.setAimDirection(boatDx < 0 ? -1 : 1);
+  }
+  const dir = oceanWorld.aimDirection === -1 ? -1 : 1;
+  oceanWorld.updateRodTip();
+
   const rodX = oceanWorld.rodTip.x;
   const rodY = oceanWorld.rodTip.y;
 
-  let dx = mousePos.x - rodX;
-  let dy = (mousePos.y + cameraY) - rodY;
+  const dx = mousePos.x - rodX;
+  const dy = (mousePos.y + cameraY) - rodY;
+  const castDx = Math.max(14, dir * dx);
 
-  const dir = dx < 0 ? -1 : 1;
-  oceanWorld.setAimDirection(dir);
-
-  const dist = Math.sqrt(dx * dx + dy * dy);
+  const dist = Math.sqrt(castDx * castDx + dy * dy);
   const minPower = 120;
   const maxPower = 340;
   const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[save.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
 
   const power = Math.min(maxPower * rodTier.castRange, Math.max(minPower, dist * 1.35));
-  const angle = Math.atan2(Math.max(-50, dy), Math.abs(dx));
+  const angle = Math.atan2(Math.max(-50, dy), castDx);
 
   const vx = dir * Math.cos(angle) * power;
   const vy = Math.sin(angle) * power - 45;
@@ -662,7 +671,7 @@ const update = (dt) => {
   }
 
   // Update Hook
-  if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING' && gameState !== 'ENDGAME_SCENE') {
+  if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING' && gameState !== 'CATCH_SUMMARY' && gameState !== 'ENDGAME_SCENE') {
     hook.rodTip = oceanWorld.rodTip;
     hook.update(dt, oceanWorld.surfaceY, screenWidth, particles, isReelingInput, zoneManager);
     soundManager.keepAliveUnderwaterMusic?.();
@@ -976,6 +985,8 @@ const update = (dt) => {
     // Keep hook resting at rod tip on surface with natural sway
     hook.x = oceanWorld.rodTip.x;
     hook.y = oceanWorld.rodTip.y + 6;
+    hook.vx = 0;
+    hook.vy = 0;
     hook.prevX = hook.x;
     hook.prevY = hook.y;
     hook.tiltAngle = (oceanWorld.boat.angle || 0) * 0.4;
