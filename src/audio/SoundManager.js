@@ -182,6 +182,7 @@ export class SoundManager {
     if (s.includes('faespencer-island-heartbeat')) return 0.31;
     if (s.includes('aether-ethereal-1')) return 0.33;
     if (s.includes('aether-ethereal-2')) return 0.33;
+    if (s.includes('realm2-second-song')) return 0.32;
     if (s.includes('juliush-relax')) return 0.32;
     if (s.includes('alex-morgan-underwater-dreamscape')) return 0.34;
     if (s.includes('aquarain.mp3')) return 0.33;
@@ -246,14 +247,20 @@ export class SoundManager {
         6: '/music/desifreemusic-ocean-documentary-background-music-with-calm-cinematic-ambience-569283.mp3',
         7: '/music/chrono-void-fishing.mp3',
       };
-      const src = isUnderwater ? (fishingTracks[id] || '/music/chrono-void-fishing.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
-      const audio = createAudioElement(src);
-      // Realm 5 (Whispering Aether Sea) loops by alternating between both ethereal tracks
-      audio.loop = id !== 5;
+      const primarySrc = isUnderwater ? (fishingTracks[id] || '/music/chrono-void-fishing.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
+      const audio = createAudioElement(primarySrc);
+      // Realm 2 (Twilight Kelp Forest) and Realm 5 (Whispering Aether Sea) loop by alternating between 2 songs
+      audio.loop = id !== 2 && id !== 5;
       audio.preload = 'none';
       audio.addEventListener?.('ended', () => {
         if (this.currentMusicMode === (isUnderwater ? 'underwater' : 'surface') && this.currentSeaId === id && !this.isMuted && !this.activeStation) {
-          if (id === 5) {
+          if (id === 2) {
+            const curSrc = audio.src || '';
+            audio.src = curSrc.includes('realm2-second-song.mp3')
+              ? primarySrc
+              : '/music/realm2-second-song.mp3';
+            this.applyVolumes();
+          } else if (id === 5) {
             const curSrc = audio.src || '';
             audio.src = curSrc.includes('aether-ethereal-1.mp3')
               ? '/music/aether-ethereal-2.mp3'
