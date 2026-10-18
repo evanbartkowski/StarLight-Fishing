@@ -261,7 +261,7 @@ export class SoundManager {
         4: '/music/peaceful.mp3',
         5: '/music/aether-ethereal-1.mp3',
         6: '/music/tropical.mp3',
-        7: '/music/ocean-vibes.mp3',
+        7: '/music/alan_frijns-valley-of-voices-meditation-yoga-zen-relaxation-work-study-sleep-music-123428.mp3',
       };
       const fishingTracks = {
         2: '/music/juliush-relax-chill-out-music-for-landscapes-under-water-animals-forests-8105.mp3',
@@ -273,10 +273,10 @@ export class SoundManager {
       };
       const primarySrc = isUnderwater ? (fishingTracks[id] || '/music/rockot-holidays-in-heaven-173070.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
       const audio = createAudioElement(primarySrc);
-      // Realm 2 (Twilight Kelp Forest), Realm 5 (Whispering Aether Sea), and Realm 7 (Chrono Void) loop by alternating between playlist tracks
-      audio.loop = id !== 2 && id !== 5 && id !== 7;
+      // Realm 2 (Twilight Kelp Forest), Realm 5 (Whispering Aether Sea), and Realm 7 underwater loop by alternating between playlist tracks
+      audio.loop = id !== 2 && id !== 5 && (id !== 7 || !isUnderwater);
       audio.preload = 'auto';
-      // Multi-track realms (Realm 2, 5, 7) alternate through their songs on ended
+      // Multi-track realms (Realm 2, 5, and Realm 7 fishing) alternate through their songs on ended; surface tracks loop
       if (id === 2 || id === 5 || id === 7) {
         audio.addEventListener?.('ended', () => {
           if (this.currentMusicMode === (isUnderwater ? 'underwater' : 'surface') && this.currentSeaId === id && !this.isMuted && !this.activeStation) {
@@ -304,11 +304,8 @@ export class SoundManager {
                   audio.src = '/music/viramiller-heavenly-calm-252015.mp3';
                 }
               } else {
-                // Surface: either what it currently is (ocean-vibes) or valley of voices
-                const curSrc = audio.src || '';
-                audio.src = (curSrc.includes('valley-of-voices') || curSrc.includes('alan_frijns'))
-                  ? '/music/ocean-vibes.mp3'
-                  : '/music/alan_frijns-valley-of-voices-meditation-yoga-zen-relaxation-work-study-sleep-music-123428.mp3';
+                // Surface: Valley of Voices
+                audio.src = '/music/alan_frijns-valley-of-voices-meditation-yoga-zen-relaxation-work-study-sleep-music-123428.mp3';
               }
               this.applyVolumes();
             }

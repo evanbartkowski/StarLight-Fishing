@@ -770,11 +770,10 @@ test('Sea 5-7 enemy balancing, Megalodons, Void aesthetic enemies, Realm 7 merma
   ];
   assert.ok(validR7Fishing.some(name => r7Fishing.src.includes(name)), 'Realm 7 fishing track must be either holiday heaven, heavenly calm, or celestial disco');
   const validR7Surface = [
-    'ocean-vibes',
     'valley-of-voices',
     'alan_frijns'
   ];
-  assert.ok(validR7Surface.some(name => r7Surface.src.includes(name)), 'Realm 7 surface track must be ocean-vibes or valley of voices');
+  assert.ok(validR7Surface.some(name => r7Surface.src.includes(name)), 'Realm 7 surface track must be valley of voices');
 
   // Check all realms have distinct surface vs fishing tracks
   for (let r = 1; r <= 7; r++) {
@@ -1717,20 +1716,20 @@ test('Realm 7 fishing playlist (Holiday Heaven, Heavenly Calm, Celestial Disco) 
     listeners.get(r7Fish)?.ended?.();
     assert.ok(r7Fish.src.includes('rockot-holidays-in-heaven'), 'Celestial Disco must rotate back to Holiday Heaven on ended');
 
-    // Test surface track rotation on ended
+    // Test surface track on Realm 7 (Valley of Voices)
     sm.currentMusicMode = 'surface';
     const r7Surf = sm.getTrackForMode(7, 'surface');
-    assert.equal(r7Surf.loop, false, 'Realm 7 surface track must have loop=false to allow playlist progression');
-
-    r7Surf.src = '/music/ocean-vibes.mp3';
-    listeners.get(r7Surf)?.ended?.();
+    assert.equal(r7Surf.loop, true, 'Realm 7 surface track should loop seamlessly');
     assert.ok(
       r7Surf.src.includes('valley-of-voices') || r7Surf.src.includes('alan_frijns'),
-      'ocean-vibes must rotate to Valley of Voices on ended'
+      'Realm 7 surface track must be Valley of Voices'
     );
 
     listeners.get(r7Surf)?.ended?.();
-    assert.ok(r7Surf.src.includes('ocean-vibes.mp3'), 'Valley of Voices must rotate back to ocean-vibes on ended');
+    assert.ok(
+      r7Surf.src.includes('valley-of-voices') || r7Surf.src.includes('alan_frijns'),
+      'Valley of Voices must persist / loop on ended'
+    );
   } finally {
     globalThis.Audio = origCreate;
   }
