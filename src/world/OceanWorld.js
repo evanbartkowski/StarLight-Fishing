@@ -1154,15 +1154,15 @@ export class OceanWorld {
     ctx.restore();
 
     // 3. The Grand Floating Celestial Palace atop a Majestic Luminous Cloud
-    // Positioned further right (w * 0.74) and scaled to 0.68 with soft atmospheric aerial haze to appear further away
-    const palaceParallax = vY - 146 + Math.sin(t * 0.65) * 4;
-    const px = Math.min(w - 120, w * 0.74);
+    // Positioned in the upper right sky clear of boat (at w*0.5) and upper GUI, and scaled smaller (0.35) to appear further away
+    const palaceParallax = vY - 105 + Math.sin(t * 0.65) * 3;
+    const px = Math.max(w * 0.74, Math.min(w - 95, w * 0.82));
     const py = palaceParallax;
 
     ctx.save();
     ctx.translate(px, py);
-    ctx.scale(0.68, 0.68);
-    ctx.globalAlpha = 0.84;
+    ctx.scale(0.35, 0.35);
+    ctx.globalAlpha = 0.76;
 
     // Distant Ethereal Celestial Halo behind the palace
     try {
@@ -3093,16 +3093,32 @@ export class OceanWorld {
     const time = this.causticTimer * 0.75;
     const t = this.waveTimer || 0;
 
-    // 1. Vast Deep-Space Chrono Void Rift & Swirling Nebular Veils
+    // 1. Vast Deep-Space Chrono Void Rift Circles & Swirling Nebular Veils (Rare apparition)
     for (let rift = 0; rift < 3; rift++) {
+      // Rare apparition cycle: each circle anomaly appears rarely on a long cycle and fades out smoothly
+      const riftCycle = 80;
+      const riftPhase = ((t + rift * 27) % riftCycle);
+      let riftVisibility = 0;
+      if (riftPhase < 58) {
+        riftVisibility = 0; // Dormant / invisible for 58s
+      } else if (riftPhase < 63) {
+        riftVisibility = (riftPhase - 58) / 5; // Gentle fade in over 5s
+      } else if (riftPhase < 72) {
+        riftVisibility = 1.0; // Shimmers in the cosmic void for 9s
+      } else {
+        riftVisibility = (80 - riftPhase) / 8; // Fades out smoothly over 8s
+      }
+
+      if (riftVisibility <= 0.005) continue;
+
       const rx = ((rift * (w * 0.42) + Math.sin(time * 0.4 + rift * 1.5) * 60) % (w + 260) + w + 260) % (w + 260) - 130;
       const ry = voidY + 80 + rift * 190;
       try {
         const riftGrad = ctx.createRadialGradient(rx + 90, ry + 120, 20, rx + 90, ry + 120, 260);
         const hue = (t * 22 + rift * 70) % 360;
-        riftGrad.addColorStop(0, `hsla(${hue}, 85%, 65%, 0.16)`);
-        riftGrad.addColorStop(0.35, `hsla(${(hue + 55) % 360}, 90%, 55%, 0.11)`);
-        riftGrad.addColorStop(0.7, `hsla(${(hue + 120) % 360}, 80%, 40%, 0.06)`);
+        riftGrad.addColorStop(0, `hsla(${hue}, 85%, 65%, ${0.16 * riftVisibility})`);
+        riftGrad.addColorStop(0.35, `hsla(${(hue + 55) % 360}, 90%, 55%, ${0.11 * riftVisibility})`);
+        riftGrad.addColorStop(0.7, `hsla(${(hue + 120) % 360}, 80%, 40%, ${0.06 * riftVisibility})`);
         riftGrad.addColorStop(1, 'rgba(3, 7, 18, 0)');
         ctx.fillStyle = riftGrad;
         ctx.beginPath();

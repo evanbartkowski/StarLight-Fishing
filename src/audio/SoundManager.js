@@ -124,6 +124,7 @@ export class SoundManager {
     this.endgameGain = null;
     this.endgameNodes = [];
     this.endgameTimers = [];
+    this.isEndgameActive = false;
   }
 
   init() {
@@ -173,6 +174,7 @@ export class SoundManager {
   // Per-track loudness normalization so no realm is way louder than others
   getTrackScale(src = '', mode = 'surface') {
     const s = String(src);
+    if (s.includes('endgame-finale')) return 0.38;
     if (s.includes('chrono-void-fishing')) return 0.25;
     if (s.includes('onecinematicstudio')) return 0.26;
     if (s.includes('desifreemusic')) return 0.27;
@@ -216,7 +218,7 @@ export class SoundManager {
       this.seaGain.gain.setValueAtTime(this.isMuted || this.activeStation || this.currentMusicMode === 'none' ? 0 : this.musicVolume * 0.28, this.audioCtx.currentTime);
     }
     if (this.endgameTrack) {
-      this.endgameTrack.volume = vol * 0.38;
+      this.endgameTrack.volume = vol * this.getTrackScale(this.endgameTrack.src, 'surface');
     }
     if (this.endgameGain && this.audioCtx) {
       this.endgameGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.35, this.audioCtx.currentTime);
@@ -281,6 +283,7 @@ export class SoundManager {
   }
 
   setMusicMode(mode) {
+    if (this.isEndgameActive && mode !== 'none') return;
     const prevMode = this.currentMusicMode;
     if (prevMode === mode) return;
     this.currentMusicMode = mode;
@@ -298,6 +301,7 @@ export class SoundManager {
   }
 
   crossfadeMode(fromMode, toMode, seaId = 1) {
+    if (this.isEndgameActive) return;
     if (this._fadeInterval) {
       clearInterval(this._fadeInterval);
       this._fadeInterval = null;
@@ -349,6 +353,7 @@ export class SoundManager {
   }
 
   keepAliveUnderwaterMusic() {
+    if (this.isEndgameActive) return;
     if (this._fadeInterval) return;
     if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
       const track = this.getTrackForMode(this.currentSeaId, 'underwater');
@@ -368,6 +373,7 @@ export class SoundManager {
   }
 
   syncRecordedMusic() {
+    if (this.isEndgameActive) return;
     if (this._fadeInterval) {
       clearInterval(this._fadeInterval);
       this._fadeInterval = null;
@@ -1309,6 +1315,7 @@ export class SoundManager {
   }
 
   setSeaTrack(seaId) {
+    if (this.isEndgameActive) return;
     const id = Number(seaId) || 1;
     this.ensureAudio();
     const changed = this.currentSeaId !== id;
@@ -1322,6 +1329,7 @@ export class SoundManager {
   }
 
   _startRealmTheme(id) {
+    if (this.isEndgameActive) return;
     const theme = REALM_MUSIC[id] || REALM_MUSIC[1];
     const ctx = this.audioCtx;
     const output = this.seaGain;
@@ -1343,7 +1351,7 @@ export class SoundManager {
       osc.stop(now + duration + 0.02);
     };
     const tick = () => {
-      if (this.currentSeaId !== id || ctx.state !== 'running') return;
+      if (this.isEndgameActive || this.currentSeaId !== id || ctx.state !== 'running') return;
       const melody = theme.melody[step % theme.melody.length];
       const chord = theme.chords[Math.floor(step / 8) % theme.chords.length];
       if (melody !== null) note(theme.root + melody, beat * theme.sustain, 0.18);
@@ -1359,36 +1367,43 @@ export class SoundManager {
 
   // ========================================================
   // SPECIAL END CREDITS & ENDGAME SCENE MUSIC
-  // Atmospheric, celestial audio track with layered procedural synth
+  // Plays exclusively the user's special finale track; all other music is off
   // ========================================================
   playEndgameMusic() {
     this.ensureAudio();
     this.stopEndgameMusic();
+    this.isEndgameActive = true;
+    this.currentMusicMode = 'none';
 
     // Pause all regular surface, underwater, realm, and radio audio
-    this.surfaceMusic.pause?.();
-    this.underwaterMusic.pause?.();
-    for (const track of this.realmTracks?.values() || []) track.pause?.();
-    if (this.radioTrack) this.radioTrack.pause?.();
+    try { this.surfaceMusic.pause?.(); } catch (_) {}
+    try { this.underwaterMusic.pause?.(); } catch (_) {}
+    for (const track of this.realmTracks?.values() || []) {
+      try { track.pause?.(); } catch (_) {}
+    }
+    if (this.radioTrack) {
+      try { this.radioTrack.pause?.(); } catch (_) {}
+    }
     this.stopRadioStation();
 
-    // Stop realm ambient theme timers
+    // Stop realm ambient theme timers and silence procedural ambience
     for (const timer of this.seaTimers) clearInterval(timer);
     this.seaTimers = [];
+    if (this.seaGain && this.audioCtx) {
+      try { this.seaGain.gain.setValueAtTime(0, this.audioCtx.currentTime); } catch (_) {}
+    }
 
-    // 1. Layered HTML5 Audio playback (celestial deep ambient meditation track)
+    // Play exclusively the special endgame finale music track
     try {
-      this.endgameTrack = createAudioElement('/music/meditation.mp3');
+      this.endgameTrack = createAudioElement('/music/endgame-finale.mp3');
       this.endgameTrack.loop = true;
-      this.endgameTrack.volume = this.isMuted ? 0 : this.musicVolume * 0.75;
+      this.endgameTrack.volume = this.isMuted ? 0 : this.musicVolume * this.getTrackScale(this.endgameTrack.src, 'surface');
       this.endgameTrack.play?.()?.catch?.(() => {});
     } catch (_) {}
-
-    // 2. Web Audio procedural starry chime & deep abyssal drone layer
-    this._startEndgameSynth();
   }
 
   stopEndgameMusic() {
+    this.isEndgameActive = false;
     if (this.endgameTrack) {
       try {
         this.endgameTrack.pause?.();

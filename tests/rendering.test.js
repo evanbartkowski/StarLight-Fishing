@@ -1490,8 +1490,8 @@ test('Obstacle and deep enemy spawn reductions, Realm 3 sky constellations, dist
   }, 'Astral Shimmerfall constellations must render smoothly without error');
 
   // 3. Verify Whispering Aether Sea floating palace position and distant scaling
-  assert.ok(oceanWorldJs.includes('ctx.scale(0.68, 0.68)'), 'Floating palace must be scaled to 0.68 to appear distant');
-  assert.ok(oceanWorldJs.includes('w * 0.74'), 'Floating palace must be moved further right to w * 0.74');
+  assert.ok(oceanWorldJs.includes('ctx.scale(0.35, 0.35)') || oceanWorldJs.includes('ctx.scale(0.68, 0.68)'), 'Floating palace must be scaled smaller to appear distant');
+  assert.ok(oceanWorldJs.includes('w * 0.74') || oceanWorldJs.includes('w * 0.82'), 'Floating palace must be positioned clear of boat');
   assert.doesNotThrow(() => {
     world.setCurrentSea(5);
     world.renderAetherSurfaceFloatingPalace(mockCtx, 320, 0);
@@ -1517,6 +1517,71 @@ test('Obstacle and deep enemy spawn reductions, Realm 3 sky constellations, dist
     sound.keepAliveUnderwaterMusic();
   }
   assert.equal(playInvocations, 1, 'keepAliveUnderwaterMusic must debounce play calls to prevent rapid restarts');
+});
+
+test('Chrono Void rare fading circles, Whispering Aether distant palace, exclusive finale music, rainbow bubble transition, and persistent poem with Next button', async () => {
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+  const { SoundManager } = await import('../src/audio/SoundManager.js');
+  const { EndgameScene } = await import('../src/ui/EndgameScene.js');
+  const fs = await import('node:fs');
+  const oceanWorldJs = fs.readFileSync('src/world/OceanWorld.js', 'utf-8');
+  const soundManagerJs = fs.readFileSync('src/audio/SoundManager.js', 'utf-8');
+  const mainJs = fs.readFileSync('src/main.js', 'utf-8');
+
+  // 1. Whispering Aether palace scale & placement
+  assert.ok(oceanWorldJs.includes('ctx.scale(0.35, 0.35)'), 'Floating castle must be scaled smaller (0.35) to seem further away');
+  assert.ok(oceanWorldJs.includes('w * 0.82'), 'Floating castle must be positioned in upper right sky away from boat');
+
+  // 2. Chrono Void background circles rare apparition & fade out
+  assert.ok(oceanWorldJs.includes('riftCycle = 80'), 'Chrono Void circles must have a long apparition cycle');
+  assert.ok(oceanWorldJs.includes('riftVisibility <= 0.005'), 'Chrono Void circles must skip rendering when invisible');
+  assert.ok(oceanWorldJs.includes('riftVisibility})'), 'Chrono Void circles must fade in and fade out smoothly');
+
+  // 3. Special finale music without overlap
+  assert.ok(soundManagerJs.includes('/music/endgame-finale.mp3'), 'Finale scene must use attached special music file');
+  assert.ok(soundManagerJs.includes('this.isEndgameActive = true;'), 'playEndgameMusic must flag isEndgameActive');
+  assert.ok(soundManagerJs.includes('if (this.isEndgameActive) return;'), 'Audio methods must guard against playing other music during endgame');
+
+  const sound = new SoundManager();
+  sound.initialized = true;
+  sound.playEndgameMusic();
+  assert.equal(sound.isEndgameActive, true, 'isEndgameActive must be true during endgame');
+  assert.equal(sound.currentMusicMode, 'none', 'currentMusicMode must be set to none during endgame');
+
+  // Verify other sound triggers are blocked while endgame is active
+  sound.setMusicMode('underwater');
+  assert.equal(sound.currentMusicMode, 'none', 'setMusicMode must not restart underwater music while endgame is active');
+  sound.keepAliveUnderwaterMusic(); // Must not crash or restart
+  sound.stopEndgameMusic();
+  assert.equal(sound.isEndgameActive, false, 'stopEndgameMusic must reset isEndgameActive to false');
+
+  // 4. Underwater visual rainbow bubble transition with exact text
+  const mockSave = {
+    hasSeenEndgame: () => false,
+    markEndgameSeen: () => {},
+    data: { profile: { name: 'Captain' } }
+  };
+  const scene = new EndgameScene(mockSave);
+  scene.show();
+
+  const transitionHtml = scene.container.innerHTML;
+  assert.ok(transitionHtml.includes('You have reached the bottom of starlight fishing!'), 'Must include exact transition text: You have reached the bottom of starlight fishing!');
+  assert.ok(transitionHtml.includes('endgame-bubble-transition'), 'Must include rainbow bubble transition overlay');
+  assert.ok(transitionHtml.includes('endgame-bubble-canvas'), 'Must include bubble canvas for aesthetic underwater rendering');
+
+  // 5. Persistent poem screen with Next button to epilogue
+  assert.ok(transitionHtml.includes('endgame-poem-view'), 'Must include dedicated poem view');
+  assert.ok(transitionHtml.includes('endgame-next-btn'), 'Must include Next button at bottom of poem');
+  assert.ok(transitionHtml.includes('Next ➔'), 'Next button must have Next label');
+  assert.ok(transitionHtml.includes('endgame-epilogue-view'), 'Must include epilogue view with thanks to top 3 players');
+
+  // 6. View switching test
+  scene.showEpilogue();
+  assert.equal(scene.currentView, 'epilogue', 'showEpilogue must switch currentView to epilogue');
+  scene.showPoem();
+  assert.equal(scene.currentView, 'poem', 'showPoem must switch currentView back to poem');
+
+  scene.close();
 });
 
 

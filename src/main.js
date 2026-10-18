@@ -752,13 +752,14 @@ const update = (dt) => {
       }
     }
 
-    // Check for Endgame Trigger on the last realm (Sea 7: Eldritch Chrono Void)
+    // Check for Endgame Trigger on the last realm (Sea 7: Eldritch Chrono Void) at 3000 meters
     const isLastRealm = (save.getCurrentSea ? save.getCurrentSea() : save.data.currentSea) === 7;
-    const reachedMaxReelDepth = (hook.depthMeters >= hook.maxDepthMeters - 1) || (hook.maxDepthReachedThisDive >= hook.maxDepthMeters - 1);
+    const reachedMaxReelDepth = (hook.depthMeters >= 2995) || (hook.depthMeters >= hook.maxDepthMeters - 1) || (hook.maxDepthReachedThisDive >= hook.maxDepthMeters - 1);
 
     if (isLastRealm && reachedMaxReelDepth && !save.hasSeenEndgame() && gameState === 'DESCENDING') {
       gameState = 'ENDGAME_SCENE';
       hook.state = 'SURFACE_IDLE';
+      soundManager.setMusicMode('none');
 
       uiManager.triggerEndgameScene(() => {
         save.markEndgameSeen();

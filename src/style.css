@@ -5346,7 +5346,6 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 
 .endgame-finish-btn {
-  margin-top: 25px;
   padding: 14px 34px;
   font-size: 1.05rem;
   font-weight: 700;
@@ -5374,6 +5373,190 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   background: linear-gradient(135deg, #6366f1, #a855f7);
 }
 
+/* Underwater Visual Rainbow Bubble Transition Overlay */
+.endgame-bubble-transition {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 25;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.94) 0%, rgba(2, 6, 23, 0.98) 75%, #000000 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.75s ease-in-out;
+}
+
+.endgame-bubble-transition.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.endgame-bubble-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.endgame-bubble-content {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 860px;
+  animation: endgamePulse 3.5s ease-in-out infinite;
+}
+
+.endgame-bubble-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.18);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  color: #bae6fd;
+  font-size: 0.84rem;
+  letter-spacing: 3.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 7px 22px;
+  border-radius: 999px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+.endgame-bubble-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: 1.2px;
+  line-height: 1.28;
+  background: linear-gradient(135deg, #fef08a 0%, #67e8f9 25%, #f472b6 50%, #c084fc 75%, #facc15 100%);
+  background-size: 250% 250%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowGradientShift 5s ease infinite;
+  filter: drop-shadow(0 0 26px rgba(168, 85, 247, 0.65));
+  margin: 12px 0 6px 0;
+}
+
+.endgame-bubble-subtitle {
+  font-size: 1.15rem;
+  color: #e2e8f0;
+  letter-spacing: 2.2px;
+  font-weight: 500;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.4);
+}
+
+.endgame-bubble-skip {
+  margin-top: 14px;
+  padding: 9px 24px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #bae6fd;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(125, 211, 252, 0.4);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 1.2px;
+}
+
+.endgame-bubble-skip:hover {
+  background: rgba(30, 41, 59, 0.9);
+  color: #ffffff;
+  border-color: #67e8f9;
+  box-shadow: 0 0 16px rgba(103, 232, 249, 0.4);
+}
+
+/* Poem & Epilogue Views */
+.endgame-poem-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.endgame-epilogue-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.endgame-next-btn {
+  margin: 28px auto 14px auto;
+  padding: 14px 44px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0284c7, #6366f1, #9333ea);
+  border: 1px solid rgba(254, 240, 138, 0.7);
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 0 28px rgba(99, 102, 241, 0.55), 0 4px 14px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+}
+
+.endgame-next-btn.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.endgame-next-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 0 38px rgba(192, 132, 252, 0.8), 0 6px 18px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+  border-color: #fef08a;
+}
+
+.endgame-epilogue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.endgame-back-btn {
+  padding: 13px 28px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: 1px;
+}
+
+.endgame-back-btn:hover {
+  color: #f8fafc;
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(226, 232, 240, 0.6);
+  transform: translateY(-2px);
+}
+
 .journal-tab-icon-svg,
 .almanac-pill-art {
   pointer-events: none;
@@ -5382,6 +5565,12 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 @keyframes endgamePulse {
   0%, 100% { box-shadow: 0 0 8px rgba(129, 140, 248, 0.2); }
   50% { box-shadow: 0 0 18px rgba(129, 140, 248, 0.5); }
+}
+
+@keyframes rainbowGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 
