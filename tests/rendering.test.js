@@ -1404,4 +1404,61 @@ test('Chrono Void forward space-whales with parallax, mermaid/unicorn gradient s
   assert.ok(html.includes('#1 Champion') && html.includes('#2 Sovereign') && html.includes('#3 Voyager'), 'Endgame HTML must honor the top 3 players');
 });
 
+test('Realm 7 rare space-whales, Realm 5 floating cloud palace, Realm 2 giant trench titans, high-visibility sea snake, and audio loop stability', async () => {
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+  const { SoundManager } = await import('../src/audio/SoundManager.js');
+
+  // 1. Striped Sea Snake High Visibility Colors
+  const seaSnake = FISH_SPECIES.find(f => f.name === 'Striped Sea Snake');
+  assert.ok(seaSnake, 'Striped Sea Snake must exist in FishData');
+  assert.equal(seaSnake.primaryColor, '#fde047', 'Striped Sea Snake must use electric high-contrast yellow primary color');
+  assert.equal(seaSnake.secondaryColor, '#0f172a', 'Striped Sea Snake must use jet black stripe secondary color');
+  assert.equal(seaSnake.finColor, '#38bdf8', 'Striped Sea Snake must use bright cyan fin color');
+
+  // 2. Whispering Aether Sea Surface Floating Cloud Palace
+  const world = new OceanWorld({ width: 1280, height: 720 });
+  world.setCurrentSea(5);
+  let palaceDrawn = false;
+  const mockCtx = {
+    save() {}, restore() {}, beginPath() {}, closePath() {},
+    arc() {}, rect() {}, fillRect() {}, strokeRect() {},
+    fill() {}, stroke() {}, moveTo() {}, lineTo() {},
+    quadraticCurveTo() {}, bezierCurveTo() {}, ellipse() {},
+    translate() {}, rotate() {}, scale() {},
+    createLinearGradient() { return { addColorStop() {} }; },
+    createRadialGradient() { return { addColorStop() {} }; },
+    setLineDash() {}, clip() {},
+  };
+  assert.doesNotThrow(() => {
+    world.renderAetherSurfaceFloatingPalace(mockCtx, 320, 0);
+  }, 'Floating cloud palace must render without error');
+
+  // 3. Bioluminescent Trench Rare Background Titans
+  world.setCurrentSea(2);
+  assert.doesNotThrow(() => {
+    world.renderBioluminescentTrenchTitans(mockCtx, 400, 720);
+  }, 'Bioluminescent Trench giant titans must render smoothly without error');
+
+  // 4. Realm 7 Background Space-Whales Rarity & Clean Looping
+  world.setCurrentSea(7);
+  assert.doesNotThrow(() => {
+    world.renderEldritchVoidWhales(mockCtx, 600, 720);
+  }, 'Eldritch Void space-whales must render cleanly');
+
+  // 5. SoundManager Music Restart Fix for Realm 7 Fishing
+  const soundManager = new SoundManager();
+  soundManager.setSeaTrack(7);
+  const track7 = soundManager.getTrackForMode(7, 'underwater');
+  assert.equal(track7.loop, true, 'Realm 7 underwater audio must use native loop=true without premature ended event resets');
+
+  // Idempotent calls during active fishing must not re-trigger track resets
+  let playCount = 0;
+  track7.play = () => { playCount++; return Promise.resolve(); };
+  soundManager.setMusicMode('underwater');
+  soundManager.setMusicMode('underwater'); // Redundant call while fishing
+  soundManager.setSeaTrack(7); // Redundant realm check while in same realm
+  assert.equal(playCount, 0, 'Redundant mode and realm calls must not trigger restart or sync disruptions during fishing');
+});
+
 

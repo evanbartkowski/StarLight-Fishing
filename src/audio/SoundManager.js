@@ -50,7 +50,7 @@ export class SoundManager {
 
     // Realm 1 (Sunlit Shoals) alternates between its main theme and the former Whispering Aether Sea song in a loop
     this.underwaterMusic.addEventListener?.('ended', () => {
-      if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
+      if (this.currentSeaId === 1 && this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
         const curSrc = this.underwaterMusic.src || '';
         const nextSrc = curSrc.includes('faespencer-island-heartbeat-211013.mp3')
           ? '/sprites/oceanmusic2.mp3'
@@ -62,7 +62,7 @@ export class SoundManager {
       }
     });
     this.surfaceMusic.addEventListener?.('ended', () => {
-      if (this.currentMusicMode === 'surface' && !this.isMuted && !this.activeStation) {
+      if (this.currentSeaId === 1 && this.currentMusicMode === 'surface' && !this.isMuted && !this.activeStation) {
         const curSrc = this.surfaceMusic.src || '';
         const nextSrc = curSrc.includes('faespencer-island-heartbeat-211013.mp3')
           ? '/sprites/seamusic.mp3'
@@ -74,7 +74,7 @@ export class SoundManager {
       }
     });
     this.underwaterMusic.addEventListener?.('error', () => {
-      if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
+      if (this.currentSeaId === 1 && this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
         try {
           this.underwaterMusic.src = '/sprites/oceanmusic2.mp3';
           this.underwaterMusic.load?.();
@@ -251,26 +251,30 @@ export class SoundManager {
       const audio = createAudioElement(primarySrc);
       // Realm 2 (Twilight Kelp Forest) and Realm 5 (Whispering Aether Sea) loop by alternating between 2 songs
       audio.loop = id !== 2 && id !== 5;
-      audio.preload = 'none';
-      audio.addEventListener?.('ended', () => {
-        if (this.currentMusicMode === (isUnderwater ? 'underwater' : 'surface') && this.currentSeaId === id && !this.isMuted && !this.activeStation) {
-          if (id === 2) {
-            const curSrc = audio.src || '';
-            audio.src = curSrc.includes('realm2-second-song.mp3')
-              ? primarySrc
-              : '/music/realm2-second-song.mp3';
-            this.applyVolumes();
-          } else if (id === 5) {
-            const curSrc = audio.src || '';
-            audio.src = curSrc.includes('aether-ethereal-1.mp3')
-              ? '/music/aether-ethereal-2.mp3'
-              : '/music/aether-ethereal-1.mp3';
-            this.applyVolumes();
+      audio.preload = 'auto';
+      // Only alternating multi-track playlists (Realm 2 & 5) need manual track alternation on ended;
+      // standard single-track realms loop natively and cleanly via audio.loop = true without premature restart hitches.
+      if (id === 2 || id === 5) {
+        audio.addEventListener?.('ended', () => {
+          if (this.currentMusicMode === (isUnderwater ? 'underwater' : 'surface') && this.currentSeaId === id && !this.isMuted && !this.activeStation) {
+            if (id === 2) {
+              const curSrc = audio.src || '';
+              audio.src = curSrc.includes('realm2-second-song.mp3')
+                ? primarySrc
+                : '/music/realm2-second-song.mp3';
+              this.applyVolumes();
+            } else if (id === 5) {
+              const curSrc = audio.src || '';
+              audio.src = curSrc.includes('aether-ethereal-1.mp3')
+                ? '/music/aether-ethereal-2.mp3'
+                : '/music/aether-ethereal-1.mp3';
+              this.applyVolumes();
+            }
+            audio.currentTime = 0;
+            audio.play?.()?.catch?.(() => {});
           }
-          audio.currentTime = 0;
-          audio.play?.()?.catch?.(() => {});
-        }
-      });
+        });
+      }
       this.realmTracks.set(key, audio);
     }
     return this.realmTracks.get(key);
@@ -278,8 +282,9 @@ export class SoundManager {
 
   setMusicMode(mode) {
     const prevMode = this.currentMusicMode;
+    if (prevMode === mode) return;
     this.currentMusicMode = mode;
-    if (prevMode && prevMode !== mode && (mode === 'surface' || mode === 'underwater') && (prevMode === 'surface' || prevMode === 'underwater')) {
+    if (prevMode && (mode === 'surface' || mode === 'underwater') && (prevMode === 'surface' || prevMode === 'underwater')) {
       if (!this.activeStation) {
         this.crossfadeMode(prevMode, mode, this.currentSeaId);
         return;
@@ -1302,8 +1307,11 @@ export class SoundManager {
     const id = Number(seaId) || 1;
     this.ensureAudio();
     const changed = this.currentSeaId !== id;
+    const mode = this.currentMusicMode || 'surface';
+    const key = `${id}_${mode}`;
+    const needsInitialSync = !this.realmTracks.has(key) && id !== 1;
     this.currentSeaId = id;
-    if (changed || this.currentMusicMode) this.syncRecordedMusic();
+    if (changed || needsInitialSync) this.syncRecordedMusic();
   }
 
   _startRealmTheme(id) {

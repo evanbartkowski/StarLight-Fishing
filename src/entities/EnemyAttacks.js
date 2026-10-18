@@ -38,9 +38,9 @@ export function updateAttack(enemy, dt, hook, width) {
     // Committed charge along committed vector
     const totalDuration = 0.75;
     const elapsed = totalDuration - attack.remaining;
-    // Speed curve: acceleration up front, followed by compensatory braking glide
+    // Speed curve: acceleration up front, followed by compensatory braking glide - slightly lowered for fair dodging
     const speedMultiplier = elapsed < 0.35 ? 1.25 : elapsed < 0.58 ? 0.9 : 0.5;
-    const currentSpeed = 385 * speedMultiplier;
+    const currentSpeed = 335 * speedMultiplier;
 
     enemy.x += attack.x * currentSpeed * step;
     enemy.y += attack.y * currentSpeed * step;

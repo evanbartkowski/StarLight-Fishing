@@ -31,48 +31,48 @@ MARINE_THREATS.push(
   {
     id: 'marine_4_sea_serpent', name: 'Sunken Colossal Sea Serpent', zone: 4, marineKind: 'monster', monsterForm: 'serpent',
     minDepth: 450, maxDepth: 3000, attack: 'dash', radius: 72, sizeScale: 1.5,
-    damage: 3, shieldCost: 2, knockback: 90, speed: 190, detectionRadius: 490, leash: 780,
+    damage: 3, shieldCost: 2, knockback: 90, speed: 172, detectionRadius: 490, leash: 780,
     chaseDuration: 3.2, restDuration: 2.8, isColossal: true, color: '#059669', glow: '#34d399',
   },
   // Astral Shimmerfall Deep Siren
   {
     id: 'marine_3_abyssal_siren', name: 'Abyssal Void Siren', zone: 3, marineKind: 'siren', monsterForm: 'siren',
     minDepth: 920, maxDepth: 3000, attack: 'dash', radius: 48, sizeScale: 1.25,
-    damage: 3, shieldCost: 2, knockback: 75, speed: 215, detectionRadius: 480, leash: 750,
+    damage: 3, shieldCost: 2, knockback: 75, speed: 192, detectionRadius: 480, leash: 750,
     chaseDuration: 3.5, restDuration: 2.0, color: '#6366f1', glow: '#e879f9',
   },
   // Magma Caldera Giant Magma Monster Sea Creature
   {
     id: 'marine_6_magma_behemoth', name: 'Caldera Magma Behemoth', zone: 6, marineKind: 'monster', monsterForm: 'magma_maw',
     minDepth: 620, maxDepth: 3000, attack: 'dash', radius: 78, sizeScale: 1.55,
-    damage: 4, shieldCost: 2, knockback: 110, speed: 205, detectionRadius: 540, leash: 860,
+    damage: 4, shieldCost: 2, knockback: 110, speed: 182, detectionRadius: 540, leash: 860,
     chaseDuration: 3.5, restDuration: 2.4, isColossal: true, color: '#7f1d1d', glow: '#f97316',
   },
   // Magma Caldera Molten Lava Megalodon
   {
     id: 'marine_6_lava_megalodon', name: 'Molten Lava Megalodon', zone: 6, marineKind: 'shark', monsterForm: 'lava_megalodon',
     minDepth: 415, maxDepth: 3000, attack: 'dash', radius: 105, sizeScale: 1.45,
-    damage: 3, shieldCost: 2, knockback: 95, speed: 125, detectionRadius: 520, leash: 700,
+    damage: 3, shieldCost: 2, knockback: 95, speed: 112, detectionRadius: 520, leash: 700,
     chaseDuration: 3.0, restDuration: 3.5, isColossal: true, color: '#450a0a', glow: '#f97316',
   },
   // Chrono Void Celestial Void Megalodon
   {
     id: 'marine_7_cosmic_megalodon', name: 'Celestial Void Megalodon', zone: 7, marineKind: 'shark', monsterForm: 'void_megalodon',
     minDepth: 535, maxDepth: 3000, attack: 'dash', radius: 110, sizeScale: 1.45,
-    damage: 3, shieldCost: 2, knockback: 95, speed: 130, detectionRadius: 540, leash: 720,
+    damage: 3, shieldCost: 2, knockback: 95, speed: 116, detectionRadius: 540, leash: 720,
     chaseDuration: 3.0, restDuration: 3.2, isColossal: true, color: '#312e81', glow: '#a855f7',
   }
 );
 
 // Each realm has an additional specialist, with distinct pursuit rhythms.
 const specialists = [
-  ['Spiny Reef Lionfish', 'lionfish', 120, 65, 200],
-  ['Glassfang Siphonophore', 'jelly', 180, 12, 190],
-  ['Meteor Mantis Shrimp', 'crab', 350, 240, 280],
-  ['Imperial Spider Crab', 'crab', 420, 135, 340],
-  ['Thunderwing Manta', 'ray', 650, 255, 430],
-  ['Furnace Scorpionfish', 'lionfish', 850, 185, 420],
-  ['Chronovore Nautilus', 'nautilus', 1000, 275, 500],
+  ['Spiny Reef Lionfish', 'lionfish', 120, 58, 190],
+  ['Glassfang Siphonophore', 'jelly', 180, 11, 180],
+  ['Meteor Mantis Shrimp', 'crab', 350, 215, 260],
+  ['Imperial Spider Crab', 'crab', 420, 120, 310],
+  ['Thunderwing Manta', 'ray', 650, 228, 390],
+  ['Furnace Scorpionfish', 'lionfish', 850, 165, 380],
+  ['Chronovore Nautilus', 'nautilus', 1000, 245, 450],
 ];
 specialists.forEach(([name, marineKind, minDepth, speed, detectionRadius], index) => {
   const zone = index + 1;
@@ -101,7 +101,7 @@ for (const zone of [4, 5, 6, 7]) {
       id: `apex_${zone}_${kind}_${form}`, name,
       zone, marineKind: kind, monsterForm: form, minDepth: depth, maxDepth: 3000,
       radius, sizeScale: 1.45, isColossal: true, damage: 3, shieldCost: shieldDmg, knockback: 95,
-      speed: 85 + zone * 6, detectionRadius: 470, leash: 650,
+      speed: 76 + zone * 5.2, detectionRadius: 470, leash: 650,
       chaseDuration: 2.5, restDuration: 4.5, color: palette[1], glow: palette[3],
     });
   }

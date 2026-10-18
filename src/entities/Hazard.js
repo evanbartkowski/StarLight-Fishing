@@ -137,16 +137,16 @@ export class Hazard {
       const dx = targetX - this.x, dy = targetY - this.y;
       const length = Math.hypot(dx, dy) || 1;
 
-      // Realistic hydrodynamic acceleration - energetic cruising patrol when not pursuing
+      // Realistic hydrodynamic acceleration - slightly lowered pursuit speed across all realms for fair dodging
       const idleSpeedFactor = (this.isColossal || isShark) ? 0.68 : 0.52;
-      const maxSpd = config.speed * (pursuing ? (isCalderaShark ? 1.05 : 1.12) : idleSpeedFactor);
+      const maxSpd = config.speed * (pursuing ? (isCalderaShark ? 1.0 : 1.08) : idleSpeedFactor);
       const desiredVx = (dx / length) * maxSpd;
       const desiredVy = (dy / length) * maxSpd;
 
       // Smooth turning response when pursuing or actively patrolling
       const accelFactor = isCalderaShark
         ? (pursuing ? 6.5 : 3.6)
-        : (this.isColossal ? (pursuing ? 3.6 : 2.8) : (pursuing ? 12.0 : 4.6));
+        : (this.isColossal ? (pursuing ? 3.6 : 2.8) : (pursuing ? 13.0 : 4.6));
       this.vx += (desiredVx - this.vx) * Math.min(1, accelFactor * deltaSec);
       this.vy += (desiredVy - this.vy) * Math.min(1, accelFactor * deltaSec);
 

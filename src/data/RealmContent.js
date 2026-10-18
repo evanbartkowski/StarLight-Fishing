@@ -47,15 +47,16 @@ export function buildRealmFish(originals) {
       const maxDepth = Math.min(sea.maxDepth, Math.round(minDepth + sea.maxDepth * (0.25 + (i % 3) * 0.08)));
       const length = 8 + (i % 8) * 7 + (shape === 'shark' || shape === 'whale' || shape === 'unicorn' || shape === 'mermaid' ? 80 : 0);
       const isPinkAngel = name === 'Sunlit Sea Angel' || shape === 'angelfish';
+      const isStripedSnake = name === 'Striped Sea Snake';
       const movementType = ['eel', 'swordfish', 'mermaid', 'sea_snake', 'unicorn', 'sea_unicorn'].includes(shape) ? 'sine_wave' : shape === 'ray' ? 'diagonal_glide' : (shape === 'seahorse' || shape === 'nautilus' || shape === 'starfish') ? 'vertical_drift' : shape === 'squid' ? 'vertical_pulse' : (sea.id === 1 ? (i === 13 ? 'hover' : (i % 3 === 0 ? 'diagonal_glide' : i % 2 === 0 ? 'sine_wave' : 'horizontal')) : (i % 4 === 0 ? 'hover' : i % 4 === 1 ? 'erratic' : 'horizontal'));
       natives.push({
         id: `realm_${sea.id}_${name.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`, name, zone: sea.id, rarity,
         minDepth, maxDepth, baseValue: Math.round(profile.commonValue * VALUE_BY_RARITY[rarity] * (0.9 + (i % 5) * 0.08)),
         baseWeight: Math.round(length * length / 1200 * 100) / 100, sizeRange: [length, Math.round(length * 1.9)],
         scaleFactor: 0.65 + (i % 7) * 0.16, shape, movementType,
-        primaryColor: isPinkAngel ? '#f472b6' : profile.colors[i % 5],
-        secondaryColor: isPinkAngel ? '#fbcfe8' : profile.colors[(i + 2) % 5],
-        finColor: isPinkAngel ? '#fda4af' : profile.colors[(i + 3) % 5],
+        primaryColor: isPinkAngel ? '#f472b6' : isStripedSnake ? '#fde047' : profile.colors[i % 5],
+        secondaryColor: isPinkAngel ? '#fbcfe8' : isStripedSnake ? '#0f172a' : profile.colors[(i + 2) % 5],
+        finColor: isPinkAngel ? '#fda4af' : isStripedSnake ? '#38bdf8' : profile.colors[(i + 3) % 5],
         eyeColor: '#ffffff',
         swimSpeed: shape === 'sea_snake' ? 0.35 : (0.55 + (i % 6) * 0.22 + sea.id * 0.04),
         wiggleSpeed: shape === 'sea_snake' ? 1.2 : (3 + i % 7),

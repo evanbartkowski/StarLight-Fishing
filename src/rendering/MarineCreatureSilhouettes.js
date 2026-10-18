@@ -501,47 +501,63 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_snake': {
-      // Elongated sinusoidal undulating body with flattened paddle tail - slower, graceful serpentine movement
-      ctx.lineWidth = 5.2;
+      // Elongated sinusoidal undulating body with flattened paddle tail - high visibility with contrast contour
+      // 1. Dark backing contour outline for crisp visibility against all waters
+      ctx.lineWidth = 9.2;
       ctx.lineCap = 'round';
-      ctx.strokeStyle = primary;
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
       ctx.beginPath();
-      ctx.moveTo(24, 0);
+      ctx.moveTo(25, 0);
       for (let s = 1; s <= 6; s++) {
-        const sx = 24 - s * 8.5;
+        const sx = 25 - s * 8.5;
         const sy = Math.sin(t * 1.35 - s * 0.7) * 6.5;
         ctx.lineTo(sx, sy);
       }
       ctx.stroke();
 
-      // Banded pattern rings (alternating striped markings)
-      ctx.strokeStyle = secondary;
-      ctx.lineWidth = 4.8;
+      // 2. Main bright snake body stroke
+      ctx.lineWidth = 7.0;
+      ctx.strokeStyle = primary;
       ctx.beginPath();
-      for (let b = 1; b <= 5; b += 2) {
-        const bx = 24 - b * 8.5;
-        const by = Math.sin(t * 1.35 - b * 0.7) * 6.5;
-        ctx.moveTo(bx - 2.5, by);
-        ctx.lineTo(bx + 2.5, by);
+      ctx.moveTo(25, 0);
+      for (let s = 1; s <= 6; s++) {
+        const sx = 25 - s * 8.5;
+        const sy = Math.sin(t * 1.35 - s * 0.7) * 6.5;
+        ctx.lineTo(sx, sy);
       }
       ctx.stroke();
 
-      // Flattened paddle tail fin
-      const tailX = 24 - 6 * 8.5;
-      const tailY = Math.sin(t * 1.35 - 6 * 0.7) * 6.5;
-      ctx.fillStyle = finColor || secondary;
+      // 3. High-contrast banded pattern rings (alternating striped markings)
+      ctx.strokeStyle = secondary;
+      ctx.lineWidth = 6.8;
       ctx.beginPath();
-      ctx.ellipse(tailX - 4, tailY, 6, 4, Math.sin(t * 1.35) * 0.25, 0, Math.PI * 2);
-      ctx.fill();
+      for (let b = 1; b <= 5; b += 2) {
+        const bx = 25 - b * 8.5;
+        const by = Math.sin(t * 1.35 - b * 0.7) * 6.5;
+        ctx.moveTo(bx - 3.2, by);
+        ctx.lineTo(bx + 3.2, by);
+      }
+      ctx.stroke();
 
-      // Slender snake head & dark eye
+      // 4. Flattened paddle tail fin (distinct high-visibility paddle)
+      const tailX = 25 - 6 * 8.5;
+      const tailY = Math.sin(t * 1.35 - 6 * 0.7) * 6.5;
+      ctx.fillStyle = finColor || '#38bdf8';
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(tailX - 4, tailY, 8, 5.5, Math.sin(t * 1.35) * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 5. Slender snake head & bright eye
       ctx.fillStyle = primary;
       ctx.beginPath();
-      ctx.arc(25, 0, 3.2, 0, Math.PI * 2);
+      ctx.arc(26, 0, 4.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(26, -1, 1, 0, Math.PI * 2);
+      ctx.arc(27.5, -1.2, 1.3, 0, Math.PI * 2);
       ctx.fill();
       return true;
     }

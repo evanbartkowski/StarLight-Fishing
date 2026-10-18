@@ -306,17 +306,17 @@ export class OceanWorld {
     });
 
     populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && !hazard.expedition && belongsToRealm(hazard, this.currentSeaId)),
-      depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.25 * ecology.hazards * (depth > 1000 ? 0.86 : 1.0),
+      depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.15 * ecology.hazards,
       hazard => {
         const isVolcano = this.currentSeaId === 6 && (/volcan|chimney|sulfur vent|lava pillar/i.test(hazard.name || '') || hazard.id === 'caldera_lava_pillar');
-        if (isVolcano) return 0.22;
-        return hazard.isColossal ? 0.6 : (this.currentSeaId === 1 && hazard.naturalKind === 'plant' ? 0.25 : 1);
+        if (isVolcano) return 0.20;
+        return hazard.isColossal ? 0.55 : (this.currentSeaId === 1 && hazard.naturalKind === 'plant' ? 0.22 : 0.9);
       },
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
     populateBands(EXPEDITION_HAZARDS.filter(h => !h.expedition && h.seas.includes(this.currentSeaId)),
-      depth => (.06 + .15 * depthProgress(depth)) * (depth > 1000 ? 0.88 : 1.0), () => 1,
+      depth => .06 + .15 * depthProgress(depth), () => 1,
       (hazard, x, y) => this.entities.hazards.push(new Hazard(hazard, x, y)));
-    // Creature encounters are sparse groups, separate from static obstacles.
+    // Creature encounters are sparse groups, separate from static obstacles (modestly lowered density across all realms).
     for (const creature of HAZARD_TYPES.filter(h => h.marineKind && h.zone === this.currentSeaId)) {
       const end = Math.min(activeMaxDepth, creature.maxDepth);
       const populationBoost = this.currentSeaId >= 5 ? 1.25 : 1.5;
@@ -697,15 +697,8 @@ export class OceanWorld {
       // Sunken Atlantis: Classical Atlantean architecture emerging from the horizon in ruins
       this.renderAtlantisSurfaceRuins(ctx, skyHeight, cameraY);
     } else if (sea.id === 5) {
-      // Whispering Aether: Floating distant sky islands silhouette
-      ctx.save();
-      ctx.fillStyle = 'rgba(76, 29, 149, 0.22)';
-      const islandY = this.surfaceY - 70 - cameraY * 0.2;
-      ctx.beginPath();
-      ctx.ellipse(this.worldWidth * 0.75, islandY, 90, 22, 0, 0, Math.PI * 2);
-      ctx.ellipse(this.worldWidth * 0.25, islandY - 30, 65, 16, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      // Whispering Aether Sea: Floating celestial palace on a luminous cloud in the surface background
+      this.renderAetherSurfaceFloatingPalace(ctx, skyHeight, cameraY);
     } else if (sea.id === 7) {
       // Eldritch Chrono Void: Surface background Black Vortex and Tornados that periodically spawn and leave
       this.renderVoidSurfaceAnomalies(ctx, skyHeight, cameraY);
@@ -954,6 +947,244 @@ export class OceanWorld {
       ctx.fill();
     }
 
+    ctx.restore();
+  }
+
+  // Whispering Aether Sea Surface Background: Dreamy floating palace on a luminous celestial cloud
+  renderAetherSurfaceFloatingPalace(ctx, skyHeight, cameraY) {
+    const vY = this.surfaceY - cameraY;
+    if (!Number.isFinite(vY)) return;
+
+    ctx.save();
+    const t = this.waveTimer || 0;
+    const w = this.worldWidth || 1200;
+
+    // 1. Dreamy Ethereal Horizon Mist & Pastel Twilight Radiance
+    try {
+      const mistGrad = ctx.createLinearGradient(0, vY - 140, 0, vY + 12);
+      mistGrad.addColorStop(0, 'rgba(192, 132, 252, 0)');
+      mistGrad.addColorStop(0.5, 'rgba(232, 121, 249, 0.14)');
+      mistGrad.addColorStop(0.85, 'rgba(251, 207, 232, 0.22)');
+      mistGrad.addColorStop(1, 'rgba(216, 180, 254, 0.35)');
+      ctx.fillStyle = mistGrad;
+      ctx.fillRect(0, vY - 140, w, 152);
+    } catch (_) {}
+
+    // 2. Distant Soft Floating Cloud-Islands in the far background
+    ctx.save();
+    ctx.fillStyle = 'rgba(147, 51, 234, 0.22)';
+    const farIsland1Y = vY - 80;
+    const farIsland2Y = vY - 105;
+    ctx.beginPath();
+    ctx.ellipse(w * 0.18, farIsland1Y, 75, 18, 0, 0, Math.PI * 2);
+    ctx.ellipse(w * 0.88, farIsland2Y, 95, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 3. The Grand Floating Celestial Palace atop a Majestic Luminous Cloud
+    const palaceParallax = vY - 170 + Math.sin(t * 0.8) * 6;
+    const px = w * 0.62;
+    const py = palaceParallax;
+
+    ctx.save();
+    ctx.translate(px, py);
+
+    // A. Cascading Cloud Waterfall: pours from the bottom of the cloud into mist
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    try {
+      const waterGrad = ctx.createLinearGradient(0, 35, 0, 160);
+      waterGrad.addColorStop(0, 'rgba(240, 249, 255, 0.85)');
+      waterGrad.addColorStop(0.5, 'rgba(199, 210, 254, 0.6)');
+      waterGrad.addColorStop(1, 'rgba(244, 114, 182, 0)');
+      ctx.fillStyle = waterGrad;
+    } catch (_) {
+      ctx.fillStyle = 'rgba(224, 231, 255, 0.6)';
+    }
+    ctx.beginPath();
+    ctx.moveTo(-16, 30);
+    ctx.lineTo(16, 30);
+    ctx.lineTo(24, 155);
+    ctx.lineTo(-24, 155);
+    ctx.closePath();
+    ctx.fill();
+
+    // Water mist particles at the bottom of the waterfall
+    ctx.fillStyle = 'rgba(253, 242, 248, 0.5)';
+    for (let m = 0; m < 5; m++) {
+      const mx = Math.sin(t * 2 + m) * 22;
+      const my = 145 + Math.cos(t * 1.5 + m) * 10;
+      ctx.beginPath();
+      ctx.arc(mx, my, 4 + m, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // B. The Grand Luminous Cloud Foundation
+    ctx.save();
+    ctx.fillStyle = 'rgba(253, 224, 71, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(0, 32, 138, 38, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Multi-puff billowing cumulus cloud base
+    const cloudPuffs = [
+      { x: 0, y: 16, rx: 130, ry: 35, col: 'rgba(250, 245, 255, 0.96)' },
+      { x: -75, y: 22, rx: 55, ry: 28, col: 'rgba(243, 232, 255, 0.94)' },
+      { x: 75, y: 22, rx: 55, ry: 28, col: 'rgba(243, 232, 255, 0.94)' },
+      { x: -45, y: 8, rx: 50, ry: 26, col: 'rgba(255, 255, 255, 0.98)' },
+      { x: 45, y: 8, rx: 50, ry: 26, col: 'rgba(255, 255, 255, 0.98)' },
+      { x: 0, y: 4, rx: 70, ry: 30, col: 'rgba(255, 255, 255, 1.0)' },
+    ];
+    for (const p of cloudPuffs) {
+      ctx.fillStyle = p.col;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Cloud golden rim highlights
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.7)';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(-45, 4, 38, Math.PI * 0.7, Math.PI * 1.3);
+    ctx.arc(0, 0, 48, Math.PI * 0.8, Math.PI * 1.2);
+    ctx.arc(45, 4, 38, Math.PI * 0.7, Math.PI * 1.3);
+    ctx.stroke();
+    ctx.restore();
+
+    // C. The Grand Palace Architecture
+    // 1. Terrace Foundation & Balustrade
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(-85, -2, 170, 8);
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(-87, 5, 174, 2.5);
+
+    // Balustrade balusters
+    ctx.fillStyle = '#cbd5e1';
+    for (let b = -80; b <= 80; b += 10) {
+      ctx.fillRect(b, -8, 3, 7);
+    }
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(-85, -10, 170, 3);
+
+    // 2. Side Wings & Colonnades
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(-70, -38, 32, 28);
+    ctx.fillRect(38, -38, 32, 28);
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillRect(-72, -40, 36, 3);
+    ctx.fillRect(36, -40, 36, 3);
+
+    // Wing windows with warm ambient lantern glow
+    ctx.fillStyle = '#fef08a';
+    ctx.fillRect(-62, -28, 7, 12);
+    ctx.fillRect(-48, -28, 7, 12);
+    ctx.fillRect(46, -28, 7, 12);
+    ctx.fillRect(60, -28, 7, 12);
+
+    // 3. Central Grand Palace Hall
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-34, -58, 68, 48);
+
+    // Entrance arch & royal columns
+    ctx.fillStyle = '#64748b';
+    ctx.beginPath();
+    ctx.arc(0, -22, 10, Math.PI, 0);
+    ctx.lineTo(10, -10);
+    ctx.lineTo(-10, -10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(0, -22, 7, Math.PI, 0);
+    ctx.lineTo(7, -10);
+    ctx.lineTo(-7, -10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Columns
+    ctx.fillStyle = '#e2e8f0';
+    [-24, -15, 15, 24].forEach(cx => {
+      ctx.fillRect(cx - 2, -44, 4, 34);
+    });
+
+    // Central balcony
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(-18, -36, 36, 2.5);
+
+    // 4. Soaring Grand Celestial Central Dome
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.arc(0, -66, 26, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(0, -66, 26, Math.PI, 0);
+    ctx.stroke();
+
+    // Central Spire & Glowing Aetherial Star Finial
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillRect(-2, -104, 4, 14);
+    const starGlint = 4.5 + Math.sin(t * 3.5) * 1.5;
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(0, -107, starGlint, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Left & Right Flanking Minaret Spire Towers
+    [-76, 76].forEach((tx, idx) => {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(tx - 7, -64, 14, 54);
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(tx - 9, -66, 18, 3);
+      ctx.fillStyle = '#818cf8';
+      ctx.beginPath();
+      ctx.moveTo(tx - 8, -66);
+      ctx.lineTo(tx, -98);
+      ctx.lineTo(tx + 8, -66);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(tx - 1, -106, 2, 8);
+      ctx.beginPath();
+      ctx.arc(tx, -107, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(tx - 2.5, -52, 5, 10);
+
+      // Fluttering silk pennant banner
+      const bannerWave = Math.sin(t * 3.2 + idx * 1.8) * 8;
+      ctx.fillStyle = '#f472b6';
+      ctx.beginPath();
+      ctx.moveTo(tx + 1, -104);
+      ctx.lineTo(tx + 16 + bannerWave, -102 + bannerWave * 0.3);
+      ctx.lineTo(tx + 1, -96);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    // 6. Floating Ascending Starlight / Sparkles above the palace
+    ctx.fillStyle = '#fef08a';
+    for (let s = 0; s < 6; s++) {
+      const sPhase = (t * 1.8 + s * 1.4) % 4.0;
+      const sx = -60 + s * 24 + Math.sin(t * 2 + s) * 8;
+      const sy = -110 - sPhase * 16;
+      const sAlpha = Math.max(0, 1 - sPhase / 4.0) * 0.75;
+      ctx.globalAlpha = sAlpha;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
     ctx.restore();
   }
 
@@ -1608,10 +1839,11 @@ export class OceanWorld {
       this.renderSunlitReefFlora(ctx, cameraY, screenHeight);
     }
 
-    // Sea 2: Bioluminescent Trench Plankton & Jellies & Deep Flora (45 - 105m)
+    // Sea 2: Bioluminescent Trench Plankton, Flora & Giant Background Titans (45 - 105m)
     if (this.currentSeaId === 2) {
       this.renderBioluminescentPlankton(ctx, cameraY, screenHeight);
       this.renderBioluminescentFlora(ctx, cameraY, screenHeight);
+      this.renderBioluminescentTrenchTitans(ctx, cameraY, screenHeight);
     }
 
     // Sea 3: Astral Shimmerfall Starlight Cascades (105 - 180m)
@@ -1990,6 +2222,262 @@ export class OceanWorld {
       ctx.restore();
     }
     ctx.restore();
+  }
+
+  // Sea 2: Bioluminescent Trench Rare Giant Background Behemoths
+  // Visual-only, uncatchable, scary & cool deep-sea titans that rarely swim across the trench background
+  renderBioluminescentTrenchTitans(ctx, cameraY, screenHeight) {
+    const time = this.causticTimer || 0;
+    const w = this.worldWidth || 1200;
+    const h = screenHeight || 800;
+
+    // Trench titan configurations: massive scale, slow ominous swim, wide horizontal cycle so they appear rarely
+    const spanX = w + 4800;
+    const parallaxY = Math.max(0, cameraY - this.surfaceY) * 0.32;
+    const vSpan = 1400;
+
+    const titanConfigs = [
+      // Titan 1: The Abyssal Phantasm Leviathan (Colossal Deep-Trench Gulper with luminous lure and glowing ribcage)
+      { type: 'gulper', dir: 1, speed: 20, scale: 1.45, baseY: 380, phaseOffset: 0 },
+      // Titan 2: The Dread Umbral Shadow Behemoth (Segmented prehistoric leviathan with multi-eye clusters & glowing photophores)
+      { type: 'shadow', dir: -1, speed: 17, scale: 1.35, baseY: 960, phaseOffset: 2600 },
+    ];
+
+    for (let tIdx = 0; tIdx < titanConfigs.length; tIdx++) {
+      const cfg = titanConfigs[tIdx];
+      const phase = (time * cfg.speed + cfg.phaseOffset) % spanX;
+      const tx = cfg.dir === 1 ? (-380 + phase) : ((w + 380) - phase);
+
+      // Vertical positioning in the trench depths with subtle parallax and serpentine wave
+      const scrolledY = (((cfg.baseY - parallaxY) % vSpan) + vSpan) % vSpan - 180;
+      const ty = (this.surfaceY - cameraY) + 720 + scrolledY + Math.sin(time * 0.5 + tIdx * 2.5) * 28;
+
+      // Cull if completely off screen
+      if (ty < -220 || ty > h + 220 || tx < -450 || tx > w + 450) continue;
+
+      const tPitch = Math.cos(time * 0.5 + tIdx * 2.5) * 0.05 * cfg.dir;
+      const tScale = cfg.scale;
+
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(tPitch);
+      ctx.scale(cfg.dir * tScale, tScale);
+
+      if (cfg.type === 'gulper') {
+        // ==========================================
+        // TITAN 1: COLOSSAL ABYSSAL GULPER LEVIATHAN
+        // ==========================================
+        ctx.globalAlpha = 0.38;
+
+        // 1. Massive Cavernous Body Silhouette (Deep Abyssal Indigo/Cyan gradient)
+        try {
+          const bGrad = ctx.createLinearGradient(-140, -40, 160, 40);
+          bGrad.addColorStop(0, '#020617');
+          bGrad.addColorStop(0.3, '#0f172a');
+          bGrad.addColorStop(0.65, '#082f49');
+          bGrad.addColorStop(1, '#0e7490');
+          ctx.fillStyle = bGrad;
+        } catch (_) {
+          ctx.fillStyle = '#082f49';
+        }
+
+        // Giant serpentine body undulating into a cavernous gaping gulper jaw
+        ctx.beginPath();
+        ctx.moveTo(150, -18);
+        ctx.quadraticCurveTo(80, -45, -20, -38);
+        ctx.quadraticCurveTo(-110, -28, -210, 0);
+        ctx.quadraticCurveTo(-120, 32, -30, 36);
+        ctx.quadraticCurveTo(60, 52, 140, 30);
+        ctx.lineTo(85, -2);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Cavernous Gaping Jaws & Terrifying Needle Pharyngeal Fangs
+        ctx.fillStyle = '#020617';
+        ctx.beginPath();
+        ctx.moveTo(148, -16);
+        ctx.quadraticCurveTo(110, -2, 78, -2);
+        ctx.quadraticCurveTo(105, 20, 138, 28);
+        ctx.closePath();
+        ctx.fill();
+
+        // Translucent glowing needle fangs
+        ctx.strokeStyle = 'rgba(103, 232, 249, 0.75)';
+        ctx.lineWidth = 1.4;
+        const upperFangs = [142, 130, 118, 106, 94];
+        upperFangs.forEach(fx => {
+          ctx.beginPath();
+          ctx.moveTo(fx, -14);
+          ctx.lineTo(fx - 4, 2);
+          ctx.stroke();
+        });
+        const lowerFangs = [134, 122, 110, 98, 86];
+        lowerFangs.forEach(fx => {
+          ctx.beginPath();
+          ctx.moveTo(fx, 24);
+          ctx.lineTo(fx - 3, 10);
+          ctx.stroke();
+        });
+
+        // 3. Colossal Cranial Illicium Stalk & Glowing Bioluminescent Esca Lantern
+        const lureSway = Math.sin(time * 1.8) * 8;
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.8)';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(110, -32);
+        ctx.bezierCurveTo(155, -75, 195, -55 + lureSway, 210, -30 + lureSway);
+        ctx.stroke();
+
+        // Glowing Bioluminescent Esca
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        try {
+          const escaGlow = ctx.createRadialGradient(210, -30 + lureSway, 2, 210, -30 + lureSway, 32);
+          escaGlow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+          escaGlow.addColorStop(0.3, 'rgba(34, 211, 238, 0.8)');
+          escaGlow.addColorStop(0.7, 'rgba(6, 182, 212, 0.35)');
+          escaGlow.addColorStop(1, 'rgba(8, 47, 73, 0)');
+          ctx.fillStyle = escaGlow;
+        } catch (_) {
+          ctx.fillStyle = 'rgba(34, 211, 238, 0.8)';
+        }
+        ctx.beginPath();
+        ctx.arc(210, -30 + lureSway, 32, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Esca lantern core bulb
+        ctx.fillStyle = '#67e8f9';
+        ctx.beginPath();
+        ctx.arc(210, -30 + lureSway, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 4. Undulating Ghostly Caudal Flukes & Spiny Dorsal Fin Frills
+        const flukeWave = Math.sin(time * 2.4) * 16;
+        ctx.fillStyle = 'rgba(6, 182, 212, 0.35)';
+        ctx.beginPath();
+        ctx.moveTo(-205, 0);
+        ctx.quadraticCurveTo(-245, -35 + flukeWave, -270, -45 + flukeWave);
+        ctx.quadraticCurveTo(-250, flukeWave * 0.4, -285, flukeWave);
+        ctx.quadraticCurveTo(-250, flukeWave * 0.4, -270, 45 + flukeWave);
+        ctx.quadraticCurveTo(-245, 35 + flukeWave, -205, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // 5. Bioluminescent Spine Photophores & Glowing Skeletal Ribs along flank
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let r = 0; r < 8; r++) {
+          const rx = 50 - r * 28;
+          const rCurv = Math.sin(time * 1.5 + r * 0.4) * 5;
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          ctx.moveTo(rx, -24 + rCurv * 0.5);
+          ctx.quadraticCurveTo(rx + 6, 2, rx - 4, 26 + rCurv);
+          ctx.stroke();
+
+          // Luminous photophore node on each spine vertex
+          ctx.fillStyle = r % 2 === 0 ? '#38bdf8' : '#a855f7';
+          ctx.beginPath();
+          ctx.arc(rx, -26 + rCurv * 0.5, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Pale, unblinking abyss eye with slit pupil
+        ctx.fillStyle = 'rgba(240, 253, 250, 0.85)';
+        ctx.beginPath();
+        ctx.arc(116, -18, 5.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#020617';
+        ctx.beginPath();
+        ctx.ellipse(116, -18, 1.4, 4.2, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+      } else {
+        // ==========================================
+        // TITAN 2: DREAD UMBRAL SHADOW BEHEMOTH
+        // ==========================================
+        ctx.globalAlpha = 0.36;
+
+        // 1. Chitinous Armored Abyssal Serpent Body
+        try {
+          const sGrad = ctx.createLinearGradient(-160, -35, 170, 35);
+          sGrad.addColorStop(0, '#020617');
+          sGrad.addColorStop(0.35, '#1e1b4b');
+          sGrad.addColorStop(0.7, '#312e81');
+          sGrad.addColorStop(1, '#4c1d95');
+          ctx.fillStyle = sGrad;
+        } catch (_) {
+          ctx.fillStyle = '#1e1b4b';
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(170, 0);
+        ctx.quadraticCurveTo(110, -32, 20, -30);
+        ctx.quadraticCurveTo(-80, -26, -220, 0);
+        ctx.quadraticCurveTo(-110, 24, 0, 28);
+        ctx.quadraticCurveTo(90, 28, 170, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Chitinous Armored Dorsal Scutes / Spikes
+        ctx.fillStyle = '#1e1b4b';
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.65)';
+        ctx.lineWidth = 1.4;
+        for (let sp = 0; sp < 7; sp++) {
+          const spx = 120 - sp * 38;
+          ctx.beginPath();
+          ctx.moveTo(spx - 12, -26);
+          ctx.lineTo(spx, -44 - (sp % 2) * 8);
+          ctx.lineTo(spx + 10, -24);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        // 3. Terrifying Multi-Tiered Predatory Eye Clusters
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const eyeCluster = [
+          { x: 145, y: -8, r: 4.2, col: '#f43f5e' },
+          { x: 154, y: -4, r: 3.4, col: '#fb7185' },
+          { x: 140, y: -2, r: 2.8, col: '#a855f7' },
+          { x: 148, y: 4, r: 3.6, col: '#e11d48' },
+        ];
+        eyeCluster.forEach(eye => {
+          ctx.fillStyle = eye.col;
+          ctx.beginPath();
+          ctx.arc(eye.x, eye.y, eye.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 4. Undulating Luminous Sensory Barbel Whisker Tendrils trailing from jaw
+        ctx.strokeStyle = 'rgba(192, 132, 252, 0.6)';
+        ctx.lineWidth = 2.0;
+        for (let barbel = 0; barbel < 3; barbel++) {
+          const bWave = Math.sin(time * 2.5 + barbel * 1.2) * 14;
+          ctx.beginPath();
+          ctx.moveTo(135 - barbel * 14, 18);
+          ctx.bezierCurveTo(70, 48 + bWave, -20, 68 - bWave, -90, 85 + bWave * 0.8);
+          ctx.stroke();
+        }
+
+        // 5. Ventral Luminous Photophore Dots (Bioluminescent Trench Lantern Constellation)
+        for (let vp = 0; vp < 9; vp++) {
+          const vpx = 120 - vp * 34;
+          const vpy = 18 + Math.sin(time * 1.2 + vp * 0.5) * 4;
+          ctx.fillStyle = vp % 2 === 0 ? '#22d3ee' : '#c084fc';
+          ctx.beginPath();
+          ctx.arc(vpx, vpy, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
   }
 
   // Sea 2: Bioluminescent Trench Plankton & Jellies
@@ -2410,16 +2898,15 @@ export class OceanWorld {
       ctx.fill();
     }
 
-    // 3. Majestic Background Celestial Space-Whales gracefully gliding forward through the deep cosmos
+    // 3. Rare, Majestic Background Celestial Space-Whales gracefully gliding forward through the deep cosmos
     const h = screenHeight || 800;
-    const spanX = w + 640;
+    // Greatly expanded travel span ensures space-whales appear only rarely as majestic cosmic sights
+    const spanX = w + 5400;
     const parallaxY = Math.max(0, cameraY - this.surfaceY) * 0.30;
-    const vSpan = 1650;
+    const vSpan = 2200;
     const whaleConfigs = [
-      { dir: 1, speed: 24, scale: 1.32, baseY: 220, phaseOffset: 0 },
-      { dir: -1, speed: 19, scale: 0.98, baseY: 560, phaseOffset: 420 },
-      { dir: 1, speed: 21, scale: 1.15, baseY: 940, phaseOffset: 860 },
-      { dir: -1, speed: 17, scale: 0.88, baseY: 1340, phaseOffset: 1240 },
+      { dir: 1, speed: 22, scale: 1.38, baseY: 420, phaseOffset: 0 },
+      { dir: -1, speed: 18, scale: 1.12, baseY: 1480, phaseOffset: 2700 },
     ];
     for (let wIdx = 0; wIdx < whaleConfigs.length; wIdx++) {
       const cfg = whaleConfigs[wIdx];
