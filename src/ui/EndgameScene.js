@@ -214,7 +214,7 @@ export class EndgameScene {
 
           <div class="endgame-epilogue-actions">
             <button type="button" class="endgame-back-btn" id="endgame-back-btn">
-              ⬅ Read Poem
+              Back
             </button>
             <button type="button" class="endgame-finish-btn active" id="endgame-finish-btn">
               ⚓ Return to Surface &amp; Continue Journey

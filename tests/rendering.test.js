@@ -1755,5 +1755,40 @@ test('Realm 7 fishing playlist (including alexrockbeat angel) and surface playli
   }
 });
 
+test('Technical SEO, sitemap, robots.txt, structured data, and endgame Back button verification', async () => {
+  const fs = await import('fs');
+
+  // 1. Verify robots.txt exists and contains sitemap directive
+  assert.ok(fs.existsSync('public/robots.txt'), 'public/robots.txt must exist');
+  const robotsTxt = fs.readFileSync('public/robots.txt', 'utf-8');
+  assert.ok(robotsTxt.includes('User-agent: *'), 'robots.txt must allow search engines');
+  assert.ok(robotsTxt.includes('Sitemap: https://starlightfishing.com/sitemap.xml'), 'robots.txt must reference sitemap.xml');
+
+  // 2. Verify sitemap.xml exists and has canonical domain
+  assert.ok(fs.existsSync('public/sitemap.xml'), 'public/sitemap.xml must exist');
+  const sitemapXml = fs.readFileSync('public/sitemap.xml', 'utf-8');
+  assert.ok(sitemapXml.includes('<loc>https://starlightfishing.com/</loc>'), 'sitemap.xml must include canonical URL');
+
+  // 3. Verify index.html contains essential SEO tags, Open Graph, and Structured Data
+  assert.ok(fs.existsSync('index.html'), 'index.html must exist');
+  const indexHtml = fs.readFileSync('index.html', 'utf-8');
+  assert.ok(indexHtml.includes('<link rel="canonical" href="https://starlightfishing.com/" />'), 'index.html must specify canonical URL');
+  assert.ok(indexHtml.includes('<title>Starlight Fishing'), 'index.html must have optimized title');
+  assert.ok(indexHtml.includes('name="description"'), 'index.html must have meta description');
+  assert.ok(indexHtml.includes('property="og:title"'), 'index.html must have Open Graph title');
+  assert.ok(indexHtml.includes('property="og:image"'), 'index.html must have Open Graph image');
+  assert.ok(indexHtml.includes('name="twitter:card"'), 'index.html must have Twitter card');
+  assert.ok(indexHtml.includes('"@type": ["VideoGame", "WebApplication"]'), 'index.html must include VideoGame/WebApplication JSON-LD');
+  assert.ok(indexHtml.includes('"@type": "FAQPage"'), 'index.html must include FAQPage JSON-LD');
+  assert.ok(indexHtml.includes('id="seo-game-hub"'), 'index.html must have semantic crawlable game content');
+
+  // 4. Verify EndgameScene credit button says "Back" instead of "Read Poem"
+  const endgameCode = fs.readFileSync('src/ui/EndgameScene.js', 'utf-8');
+  assert.ok(!endgameCode.includes('Read Poem'), 'Endgame credit button must not say Read Poem');
+  assert.ok(endgameCode.includes('id="endgame-back-btn"'), 'EndgameScene must retain back button id');
+  assert.ok(/<button[^>]*id="endgame-back-btn"[^>]*>\s*Back\s*<\/button>/.test(endgameCode), 'EndgameScene back button must say Back');
+});
+
+
 
 

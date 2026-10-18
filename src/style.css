@@ -5766,6 +5766,26 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   }
 }
 
+/* =========================================
+   Accessible & SEO Semantic Content
+   Accessible to screen readers and search engine crawlers;
+   Kept out of canvas interaction path without visual intrusion.
+   ========================================= */
+.seo-sr-content {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: normal;
+  border: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+
 
 
 

@@ -281,3 +281,50 @@ Fleet Radio uses shared Firestore messages, server-acknowledged REST writes, and
 The Gem Store presents 10-, 35-, and 100-gem bundles. Stripe prices are configuration, not hardcoded dollar amounts. The signed-in user's `/players/{uid}` wallet streams into the HUD; gameplay-earned gems remain in the captain save. Verified webhook transactions grant purchased gems once per checkout session, including duplicate or concurrent Stripe deliveries. Clients cannot create or increase purchased gem balances. Local gameplay progression and earned gems remain client-reported, so this is not a server-authoritative anti-cheat system.
 
 See [functions/README.md](functions/README.md) for Stripe secrets, prices, webhook setup, retention deployment, and backend tests. Checkout is unavailable until configured. No live purchase is needed for the automated tests.
+
+## SEO & Google Search Console Verification
+
+To maximize organic search discoverability for **Starlight Fishing** across search terms such as *"Starlight Fishing"*, *"Starlight Fishing game"*, *"free online fishing game"*, and *"browser fishing adventure game"*, follow these steps to verify domain ownership, submit your sitemap, and request priority indexing:
+
+### 1. Add Property to Google Search Console
+1. Navigate to [Google Search Console](https://search.google.com/search-console).
+2. Click **Add Property** in the property dropdown.
+3. Choose **Domain** property and enter `starlightfishing.com` (covers both `https://starlightfishing.com` and all subdomains), or select **URL prefix** and enter `https://starlightfishing.com/`.
+
+### 2. Verify Domain Ownership via Cloudflare DNS (Recommended)
+Because Starlight Fishing uses Cloudflare DNS with Firebase Hosting:
+1. Google Search Console will provide a TXT record string (e.g. `google-site-verification=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`).
+2. Log into your [Cloudflare Dashboard](https://dash.cloudflare.com/) and select the `starlightfishing.com` domain.
+3. Go to **DNS > Records** and click **Add Record**:
+   - **Type**: `TXT`
+   - **Name**: `@` (or `starlightfishing.com`)
+   - **Content**: paste the `google-site-verification=...` string from Google.
+   - **TTL**: Auto
+4. Click **Save**.
+5. Return to Google Search Console and click **Verify**. (Cloudflare DNS changes propagate almost instantly).
+
+*Alternative*: If using the URL prefix property method, you can also copy the verification meta tag `<meta name="google-site-verification" content="..." />` into the `<head>` of `index.html` or place the Google HTML verification file into `public/`.
+
+### 3. Submit the XML Sitemap
+1. In Google Search Console, select `starlightfishing.com`.
+2. In the left navigation sidebar under **Indexing**, click **Sitemaps**.
+3. Under **Add a new sitemap**, type `sitemap.xml` (the full URL is `https://starlightfishing.com/sitemap.xml`).
+4. Click **Submit**.
+5. Verify that Google confirms the status as **Success** with 1 discovered page.
+
+### 4. Inspect URL & Request Immediate Indexing
+1. Use the search bar at the very top of Google Search Console: enter `https://starlightfishing.com/` and press Enter.
+2. Click **Test Live URL** to verify Googlebot can fetch and render the page successfully.
+3. In the live test preview, verify that:
+   - HTTP response is `200 OK`.
+   - Googlebot Smartphone successfully parses the page title, meta description, and the accessible fallback content (`#seo-game-hub`).
+   - The Structured Data tab validates the `VideoGame`, `WebApplication`, `BreadcrumbList`, and `FAQPage` schemas without errors.
+4. Click **Request Indexing** to submit the homepage to Google's high-priority crawl queue.
+
+### 5. Technical SEO & Performance Checklist
+- **Robots.txt**: Hosted at `https://starlightfishing.com/robots.txt` allowing all search crawlers while protecting internal API endpoints.
+- **Canonical URL**: Self-referential canonical `<link rel="canonical" href="https://starlightfishing.com/" />` on `index.html` avoids duplicate content penalties.
+- **Open Graph & Twitter Cards**: Configured with high-resolution 512x512 branding graphics for social and Discord previews.
+- **Semantic Crawlable Content**: Screen-reader and search crawler accessible summary (`.seo-sr-content`) detailing all 7 realms, controls, and features without obstructing interactive canvas gameplay.
+- **Core Web Vitals & Caching**: Static assets are pre-compressed and served with 7-day browser caching (`stale-while-revalidate`), while `index.html` uses `no-cache` to ensure instantaneous game updates.
+
