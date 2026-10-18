@@ -4041,6 +4041,8 @@ export class UIManager {
       if (item.type === 'fish' || (!item.type && !item.isRelic)) {
         const fishEntity = specimen(item, 0, 0);
         if (!fishEntity) return;
+        fishEntity.isAquarium = true;
+        fishEntity._inTank = true;
         const species = fishEntity.species;
         fishEntity.scale = Math.min(1.4, Math.max(0.4, fishEntity.scale * .85));
 
@@ -4213,6 +4215,7 @@ export class UIManager {
         if (!entity._inTank) {
           entity.x = f.x; entity.y = f.y; entity.minY = 35; entity.maxY = canvas.height - 65;
           entity._inTank = true;
+          entity.isAquarium = true;
         }
         if (foodPellets.length) {
           const food = foodPellets[0];

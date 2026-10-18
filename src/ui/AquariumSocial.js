@@ -29,7 +29,13 @@ export async function visitAquarium(ui, host) {
       const config = TREASURE_ITEMS.find(entry => entry.id === (item.id || item.speciesId));
       return config ? new Treasure(config, 60 + index * 65 % 510, 290) : null;
     }).filter(Boolean);
-    fish.forEach(entity => { entity.minY = 40; entity.maxY = 300; entity.scale = Math.min(1.4, entity.scale); });
+    fish.forEach(entity => {
+      entity.minY = 40;
+      entity.maxY = 300;
+      entity.scale = Math.min(1.4, entity.scale);
+      entity.isAquarium = true;
+      entity._inTank = true;
+    });
     let previous = performance.now();
     const frame = now => {
       if (!canvas.isConnected) return;

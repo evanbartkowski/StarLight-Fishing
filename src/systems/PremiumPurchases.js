@@ -17,17 +17,20 @@ export async function premiumPurchase(ui, input) {
   if (ui.premiumBusy) return false;
   ui.premiumBusy = true;
   try {
-    if (accountManager.isGuest()) {
+    const isCloudConnected = !accountManager.isGuest() && !!accountManager.cloudSession && !accountManager.cloudSession.busy;
+    if (!isCloudConnected || input.kind === 'soundtrack') {
       if (input.kind === 'crate') {
         const crate = CRATE_RANKS.find(item => item.rank === input.rank);
         if (!crate) throw new Error('Choose a valid crate.');
         if (save.isInventoryFull()) throw new Error('Your inventory is full. Free a slot before buying a crate.');
         const cost = CRATE_GEM_PRICES[crate.rank];
-        if (save.data.gems < cost) throw new Error(`You need ${cost} earned Gems for this crate.`);
+        if (save.getGemBalance() < cost) throw new Error(`You need ${cost} earned Gems for this crate.`);
         save.mutateAtomically(() => {
           save.data.gems -= cost;
           if (!save.addItemToInventory({ ...crate, isCrate: true, crateRank: crate.rank, category: 'crate', value: 0 })) throw new Error('Your inventory is full.');
         });
+        save.save();
+        accountManager.syncCloudSave().catch(() => {});
         ui.showToast('Sealed case stored in your Crate Vault.');
         return true;
       }
@@ -53,6 +56,8 @@ export async function premiumPurchase(ui, input) {
           ui.chatManager?.sendBroadcast('[Fleet Radio]', `${captainName} has acquired a radio and joined the frequency!`);
           ui.showAccountChat?.();
         }
+        save.save();
+        accountManager.syncCloudSave().catch(() => {});
         ui.onUpgradePurchased?.();
         ui.showToast(`✨ Upgraded ${upg.name} to Level ${currentLvl + 1}!`);
         return true;
@@ -61,12 +66,19 @@ export async function premiumPurchase(ui, input) {
         const cost = input.cost !== undefined ? input.cost : 3;
         if (save.getGemBalance() < cost) throw new Error(`You need ${cost} earned Gems to unlock this soundtrack.`);
         save.mutateAtomically(() => {
-          save.data.gems -= cost;
+          const fromEarned = Math.min(save.data.gems || 0, cost);
+          const fromPaid = cost - fromEarned;
+          save.data.gems = Math.max(0, (save.data.gems || 0) - fromEarned);
+          if (fromPaid > 0 && save.gemShop) {
+            save.gemShop.balance = Math.max(0, (save.gemShop.balance || 0) - fromPaid);
+          }
           save.data.unlockedSoundtracks ||= ['harbor_breeze', 'rainy_lighthouse', 'deep_blue'];
           if (!save.data.unlockedSoundtracks.includes(input.track)) {
             save.data.unlockedSoundtracks.push(input.track);
           }
         });
+        save.save();
+        accountManager.syncCloudSave().catch(() => {});
         ui.showToast('Soundtrack unlocked!');
         return true;
       }

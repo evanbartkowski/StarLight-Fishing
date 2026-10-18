@@ -225,6 +225,7 @@ export class SoundManager {
     if (s.includes('tropical.mp3')) return 0.26;
     if (s.includes('ocean-waves')) return 0.32;
     if (s.includes('ocean-vibes')) return 0.44;
+    if (s.includes('caribbean-beach')) return 0.32;
     if (s.includes('peaceful.mp3')) return 0.30;
     if (s.includes('faespencer-island-heartbeat')) return 0.31;
     if (s.includes('aether-ethereal-1')) return 0.33;
@@ -281,7 +282,7 @@ export class SoundManager {
       const surfaceTracks = {
         2: '/music/aquarain.mp3',
         3: '/music/meditation.mp3',
-        4: '/music/ocean-waves.mp3',
+        4: '/music/music_for_videos-caribbean-beach-164232.mp3',
         5: '/music/aether-ethereal-1.mp3',
         6: '/music/tropical.mp3',
         7: '/music/megisss-epic-angel-spirit-450168.mp3',

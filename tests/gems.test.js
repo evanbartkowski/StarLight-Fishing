@@ -193,3 +193,39 @@ test('upgrades using gems cost the exact displayed price and debit accurately fo
   assert.equal(save.data.gems, 5); // debited exactly expectedGems, not a single gem more
 });
 
+test('soundtracks can be unlocked with gems by both guests and signed-in captains without errors', async () => {
+  const { premiumPurchase } = await import('../src/systems/PremiumPurchases.js');
+
+  // 1. Guest purchase test
+  const guestSave = fresh();
+  accountManager.activeUser = null;
+  guestSave.data.gems = 10;
+  let toastMsg = '';
+  const guestUi = { saveSystem: guestSave, showToast(msg) { toastMsg = msg; } };
+
+  // Fail when not enough gems
+  guestSave.data.gems = 2;
+  const failRes = await premiumPurchase(guestUi, { kind: 'soundtrack', track: 'celestial_disco', cost: 5 });
+  assert.equal(failRes, false);
+  assert.ok(toastMsg.includes('earned Gems'), 'Must notify user of insufficient gems');
+
+  // Succeed with sufficient gems
+  guestSave.data.gems = 10;
+  const successRes = await premiumPurchase(guestUi, { kind: 'soundtrack', track: 'celestial_disco', cost: 5 });
+  assert.equal(successRes, true);
+  assert.equal(guestSave.data.gems, 5);
+  assert.ok(guestSave.data.unlockedSoundtracks.includes('celestial_disco'), 'Soundtrack must be added to unlocked list');
+
+  // 2. Signed-in captain purchase test (no cloud session error)
+  const captainSave = fresh();
+  accountManager.activeUser = 'CaptainEvan';
+  accountManager.cloudSession = null; // typical state on page reload
+  captainSave.data.gems = 15;
+  const captainUi = { saveSystem: captainSave, showToast(msg) { toastMsg = msg; } };
+
+  const capRes = await premiumPurchase(captainUi, { kind: 'soundtrack', track: 'midnight_current', cost: 15 });
+  assert.equal(capRes, true, 'Signed-in captain must be able to unlock soundtrack with gems');
+  assert.equal(captainSave.data.gems, 0);
+  assert.ok(captainSave.data.unlockedSoundtracks.includes('midnight_current'), 'Captain must have midnight_current unlocked');
+});
+

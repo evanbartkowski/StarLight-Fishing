@@ -403,6 +403,27 @@ test('legendary fish and animal noticeable glow, rainbow star sparkles, and catc
     fish.render(fishCtx, 0);
     assert.equal(saveCount, restoreCount, `${species.name} Fish.render must have balanced save/restore`);
     assert.ok(fishCalls.length > 50, `${species.name} Fish.render must render noticeable aura and sparkles`);
+    const oceanStrokeCount = fishCalls.filter(c => c.key === 'stroke').length;
+
+    // Verify aquarium fish do not render circulating rays/bars
+    const aqFish = new Fish(species, 300, 400);
+    aqFish.isAquarium = true;
+    let aqSave = 0, aqRestore = 0;
+    const aqCalls = [];
+    const aqCtx = new Proxy({ globalAlpha: 1 }, {
+      get: (target, key) => {
+        if (key in target) return target[key];
+        if (key === 'save') return () => { aqSave++; };
+        if (key === 'restore') return () => { aqRestore++; };
+        if (typeof key === 'string' && key.startsWith('create')) return () => ({ addColorStop() {} });
+        return (...args) => aqCalls.push({ key, args });
+      },
+      set: (target, key, val) => { target[key] = val; return true; },
+    });
+    aqFish.render(aqCtx, 0);
+    assert.equal(aqSave, aqRestore, 'Aquarium fish render must have balanced save/restore');
+    const aqStrokeCount = aqCalls.filter(c => c.key === 'stroke').length;
+    assert.ok(aqStrokeCount < oceanStrokeCount, 'Aquarium fish must have fewer stroke calls because circulating white bars are suppressed');
   }
 
   // 3. Verify Hook emits rainbow star sparkles when catching legendary species
@@ -1739,9 +1760,10 @@ test('Realm 7 fishing playlist (including alexrockbeat angel) and surface playli
       'Angel Choir must rotate back to Angel Spirit on ended'
     );
 
-    // 3. Verify Realm 4 surface uses ocean-waves.mp3 (upbeat oceanic waves)
+    // 3. Verify Realm 4 surface uses caribbean-beach (distinct from all other realms, not ocean-waves)
     const r4Surf = sm.getTrackForMode(4, 'surface');
-    assert.ok(r4Surf.src.includes('ocean-waves.mp3'), 'Realm 4 surface must use ocean-waves.mp3');
+    assert.ok(r4Surf.src.includes('music_for_videos-caribbean-beach-164232.mp3'), 'Realm 4 surface must use caribbean-beach');
+    assert.ok(!r4Surf.src.includes('ocean-waves'), 'Realm 4 surface must not use ocean-waves');
     sm.primeSeaTracks(4);
     sm.keepAliveMusic();
 

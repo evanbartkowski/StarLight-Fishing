@@ -173,6 +173,8 @@ export class Fish {
     this.hook = null;
     this.hookOffset = { x: 0, y: -22 };
     this.hookIndex = 0;
+    this.isAquarium = false;
+    this._inTank = false;
 
     // Collision radius (generous and responsive for big leviathans and caldera monsters)
     this.radius = Math.max(14, Math.min(58, 16 * this.scale));
@@ -792,20 +794,22 @@ export class Fish {
       ctx.fill();
       ctx.restore();
 
-      // 2. Rotating celestial sunbeam halo (8 prismatic rays)
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      for (let r = 0; r < 8; r++) {
-        const beamAngle = r * (Math.PI / 4) + t * 0.22;
-        const rayHue = (t * 60 + r * 45) % 360;
-        ctx.strokeStyle = `hsla(${rayHue}, 100%, 75%, 0.24)`;
-        ctx.lineWidth = 3.2;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(beamAngle) * 12, Math.sin(beamAngle) * 8);
-        ctx.lineTo(Math.cos(beamAngle) * auraRadius * 0.92, Math.sin(beamAngle) * auraRadius * 0.64);
-        ctx.stroke();
+      // 2. Rotating celestial sunbeam halo (8 prismatic rays) - ocean swimming only, hidden in aquarium
+      if (!this.isAquarium && !this._inTank) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let r = 0; r < 8; r++) {
+          const beamAngle = r * (Math.PI / 4) + t * 0.22;
+          const rayHue = (t * 60 + r * 45) % 360;
+          ctx.strokeStyle = `hsla(${rayHue}, 100%, 75%, 0.24)`;
+          ctx.lineWidth = 3.2;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(beamAngle) * 12, Math.sin(beamAngle) * 8);
+          ctx.lineTo(Math.cos(beamAngle) * auraRadius * 0.92, Math.sin(beamAngle) * auraRadius * 0.64);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
-      ctx.restore();
 
       // 3. Floating rainbow star sparkles within the radiant aura halo
       const haloSparkles = [
@@ -866,7 +870,7 @@ export class Fish {
       ctx.restore();
 
       // 2. Orbiting stardust motes & prismatic celestial sparks (only a select few normal fish carry these!)
-      if (this.hasOrbitingStars) {
+      if (this.hasOrbitingStars && !this.isAquarium && !this._inTank) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         for (let m = 0; m < 4; m++) {
