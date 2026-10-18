@@ -5676,7 +5676,7 @@ export class UIManager {
           <div class="step-num">6</div>
           <div class="step-text">
             <h4>Realms & Boat Companions</h4>
-            <p>Voyage across <strong>7 distinct fantasy ocean realms</strong> to complete your Field Journal. Equip beloved companions like <strong>Gracie the Dolphin</strong> and <strong>Irene the Shark</strong> to swim and dive with you!</p>
+            <p>Voyage across <strong>7 distinct fantasy ocean realms</strong> to complete your Field Journal. Equip beloved companions like <strong>Gracie the Dolphin</strong> and <strong>Sylus the Shark</strong> to swim and dive with you!</p>
           </div>
         </div>
 

@@ -3,10 +3,10 @@
 
 export const PET_DEFINITIONS = {
   shark: {
-    id: 'shark', name: 'Irene the Shark', species: 'Friendly Reef Shark', icon: '\uD83E\uDD88', reqLevel: 36,
+    id: 'shark', name: 'Sylus the Shark', species: 'Friendly Reef Shark', icon: '\uD83E\uDD88', reqLevel: 36,
     perk: 'Swims beside your boat, keeping you company on every voyage.',
     lore: 'A curious reef shark with a silver dorsal fin and a surprisingly gentle smile.',
-    unlockHint: 'Irene joins your crew automatically at Angler Level 36.',
+    unlockHint: 'Sylus joins your crew automatically at Angler Level 36.',
   },
   cat: {
     id: 'cat',

@@ -219,7 +219,7 @@ test('bulletproof vessel, companions, angler, and pet nameplate rendering across
   assert.equal(ctxWithRoundRect.__saveCount, ctxWithRoundRect.__restoreCount, 'save/restore must balance with roundRect');
 
   const ctxWithoutRoundRect = createMockCtx(false);
-  drawPetNameplate(ctxWithoutRoundRect, 100, 200, 'Irene the Shark');
+  drawPetNameplate(ctxWithoutRoundRect, 100, 200, 'Sylus the Shark');
   assert.equal(ctxWithoutRoundRect.__saveCount, ctxWithoutRoundRect.__restoreCount, 'save/restore must balance WITHOUT roundRect (fallback)');
 
   // 2. Verify drawAngler handles null, undefined, and corrupted appearance gracefully

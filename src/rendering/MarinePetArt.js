@@ -125,7 +125,7 @@ export function drawMarinePet(ctx, kind, time = 0) {
 
     ctx.restore();
   } else {
-    // Irene the Friendly Reef Shark:
+    // Sylus the Friendly Reef Shark:
     // Sleek oceanic slate-blue body (#5587c1), classic upright dorsal fin,
     // harmonious matching belly, triangular pectoral fin, 3 neat gill slits,
     // friendly smiling eye with white sparkle, soft cheek blush, cute white tooth,

@@ -47,7 +47,7 @@ Native species occupy shallow nurseries as well as deep habitats, so arriving in
 
 Open **Settings > Customize Appearance** to choose your angler's skin tone, coat, hair, hat color, and headwear, with a live preview. Choices save with the active local profile.
 
-Four companions can join your voyages: Angela the cat (eligible from level 8), Evan the pelican (14), Gracie the dolphin (22), and **Irene the shark**, who joins automatically at level 36. Existing level-36+ saves also receive Irene.
+Four companions can join your voyages: Angela the cat (eligible from level 8), Evan the pelican (14), Gracie the dolphin (22), and **Sylus the shark**, who joins automatically at level 36. Existing level-36+ saves also receive Sylus.
 
 Maxed-out upgrades move to the bottom of the shop, leaving available purchases first.
 

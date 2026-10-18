@@ -873,7 +873,7 @@ export const CREW_ART = {
   `),
 
   shark: svgWrap(`
-    <!-- Irene the Shark friendly portrait -->
+    <!-- Sylus the Shark friendly portrait -->
     <path d="M8 26c4-10 16-14 28-8 5 3 8 7 8 11-6 2-14 2-18-2-6 5-13 3-18-1z" fill="#64748b" stroke="#334155" stroke-width="1.5"/>
     <path d="M14 28c4-3 12-2 18 2-6 3-12 3-18-2z" fill="#e2e8f0"/>
     <!-- Triangular dorsal fin -->

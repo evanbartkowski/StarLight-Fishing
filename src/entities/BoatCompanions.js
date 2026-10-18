@@ -472,7 +472,7 @@ export class BackgroundDolphin {
   }
 }
 
-// Irene cruises under the surface alongside the player's vessel.
+// Sylus cruises under the surface alongside the player's vessel.
 export class BoatShark {
   constructor() { this.timer = 0; this.x = 0; this.y = 0; this.direction = 1; this.rotation = 0; this.isHovered = false; }
   update(dt, boat, surfaceY) {
@@ -517,7 +517,7 @@ export class BoatShark {
 
     if (this.isHovered) {
       try {
-        drawPetNameplate(ctx, safeX, drawY + 32, 'Irene the Shark');
+        drawPetNameplate(ctx, safeX, drawY + 32, 'Sylus the Shark');
       } catch (e) {}
     }
   }

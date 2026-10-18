@@ -304,10 +304,11 @@ test('new fish and all realm visuals can render with finite geometry', () => {
   assert.ok(calls > 1000);
 });
 
-test('Irene joins at level 36 and is granted to existing high-level saves', async () => {
+test('Sylus joins at level 36 and is granted to existing high-level saves', async () => {
   const { PET_DEFINITIONS } = await import('../src/data/PetsData.js');
   assert.equal(Object.keys(PET_DEFINITIONS).length, 4);
   assert.equal(PET_DEFINITIONS.shark.reqLevel, 36);
+  assert.equal(PET_DEFINITIONS.shark.name, 'Sylus the Shark');
   const save = new SaveSystem();
   save.data.level = 35;
   assert.equal(save.hasPet('shark'), false);

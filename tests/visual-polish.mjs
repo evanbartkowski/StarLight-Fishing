@@ -48,7 +48,7 @@ try {
     world.dolphin.update(4000, world.surfaceY, 'RAIN'); world.shark.update(4000, world.boat, world.surfaceY);
     world.shark.isHovered = true;
     ctx.save(); ctx.translate(160, 205); world.renderBoatAndFisherman(ctx); ctx.restore();
-    label('Crew: cat, pelican, Gracie and Irene', 24, 365);
+    label('Crew: cat, pelican, Gracie and Sylus', 24, 365);
     const weather = [];
     for (const [i, id] of ['blood_moon', 'abyssal_storm', 'aurora_borealis'].entries()) {
       const c = document.createElement('canvas'); c.width = 310; c.height = 150;
