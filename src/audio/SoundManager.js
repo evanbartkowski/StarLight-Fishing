@@ -151,6 +151,24 @@ export class SoundManager {
     }
   }
 
+  unlockActiveMusicOnGesture() {
+    this.ensureAudio();
+    if (this.isEndgameActive || this.isMuted || this.activeStation) return;
+    // Pre-initialize the active sea's underwater track during user gestures so it is buffered and ready when the hook hits the water
+    const underTrack = this.getTrackForMode(this.currentSeaId, 'underwater');
+    if (underTrack && underTrack.paused && underTrack.readyState === 0) {
+      try { underTrack.load?.(); } catch (_) {}
+    }
+    if (this.currentMusicMode === 'underwater' || this.currentMusicMode === 'surface') {
+      const activeTrack = this.getTrackForMode(this.currentSeaId, this.currentMusicMode);
+      if (activeTrack && activeTrack.paused) {
+        const vol = this.musicVolume * this.getTrackScale(activeTrack.src, this.currentMusicMode);
+        if (!this._fadeInterval) activeTrack.volume = vol;
+        activeTrack.play?.()?.catch?.(() => {});
+      }
+    }
+  }
+
   setMuted(muted) {
     this.isMuted = muted;
     this.applyVolumes();
@@ -175,7 +193,7 @@ export class SoundManager {
   getTrackScale(src = '', mode = 'surface') {
     const s = String(src);
     if (s.includes('endgame-finale')) return 0.38;
-    if (s.includes('chrono-void-fishing')) return 0.25;
+    if (s.includes('chrono-void-fishing')) return 0.36;
     if (s.includes('onecinematicstudio')) return 0.26;
     if (s.includes('desifreemusic')) return 0.27;
     if (s.includes('tropical.mp3')) return 0.26;
@@ -314,6 +332,13 @@ export class SoundManager {
       return;
     }
 
+    // Ensure any other non-participating tracks are paused if an earlier crossfade was interrupted
+    if (this.surfaceMusic !== fromTrack && this.surfaceMusic !== toTrack) this.surfaceMusic.pause?.();
+    if (this.underwaterMusic !== fromTrack && this.underwaterMusic !== toTrack) this.underwaterMusic.pause?.();
+    for (const track of this.realmTracks.values()) {
+      if (track !== fromTrack && track !== toTrack) track.pause?.();
+    }
+
     const vol = this.isMuted ? 0 : this.musicVolume;
     const targetVol = vol * this.getTrackScale(toTrack.src, toMode);
 
@@ -327,13 +352,21 @@ export class SoundManager {
 
     // Browser runtime: smooth 1.2s crossfade transition
     toTrack.volume = 0;
-    toTrack.play?.()?.catch?.(() => {});
+    if (toTrack.paused) {
+      toTrack.play?.()?.catch?.(() => {});
+    }
 
     const startTime = performance.now();
     const duration = 1200;
     const startFromVol = fromTrack.volume || 0;
+    const targetSeaId = Number(seaId) || 1;
 
     this._fadeInterval = setInterval(() => {
+      if (this.isEndgameActive || this.currentMusicMode !== toMode || this.currentSeaId !== targetSeaId) {
+        clearInterval(this._fadeInterval);
+        this._fadeInterval = null;
+        return;
+      }
       const elapsed = performance.now() - startTime;
       const progress = Math.min(1, elapsed / duration);
       const ease = 0.5 - 0.5 * Math.cos(progress * Math.PI);
@@ -347,7 +380,12 @@ export class SoundManager {
         clearInterval(this._fadeInterval);
         this._fadeInterval = null;
         fromTrack.pause?.();
-        if (!this.isMuted) toTrack.volume = targetVol;
+        if (!this.isMuted) {
+          toTrack.volume = targetVol;
+          if (toTrack.paused && !this.activeStation) {
+            toTrack.play?.()?.catch?.(() => {});
+          }
+        }
       }
     }, 25);
   }
@@ -378,13 +416,18 @@ export class SoundManager {
       clearInterval(this._fadeInterval);
       this._fadeInterval = null;
     }
-    this.surfaceMusic.pause?.();
-    this.underwaterMusic.pause?.();
-    for (const track of this.realmTracks.values()) track.pause?.();
-    if (this.activeStation || this.currentMusicMode === 'none' || !this.currentMusicMode) return;
-    const track = this.getTrackForMode(this.currentSeaId, this.currentMusicMode);
+    const shouldPlay = !this.activeStation && this.currentMusicMode && this.currentMusicMode !== 'none';
+    const targetTrack = shouldPlay ? this.getTrackForMode(this.currentSeaId, this.currentMusicMode) : null;
+    if (this.surfaceMusic !== targetTrack) this.surfaceMusic.pause?.();
+    if (this.underwaterMusic !== targetTrack) this.underwaterMusic.pause?.();
+    for (const track of this.realmTracks.values()) {
+      if (track !== targetTrack) track.pause?.();
+    }
+    if (!targetTrack) return;
     this.applyVolumes();
-    track?.play?.()?.catch?.(() => {});
+    if (targetTrack.paused) {
+      targetTrack.play?.()?.catch?.(() => {});
+    }
   }
 
   // Pure Web Audio API: Procedural Soft Ambient Water & Rain Loops
@@ -1321,9 +1364,10 @@ export class SoundManager {
     const changed = this.currentSeaId !== id;
     const mode = this.currentMusicMode || 'surface';
     const key = `${id}_${mode}`;
-    const needsInitialSync = id === 1
-      ? (mode === 'none' || (mode === 'surface' && this.surfaceMusic.paused) || (mode === 'underwater' && this.underwaterMusic.paused))
-      : (mode === 'none' || !this.realmTracks.has(key));
+    const existingTrack = id === 1
+      ? (mode === 'underwater' ? this.underwaterMusic : this.surfaceMusic)
+      : this.realmTracks.get(key);
+    const needsInitialSync = mode === 'none' || !existingTrack || (existingTrack.paused && !this._fadeInterval);
     this.currentSeaId = id;
     if (changed || needsInitialSync) this.syncRecordedMusic();
   }

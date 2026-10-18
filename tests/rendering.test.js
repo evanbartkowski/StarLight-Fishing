@@ -1454,11 +1454,12 @@ test('Realm 7 rare space-whales, Realm 5 floating cloud palace, Realm 2 giant tr
 
   // Idempotent calls during active fishing must not re-trigger track resets
   let playCount = 0;
-  track7.play = () => { playCount++; return Promise.resolve(); };
+  track7.play = () => { playCount++; track7.paused = false; return Promise.resolve(); };
   soundManager.setMusicMode('underwater');
+  assert.equal(playCount, 1, 'Entering underwater mode in Realm 7 must start playing chrono-void-fishing.mp3');
   soundManager.setMusicMode('underwater'); // Redundant call while fishing
   soundManager.setSeaTrack(7); // Redundant realm check while in same realm
-  assert.equal(playCount, 0, 'Redundant mode and realm calls must not trigger restart or sync disruptions during fishing');
+  assert.equal(playCount, 1, 'Redundant mode and realm calls must not trigger restart or sync disruptions during fishing');
 });
 
 test('Obstacle and deep enemy spawn reductions, Realm 3 sky constellations, distant Aether palace polish, and reel-up camera lower framing', async () => {

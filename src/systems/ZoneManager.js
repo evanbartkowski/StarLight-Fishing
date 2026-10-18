@@ -59,8 +59,9 @@ export class ZoneManager {
     this.lineHeat = 0;
     this.isSurging = false;
 
-    // Update soundscape
-    soundManager.setZoneSoundscape(zone.id);
+    // Update soundscape while preserving active Fantasy Sea track
+    const activeSea = this.saveSystem?.getCurrentSea ? this.saveSystem.getCurrentSea() : null;
+    soundManager.setZoneSoundscape(activeSea || zone.id);
   }
 
   switchZoneWithTransition(zoneId, callback) {

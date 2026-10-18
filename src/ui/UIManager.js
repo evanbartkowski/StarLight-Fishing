@@ -483,6 +483,9 @@ export class UIManager {
       try {
         soundManager.ensureAudio();
         soundManager.playButtonClick();
+        if (this.saveSystem?.getCurrentSea) {
+          soundManager.setSeaTrack(this.saveSystem.getCurrentSea());
+        }
         soundManager.setMusicMode('surface');
       } catch (e) {
         console.warn('Audio start error:', e);
