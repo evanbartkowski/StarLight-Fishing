@@ -1739,9 +1739,9 @@ test('Realm 7 fishing playlist (including alexrockbeat angel) and surface playli
       'Angel Choir must rotate back to Angel Spirit on ended'
     );
 
-    // 3. Verify Realm 4 surface uses Heavenly Calm (replacing peaceful.mp3)
+    // 3. Verify Realm 4 surface uses ocean-vibes.mp3 (upbeat oceanic groove)
     const r4Surf = sm.getTrackForMode(4, 'surface');
-    assert.ok(r4Surf.src.includes('viramiller-heavenly-calm-252015.mp3'), 'Realm 4 surface must use Heavenly Calm');
+    assert.ok(r4Surf.src.includes('ocean-vibes.mp3'), 'Realm 4 surface must use ocean-vibes.mp3');
 
     // 4. Verify Coastal Radio supports celestial_disco and peaceful_lagoon (Heavenly Calm)
     sm.startRadioStation('celestial_disco');
