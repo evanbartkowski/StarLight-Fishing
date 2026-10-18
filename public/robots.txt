@@ -2,5 +2,23 @@ User-agent: *
 Allow: /
 Disallow: /functions/
 
-Sitemap: https://starlightfishing.com/sitemap.xml
+# Explicit search engine bot permissions
+User-agent: Googlebot
+Allow: /
 
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Bravebot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+Sitemap: https://starlightfishing.com/sitemap.xml

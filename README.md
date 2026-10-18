@@ -282,49 +282,100 @@ The Gem Store presents 10-, 35-, and 100-gem bundles. Stripe prices are configur
 
 See [functions/README.md](functions/README.md) for Stripe secrets, prices, webhook setup, retention deployment, and backend tests. Checkout is unavailable until configured. No live purchase is needed for the automated tests.
 
-## SEO & Google Search Console Verification
+## Multi-Engine SEO & Search Engine Compatibility
 
-To maximize organic search discoverability for **Starlight Fishing** across search terms such as *"Starlight Fishing"*, *"Starlight Fishing game"*, *"free online fishing game"*, and *"browser fishing adventure game"*, follow these steps to verify domain ownership, submit your sitemap, and request priority indexing:
+Starlight Fishing is optimized for all major search engines across the globe, including **Google**, **Microsoft Bing**, **DuckDuckGo**, **Brave Search**, and **Yandex**, with automated instant-indexing via the **IndexNow protocol**.
 
-### 1. Add Property to Google Search Console
-1. Navigate to [Google Search Console](https://search.google.com/search-console).
-2. Click **Add Property** in the property dropdown.
-3. Choose **Domain** property and enter `starlightfishing.com` (covers both `https://starlightfishing.com` and all subdomains), or select **URL prefix** and enter `https://starlightfishing.com/`.
+### Automated Components vs. Manual Setup
 
-### 2. Verify Domain Ownership via Cloudflare DNS (Recommended)
-Because Starlight Fishing uses Cloudflare DNS with Firebase Hosting:
-1. Google Search Console will provide a TXT record string (e.g. `google-site-verification=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`).
-2. Log into your [Cloudflare Dashboard](https://dash.cloudflare.com/) and select the `starlightfishing.com` domain.
-3. Go to **DNS > Records** and click **Add Record**:
-   - **Type**: `TXT`
-   - **Name**: `@` (or `starlightfishing.com`)
-   - **Content**: paste the `google-site-verification=...` string from Google.
-   - **TTL**: Auto
-4. Click **Save**.
-5. Return to Google Search Console and click **Verify**. (Cloudflare DNS changes propagate almost instantly).
+| Feature | Status | Notes |
+| --- | --- | --- |
+| **Robots.txt & Sitemap** | Automated | Deployed at `/robots.txt` and `/sitemap.xml` with explicit crawler directives and image sitemap schemas. |
+| **IndexNow Protocol** | Automated | Verified key deployed at `/89c1b7f23e4a49688da53f9e2d6b701c.txt`. Triggers on `npm run deploy:hosting`. |
+| **Semantic Fallback Content** | Automated | Screen-reader and bot-crawlable `#seo-game-hub` markup renders without JS execution. |
+| **Structured Data** | Automated | Schema.org JSON-LD graph (`VideoGame`, `WebApplication`, `BreadcrumbList`, `FAQPage`). |
+| **Google Search Console** | Manual (1-time) | Add domain property and verify via Cloudflare DNS TXT record. |
+| **Bing Webmaster Tools** | Manual (1-time) | One-click import from Google Search Console (automatically enables DuckDuckGo & Yahoo). |
+| **Brave Search** | Manual (1-time) | Submit website directly to Brave Search index. |
+| **Cloudflare Security Rules** | Manual (1-time) | Ensure WAF and Bot Management allow verified crawlers and enable Crawl Hints. |
 
-*Alternative*: If using the URL prefix property method, you can also copy the verification meta tag `<meta name="google-site-verification" content="..." />` into the `<head>` of `index.html` or place the Google HTML verification file into `public/`.
+---
 
-### 3. Submit the XML Sitemap
-1. In Google Search Console, select `starlightfishing.com`.
-2. In the left navigation sidebar under **Indexing**, click **Sitemaps**.
-3. Under **Add a new sitemap**, type `sitemap.xml` (the full URL is `https://starlightfishing.com/sitemap.xml`).
-4. Click **Submit**.
-5. Verify that Google confirms the status as **Success** with 1 discovered page.
+### 1. Google Search Console Setup
+1. Open [Google Search Console](https://search.google.com/search-console).
+2. Click **Add Property** > **Domain** property and enter `starlightfishing.com`.
+3. Copy the verification TXT token (`google-site-verification=...`).
+4. In [Cloudflare Dashboard](https://dash.cloudflare.com/) > `starlightfishing.com` > **DNS > Records**:
+   - Add a `TXT` record with Name `@` and Content `google-site-verification=...`.
+5. Return to Google Search Console and click **Verify**.
+6. Under **Sitemaps**, submit `sitemap.xml` (URL: `https://starlightfishing.com/sitemap.xml`).
+7. In the top search bar, enter `https://starlightfishing.com/`, click **Test Live URL**, and click **Request Indexing**.
 
-### 4. Inspect URL & Request Immediate Indexing
-1. Use the search bar at the very top of Google Search Console: enter `https://starlightfishing.com/` and press Enter.
-2. Click **Test Live URL** to verify Googlebot can fetch and render the page successfully.
-3. In the live test preview, verify that:
-   - HTTP response is `200 OK`.
-   - Googlebot Smartphone successfully parses the page title, meta description, and the accessible fallback content (`#seo-game-hub`).
-   - The Structured Data tab validates the `VideoGame`, `WebApplication`, `BreadcrumbList`, and `FAQPage` schemas without errors.
-4. Click **Request Indexing** to submit the homepage to Google's high-priority crawl queue.
+---
 
-### 5. Technical SEO & Performance Checklist
-- **Robots.txt**: Hosted at `https://starlightfishing.com/robots.txt` allowing all search crawlers while protecting internal API endpoints.
-- **Canonical URL**: Self-referential canonical `<link rel="canonical" href="https://starlightfishing.com/" />` on `index.html` avoids duplicate content penalties.
-- **Open Graph & Twitter Cards**: Configured with high-resolution 512x512 branding graphics for social and Discord previews.
-- **Semantic Crawlable Content**: Screen-reader and search crawler accessible summary (`.seo-sr-content`) detailing all 7 realms, controls, and features without obstructing interactive canvas gameplay.
-- **Core Web Vitals & Caching**: Static assets are pre-compressed and served with 7-day browser caching (`stale-while-revalidate`), while `index.html` uses `no-cache` to ensure instantaneous game updates.
+### 2. Bing Webmaster Tools & DuckDuckGo Setup
+Bing powers both Bing Search and syndicates search results to **DuckDuckGo**, **Yahoo! Search**, and **Ecosia**.
+1. Open [Bing Webmaster Tools](https://www.bing.com/webmasters/).
+2. Sign in and select **Import from Google Search Console** (recommended, takes under 30 seconds with no extra DNS steps needed).
+   - *Alternative*: Enter `https://starlightfishing.com/` manually and verify via DNS TXT record or the IndexNow key.
+3. Verify that `https://starlightfishing.com/sitemap.xml` is listed under **Sitemaps**.
+4. DuckDuckGo automatically discovers and indexes pages indexed by Bing and will crawl using `DuckDuckBot` according to `robots.txt`.
+
+---
+
+### 3. Brave Search Webmaster & Submission
+Brave Search maintains its own completely independent web crawler (`Bravebot`).
+1. Navigate to [Brave Search](https://search.brave.com/) and search for `site:starlightfishing.com`.
+2. To submit or register your domain with Brave, visit [Brave Search API & Webmaster Portal](https://api.search.brave.com/).
+3. Submit `https://starlightfishing.com/` for priority indexing.
+4. `robots.txt` explicitly authorizes `Bravebot` (`User-agent: Bravebot Allow: /`).
+
+---
+
+### 4. IndexNow Protocol & Automated Deployment Workflow
+IndexNow is an open protocol created by Microsoft and Yandex that instantly notifies participating search engines (Bing, Yandex, Seznam, Naver) whenever content changes, bypassing normal crawl delays.
+- **Verification Key**: `89c1b7f23e4a49688da53f9e2d6b701c`
+- **Key Location**: `https://starlightfishing.com/89c1b7f23e4a49688da53f9e2d6b701c.txt`
+- **Notification Script**: `scripts/notify-indexnow.js`
+
+To build, deploy to Firebase Hosting, and immediately notify all IndexNow search engines in a single command, run:
+```sh
+npm run deploy:hosting
+```
+To notify IndexNow independently:
+```sh
+npm run indexnow
+```
+
+---
+
+### 5. Cloudflare Security & Crawler Audit
+To ensure legitimate search bots (Googlebot, Bingbot, DuckDuckBot, Bravebot, YandexBot) are never blocked by Cloudflare firewall settings:
+
+1. **Enable Crawl Hints & IndexNow**:
+   - In Cloudflare Dashboard, go to **Speed > Optimization > Content Optimization** (or **Rules > Settings**).
+   - Enable **Crawl Hints**: Cloudflare will automatically propagate changes directly to search engines via IndexNow.
+2. **Bot Fight Mode & Verified Bots**:
+   - Go to **Security > Bots**.
+   - Cloudflare automatically whitelists known search engine bots in its **Verified Bots** directory.
+   - If using Custom WAF Rules (**Security > WAF > Custom Rules**), ensure your rules do not challenge verified bots:
+     ```
+     Rule: (cf.bot_management.verified_bot or http.user_agent contains "Bravebot" or http.user_agent contains "IndexNow")
+     Action: Skip (All Security Features)
+     ```
+3. **SSL/TLS Settings**:
+   - In **SSL/TLS > Overview**, ensure encryption mode is set to **Full (strict)**.
+   - Under **Edge Certificates**, enable **Always Use HTTPS** and **Automatic HTTPS Rewrites** to eliminate redirect loops between Cloudflare and Firebase Hosting.
+4. **Under Attack Mode**:
+   - Keep "Under Attack Mode" turned **Off** during standard operation, as it displays an interstitial JavaScript challenge that can deter non-JS search crawlers.
+
+---
+
+### 6. Technical Checklist & Crawl Verification
+- **Robots.txt**: `https://starlightfishing.com/robots.txt` (allows all bots and defines explicit rules for Googlebot, Bingbot, DuckDuckBot, Bravebot, and YandexBot).
+- **XML Sitemap**: `https://starlightfishing.com/sitemap.xml` (includes canonical URL and Google Image sitemap extension for `starlight-logo.png`).
+- **Semantic HTML**: `<main id="seo-game-hub" class="seo-sr-content">` provides an immediate, accessible HTML description of all 7 realms, controls, and game features for crawlers that do not execute JavaScript.
+- **Structured Data**: JSON-LD graph with valid `VideoGame`, `WebApplication`, `BreadcrumbList`, and `FAQPage` entities.
+- **Performance**: Preconnected Google Fonts, pre-compressed static assets with 7-day edge caching (`stale-while-revalidate`), and instant cache invalidation for `index.html`.
+
 

@@ -1759,23 +1759,40 @@ test('Realm 7 fishing playlist (including alexrockbeat angel) and surface playli
 test('Technical SEO, sitemap, robots.txt, structured data, and endgame Back button verification', async () => {
   const fs = await import('fs');
 
-  // 1. Verify robots.txt exists and contains sitemap directive
+  // 1. Verify robots.txt exists and contains sitemap and multi-engine bot directives
   assert.ok(fs.existsSync('public/robots.txt'), 'public/robots.txt must exist');
   const robotsTxt = fs.readFileSync('public/robots.txt', 'utf-8');
   assert.ok(robotsTxt.includes('User-agent: *'), 'robots.txt must allow search engines');
+  assert.ok(robotsTxt.includes('User-agent: Googlebot'), 'robots.txt must explicitly allow Googlebot');
+  assert.ok(robotsTxt.includes('User-agent: Bingbot'), 'robots.txt must explicitly allow Bingbot');
+  assert.ok(robotsTxt.includes('User-agent: DuckDuckBot'), 'robots.txt must explicitly allow DuckDuckBot');
+  assert.ok(robotsTxt.includes('User-agent: Bravebot'), 'robots.txt must explicitly allow Bravebot');
+  assert.ok(robotsTxt.includes('User-agent: YandexBot'), 'robots.txt must explicitly allow YandexBot');
   assert.ok(robotsTxt.includes('Sitemap: https://starlightfishing.com/sitemap.xml'), 'robots.txt must reference sitemap.xml');
 
-  // 2. Verify sitemap.xml exists and has canonical domain
+  // 2. Verify sitemap.xml exists, has canonical domain, and image extensions
   assert.ok(fs.existsSync('public/sitemap.xml'), 'public/sitemap.xml must exist');
   const sitemapXml = fs.readFileSync('public/sitemap.xml', 'utf-8');
   assert.ok(sitemapXml.includes('<loc>https://starlightfishing.com/</loc>'), 'sitemap.xml must include canonical URL');
+  assert.ok(sitemapXml.includes('xmlns:image='), 'sitemap.xml must support image sitemap extension');
 
-  // 3. Verify index.html contains essential SEO tags, Open Graph, and Structured Data
+  // 3. Verify IndexNow key file exists and matches scripts/notify-indexnow.js key
+  const indexNowKey = '89c1b7f23e4a49688da53f9e2d6b701c';
+  assert.ok(fs.existsSync(`public/${indexNowKey}.txt`), 'IndexNow verification key file must exist in public/');
+  assert.equal(fs.readFileSync(`public/${indexNowKey}.txt`, 'utf-8').trim(), indexNowKey, 'IndexNow key file content must match key');
+  assert.ok(fs.existsSync('scripts/notify-indexnow.js'), 'scripts/notify-indexnow.js must exist');
+
+  // 4. Verify index.html contains essential SEO tags, multi-engine crawler tags, Open Graph, and Structured Data
   assert.ok(fs.existsSync('index.html'), 'index.html must exist');
   const indexHtml = fs.readFileSync('index.html', 'utf-8');
   assert.ok(indexHtml.includes('<link rel="canonical" href="https://starlightfishing.com/" />'), 'index.html must specify canonical URL');
   assert.ok(indexHtml.includes('<title>Starlight Fishing'), 'index.html must have optimized title');
   assert.ok(indexHtml.includes('name="description"'), 'index.html must have meta description');
+  assert.ok(indexHtml.includes('name="googlebot"'), 'index.html must have googlebot tag');
+  assert.ok(indexHtml.includes('name="bingbot"'), 'index.html must have bingbot tag');
+  assert.ok(indexHtml.includes('name="bravebot"'), 'index.html must have bravebot tag');
+  assert.ok(indexHtml.includes('name="yandex"'), 'index.html must have yandex tag');
+  assert.ok(indexHtml.includes('name="duckduckbot"'), 'index.html must have duckduckbot tag');
   assert.ok(indexHtml.includes('property="og:title"'), 'index.html must have Open Graph title');
   assert.ok(indexHtml.includes('property="og:image"'), 'index.html must have Open Graph image');
   assert.ok(indexHtml.includes('name="twitter:card"'), 'index.html must have Twitter card');
@@ -1783,7 +1800,7 @@ test('Technical SEO, sitemap, robots.txt, structured data, and endgame Back butt
   assert.ok(indexHtml.includes('"@type": "FAQPage"'), 'index.html must include FAQPage JSON-LD');
   assert.ok(indexHtml.includes('id="seo-game-hub"'), 'index.html must have semantic crawlable game content');
 
-  // 4. Verify EndgameScene credit button says "Back" instead of "Read Poem"
+  // 5. Verify EndgameScene credit button says "Back" instead of "Read Poem"
   const endgameCode = fs.readFileSync('src/ui/EndgameScene.js', 'utf-8');
   assert.ok(!endgameCode.includes('Read Poem'), 'Endgame credit button must not say Read Poem');
   assert.ok(endgameCode.includes('id="endgame-back-btn"'), 'EndgameScene must retain back button id');
