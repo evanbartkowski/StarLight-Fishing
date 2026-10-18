@@ -1824,7 +1824,21 @@ test('Technical SEO, sitemap, robots.txt, structured data, and endgame Back butt
   assert.ok(indexHtml.includes('"@type": "FAQPage"'), 'index.html must include FAQPage JSON-LD');
   assert.ok(indexHtml.includes('id="seo-game-hub"'), 'index.html must have semantic crawlable game content');
 
-  // 5. Verify EndgameScene credit button says "Back" instead of "Read Poem"
+  // 5. Verify Google Search favicon requirements: favicon.ico, 48x48 PNG, webmanifest, and Google-Favicon in robots.txt
+  assert.ok(fs.existsSync('public/favicon.ico'), 'public/favicon.ico must exist for Googlebot and browsers');
+  assert.ok(fs.existsSync('public/favicon-48x48.png'), 'public/favicon-48x48.png must exist (Google 48px multiple requirement)');
+  assert.ok(fs.existsSync('public/favicon-192x192.png'), 'public/favicon-192x192.png must exist');
+  assert.ok(fs.existsSync('public/apple-touch-icon.png'), 'public/apple-touch-icon.png must exist');
+  assert.ok(fs.existsSync('public/site.webmanifest'), 'public/site.webmanifest must exist');
+  assert.ok(robotsTxt.includes('User-agent: Google-Favicon'), 'robots.txt must explicitly allow Google-Favicon');
+  assert.ok(robotsTxt.includes('User-agent: Googlebot-Image'), 'robots.txt must explicitly allow Googlebot-Image');
+  assert.ok(indexHtml.includes('href="/favicon.ico"'), 'index.html must reference favicon.ico');
+  assert.ok(indexHtml.includes('href="/favicon-48x48.png"'), 'index.html must reference favicon-48x48.png');
+  assert.ok(indexHtml.includes('href="/site.webmanifest"'), 'index.html must reference site.webmanifest');
+  assert.ok(indexHtml.includes('"@type": "WebSite"'), 'index.html must include WebSite JSON-LD');
+  assert.ok(indexHtml.includes('"@type": "Organization"'), 'index.html must include Organization JSON-LD');
+
+  // 6. Verify EndgameScene credit button says "Back" instead of "Read Poem"
   const endgameCode = fs.readFileSync('src/ui/EndgameScene.js', 'utf-8');
   assert.ok(!endgameCode.includes('Read Poem'), 'Endgame credit button must not say Read Poem');
   assert.ok(endgameCode.includes('id="endgame-back-btn"'), 'EndgameScene must retain back button id');

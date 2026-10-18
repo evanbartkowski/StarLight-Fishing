@@ -18,15 +18,23 @@
     <meta name="duckduckbot" content="index, follow" />
     <link rel="canonical" href="https://starlightfishing.com/" />
 
-    <!-- Favicons & App Icons -->
+    <!-- Favicons & App Icons (Optimized for Google Search & Bing Results) -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/starlight-logo.png" />
-    <link rel="apple-touch-icon" href="/starlight-logo.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="144x144" href="/favicon-144x144.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0a1128" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Starlight Fishing" />
     <meta name="application-name" content="Starlight Fishing" />
+    <meta name="thumbnail" content="https://starlightfishing.com/favicon-192x192.png" />
+    <meta name="image" content="https://starlightfishing.com/starlight-logo.png" />
 
     <!-- Open Graph / Facebook / Discord / Social Previews -->
     <meta property="og:type" content="website" />
@@ -55,6 +63,29 @@
     {
       "@context": "https://schema.org",
       "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://starlightfishing.com/#website",
+          "url": "https://starlightfishing.com/",
+          "name": "Starlight Fishing",
+          "alternateName": ["Starlight Fishing Game", "StarlightFishing"],
+          "description": "Free online browser-based fishing adventure game across 7 magical ocean realms.",
+          "inLanguage": "en",
+          "image": "https://starlightfishing.com/starlight-logo.png",
+          "publisher": {
+            "@type": "Organization",
+            "@id": "https://starlightfishing.com/#organization",
+            "name": "Starlight Fishing",
+            "url": "https://starlightfishing.com/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://starlightfishing.com/favicon-192x192.png",
+              "contentUrl": "https://starlightfishing.com/starlight-logo.png",
+              "width": 192,
+              "height": 192
+            }
+          }
+        },
         {
           "@type": ["VideoGame", "WebApplication"],
           "@id": "https://starlightfishing.com/#game",
