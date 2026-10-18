@@ -39,7 +39,7 @@ export async function purchasePremium(db, uid, input, fieldValue) {
       if (input.key === 'personalAquarium') Object.assign(state.aquarium, { isUnlocked: true, tier: level + 1, maxCapacity: tier.capacity });
       if (input.key === 'seabedTraps') Object.assign(state.traps, { count: tier.trapCount || 1, maxStorage: tier.maxStorage || 12 });
     } else if (input.kind === 'soundtrack') {
-      const prices = /** @type {Record<string, number>} */ ({ peaceful_lagoon: 3, zen_meditation: 4, tropical_solitude: 3, ocean_waves: 3, midnight_current: 15 });
+      const prices = /** @type {Record<string, number>} */ ({ peaceful_lagoon: 3, zen_meditation: 4, tropical_solitude: 3, ocean_waves: 3, midnight_current: 15, celestial_disco: 5 });
       if (!Object.hasOwn(prices, input.track)) throw new Error('invalid-argument');
       state.unlockedSoundtracks ||= ['harbor_breeze', 'rainy_lighthouse', 'deep_blue'];
       cost = state.unlockedSoundtracks.includes(input.track) ? 0 : prices[input.track];

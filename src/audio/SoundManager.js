@@ -262,10 +262,10 @@ export class SoundManager {
       const surfaceTracks = {
         2: '/music/aquarain.mp3',
         3: '/music/meditation.mp3',
-        4: '/music/peaceful.mp3',
+        4: '/music/viramiller-heavenly-calm-252015.mp3',
         5: '/music/aether-ethereal-1.mp3',
         6: '/music/tropical.mp3',
-        7: '/music/deltax-music-angel-love-539731.mp3',
+        7: '/music/megisss-epic-angel-spirit-450168.mp3',
       };
       const fishingTracks = {
         2: '/music/juliush-relax-chill-out-music-for-landscapes-under-water-animals-forests-8105.mp3',
@@ -273,9 +273,9 @@ export class SoundManager {
         4: '/music/onecinematicstudio-the-lost-city-of-atlantis-_-mystical-underwater-cinematic-music-529056.mp3',
         5: '/music/aether-ethereal-2.mp3',
         6: '/music/desifreemusic-ocean-documentary-background-music-with-calm-cinematic-ambience-569283.mp3',
-        7: '/music/rockot-holidays-in-heaven-173070.mp3',
+        7: '/music/alexrockbeat-angel-595640.mp3',
       };
-      const primarySrc = isUnderwater ? (fishingTracks[id] || '/music/rockot-holidays-in-heaven-173070.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
+      const primarySrc = isUnderwater ? (fishingTracks[id] || '/music/alexrockbeat-angel-595640.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
       const audio = createAudioElement(primarySrc);
       // Multi-track realms (Realm 2, 5, and Realm 7 surface & fishing) loop by alternating between playlist tracks
       audio.loop = id !== 2 && id !== 5 && id !== 7;
@@ -298,27 +298,17 @@ export class SoundManager {
               this.applyVolumes();
             } else if (id === 7) {
               if (isUnderwater) {
-                // Loop through fishing songs: Holiday Heaven -> Heavenly Calm -> Celestial Disco -> alexrockbeat Angel
+                // Only alexrockbeat-angel and deltax music angel play while fishing in Chrono Void
                 const curSrc = audio.src || '';
-                if (curSrc.includes('heavenly-calm')) {
-                  audio.src = '/music/tokyorifft-celestial-disco-324443-[AudioTrimmer.com].mp3';
-                } else if (curSrc.includes('celestial-disco')) {
-                  audio.src = '/music/alexrockbeat-angel-595640.mp3';
-                } else if (curSrc.includes('alexrockbeat') || curSrc.includes('595640')) {
-                  audio.src = '/music/rockot-holidays-in-heaven-173070.mp3';
-                } else {
-                  audio.src = '/music/viramiller-heavenly-calm-252015.mp3';
-                }
+                audio.src = (curSrc.includes('alexrockbeat') || curSrc.includes('595640'))
+                  ? '/music/deltax-music-angel-love-539731.mp3'
+                  : '/music/alexrockbeat-angel-595640.mp3';
               } else {
-                // Surface: loop through new angel songs (Angel Love -> Angel Spirit -> Angel Choir)
+                // Surface: loop through angel songs (Angel Spirit -> Angel Choir)
                 const curSrc = audio.src || '';
-                if (curSrc.includes('angel-love') || curSrc.includes('539731')) {
-                  audio.src = '/music/megisss-epic-angel-spirit-450168.mp3';
-                } else if (curSrc.includes('angel-spirit') || curSrc.includes('450168')) {
-                  audio.src = '/music/juliush-ambient-christmas-angel-choir-9293.mp3';
-                } else {
-                  audio.src = '/music/deltax-music-angel-love-539731.mp3';
-                }
+                audio.src = (curSrc.includes('angel-spirit') || curSrc.includes('450168'))
+                  ? '/music/juliush-ambient-christmas-angel-choir-9293.mp3'
+                  : '/music/megisss-epic-angel-spirit-450168.mp3';
               }
               this.applyVolumes();
             }
@@ -1166,8 +1156,9 @@ export class SoundManager {
     this.stopRadioStation();
     const stations = {
       harbor_breeze: '/sprites/seamusic.mp3', rainy_lighthouse: '/music/aquarain.mp3', deep_blue: '/sprites/oceanmusic2.mp3',
-      peaceful_lagoon: '/music/peaceful.mp3', zen_meditation: '/music/meditation.mp3', tropical_solitude: '/music/tropical.mp3',
+      peaceful_lagoon: '/music/viramiller-heavenly-calm-252015.mp3', zen_meditation: '/music/meditation.mp3', tropical_solitude: '/music/tropical.mp3',
       ocean_waves: '/music/ocean-waves.mp3', midnight_current: '/music/ocean-vibes.mp3',
+      celestial_disco: '/music/tokyorifft-celestial-disco-324443-[AudioTrimmer.com].mp3',
     };
     if (!stations[stationId]) return;
     this.activeStation = stationId;

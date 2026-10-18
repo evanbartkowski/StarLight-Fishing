@@ -1703,40 +1703,28 @@ test('Realm 7 fishing playlist (including alexrockbeat angel) and surface playli
     sm.currentSeaId = 7;
     sm.currentMusicMode = 'underwater';
 
+    // 1. Verify Realm 7 fishing playlist: ONLY alexrockbeat-angel-595640 and deltax music angel
     const r7Fish = sm.getTrackForMode(7, 'underwater');
     assert.equal(r7Fish.loop, false, 'Realm 7 underwater track must have loop=false to allow playlist progression');
     assert.ok(
-      ['rockot-holidays-in-heaven', 'viramiller-heavenly-calm', 'tokyorifft-celestial-disco', 'alexrockbeat-angel'].some(n => r7Fish.src.includes(n)),
-      'Initial Realm 7 fishing track must be in the fishing playlist'
+      r7Fish.src.includes('alexrockbeat-angel') || r7Fish.src.includes('deltax-music-angel-love'),
+      'Initial Realm 7 fishing track must be either alexrockbeat angel or deltax angel'
     );
 
-    // Test fishing track rotation on ended including alexrockbeat-angel-595640
-    r7Fish.src = '/music/rockot-holidays-in-heaven-173070.mp3';
+    r7Fish.src = '/music/alexrockbeat-angel-595640.mp3';
     listeners.get(r7Fish)?.ended?.();
-    assert.ok(r7Fish.src.includes('viramiller-heavenly-calm'), 'Holiday Heaven must rotate to Heavenly Calm on ended');
+    assert.ok(r7Fish.src.includes('deltax-music-angel-love-539731'), 'alexrockbeat angel must rotate to deltax angel love on ended');
 
     listeners.get(r7Fish)?.ended?.();
-    assert.ok(r7Fish.src.includes('tokyorifft-celestial-disco'), 'Heavenly Calm must rotate to Celestial Disco on ended');
+    assert.ok(r7Fish.src.includes('alexrockbeat-angel-595640'), 'deltax angel love must rotate back to alexrockbeat angel on ended');
 
-    listeners.get(r7Fish)?.ended?.();
-    assert.ok(r7Fish.src.includes('alexrockbeat-angel-595640'), 'Celestial Disco must rotate to alexrockbeat-angel on ended');
-
-    listeners.get(r7Fish)?.ended?.();
-    assert.ok(r7Fish.src.includes('rockot-holidays-in-heaven'), 'alexrockbeat angel must rotate back to Holiday Heaven on ended');
-
-    // Test surface track rotation on Realm 7 (new angel songs)
+    // 2. Verify Realm 7 surface playlist: angel spirit and angel choir
     sm.currentMusicMode = 'surface';
     const r7Surf = sm.getTrackForMode(7, 'surface');
     assert.equal(r7Surf.loop, false, 'Realm 7 surface track must have loop=false to allow playlist rotation');
     assert.ok(
-      r7Surf.src.includes('angel-love') || r7Surf.src.includes('539731'),
-      'Realm 7 surface initial track must be Angel Love'
-    );
-
-    listeners.get(r7Surf)?.ended?.();
-    assert.ok(
       r7Surf.src.includes('angel-spirit') || r7Surf.src.includes('450168'),
-      'Angel Love must rotate to Angel Spirit on ended'
+      'Realm 7 surface initial track must be Angel Spirit'
     );
 
     listeners.get(r7Surf)?.ended?.();
@@ -1747,9 +1735,22 @@ test('Realm 7 fishing playlist (including alexrockbeat angel) and surface playli
 
     listeners.get(r7Surf)?.ended?.();
     assert.ok(
-      r7Surf.src.includes('angel-love') || r7Surf.src.includes('539731'),
-      'Angel Choir must rotate back to Angel Love on ended'
+      r7Surf.src.includes('angel-spirit') || r7Surf.src.includes('450168'),
+      'Angel Choir must rotate back to Angel Spirit on ended'
     );
+
+    // 3. Verify Realm 4 surface uses Heavenly Calm (replacing peaceful.mp3)
+    const r4Surf = sm.getTrackForMode(4, 'surface');
+    assert.ok(r4Surf.src.includes('viramiller-heavenly-calm-252015.mp3'), 'Realm 4 surface must use Heavenly Calm');
+
+    // 4. Verify Coastal Radio supports celestial_disco and peaceful_lagoon (Heavenly Calm)
+    sm.startRadioStation('celestial_disco');
+    assert.equal(sm.activeStation, 'celestial_disco');
+    assert.ok(sm.radioTrack.src.includes('celestial-disco'), 'Coastal Radio must play celestial disco');
+
+    sm.startRadioStation('peaceful_lagoon');
+    assert.equal(sm.activeStation, 'peaceful_lagoon');
+    assert.ok(sm.radioTrack.src.includes('viramiller-heavenly-calm-252015.mp3'), 'Coastal Radio peaceful lagoon must play heavenly calm');
   } finally {
     globalThis.Audio = origCreate;
   }

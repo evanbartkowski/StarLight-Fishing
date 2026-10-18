@@ -727,6 +727,27 @@ export const RADIO_ART = {
     <path d="M4 40c8-4 18 4 26 0s8-3 12-1" stroke="#c7d2fe" stroke-width="1.5" stroke-linecap="round" fill="none"/>
     <circle cx="14" cy="14" r="1.2" fill="#ffffff"/>
   `),
+
+  celestial_disco: svgWrap(`
+    <defs>
+      <linearGradient id="rad_disco" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#4c1d95"/>
+        <stop offset="50%" stop-color="#831843"/>
+        <stop offset="100%" stop-color="#1e1b4b"/>
+      </linearGradient>
+    </defs>
+    <rect width="48" height="48" rx="10" fill="url(#rad_disco)"/>
+    <!-- Sparkling Disco Ball -->
+    <line x1="24" y1="0" x2="24" y2="12" stroke="#cbd5e1" stroke-width="1.5"/>
+    <circle cx="24" cy="24" r="12" fill="#334155" stroke="#94a3b8" stroke-width="1.2"/>
+    <!-- Facets -->
+    <path d="M16 20h16M14 24h20M16 28h16M20 14v20M24 12v24M28 14v20" stroke="#f1f5f9" stroke-width="0.8" stroke-opacity="0.7"/>
+    <!-- Sparkles -->
+    <polygon points="36,12 37.5,15 40.5,16.5 37.5,18 36,21 34.5,18 31.5,16.5 34.5,15" fill="#facc15"/>
+    <polygon points="12,30 13,32 15,33 13,34 12,36 11,34 9,33 11,32" fill="#38bdf8"/>
+    <circle cx="20" cy="20" r="1.5" fill="#ffffff"/>
+    <circle cx="27" cy="26" r="1.5" fill="#ffffff"/>
+  `),
 };
 
 /**

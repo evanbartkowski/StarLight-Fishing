@@ -1306,11 +1306,12 @@ export class UIManager {
       { id: 'harbor_breeze', name: 'Station 1: Harbor Breeze', desc: 'Sunny shoreline melodies and gentle swelling waves', icon: '🎸', cost: 0 },
       { id: 'rainy_lighthouse', name: 'Station 2: Rainy Lighthouse', desc: 'Soft rain, rolling thunder & a warm low foghorn', icon: '🌧️', cost: 0 },
       { id: 'deep_blue', name: 'Station 3: Deep Blue Reverie', desc: 'Slow underwater pads and drifting resonance', icon: '🫧', cost: 0 },
-      { id: 'peaceful_lagoon', name: 'Soundtrack: Peaceful Shallows', desc: 'Serene ambient strings and gentle turquoise ripples', icon: '🕊️', cost: 3 },
+      { id: 'peaceful_lagoon', name: 'Soundtrack: Heavenly Calm', desc: 'Serene ambient strings, gentle harp notes and tranquil ripples', icon: '🕊️', cost: 3 },
       { id: 'zen_meditation', name: 'Soundtrack: Abyssal Meditation', desc: 'Tranquil harmonic chimes from the deep ocean trenches', icon: '🧘', cost: 4 },
       { id: 'tropical_solitude', name: 'Soundtrack: Tropical Warmth', desc: 'Bright island percussion and warm offshore breeze', icon: '🌴', cost: 3 },
       { id: 'ocean_waves', name: 'Soundtrack: Rhythmic Swell', desc: 'Lapping coastal waves and gentle seafoam whispers', icon: '🌊', cost: 3 },
       { id: 'midnight_current', name: 'Soundtrack: Midnight Current', desc: 'Dreamy night-tide synths drifting over dark water', icon: '🌙', cost: 15 },
+      { id: 'celestial_disco', name: 'Soundtrack: Celestial Disco', desc: 'Upbeat cosmic funk groove and sparkling starlight basslines', icon: '🪩', cost: 5 },
     ];
 
     let html = `
