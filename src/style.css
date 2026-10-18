@@ -5156,7 +5156,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   letter-spacing: 0.3px;
   opacity: 0;
   transform: translateY(18px);
-  transition: opacity 1.6s ease, transform 1.6s ease;
+  transition: opacity 2.8s ease-out, transform 2.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .endgame-quote-stanza.active {
@@ -5179,7 +5179,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   text-transform: lowercase;
   opacity: 0;
   transform: translateY(14px);
-  transition: opacity 1.4s ease, transform 1.4s ease;
+  transition: opacity 2.5s ease-out, transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .endgame-author.active {
@@ -5495,8 +5495,11 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 
 .endgame-next-btn {
-  margin: 28px auto 14px auto;
-  padding: 14px 44px;
+  position: fixed;
+  bottom: clamp(18px, 4vh, 36px);
+  right: clamp(18px, 4vw, 36px);
+  z-index: 1000;
+  padding: 14px 40px;
   font-size: 1.15rem;
   font-weight: 800;
   color: #ffffff;
@@ -5505,24 +5508,25 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   border-radius: 999px;
   cursor: pointer;
   box-shadow: 0 0 28px rgba(99, 102, 241, 0.55), 0 4px 14px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
   letter-spacing: 2px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   opacity: 0;
-  transform: translateY(14px);
+  transform: translateY(20px) scale(0.9);
   pointer-events: none;
 }
 
 .endgame-next-btn.active {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
   pointer-events: auto;
+  animation: endgameButtonPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), endgameButtonPulse 3s ease-in-out infinite 0.5s;
 }
 
 .endgame-next-btn:hover {
-  transform: translateY(-2px) scale(1.04);
+  transform: translateY(-2px) scale(1.06);
   box-shadow: 0 0 38px rgba(192, 132, 252, 0.8), 0 6px 18px rgba(0, 0, 0, 0.6);
   background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
   border-color: #fef08a;
@@ -5572,6 +5576,197 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+
+@keyframes endgameButtonPop {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.85);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes endgameButtonPulse {
+  0%, 100% {
+    box-shadow: 0 0 26px rgba(99, 102, 241, 0.55), 0 4px 14px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 38px rgba(168, 85, 247, 0.75), 0 6px 20px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* =========================================
+   Phone Upper GUI Right-Hand Dropdown Menu
+   (Zero changes to Desktop / Laptop visuals)
+   ========================================= */
+.mobile-menu-toggle-btn {
+  display: none !important;
+}
+
+.mobile-only-label {
+  display: none !important;
+}
+
+.hud-right-dropdown {
+  display: contents;
+}
+
+@keyframes mobileMenuDropIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  #game-hud {
+    padding: 6px 8px;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #game-hud .hud-left {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: auto;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  #game-hud .hud-left::-webkit-scrollbar {
+    display: none;
+  }
+
+  #game-hud .hud-left button.gem-display {
+    min-height: 0;
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  #game-hud .hud-right {
+    position: relative;
+    flex: 0 0 auto;
+    height: auto;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0;
+  }
+
+  #game-hud .hud-right #btn-mobile-menu-toggle.mobile-menu-toggle-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    padding: 6px 11px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.94) 0%, rgba(15, 23, 42, 0.98) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    color: #f8fafc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  #game-hud .hud-right.mobile-menu-open #btn-mobile-menu-toggle.mobile-menu-toggle-btn {
+    border-color: #38bdf8;
+    background: linear-gradient(180deg, rgba(14, 116, 144, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+  }
+
+  .mobile-menu-chevron {
+    font-size: 0.75rem;
+    line-height: 1;
+    transition: transform 0.2s ease;
+    color: #7dd3fc;
+  }
+
+  #game-hud .hud-right.mobile-menu-open .mobile-menu-chevron {
+    transform: rotate(180deg);
+  }
+
+  #game-hud .hud-right .hud-right-dropdown {
+    display: none;
+  }
+
+  #game-hud .hud-right.mobile-menu-open .hud-right-dropdown,
+  #game-hud .hud-right .hud-right-dropdown.open {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: min(210px, calc(100vw - 16px));
+    max-height: calc(100dvh - 64px);
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(56, 189, 248, 0.42);
+    border-radius: 14px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.22);
+    z-index: 150;
+    animation: mobileMenuDropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  #game-hud .hud-right .hud-right-dropdown .icon-btn {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 0.84rem;
+    justify-content: flex-start;
+    gap: 10px;
+    border-radius: 9px;
+    background: rgba(30, 41, 59, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  #game-hud .hud-right .hud-right-dropdown .icon-btn:hover,
+  #game-hud .hud-right .hud-right-dropdown .icon-btn:active {
+    background: rgba(51, 65, 85, 0.92);
+    border-color: rgba(56, 189, 248, 0.55);
+    transform: none;
+  }
+
+  #game-hud .hud-right .hud-right-dropdown .icon-btn .btn-label,
+  #game-hud .hud-right .hud-right-dropdown .icon-btn .mobile-only-label {
+    display: inline-block !important;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+
+  #game-hud .hud-right .hud-right-dropdown .icon-btn .trap-badge-num,
+  #game-hud .hud-right .hud-right-dropdown .icon-btn .inv-badge-num {
+    position: static;
+    margin-left: auto;
+    font-size: 0.74rem;
+    padding: 1px 6px;
+  }
+}
+
+
 
 
 

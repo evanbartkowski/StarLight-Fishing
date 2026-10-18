@@ -1584,5 +1584,66 @@ test('Chrono Void rare fading circles, Whispering Aether distant palace, exclusi
   scene.close();
 });
 
+test('Endgame finale slow line-by-line poem fade, bubble continue button removal, 10s delayed bottom-right next button, and phone right-hand dropdown menu', async () => {
+  const { EndgameScene } = await import('../src/ui/EndgameScene.js');
+  const { UIManager } = await import('../src/ui/UIManager.js');
+  const fs = await import('node:fs');
+  const css = fs.readFileSync('src/style.css', 'utf-8');
+  const endgameJs = fs.readFileSync('src/ui/EndgameScene.js', 'utf-8');
+  const uiManagerJs = fs.readFileSync('src/ui/UIManager.js', 'utf-8');
+
+  const mockSave = {
+    hasSeenEndgame: () => false,
+    markEndgameSeen: () => {},
+    data: { profile: { name: 'Captain' } }
+  };
+  const scene = new EndgameScene(mockSave);
+  try {
+    scene.show();
+
+    // 1. Verify bubble transition has no continue button (autotransitions automatically)
+    const domHtml = scene.container.innerHTML;
+    assert.ok(!domHtml.includes('endgame-bubble-skip'), 'Bubble transition must NOT contain a continue / skip button');
+    assert.ok(!domHtml.includes('Continue ➔'), 'Bubble transition must NOT have Continue ➔ text');
+
+    // 2. Verify slow line-by-line pacing constants and 10s delayed next button popup
+    assert.equal(EndgameScene.POEM_LINE_DELAYS.length, 4, 'Must have 4 staggered delays for stanzas 1-3 and author credit');
+    assert.ok(EndgameScene.POEM_LINE_DELAYS[0] < EndgameScene.POEM_LINE_DELAYS[1]);
+    assert.ok(EndgameScene.POEM_LINE_DELAYS[1] < EndgameScene.POEM_LINE_DELAYS[2]);
+    assert.ok(EndgameScene.POEM_LINE_DELAYS[2] < EndgameScene.POEM_LINE_DELAYS[3]);
+    assert.equal(EndgameScene.POEM_FULLY_OUT_MS, 14300, 'Poem fully out milestone must be 14.3s (11.8s + 2.5s duration)');
+    assert.equal(EndgameScene.NEXT_BUTTON_DELAY_AFTER_POEM_MS, 10000, 'Next button delay must be strictly 10 seconds after poem is fully out');
+    assert.equal(EndgameScene.NEXT_BUTTON_APPEAR_MS, 24300, 'Next button appear time must be exactly 24.3s (14.3s + 10s)');
+
+    // 3. Verify CSS styling for slow fade-ins and fixed bottom-right position without scrolling
+    assert.ok(css.includes('transition: opacity 2.8s ease-out, transform 2.8s cubic-bezier(0.16, 1, 0.3, 1);'), 'Stanzas must use 2.8s slow fade-in transition');
+    assert.ok(css.includes('transition: opacity 2.5s ease-out, transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);'), 'Author must use 2.5s slow fade-in transition');
+    assert.ok(css.includes('position: fixed;'), 'Next button must have fixed positioning');
+    assert.ok(css.includes('bottom: clamp(18px, 4vh, 36px);'), 'Next button must be anchored to bottom');
+    assert.ok(css.includes('right: clamp(18px, 4vw, 36px);'), 'Next button must be anchored to right');
+    assert.ok(css.includes('endgameButtonPop'), 'Next button must feature popup keyframe animation');
+
+    // 4. Verify phone right-hand dropdown menu while preserving desktop/laptop visuals
+    assert.ok(uiManagerJs.includes('id="btn-mobile-menu-toggle"'), 'HUD must include mobile menu toggle button');
+    assert.ok(uiManagerJs.includes('id="hud-right-dropdown"'), 'HUD must wrap menu items in hud-right-dropdown');
+    assert.equal(typeof UIManager.prototype.toggleMobileMenu, 'function', 'UIManager must provide toggleMobileMenu method');
+    assert.equal(typeof UIManager.prototype.closeMobileMenu, 'function', 'UIManager must provide closeMobileMenu method');
+    assert.ok(css.includes('.mobile-menu-toggle-btn {\n  display: none !important;\n}'), 'Mobile menu toggle must be hidden on desktop/laptop');
+    assert.ok(css.includes('.hud-right-dropdown {\n  display: contents;\n}'), 'Desktop/laptop must use display: contents so visuals remain completely unchanged');
+    assert.ok(css.includes('#game-hud .hud-right.mobile-menu-open .hud-right-dropdown'), 'Phone dropdown menu must open on right hand side when toggled');
+
+    // 5. Verify manual tap advancement and view switching execute cleanly
+    scene.finishTransition();
+    scene.advancePoemPacing();
+    scene.revealNextButton();
+    scene.showEpilogue();
+    assert.equal(scene.currentView, 'epilogue');
+    scene.showPoem();
+    assert.equal(scene.currentView, 'poem');
+  } finally {
+    scene.close();
+  }
+});
+
 
 

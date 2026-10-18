@@ -2,6 +2,11 @@ import { soundManager } from '../audio/SoundManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
 
 export class EndgameScene {
+  static POEM_LINE_DELAYS = [400, 4200, 8000, 11800];
+  static POEM_FULLY_OUT_MS = 14300;
+  static NEXT_BUTTON_DELAY_AFTER_POEM_MS = 10000;
+  static NEXT_BUTTON_APPEAR_MS = 24300; // 14300ms + 10000ms
+
   constructor(saveSystem) {
     this.saveSystem = saveSystem;
     this.container = null;
@@ -137,7 +142,6 @@ export class EndgameScene {
           <div class="endgame-bubble-badge">✦ 3,000 METERS · THE CELESTIAL ABYSS ✦</div>
           <h1 class="endgame-bubble-title">You have reached the bottom of starlight fishing!</h1>
           <div class="endgame-bubble-subtitle">✨ Entering the Eldritch Chrono Void Finale... ✨</div>
-          <button type="button" class="endgame-bubble-skip" id="endgame-bubble-skip">Continue ➔</button>
         </div>
       </div>
       
@@ -272,7 +276,11 @@ export class EndgameScene {
     this.currentView = 'epilogue';
     const poemView = this.container?.querySelector('#endgame-poem-view');
     const epilogueView = this.container?.querySelector('#endgame-epilogue-view');
+    const nextBtn = this.container?.querySelector('#endgame-next-btn');
     const scrollWrapper = this.container?.querySelector('#endgame-scroll-wrapper');
+    if (nextBtn) {
+      nextBtn.style.display = 'none';
+    }
     if (poemView && epilogueView) {
       poemView.style.display = 'none';
       epilogueView.style.display = 'flex';
@@ -285,11 +293,16 @@ export class EndgameScene {
     this.currentView = 'poem';
     const poemView = this.container?.querySelector('#endgame-poem-view');
     const epilogueView = this.container?.querySelector('#endgame-epilogue-view');
+    const nextBtn = this.container?.querySelector('#endgame-next-btn');
     const scrollWrapper = this.container?.querySelector('#endgame-scroll-wrapper');
     if (poemView && epilogueView) {
       epilogueView.style.display = 'none';
       poemView.style.display = 'flex';
       scrollWrapper?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (nextBtn) {
+      nextBtn.style.display = '';
+      nextBtn.classList?.add?.('active');
     }
   }
 
@@ -604,28 +617,38 @@ export class EndgameScene {
     const s2 = this.container?.querySelector('#stanza-2');
     const s3 = this.container?.querySelector('#stanza-3');
     const author = this.container?.querySelector('#endgame-author');
-    const nextBtn = this.container?.querySelector('#endgame-next-btn');
 
-    // Stanza 1 after 200ms
+    // Stanza 1 after 400ms (slow fade-in)
     this.addTimer(() => {
       s1?.classList?.add?.('active');
-    }, 200);
+    }, EndgameScene.POEM_LINE_DELAYS[0]);
 
-    // Stanza 2 after 2600ms
+    // Stanza 2 after 4200ms (slow fade-in)
     this.addTimer(() => {
       s2?.classList?.add?.('active');
-    }, 2600);
+    }, EndgameScene.POEM_LINE_DELAYS[1]);
 
-    // Stanza 3 after 5200ms
+    // Stanza 3 after 8000ms (slow fade-in)
     this.addTimer(() => {
       s3?.classList?.add?.('active');
-    }, 5200);
+    }, EndgameScene.POEM_LINE_DELAYS[2]);
 
-    // Author & Next Button after 7500ms
+    // Author credit after 11800ms (slow fade-in, fully out by ~14300ms)
     this.addTimer(() => {
       author?.classList?.add?.('active');
-      nextBtn?.classList?.add?.('active');
-    }, 7500);
+    }, EndgameScene.POEM_LINE_DELAYS[3]);
+
+    // Next button pops up 10 seconds after the poem is fully out (14300ms + 10000ms = 24300ms)
+    this.nextBtnTimer = this.addTimer(() => {
+      this.revealNextButton();
+    }, EndgameScene.NEXT_BUTTON_APPEAR_MS);
+  }
+
+  revealNextButton() {
+    const nextBtn = this.container?.querySelector('#endgame-next-btn');
+    if (nextBtn && !nextBtn.classList?.contains?.('active')) {
+      nextBtn.classList?.add?.('active');
+    }
   }
 
   advancePoemPacing() {
@@ -638,7 +661,6 @@ export class EndgameScene {
     const s2 = this.container?.querySelector('#stanza-2');
     const s3 = this.container?.querySelector('#stanza-3');
     const author = this.container?.querySelector('#endgame-author');
-    const nextBtn = this.container?.querySelector('#endgame-next-btn');
 
     if (!s1?.classList?.contains?.('active')) {
       s1?.classList?.add?.('active');
@@ -646,9 +668,10 @@ export class EndgameScene {
       s2?.classList?.add?.('active');
     } else if (!s3?.classList?.contains?.('active')) {
       s3?.classList?.add?.('active');
-    } else {
+    } else if (!author?.classList?.contains?.('active')) {
       author?.classList?.add?.('active');
-      nextBtn?.classList?.add?.('active');
+    } else {
+      this.revealNextButton();
     }
   }
 

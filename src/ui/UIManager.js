@@ -44,6 +44,7 @@ const HUD_ICONS = {
   help: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.6 1.3c-.9 1.1-2.2 1.4-2.2 3.2m0 3h.01"/></svg>',
   sound: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1a5 5 0 0 1 0 6m2-9a9 9 0 0 1 0 12"/></svg>',
   muted: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1 5 6m0-6-5 6"/></svg>',
+  menu: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
 };
 const hudIcon = name => `<span class="hud-icon" aria-hidden="true">${HUD_ICONS[name]}</span>`;
 
@@ -82,7 +83,7 @@ export class UIManager {
     if (!muteBtn) return;
     const isMuted = Boolean(this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted);
     soundManager.setMuted(isMuted);
-    muteBtn.innerHTML = hudIcon(isMuted ? 'muted' : 'sound');
+    muteBtn.innerHTML = `${hudIcon(isMuted ? 'muted' : 'sound')} <span class="btn-label mobile-only-label">${isMuted ? 'Unmute' : 'Sound'}</span>`;
     muteBtn.title = isMuted ? 'Unmute Sound' : 'Mute Sound';
   }
 
@@ -361,24 +362,29 @@ export class UIManager {
         </div>
       </div>
 
-      <div class="hud-right">
-        <button class="icon-btn" id="btn-minimap" title="Charted Waters Map & World Navigation">${hudIcon('map')} <span class="btn-label">Map</span></button>
-        <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
-          ${hudIcon('trap')} <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
+      <div class="hud-right" id="hud-right">
+        <button type="button" class="icon-btn mobile-menu-toggle-btn" id="btn-mobile-menu-toggle" aria-expanded="false" aria-controls="hud-right-dropdown" title="Open Menu">
+          ${hudIcon('menu')} <span class="mobile-menu-toggle-label">Menu</span> <span class="mobile-menu-chevron" aria-hidden="true">▾</span>
         </button>
-        <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
-          ${hudIcon('quests')} <span class="btn-label">Quests</span>
-        </button>
-        <button class="icon-btn" id="btn-inventory" title="Inventory">
-          ${hudIcon('inventory')} <span class="btn-label">Inventory</span> <span class="inv-badge-num" id="hud-inv-badge" style="font-size: 0.72rem; color: #38bdf8; font-weight: 700;"></span>
-        </button>
-        <button class="icon-btn" id="btn-shop" title="Shop">${hudIcon('shop')} <span class="btn-label">Shop</span></button>
-        <button class="icon-btn" id="btn-journal" title="Open Field Journal or Trophy Room">${hudIcon('journal')} <span class="btn-label">Journal</span></button>
-        <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">${hudIcon('aquarium')} <span class="btn-label">Aquarium</span></button>
-        <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">${hudIcon('radio')} <span class="btn-label">Radio</span></button>
-        <button class="icon-btn" id="btn-settings" title="Settings">${hudIcon('settings')}</button>
-        <button class="icon-btn" id="btn-tutorial" title="How to Play">${hudIcon('help')}</button>
-        <button class="icon-btn" id="btn-mute" title="${(this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted) ? 'Unmute Sound' : 'Mute Sound'}">${hudIcon((this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted) ? 'muted' : 'sound')}</button>
+        <div class="hud-right-dropdown" id="hud-right-dropdown">
+          <button class="icon-btn" id="btn-minimap" title="Charted Waters Map & World Navigation">${hudIcon('map')} <span class="btn-label">Map</span></button>
+          <button class="icon-btn trap-hud-btn" id="btn-traps-hud" title="Harvest Idle Seabed Traps" style="display: none;">
+            ${hudIcon('trap')} <span class="btn-label">Traps</span> <span class="trap-badge-num" id="hud-trap-badge" style="display: none;">0</span>
+          </button>
+          <button class="icon-btn" id="btn-quests" title="Harbor Noticeboard Quests">
+            ${hudIcon('quests')} <span class="btn-label">Quests</span>
+          </button>
+          <button class="icon-btn" id="btn-inventory" title="Inventory">
+            ${hudIcon('inventory')} <span class="btn-label">Inventory</span> <span class="inv-badge-num" id="hud-inv-badge" style="font-size: 0.72rem; color: #38bdf8; font-weight: 700;"></span>
+          </button>
+          <button class="icon-btn" id="btn-shop" title="Shop">${hudIcon('shop')} <span class="btn-label">Shop</span></button>
+          <button class="icon-btn" id="btn-journal" title="Open Field Journal or Trophy Room">${hudIcon('journal')} <span class="btn-label">Journal</span></button>
+          <button class="icon-btn aquarium-hud-btn" id="btn-aquarium-hud" title="Personal Marine Aquarium" style="display: none;">${hudIcon('aquarium')} <span class="btn-label">Aquarium</span></button>
+          <button class="icon-btn" id="btn-radio-hud" title="Coastal Radio Receiver" aria-label="Coastal Radio Receiver">${hudIcon('radio')} <span class="btn-label">Radio</span></button>
+          <button class="icon-btn" id="btn-settings" title="Settings">${hudIcon('settings')} <span class="btn-label mobile-only-label">Settings</span></button>
+          <button class="icon-btn" id="btn-tutorial" title="How to Play">${hudIcon('help')} <span class="btn-label mobile-only-label">How to Play</span></button>
+          <button class="icon-btn" id="btn-mute" title="${(this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted) ? 'Unmute Sound' : 'Mute Sound'}">${hudIcon((this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted) ? 'muted' : 'sound')} <span class="btn-label mobile-only-label">${(this.saveSystem?.data?.settings?.isMuted ?? soundManager.isMuted) ? 'Unmute' : 'Sound'}</span></button>
+        </div>
       </div>
     `;
     document.body.appendChild(hud);
@@ -761,10 +767,34 @@ export class UIManager {
       const isMuted = soundManager.toggleMute();
       this.saveSystem.data.settings.isMuted = isMuted;
       this.saveSystem.save();
-      muteBtn.innerHTML = hudIcon(isMuted ? 'muted' : 'sound');
+      muteBtn.innerHTML = `${hudIcon(isMuted ? 'muted' : 'sound')} <span class="btn-label mobile-only-label">${isMuted ? 'Unmute' : 'Sound'}</span>`;
       muteBtn.title = isMuted ? 'Unmute Sound' : 'Mute Sound';
       soundManager.playButtonClick();
     });
+
+    const mobileMenuToggle = document.getElementById('btn-mobile-menu-toggle');
+    mobileMenuToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      soundManager.playButtonClick?.();
+      this.toggleMobileMenu();
+    });
+
+    const dropdown = document.getElementById('hud-right-dropdown');
+    dropdown?.addEventListener('click', (e) => {
+      const btn = e.target?.closest?.('.icon-btn');
+      if (btn && btn.id !== 'btn-mute') {
+        this.closeMobileMenu();
+      }
+    });
+
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+      document.addEventListener('pointerdown', (e) => {
+        const hudRight = document.getElementById('hud-right');
+        if (hudRight?.classList?.contains?.('mobile-menu-open') && !hudRight.contains?.(e.target)) {
+          this.closeMobileMenu();
+        }
+      });
+    }
 
     document.getElementById('modal-close')?.addEventListener('click', () => this.closeModal());
     document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
@@ -774,10 +804,31 @@ export class UIManager {
     });
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.activeModal) {
-        this.closeModal();
+      if (e.key === 'Escape') {
+        this.closeMobileMenu();
+        if (this.activeModal) {
+          this.closeModal();
+        }
       }
     });
+  }
+
+  toggleMobileMenu(forceState) {
+    const hudRight = document.getElementById('hud-right');
+    const toggleBtn = document.getElementById('btn-mobile-menu-toggle');
+    const dropdown = document.getElementById('hud-right-dropdown');
+    if (!hudRight || !toggleBtn || !dropdown) return false;
+    const isOpen = typeof forceState === 'boolean'
+      ? forceState
+      : !hudRight.classList?.contains?.('mobile-menu-open');
+    hudRight.classList?.toggle?.('mobile-menu-open', isOpen);
+    dropdown.classList?.toggle?.('open', isOpen);
+    toggleBtn.setAttribute?.('aria-expanded', String(isOpen));
+    return isOpen;
+  }
+
+  closeMobileMenu() {
+    this.toggleMobileMenu(false);
   }
 
   handleTrapClick() {
@@ -867,6 +918,9 @@ export class UIManager {
     }
     if (!captain) this._focusedCaptain = null;
     const isDiving = (gameState === 'CASTING' || gameState === 'DESCENDING' || gameState === 'REELING');
+    if (isDiving) {
+      this.closeMobileMenu();
+    }
     if ((isDiving || gameState === 'AIMING') && this.toastDismissOnFishing) {
       clearTimeout(this.toastTimer);
       this.toastTimer = null;
