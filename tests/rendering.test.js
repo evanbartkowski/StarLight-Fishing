@@ -766,14 +766,19 @@ test('Sea 5-7 enemy balancing, Megalodons, Void aesthetic enemies, Realm 7 merma
   const validR7Fishing = [
     'rockot-holidays-in-heaven',
     'viramiller-heavenly-calm',
-    'tokyorifft-celestial-disco'
+    'tokyorifft-celestial-disco',
+    'alexrockbeat-angel'
   ];
-  assert.ok(validR7Fishing.some(name => r7Fishing.src.includes(name)), 'Realm 7 fishing track must be either holiday heaven, heavenly calm, or celestial disco');
+  assert.ok(validR7Fishing.some(name => r7Fishing.src.includes(name)), 'Realm 7 fishing track must be either holiday heaven, heavenly calm, celestial disco, or alexrockbeat angel');
   const validR7Surface = [
-    'valley-of-voices',
-    'alan_frijns'
+    'angel-love',
+    'angel-spirit',
+    'angel-choir',
+    'deltax-music-angel-love',
+    'megisss-epic-angel-spirit',
+    'juliush-ambient-christmas-angel-choir'
   ];
-  assert.ok(validR7Surface.some(name => r7Surface.src.includes(name)), 'Realm 7 surface track must be valley of voices');
+  assert.ok(validR7Surface.some(name => r7Surface.src.includes(name)), 'Realm 7 surface track must be one of the new surface angel tracks');
 
   // Check all realms have distinct surface vs fishing tracks
   for (let r = 1; r <= 7; r++) {
@@ -1655,7 +1660,7 @@ test('Endgame finale slow line-by-line poem fade, bubble continue button removal
   }
 });
 
-test('Realm 7 fishing playlist (Holiday Heaven, Heavenly Calm, Celestial Disco) and surface playlist (ocean-vibes, Valley of Voices)', async () => {
+test('Realm 7 fishing playlist (including alexrockbeat angel) and surface playlist (new angel songs)', async () => {
   const { SoundManager } = await import('../src/audio/SoundManager.js');
   const sound = new SoundManager();
   sound.initialized = true;
@@ -1701,11 +1706,11 @@ test('Realm 7 fishing playlist (Holiday Heaven, Heavenly Calm, Celestial Disco) 
     const r7Fish = sm.getTrackForMode(7, 'underwater');
     assert.equal(r7Fish.loop, false, 'Realm 7 underwater track must have loop=false to allow playlist progression');
     assert.ok(
-      ['rockot-holidays-in-heaven', 'viramiller-heavenly-calm', 'tokyorifft-celestial-disco'].some(n => r7Fish.src.includes(n)),
-      'Initial Realm 7 fishing track must be Holiday Heaven, Heavenly Calm, or Celestial Disco'
+      ['rockot-holidays-in-heaven', 'viramiller-heavenly-calm', 'tokyorifft-celestial-disco', 'alexrockbeat-angel'].some(n => r7Fish.src.includes(n)),
+      'Initial Realm 7 fishing track must be in the fishing playlist'
     );
 
-    // Test fishing track rotation on ended
+    // Test fishing track rotation on ended including alexrockbeat-angel-595640
     r7Fish.src = '/music/rockot-holidays-in-heaven-173070.mp3';
     listeners.get(r7Fish)?.ended?.();
     assert.ok(r7Fish.src.includes('viramiller-heavenly-calm'), 'Holiday Heaven must rotate to Heavenly Calm on ended');
@@ -1714,21 +1719,36 @@ test('Realm 7 fishing playlist (Holiday Heaven, Heavenly Calm, Celestial Disco) 
     assert.ok(r7Fish.src.includes('tokyorifft-celestial-disco'), 'Heavenly Calm must rotate to Celestial Disco on ended');
 
     listeners.get(r7Fish)?.ended?.();
-    assert.ok(r7Fish.src.includes('rockot-holidays-in-heaven'), 'Celestial Disco must rotate back to Holiday Heaven on ended');
+    assert.ok(r7Fish.src.includes('alexrockbeat-angel-595640'), 'Celestial Disco must rotate to alexrockbeat-angel on ended');
 
-    // Test surface track on Realm 7 (Valley of Voices)
+    listeners.get(r7Fish)?.ended?.();
+    assert.ok(r7Fish.src.includes('rockot-holidays-in-heaven'), 'alexrockbeat angel must rotate back to Holiday Heaven on ended');
+
+    // Test surface track rotation on Realm 7 (new angel songs)
     sm.currentMusicMode = 'surface';
     const r7Surf = sm.getTrackForMode(7, 'surface');
-    assert.equal(r7Surf.loop, true, 'Realm 7 surface track should loop seamlessly');
+    assert.equal(r7Surf.loop, false, 'Realm 7 surface track must have loop=false to allow playlist rotation');
     assert.ok(
-      r7Surf.src.includes('valley-of-voices') || r7Surf.src.includes('alan_frijns'),
-      'Realm 7 surface track must be Valley of Voices'
+      r7Surf.src.includes('angel-love') || r7Surf.src.includes('539731'),
+      'Realm 7 surface initial track must be Angel Love'
     );
 
     listeners.get(r7Surf)?.ended?.();
     assert.ok(
-      r7Surf.src.includes('valley-of-voices') || r7Surf.src.includes('alan_frijns'),
-      'Valley of Voices must persist / loop on ended'
+      r7Surf.src.includes('angel-spirit') || r7Surf.src.includes('450168'),
+      'Angel Love must rotate to Angel Spirit on ended'
+    );
+
+    listeners.get(r7Surf)?.ended?.();
+    assert.ok(
+      r7Surf.src.includes('angel-choir') || r7Surf.src.includes('9293'),
+      'Angel Spirit must rotate to Angel Choir on ended'
+    );
+
+    listeners.get(r7Surf)?.ended?.();
+    assert.ok(
+      r7Surf.src.includes('angel-love') || r7Surf.src.includes('539731'),
+      'Angel Choir must rotate back to Angel Love on ended'
     );
   } finally {
     globalThis.Audio = origCreate;
