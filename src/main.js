@@ -1027,8 +1027,8 @@ const update = (dt) => {
     targetCameraY = 0;
     if (cameraY < 1 && cameraY > -1) cameraY = 0;
   } else if (gameState === 'REELING') {
-    // Keep hook smoothly framed in lower-middle screen (~60% down) during fast reel-up
-    const verticalOffset = screenHeight * 0.60;
+    // Keep hook smoothly framed lower down on the screen (~76% down) during reel-up to maximize obstacle dodging reaction time
+    const verticalOffset = screenHeight * 0.76;
     const hookY = Number.isFinite(hook.y) ? hook.y : 0;
     targetCameraY = Math.max(0, hookY - verticalOffset);
   } else {
@@ -1046,7 +1046,7 @@ const update = (dt) => {
   // Hook drawY is (hook.y - cameraY). Clamping ensures hook is NEVER pushed off-screen.
   if (!isSurfaceState && Number.isFinite(hook.y) && hook.y > 0) {
     const minHookScreenY = screenHeight * 0.15;
-    const maxHookScreenY = screenHeight * 0.85;
+    const maxHookScreenY = screenHeight * 0.88;
     cameraY = Math.max(hook.y - maxHookScreenY, Math.min(hook.y - minHookScreenY, cameraY));
     cameraY = Math.max(0, cameraY);
   }

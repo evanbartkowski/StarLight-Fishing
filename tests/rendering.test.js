@@ -1461,4 +1461,63 @@ test('Realm 7 rare space-whales, Realm 5 floating cloud palace, Realm 2 giant tr
   assert.equal(playCount, 0, 'Redundant mode and realm calls must not trigger restart or sync disruptions during fishing');
 });
 
+test('Obstacle and deep enemy spawn reductions, Realm 3 sky constellations, distant Aether palace polish, and reel-up camera lower framing', async () => {
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+  const { SoundManager } = await import('../src/audio/SoundManager.js');
+  const fs = await import('node:fs');
+  const mainJs = fs.readFileSync('src/main.js', 'utf-8');
+  const oceanWorldJs = fs.readFileSync('src/world/OceanWorld.js', 'utf-8');
+
+  // 1. Verify lowered obstacle spawn rate and lowered deep enemy increase
+  assert.ok(oceanWorldJs.includes('1.04 * ecology.hazards'), 'Static hazard density multiplier must be lowered to 1.04');
+  assert.ok(oceanWorldJs.includes('1 + depthProgress(depth) * 1.28'), 'Deep enemy scaling must be lowered to 1.28');
+
+  // 2. Verify Astral Shimmerfall sky constellations rendering
+  const world = new OceanWorld({ width: 1280, height: 720 });
+  world.setCurrentSea(3);
+  const mockCtx = {
+    save() {}, restore() {}, beginPath() {}, closePath() {},
+    moveTo() {}, lineTo() {}, stroke() {}, fill() {}, arc() {}, ellipse() {},
+    quadraticCurveTo() {}, bezierCurveTo() {},
+    fillRect() {}, strokeRect() {}, fillText() {}, measureText() { return { width: 40 }; },
+    translate() {}, rotate() {}, scale() {},
+    createLinearGradient() { return { addColorStop() {} }; },
+    createRadialGradient() { return { addColorStop() {} }; },
+    setLineDash() {}, clip() {},
+  };
+  assert.doesNotThrow(() => {
+    world.renderShimmerfallConstellations(mockCtx, 320, 0);
+  }, 'Astral Shimmerfall constellations must render smoothly without error');
+
+  // 3. Verify Whispering Aether Sea floating palace position and distant scaling
+  assert.ok(oceanWorldJs.includes('ctx.scale(0.68, 0.68)'), 'Floating palace must be scaled to 0.68 to appear distant');
+  assert.ok(oceanWorldJs.includes('w * 0.74'), 'Floating palace must be moved further right to w * 0.74');
+  assert.doesNotThrow(() => {
+    world.setCurrentSea(5);
+    world.renderAetherSurfaceFloatingPalace(mockCtx, 320, 0);
+  }, 'Distant floating palace must render smoothly');
+
+  // 4. Verify lower hook framing on reel-up in main.js
+  assert.ok(mainJs.includes('screenHeight * 0.76'), 'Reel-up verticalOffset must be framed lower down (~76%) for maximum reaction time');
+  assert.ok(mainJs.includes('maxHookScreenY = screenHeight * 0.88'), 'Safety clamp maxHookScreenY must accommodate lower reel framing at 0.88');
+
+  // 5. Verify keepAliveUnderwaterMusic debouncing prevents play spam
+  const sound = new SoundManager();
+  sound.initialized = true;
+  sound.isMuted = false;
+  sound.setSeaTrack(7);
+  sound.currentMusicMode = 'underwater';
+  const track7 = sound.getTrackForMode(7, 'underwater');
+  track7.paused = true;
+  let playInvocations = 0;
+  track7.play = () => { playInvocations++; return Promise.resolve(); };
+
+  // Call keepAlive rapidly 10 times in a row (simulating 60fps frames)
+  for (let i = 0; i < 10; i++) {
+    sound.keepAliveUnderwaterMusic();
+  }
+  assert.equal(playInvocations, 1, 'keepAliveUnderwaterMusic must debounce play calls to prevent rapid restarts');
+});
+
+
 

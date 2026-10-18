@@ -352,11 +352,16 @@ export class SoundManager {
     if (this._fadeInterval) return;
     if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
       const track = this.getTrackForMode(this.currentSeaId, 'underwater');
+      if (!track) return;
       const vol = this.musicVolume * this.getTrackScale(track?.src, 'underwater');
-      if (track && track.paused) {
-        track.volume = vol;
-        track.play?.()?.catch?.(() => {});
-      } else if (track && track.volume <= 0.05) {
+      if (track.paused) {
+        const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        if (!this._lastKeepAliveAttempt || (now - this._lastKeepAliveAttempt > 1500)) {
+          this._lastKeepAliveAttempt = now;
+          track.volume = vol;
+          track.play?.()?.catch?.(() => {});
+        }
+      } else if (track.volume <= 0.05) {
         track.volume = vol;
       }
     }
@@ -1309,7 +1314,9 @@ export class SoundManager {
     const changed = this.currentSeaId !== id;
     const mode = this.currentMusicMode || 'surface';
     const key = `${id}_${mode}`;
-    const needsInitialSync = !this.realmTracks.has(key) && id !== 1;
+    const needsInitialSync = id === 1
+      ? (mode === 'none' || (mode === 'surface' && this.surfaceMusic.paused) || (mode === 'underwater' && this.underwaterMusic.paused))
+      : (mode === 'none' || !this.realmTracks.has(key));
     this.currentSeaId = id;
     if (changed || needsInitialSync) this.syncRecordedMusic();
   }

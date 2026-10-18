@@ -306,7 +306,7 @@ export class OceanWorld {
     });
 
     populateBands(HAZARD_TYPES.filter(hazard => !hazard.marineKind && !hazard.expedition && belongsToRealm(hazard, this.currentSeaId)),
-      depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.15 * ecology.hazards,
+      depth => (0.25 + 1.8 * depthProgress(depth)) * realmProfile.hazardDensity * 1.04 * ecology.hazards,
       hazard => {
         const isVolcano = this.currentSeaId === 6 && (/volcan|chimney|sulfur vent|lava pillar/i.test(hazard.name || '') || hazard.id === 'caldera_lava_pillar');
         if (isVolcano) return 0.20;
@@ -326,7 +326,7 @@ export class OceanWorld {
         const realmEnemyDampener = this.currentSeaId >= 5 ? 0.72 : 1.0;
         const depthDampener = depth > 1000 ? 0.88 : 1.0;
         const chance = baseChance * realmEnemyDampener * depthDampener;
-        if (Math.random() >= Math.min(.85, chance * ecology.enemies * (1 + depthProgress(depth) * 1.8))) continue;
+        if (Math.random() >= Math.min(.85, chance * ecology.enemies * (1 + depthProgress(depth) * 1.28))) continue;
         const centerDepth = depth + 10 + Math.random() * Math.min(spacing - 20, end - depth - 20);
         const centerX = 120 + Math.random() * Math.max(1, this.worldWidth - 240);
         const count = creature.marineKind === 'jelly' ? 3 + Math.floor(Math.random() * 3) : 1;
@@ -681,7 +681,7 @@ export class OceanWorld {
       }
       ctx.restore();
     } else if (sea.id === 3) {
-      // Astral Shimmerfall: Drifting fallen starlight sparkles
+      // Astral Shimmerfall: Drifting fallen starlight sparkles & rare surface constellations
       ctx.save();
       for (let i = 0; i < 18; i++) {
         const seed = i * 53.1;
@@ -693,6 +693,7 @@ export class OceanWorld {
         ctx.fillText('✦', sx, sy);
       }
       ctx.restore();
+      this.renderShimmerfallConstellations(ctx, skyHeight, cameraY);
     } else if (sea.id === 4) {
       // Sunken Atlantis: Classical Atlantean architecture emerging from the horizon in ruins
       this.renderAtlantisSurfaceRuins(ctx, skyHeight, cameraY);
@@ -703,6 +704,177 @@ export class OceanWorld {
       // Eldritch Chrono Void: Surface background Black Vortex and Tornados that periodically spawn and leave
       this.renderVoidSurfaceAnomalies(ctx, skyHeight, cameraY);
     }
+  }
+
+  // Astral Shimmerfall: Rare celestial surface sky constellations with starlight filaments and glowing nodes
+  renderShimmerfallConstellations(ctx, skyHeight, cameraY) {
+    const vY = this.surfaceY - cameraY;
+    if (vY < -200 || vY > (skyHeight || 600) + 120) return;
+
+    ctx.save();
+    const t = this.waveTimer || 0;
+    const w = this.worldWidth || 1200;
+
+    // Rare periodic apparition: cycle through celestial star figures
+    // Each constellation cycle lasts 36 seconds:
+    // 0-4s: fade in, 4-18s: fully visible & shimmering, 18-24s: gentle fade out, 24-36s: dormant
+    const cycleDuration = 36;
+    const phase = (t % cycleDuration);
+    const constIndex = Math.floor(t / cycleDuration) % 3;
+
+    let visibility = 0;
+    if (phase < 4) {
+      visibility = phase / 4;
+    } else if (phase < 18) {
+      visibility = 1.0;
+    } else if (phase < 24) {
+      visibility = (24 - phase) / 6;
+    } else {
+      visibility = 0;
+    }
+
+    if (visibility > 0.01) {
+      // 3 mythical oceanic/astral constellations:
+      // 0: Delphinus the Starlight Dolphin
+      // 1: Cygnus the Astral Swan
+      // 2: Pisces / Oceanus the Twin Celestial Fish
+      const constellations = [
+        {
+          name: 'Delphinus the Celestial Dolphin',
+          baseX: w * 0.48,
+          baseY: vY - 180,
+          scale: 1.15,
+          stars: [
+            { x: 45, y: -15, r: 3.2, primary: true, col: '#fef08a' }, // Snout
+            { x: 20, y: -35, r: 2.8, col: '#67e8f9' }, // Head / Crown
+            { x: -10, y: -45, r: 3.5, primary: true, col: '#ffffff' }, // Dorsal spine
+            { x: -45, y: -30, r: 2.8, col: '#c4b5fd' }, // Flank
+            { x: -75, y: -10, r: 3.0, primary: true, col: '#f0abfc' }, // Peduncle
+            { x: -105, y: -25, r: 2.6, col: '#93c5fd' }, // Upper Fluke
+            { x: -100, y: 10, r: 2.6, col: '#93c5fd' }, // Lower Fluke
+            { x: 5, y: -10, r: 2.4, col: '#c4b5fd' }, // Ventral throat
+            { x: -25, y: -5, r: 2.5, col: '#67e8f9' }, // Pectoral star
+          ],
+          lines: [
+            [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [4, 6], [5, 6],
+            [0, 7], [7, 8], [8, 4], [1, 7], [2, 8]
+          ]
+        },
+        {
+          name: 'Cygnus the Starlight Swan',
+          baseX: w * 0.65,
+          baseY: vY - 195,
+          scale: 1.1,
+          stars: [
+            { x: 0, y: -20, r: 4.0, primary: true, col: '#ffffff' }, // Heart (Sadr)
+            { x: 60, y: -10, r: 3.2, col: '#fef08a' }, // Head (Albireo)
+            { x: -65, y: -30, r: 3.6, primary: true, col: '#67e8f9' }, // Tail (Deneb)
+            { x: -25, y: -75, r: 3.0, col: '#c4b5fd' }, // Northern Wing Tip
+            { x: -10, y: -48, r: 2.6, col: '#93c5fd' }, // Wing Joint North
+            { x: 25, y: 35, r: 2.6, col: '#93c5fd' }, // Wing Joint South
+            { x: 45, y: 65, r: 3.0, col: '#f0abfc' }, // Southern Wing Tip
+          ],
+          lines: [
+            [2, 0], [0, 1],
+            [3, 4], [4, 0], [0, 5], [5, 6]
+          ]
+        },
+        {
+          name: 'Oceanus the Twin Celestial Fish',
+          baseX: w * 0.32,
+          baseY: vY - 175,
+          scale: 1.1,
+          stars: [
+            { x: -70, y: -35, r: 3.4, primary: true, col: '#67e8f9' }, // Fish 1 Mouth
+            { x: -50, y: -50, r: 2.7, col: '#c4b5fd' },
+            { x: -35, y: -30, r: 3.0, col: '#ffffff' },
+            { x: -55, y: -15, r: 2.6, col: '#93c5fd' },
+            { x: -10, y: -15, r: 2.4, col: '#fef08a' }, // Ribbon knot
+            { x: 20, y: -10, r: 2.5, col: '#fbcfe8' },
+            { x: 45, y: 15, r: 2.8, col: '#c4b5fd' },
+            { x: 60, y: -5, r: 3.5, primary: true, col: '#ffffff' }, // Fish 2 Heart
+            { x: 80, y: 10, r: 2.9, col: '#67e8f9' },
+            { x: 65, y: 35, r: 2.6, col: '#93c5fd' },
+          ],
+          lines: [
+            [0, 1], [1, 2], [2, 3], [3, 0], // Fish 1 body
+            [2, 4], [4, 5], [5, 6], // Celestial ribbon
+            [6, 7], [7, 8], [8, 9], [9, 6] // Fish 2 body
+          ]
+        }
+      ];
+
+      const cData = constellations[constIndex];
+      const baseAlpha = visibility * 0.65;
+
+      ctx.save();
+      ctx.translate(cData.baseX, cData.baseY);
+      ctx.scale(cData.scale, cData.scale);
+
+      // 1. Starlight filament connecting lines
+      ctx.lineWidth = 1.3;
+      ctx.strokeStyle = `rgba(196, 181, 253, ${baseAlpha * 0.65})`;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      for (const [fromIdx, toIdx] of cData.lines) {
+        const s1 = cData.stars[fromIdx];
+        const s2 = cData.stars[toIdx];
+        if (s1 && s2) {
+          ctx.moveTo(s1.x, s1.y);
+          ctx.lineTo(s2.x, s2.y);
+        }
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Subtle radiant outer glow line
+      ctx.lineWidth = 3.2;
+      ctx.strokeStyle = `rgba(103, 232, 249, ${baseAlpha * 0.22})`;
+      ctx.stroke();
+
+      // 2. Star nodes with pulsating celestial halos and diamond diffraction spikes
+      for (let i = 0; i < cData.stars.length; i++) {
+        const star = cData.stars[i];
+        const pulse = Math.sin(t * 3.0 + i * 1.5) * 0.25;
+        const currentR = Math.max(1, (star.r + pulse));
+        const sAlpha = Math.min(1.0, baseAlpha * (star.primary ? 1.0 : 0.8));
+
+        // Soft starlight halo
+        try {
+          const haloGrad = ctx.createRadialGradient(star.x, star.y, 0.5, star.x, star.y, currentR * 3.5);
+          haloGrad.addColorStop(0, star.col);
+          haloGrad.addColorStop(0.4, `rgba(196, 181, 253, ${sAlpha * 0.45})`);
+          haloGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+          ctx.fillStyle = haloGrad;
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, currentR * 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        } catch (_) {}
+
+        // Brilliant star core
+        ctx.fillStyle = star.col;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, currentR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Diamond diffraction spikes for primary stars
+        if (star.primary) {
+          ctx.strokeStyle = `rgba(255, 255, 255, ${sAlpha * 0.75})`;
+          ctx.lineWidth = 1.0;
+          const spikeLen = currentR * 2.8;
+          ctx.beginPath();
+          ctx.moveTo(star.x - spikeLen, star.y);
+          ctx.lineTo(star.x + spikeLen, star.y);
+          ctx.moveTo(star.x, star.y - spikeLen);
+          ctx.lineTo(star.x, star.y + spikeLen);
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    ctx.restore();
   }
 
   // Sunken Atlantis Surface Background: Grand Classical temples, shattered aqueducts, and fluted marble pillars in ruins
@@ -982,59 +1154,90 @@ export class OceanWorld {
     ctx.restore();
 
     // 3. The Grand Floating Celestial Palace atop a Majestic Luminous Cloud
-    const palaceParallax = vY - 170 + Math.sin(t * 0.8) * 6;
-    const px = w * 0.62;
+    // Positioned further right (w * 0.74) and scaled to 0.68 with soft atmospheric aerial haze to appear further away
+    const palaceParallax = vY - 146 + Math.sin(t * 0.65) * 4;
+    const px = Math.min(w - 120, w * 0.74);
     const py = palaceParallax;
 
     ctx.save();
     ctx.translate(px, py);
+    ctx.scale(0.68, 0.68);
+    ctx.globalAlpha = 0.84;
 
-    // A. Cascading Cloud Waterfall: pours from the bottom of the cloud into mist
-    ctx.save();
-    ctx.globalAlpha = 0.55;
+    // Distant Ethereal Celestial Halo behind the palace
     try {
-      const waterGrad = ctx.createLinearGradient(0, 35, 0, 160);
-      waterGrad.addColorStop(0, 'rgba(240, 249, 255, 0.85)');
-      waterGrad.addColorStop(0.5, 'rgba(199, 210, 254, 0.6)');
+      const haloGrad = ctx.createRadialGradient(0, -55, 25, 0, -55, 210);
+      haloGrad.addColorStop(0, 'rgba(254, 240, 138, 0.25)');
+      haloGrad.addColorStop(0.45, 'rgba(244, 114, 182, 0.15)');
+      haloGrad.addColorStop(0.75, 'rgba(192, 132, 252, 0.08)');
+      haloGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = haloGrad;
+      ctx.beginPath();
+      ctx.arc(0, -55, 210, 0, Math.PI * 2);
+      ctx.fill();
+    } catch (_) {}
+
+    // A. Cascading Cloud Waterfalls: pour from the bottom of the cloud into mist
+    ctx.save();
+    ctx.globalAlpha = 0.58;
+    try {
+      const waterGrad = ctx.createLinearGradient(0, 35, 0, 175);
+      waterGrad.addColorStop(0, 'rgba(240, 249, 255, 0.92)');
+      waterGrad.addColorStop(0.4, 'rgba(199, 210, 254, 0.7)');
+      waterGrad.addColorStop(0.8, 'rgba(244, 114, 182, 0.35)');
       waterGrad.addColorStop(1, 'rgba(244, 114, 182, 0)');
       ctx.fillStyle = waterGrad;
     } catch (_) {
       ctx.fillStyle = 'rgba(224, 231, 255, 0.6)';
     }
+
+    // Main central waterfall
     ctx.beginPath();
-    ctx.moveTo(-16, 30);
-    ctx.lineTo(16, 30);
-    ctx.lineTo(24, 155);
-    ctx.lineTo(-24, 155);
+    ctx.moveTo(-18, 30);
+    ctx.lineTo(18, 30);
+    ctx.lineTo(26, 170);
+    ctx.lineTo(-26, 170);
     ctx.closePath();
     ctx.fill();
 
-    // Water mist particles at the bottom of the waterfall
-    ctx.fillStyle = 'rgba(253, 242, 248, 0.5)';
-    for (let m = 0; m < 5; m++) {
-      const mx = Math.sin(t * 2 + m) * 22;
-      const my = 145 + Math.cos(t * 1.5 + m) * 10;
+    // Twin delicate flanking secondary cascades
+    [-65, 65].forEach(ox => {
       ctx.beginPath();
-      ctx.arc(mx, my, 4 + m, 0, Math.PI * 2);
+      ctx.moveTo(ox - 8, 28);
+      ctx.lineTo(ox + 8, 28);
+      ctx.lineTo(ox + 12, 115);
+      ctx.lineTo(ox - 12, 115);
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    // Water mist clouds at the bottom of the waterfalls
+    ctx.fillStyle = 'rgba(253, 242, 248, 0.55)';
+    for (let m = 0; m < 7; m++) {
+      const mx = Math.sin(t * 1.8 + m) * 32;
+      const my = 158 + Math.cos(t * 1.4 + m) * 12;
+      ctx.beginPath();
+      ctx.arc(mx, my, 5 + (m % 4) * 2, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
 
     // B. The Grand Luminous Cloud Foundation
     ctx.save();
-    ctx.fillStyle = 'rgba(253, 224, 71, 0.35)';
+    // Warm celestial underglow
+    ctx.fillStyle = 'rgba(253, 224, 71, 0.32)';
     ctx.beginPath();
-    ctx.ellipse(0, 32, 138, 38, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 36, 155, 42, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Multi-puff billowing cumulus cloud base
+    // Multi-puff billowing cumulus cloud base with delicate pastel depth shading
     const cloudPuffs = [
-      { x: 0, y: 16, rx: 130, ry: 35, col: 'rgba(250, 245, 255, 0.96)' },
-      { x: -75, y: 22, rx: 55, ry: 28, col: 'rgba(243, 232, 255, 0.94)' },
-      { x: 75, y: 22, rx: 55, ry: 28, col: 'rgba(243, 232, 255, 0.94)' },
-      { x: -45, y: 8, rx: 50, ry: 26, col: 'rgba(255, 255, 255, 0.98)' },
-      { x: 45, y: 8, rx: 50, ry: 26, col: 'rgba(255, 255, 255, 0.98)' },
-      { x: 0, y: 4, rx: 70, ry: 30, col: 'rgba(255, 255, 255, 1.0)' },
+      { x: 0, y: 22, rx: 145, ry: 40, col: 'rgba(245, 238, 255, 0.94)' },
+      { x: -95, y: 26, rx: 65, ry: 32, col: 'rgba(240, 228, 255, 0.92)' },
+      { x: 95, y: 26, rx: 65, ry: 32, col: 'rgba(240, 228, 255, 0.92)' },
+      { x: -55, y: 12, rx: 60, ry: 30, col: 'rgba(255, 250, 255, 0.97)' },
+      { x: 55, y: 12, rx: 60, ry: 30, col: 'rgba(255, 250, 255, 0.97)' },
+      { x: 0, y: 6, rx: 80, ry: 34, col: 'rgba(255, 255, 255, 1.0)' },
     ];
     for (const p of cloudPuffs) {
       ctx.fillStyle = p.col;
@@ -1042,109 +1245,146 @@ export class OceanWorld {
       ctx.ellipse(p.x, p.y, p.rx, p.ry, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Cloud golden rim highlights
-    ctx.strokeStyle = 'rgba(254, 240, 138, 0.7)';
-    ctx.lineWidth = 2.2;
+    // Cloud golden-rose rim highlights
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.75)';
+    ctx.lineWidth = 2.4;
     ctx.beginPath();
-    ctx.arc(-45, 4, 38, Math.PI * 0.7, Math.PI * 1.3);
-    ctx.arc(0, 0, 48, Math.PI * 0.8, Math.PI * 1.2);
-    ctx.arc(45, 4, 38, Math.PI * 0.7, Math.PI * 1.3);
+    ctx.arc(-55, 6, 44, Math.PI * 0.7, Math.PI * 1.3);
+    ctx.arc(0, 2, 56, Math.PI * 0.8, Math.PI * 1.2);
+    ctx.arc(55, 6, 44, Math.PI * 0.7, Math.PI * 1.3);
     ctx.stroke();
     ctx.restore();
 
     // C. The Grand Palace Architecture
     // 1. Terrace Foundation & Balustrade
     ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(-85, -2, 170, 8);
+    ctx.fillRect(-96, -2, 192, 9);
     ctx.fillStyle = '#facc15';
-    ctx.fillRect(-87, 5, 174, 2.5);
+    ctx.fillRect(-98, 5, 196, 2.8);
 
     // Balustrade balusters
     ctx.fillStyle = '#cbd5e1';
-    for (let b = -80; b <= 80; b += 10) {
-      ctx.fillRect(b, -8, 3, 7);
+    for (let b = -90; b <= 90; b += 10) {
+      ctx.fillRect(b, -9, 3, 8);
     }
     ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(-85, -10, 170, 3);
+    ctx.fillRect(-96, -11, 192, 3);
 
     // 2. Side Wings & Colonnades
     ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(-70, -38, 32, 28);
-    ctx.fillRect(38, -38, 32, 28);
+    ctx.fillRect(-80, -42, 36, 32);
+    ctx.fillRect(44, -42, 36, 32);
     ctx.fillStyle = '#f59e0b';
-    ctx.fillRect(-72, -40, 36, 3);
-    ctx.fillRect(36, -40, 36, 3);
+    ctx.fillRect(-82, -44, 40, 3.5);
+    ctx.fillRect(42, -44, 40, 3.5);
+
+    // Side rotunda domes
+    [-62, 62].forEach(rx => {
+      ctx.fillStyle = '#c084fc';
+      ctx.beginPath();
+      ctx.arc(rx, -44, 15, Math.PI, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      // Mini spire finial
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(rx - 1, -66, 2, 8);
+      ctx.beginPath();
+      ctx.arc(rx, -67, 2, 0, Math.PI * 2);
+      ctx.fill();
+    });
 
     // Wing windows with warm ambient lantern glow
     ctx.fillStyle = '#fef08a';
-    ctx.fillRect(-62, -28, 7, 12);
-    ctx.fillRect(-48, -28, 7, 12);
-    ctx.fillRect(46, -28, 7, 12);
-    ctx.fillRect(60, -28, 7, 12);
+    ctx.fillRect(-72, -32, 8, 14);
+    ctx.fillRect(-56, -32, 8, 14);
+    ctx.fillRect(52, -32, 8, 14);
+    ctx.fillRect(68, -32, 8, 14);
 
     // 3. Central Grand Palace Hall
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-34, -58, 68, 48);
+    ctx.fillRect(-38, -65, 76, 54);
 
     // Entrance arch & royal columns
     ctx.fillStyle = '#64748b';
     ctx.beginPath();
-    ctx.arc(0, -22, 10, Math.PI, 0);
-    ctx.lineTo(10, -10);
-    ctx.lineTo(-10, -10);
+    ctx.arc(0, -26, 12, Math.PI, 0);
+    ctx.lineTo(12, -11);
+    ctx.lineTo(-12, -11);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = '#fbbf24';
     ctx.beginPath();
-    ctx.arc(0, -22, 7, Math.PI, 0);
-    ctx.lineTo(7, -10);
-    ctx.lineTo(-7, -10);
+    ctx.arc(0, -26, 8.5, Math.PI, 0);
+    ctx.lineTo(8.5, -11);
+    ctx.lineTo(-8.5, -11);
     ctx.closePath();
     ctx.fill();
 
-    // Columns
+    // Palace front fluted columns
     ctx.fillStyle = '#e2e8f0';
-    [-24, -15, 15, 24].forEach(cx => {
-      ctx.fillRect(cx - 2, -44, 4, 34);
+    [-28, -18, 18, 28].forEach(cx => {
+      ctx.fillRect(cx - 2.5, -50, 5, 39);
     });
 
     // Central balcony
     ctx.fillStyle = '#facc15';
-    ctx.fillRect(-18, -36, 36, 2.5);
+    ctx.fillRect(-22, -40, 44, 3);
+
+    // Rose stained-glass window
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.arc(0, -52, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
 
     // 4. Soaring Grand Celestial Central Dome
     ctx.fillStyle = '#f472b6';
     ctx.beginPath();
-    ctx.arc(0, -66, 26, Math.PI, 0);
+    ctx.arc(0, -74, 30, Math.PI, 0);
     ctx.closePath();
     ctx.fill();
 
     ctx.strokeStyle = '#facc15';
-    ctx.lineWidth = 2.2;
+    ctx.lineWidth = 2.4;
     ctx.beginPath();
-    ctx.arc(0, -66, 26, Math.PI, 0);
+    ctx.arc(0, -74, 30, Math.PI, 0);
     ctx.stroke();
+
+    // Gold filigree ribs on central dome
+    ctx.strokeStyle = 'rgba(254, 240, 138, 0.65)';
+    ctx.lineWidth = 1.5;
+    [-15, 0, 15].forEach(rx => {
+      ctx.beginPath();
+      ctx.moveTo(rx, -74);
+      ctx.quadraticCurveTo(rx * 0.4, -98, 0, -104);
+      ctx.stroke();
+    });
 
     // Central Spire & Glowing Aetherial Star Finial
     ctx.fillStyle = '#fbbf24';
-    ctx.fillRect(-2, -104, 4, 14);
-    const starGlint = 4.5 + Math.sin(t * 3.5) * 1.5;
+    ctx.fillRect(-2.5, -118, 5, 16);
+    const starGlint = 5.2 + Math.sin(t * 3.5) * 1.8;
     ctx.fillStyle = '#fef08a';
     ctx.beginPath();
-    ctx.arc(0, -107, starGlint, 0, Math.PI * 2);
+    ctx.arc(0, -121, starGlint, 0, Math.PI * 2);
     ctx.fill();
 
     // 5. Left & Right Flanking Minaret Spire Towers
-    [-76, 76].forEach((tx, idx) => {
+    [-88, 88].forEach((tx, idx) => {
       ctx.fillStyle = '#f8fafc';
-      ctx.fillRect(tx - 7, -64, 14, 54);
+      ctx.fillRect(tx - 7.5, -72, 15, 62);
       ctx.fillStyle = '#facc15';
-      ctx.fillRect(tx - 9, -66, 18, 3);
+      ctx.fillRect(tx - 9.5, -74, 19, 3.5);
       ctx.fillStyle = '#818cf8';
       ctx.beginPath();
-      ctx.moveTo(tx - 8, -66);
-      ctx.lineTo(tx, -98);
-      ctx.lineTo(tx + 8, -66);
+      ctx.moveTo(tx - 9, -74);
+      ctx.lineTo(tx, -112);
+      ctx.lineTo(tx + 9, -74);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#facc15';
@@ -1152,21 +1392,21 @@ export class OceanWorld {
       ctx.stroke();
 
       ctx.fillStyle = '#facc15';
-      ctx.fillRect(tx - 1, -106, 2, 8);
+      ctx.fillRect(tx - 1.5, -122, 3, 10);
       ctx.beginPath();
-      ctx.arc(tx, -107, 2.5, 0, Math.PI * 2);
+      ctx.arc(tx, -123, 3, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = '#fef08a';
-      ctx.fillRect(tx - 2.5, -52, 5, 10);
+      ctx.fillRect(tx - 3, -60, 6, 12);
 
       // Fluttering silk pennant banner
-      const bannerWave = Math.sin(t * 3.2 + idx * 1.8) * 8;
+      const bannerWave = Math.sin(t * 3.2 + idx * 1.8) * 9;
       ctx.fillStyle = '#f472b6';
       ctx.beginPath();
-      ctx.moveTo(tx + 1, -104);
-      ctx.lineTo(tx + 16 + bannerWave, -102 + bannerWave * 0.3);
-      ctx.lineTo(tx + 1, -96);
+      ctx.moveTo(tx + 1, -119);
+      ctx.lineTo(tx + 18 + bannerWave, -116 + bannerWave * 0.3);
+      ctx.lineTo(tx + 1, -110);
       ctx.closePath();
       ctx.fill();
     });
