@@ -151,21 +151,39 @@ export class SoundManager {
     }
   }
 
+  primeSeaTracks(seaId) {
+    this.ensureAudio();
+    const id = Number(seaId) || 1;
+    const surfTrack = this.getTrackForMode(id, 'surface');
+    const underTrack = this.getTrackForMode(id, 'underwater');
+    [surfTrack, underTrack].forEach(track => {
+      if (track && track.paused) {
+        try { track.load?.(); } catch (_) {}
+      }
+    });
+  }
+
   unlockActiveMusicOnGesture() {
     this.ensureAudio();
     if (this.isEndgameActive || this.isMuted || this.activeStation) return;
+    if (this._pendingTrackToResume && this._pendingTrackToResume.paused) {
+      this.applyVolumes();
+      this._pendingTrackToResume.play?.()?.catch?.(() => {});
+      this._pendingTrackToResume = null;
+    }
     // Pre-initialize the active sea's underwater track during user gestures so it is buffered and ready when the hook hits the water
     const underTrack = this.getTrackForMode(this.currentSeaId, 'underwater');
-    if (underTrack && underTrack.paused && underTrack.readyState === 0) {
+    if (underTrack && underTrack.paused) {
       try { underTrack.load?.(); } catch (_) {}
     }
-    if (this.currentMusicMode === 'underwater' || this.currentMusicMode === 'surface') {
-      const activeTrack = this.getTrackForMode(this.currentSeaId, this.currentMusicMode);
-      if (activeTrack && activeTrack.paused) {
-        const vol = this.musicVolume * this.getTrackScale(activeTrack.src, this.currentMusicMode);
-        if (!this._fadeInterval) activeTrack.volume = vol;
-        activeTrack.play?.()?.catch?.(() => {});
-      }
+    const mode = this.currentMusicMode || 'surface';
+    const activeTrack = this.getTrackForMode(this.currentSeaId, mode);
+    if (activeTrack && activeTrack.paused) {
+      const vol = this.musicVolume * this.getTrackScale(activeTrack.src, mode);
+      if (!this._fadeInterval) activeTrack.volume = vol;
+      activeTrack.play?.()?.catch?.((err) => {
+        this._pendingTrackToResume = activeTrack;
+      });
     }
   }
 
@@ -202,10 +220,11 @@ export class SoundManager {
     if (s.includes('angel-choir') || s.includes('9293')) return 0.34;
     if (s.includes('valley-of-voices') || s.includes('alan_frijns')) return 0.34;
     if (s.includes('chrono-void-fishing')) return 0.36;
-    if (s.includes('onecinematicstudio')) return 0.26;
+    if (s.includes('onecinematicstudio')) return 0.35;
     if (s.includes('desifreemusic')) return 0.27;
     if (s.includes('tropical.mp3')) return 0.26;
-    if (s.includes('ocean-vibes.mp3')) return 0.26;
+    if (s.includes('ocean-waves')) return 0.32;
+    if (s.includes('ocean-vibes')) return 0.44;
     if (s.includes('peaceful.mp3')) return 0.30;
     if (s.includes('faespencer-island-heartbeat')) return 0.31;
     if (s.includes('aether-ethereal-1')) return 0.33;
@@ -262,7 +281,7 @@ export class SoundManager {
       const surfaceTracks = {
         2: '/music/aquarain.mp3',
         3: '/music/meditation.mp3',
-        4: '/music/ocean-vibes.mp3',
+        4: '/music/ocean-waves.mp3',
         5: '/music/aether-ethereal-1.mp3',
         6: '/music/tropical.mp3',
         7: '/music/megisss-epic-angel-spirit-450168.mp3',
@@ -280,6 +299,9 @@ export class SoundManager {
       // Multi-track realms (Realm 2, 5, and Realm 7 surface & fishing) loop by alternating between playlist tracks
       audio.loop = id !== 2 && id !== 5 && id !== 7;
       audio.preload = 'auto';
+      audio.addEventListener?.('error', () => {
+        console.warn(`[SoundManager] Audio load error on track: ${primarySrc}`);
+      });
       // Multi-track realms alternate through their songs on ended
       if (id === 2 || id === 5 || id === 7) {
         audio.addEventListener?.('ended', () => {
@@ -412,24 +434,35 @@ export class SoundManager {
     }, 25);
   }
 
-  keepAliveUnderwaterMusic() {
+  keepAliveMusic() {
     if (this.isEndgameActive) return;
     if (this._fadeInterval) return;
-    if (this.currentMusicMode === 'underwater' && !this.isMuted && !this.activeStation) {
-      const track = this.getTrackForMode(this.currentSeaId, 'underwater');
+    if (this.isMuted || this.activeStation) return;
+    const mode = this.currentMusicMode || 'surface';
+    if (mode === 'underwater' || mode === 'surface') {
+      const track = this.getTrackForMode(this.currentSeaId, mode);
       if (!track) return;
-      const vol = this.musicVolume * this.getTrackScale(track?.src, 'underwater');
+      const vol = this.musicVolume * this.getTrackScale(track?.src, mode);
       if (track.paused) {
         const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
         if (!this._lastKeepAliveAttempt || (now - this._lastKeepAliveAttempt > 1500)) {
           this._lastKeepAliveAttempt = now;
           track.volume = vol;
-          track.play?.()?.catch?.(() => {});
+          const p = track.play?.();
+          if (p && typeof p.catch === 'function') {
+            p.catch((err) => {
+              this._pendingTrackToResume = track;
+            });
+          }
         }
-      } else if (track.volume <= 0.05) {
+      } else if (track.volume <= 0.05 && vol > 0.05) {
         track.volume = vol;
       }
     }
+  }
+
+  keepAliveUnderwaterMusic() {
+    this.keepAliveMusic();
   }
 
   syncRecordedMusic() {
@@ -448,7 +481,12 @@ export class SoundManager {
     if (!targetTrack) return;
     this.applyVolumes();
     if (targetTrack.paused) {
-      targetTrack.play?.()?.catch?.(() => {});
+      const playPromise = targetTrack.play?.();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch((err) => {
+          this._pendingTrackToResume = targetTrack;
+        });
+      }
     }
   }
 

@@ -671,6 +671,9 @@ const update = (dt) => {
     zoneManager.update(dt, hook, gameState, isReelingInput);
   }
 
+  // Keep background soundtrack reliably active and playing across all realms
+  soundManager.keepAliveMusic?.();
+
   // Update Hook
   if (gameState !== 'SURFACE_IDLE' && gameState !== 'AIMING' && gameState !== 'CATCH_SUMMARY' && gameState !== 'ENDGAME_SCENE') {
     hook.rodTip = oceanWorld.rodTip;
@@ -1304,4 +1307,24 @@ setTimeout(() => {
 // Start game loop
 const gameLoop = new GameLoop(update, render);
 gameLoop.start();
+
+// Global audio gesture unlock: ensure music starts seamlessly on any user interaction or window focus
+const unlockAudioOnGesture = () => {
+  soundManager.ensureAudio();
+  if (!soundManager.currentMusicMode) soundManager.setMusicMode('surface');
+  soundManager.unlockActiveMusicOnGesture?.();
+};
+window.addEventListener('pointerdown', unlockAudioOnGesture, { passive: true });
+window.addEventListener('keydown', unlockAudioOnGesture, { passive: true });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    unlockAudioOnGesture();
+    soundManager.syncRecordedMusic?.();
+  }
+});
+window.addEventListener('focus', () => {
+  unlockAudioOnGesture();
+  soundManager.syncRecordedMusic?.();
+});
+
 

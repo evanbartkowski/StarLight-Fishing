@@ -273,6 +273,9 @@ export class MinimapUI {
 
     if (this.saveSystem.setCurrentSea(seaId)) {
       this.soundManager.playCast();
+      if (typeof this.soundManager.primeSeaTracks === 'function') {
+        this.soundManager.primeSeaTracks(seaId);
+      }
       this.uiManager.closeModal();
 
       if (this.uiManager && typeof this.uiManager.playCloudTransition === 'function') {
