@@ -763,8 +763,18 @@ test('Sea 5-7 enemy balancing, Megalodons, Void aesthetic enemies, Realm 7 merma
   const r7Surface = sound.getTrackForMode(7, 'surface');
   const r7Fishing = sound.getTrackForMode(7, 'underwater');
   assert.notEqual(r7Surface.src, r7Fishing.src, 'Realm 7 must have distinct surface vs fishing tracks');
-  assert.equal(r7Fishing.src, '/music/chrono-void-fishing.mp3', 'Realm 7 fishing track must be the user attached song');
-  assert.equal(r7Surface.src, '/music/ocean-vibes.mp3', 'Realm 7 surface track must be ocean-vibes');
+  const validR7Fishing = [
+    'rockot-holidays-in-heaven',
+    'viramiller-heavenly-calm',
+    'tokyorifft-celestial-disco'
+  ];
+  assert.ok(validR7Fishing.some(name => r7Fishing.src.includes(name)), 'Realm 7 fishing track must be either holiday heaven, heavenly calm, or celestial disco');
+  const validR7Surface = [
+    'ocean-vibes',
+    'valley-of-voices',
+    'alan_frijns'
+  ];
+  assert.ok(validR7Surface.some(name => r7Surface.src.includes(name)), 'Realm 7 surface track must be ocean-vibes or valley of voices');
 
   // Check all realms have distinct surface vs fishing tracks
   for (let r = 1; r <= 7; r++) {
@@ -1450,13 +1460,13 @@ test('Realm 7 rare space-whales, Realm 5 floating cloud palace, Realm 2 giant tr
   const soundManager = new SoundManager();
   soundManager.setSeaTrack(7);
   const track7 = soundManager.getTrackForMode(7, 'underwater');
-  assert.equal(track7.loop, true, 'Realm 7 underwater audio must use native loop=true without premature ended event resets');
+  assert.equal(track7.loop, false, 'Realm 7 underwater audio must use loop=false and alternate among the 3 songs on ended');
 
   // Idempotent calls during active fishing must not re-trigger track resets
   let playCount = 0;
   track7.play = () => { playCount++; track7.paused = false; return Promise.resolve(); };
   soundManager.setMusicMode('underwater');
-  assert.equal(playCount, 1, 'Entering underwater mode in Realm 7 must start playing chrono-void-fishing.mp3');
+  assert.equal(playCount, 1, 'Entering underwater mode in Realm 7 must start playing the fishing track');
   soundManager.setMusicMode('underwater'); // Redundant call while fishing
   soundManager.setSeaTrack(7); // Redundant realm check while in same realm
   assert.equal(playCount, 1, 'Redundant mode and realm calls must not trigger restart or sync disruptions during fishing');
@@ -1643,6 +1653,86 @@ test('Endgame finale slow line-by-line poem fade, bubble continue button removal
     assert.equal(scene.currentView, 'poem');
   } finally {
     scene.close();
+  }
+});
+
+test('Realm 7 fishing playlist (Holiday Heaven, Heavenly Calm, Celestial Disco) and surface playlist (ocean-vibes, Valley of Voices)', async () => {
+  const { SoundManager } = await import('../src/audio/SoundManager.js');
+  const sound = new SoundManager();
+  sound.initialized = true;
+
+  // Track ended event listener registry
+  const listeners = new Map();
+  const mockAudio = (src) => ({
+    src,
+    loop: false,
+    paused: true,
+    currentTime: 0,
+    addEventListener(ev, fn) {
+      if (!listeners.has(this)) listeners.set(this, {});
+      listeners.get(this)[ev] = fn;
+    },
+    play() { this.paused = false; return Promise.resolve(); },
+    pause() { this.paused = true; }
+  });
+
+  const origCreate = globalThis.Audio;
+  try {
+    globalThis.Audio = class {
+      constructor(src) {
+        this.src = src;
+        this.loop = false;
+        this.paused = true;
+        this.currentTime = 0;
+      }
+      addEventListener(ev, fn) {
+        if (!listeners.has(this)) listeners.set(this, {});
+        listeners.get(this)[ev] = fn;
+      }
+      play() { this.paused = false; return Promise.resolve(); }
+      pause() { this.paused = true; }
+    };
+
+    const sm = new SoundManager();
+    sm.initialized = true;
+    sm.isMuted = false;
+    sm.currentSeaId = 7;
+    sm.currentMusicMode = 'underwater';
+
+    const r7Fish = sm.getTrackForMode(7, 'underwater');
+    assert.equal(r7Fish.loop, false, 'Realm 7 underwater track must have loop=false to allow playlist progression');
+    assert.ok(
+      ['rockot-holidays-in-heaven', 'viramiller-heavenly-calm', 'tokyorifft-celestial-disco'].some(n => r7Fish.src.includes(n)),
+      'Initial Realm 7 fishing track must be Holiday Heaven, Heavenly Calm, or Celestial Disco'
+    );
+
+    // Test fishing track rotation on ended
+    r7Fish.src = '/music/rockot-holidays-in-heaven-173070.mp3';
+    listeners.get(r7Fish)?.ended?.();
+    assert.ok(r7Fish.src.includes('viramiller-heavenly-calm'), 'Holiday Heaven must rotate to Heavenly Calm on ended');
+
+    listeners.get(r7Fish)?.ended?.();
+    assert.ok(r7Fish.src.includes('tokyorifft-celestial-disco'), 'Heavenly Calm must rotate to Celestial Disco on ended');
+
+    listeners.get(r7Fish)?.ended?.();
+    assert.ok(r7Fish.src.includes('rockot-holidays-in-heaven'), 'Celestial Disco must rotate back to Holiday Heaven on ended');
+
+    // Test surface track rotation on ended
+    sm.currentMusicMode = 'surface';
+    const r7Surf = sm.getTrackForMode(7, 'surface');
+    assert.equal(r7Surf.loop, false, 'Realm 7 surface track must have loop=false to allow playlist progression');
+
+    r7Surf.src = '/music/ocean-vibes.mp3';
+    listeners.get(r7Surf)?.ended?.();
+    assert.ok(
+      r7Surf.src.includes('valley-of-voices') || r7Surf.src.includes('alan_frijns'),
+      'ocean-vibes must rotate to Valley of Voices on ended'
+    );
+
+    listeners.get(r7Surf)?.ended?.();
+    assert.ok(r7Surf.src.includes('ocean-vibes.mp3'), 'Valley of Voices must rotate back to ocean-vibes on ended');
+  } finally {
+    globalThis.Audio = origCreate;
   }
 });
 

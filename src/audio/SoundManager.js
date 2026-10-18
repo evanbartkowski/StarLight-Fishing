@@ -193,6 +193,10 @@ export class SoundManager {
   getTrackScale(src = '', mode = 'surface') {
     const s = String(src);
     if (s.includes('endgame-finale')) return 0.38;
+    if (s.includes('holidays-in-heaven') || s.includes('holiday-heaven')) return 0.28;
+    if (s.includes('heavenly-calm')) return 0.48;
+    if (s.includes('celestial-disco')) return 0.30;
+    if (s.includes('valley-of-voices') || s.includes('alan_frijns')) return 0.34;
     if (s.includes('chrono-void-fishing')) return 0.36;
     if (s.includes('onecinematicstudio')) return 0.26;
     if (s.includes('desifreemusic')) return 0.27;
@@ -265,16 +269,15 @@ export class SoundManager {
         4: '/music/onecinematicstudio-the-lost-city-of-atlantis-_-mystical-underwater-cinematic-music-529056.mp3',
         5: '/music/aether-ethereal-2.mp3',
         6: '/music/desifreemusic-ocean-documentary-background-music-with-calm-cinematic-ambience-569283.mp3',
-        7: '/music/chrono-void-fishing.mp3',
+        7: '/music/rockot-holidays-in-heaven-173070.mp3',
       };
-      const primarySrc = isUnderwater ? (fishingTracks[id] || '/music/chrono-void-fishing.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
+      const primarySrc = isUnderwater ? (fishingTracks[id] || '/music/rockot-holidays-in-heaven-173070.mp3') : (surfaceTracks[id] || '/music/aquarain.mp3');
       const audio = createAudioElement(primarySrc);
-      // Realm 2 (Twilight Kelp Forest) and Realm 5 (Whispering Aether Sea) loop by alternating between 2 songs
-      audio.loop = id !== 2 && id !== 5;
+      // Realm 2 (Twilight Kelp Forest), Realm 5 (Whispering Aether Sea), and Realm 7 (Chrono Void) loop by alternating between playlist tracks
+      audio.loop = id !== 2 && id !== 5 && id !== 7;
       audio.preload = 'auto';
-      // Only alternating multi-track playlists (Realm 2 & 5) need manual track alternation on ended;
-      // standard single-track realms loop natively and cleanly via audio.loop = true without premature restart hitches.
-      if (id === 2 || id === 5) {
+      // Multi-track realms (Realm 2, 5, 7) alternate through their songs on ended
+      if (id === 2 || id === 5 || id === 7) {
         audio.addEventListener?.('ended', () => {
           if (this.currentMusicMode === (isUnderwater ? 'underwater' : 'surface') && this.currentSeaId === id && !this.isMuted && !this.activeStation) {
             if (id === 2) {
@@ -288,6 +291,25 @@ export class SoundManager {
               audio.src = curSrc.includes('aether-ethereal-1.mp3')
                 ? '/music/aether-ethereal-2.mp3'
                 : '/music/aether-ethereal-1.mp3';
+              this.applyVolumes();
+            } else if (id === 7) {
+              if (isUnderwater) {
+                // Loop through either holiday heaven, heavenly calm, or celestial disco
+                const curSrc = audio.src || '';
+                if (curSrc.includes('heavenly-calm')) {
+                  audio.src = '/music/tokyorifft-celestial-disco-324443-[AudioTrimmer.com].mp3';
+                } else if (curSrc.includes('celestial-disco')) {
+                  audio.src = '/music/rockot-holidays-in-heaven-173070.mp3';
+                } else {
+                  audio.src = '/music/viramiller-heavenly-calm-252015.mp3';
+                }
+              } else {
+                // Surface: either what it currently is (ocean-vibes) or valley of voices
+                const curSrc = audio.src || '';
+                audio.src = (curSrc.includes('valley-of-voices') || curSrc.includes('alan_frijns'))
+                  ? '/music/ocean-vibes.mp3'
+                  : '/music/alan_frijns-valley-of-voices-meditation-yoga-zen-relaxation-work-study-sleep-music-123428.mp3';
+              }
               this.applyVolumes();
             }
             audio.currentTime = 0;
