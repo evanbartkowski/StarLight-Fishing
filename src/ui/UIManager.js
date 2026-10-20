@@ -3844,7 +3844,7 @@ export class UIManager {
             <div class="perk-row"><span>📦</span> Expandable capacity: 5 slots (Tier I), 10 slots (Tier II), 20 slots (Tier III)</div>
           </div>
           <button class="btn btn-buy btn-lg" id="btn-unlock-aquarium-shop" style="margin-top: 16px;">
-            🛒 View Personal Aquarium in Tackle Shop ($1,450)
+            🛒 View Personal Aquarium in Tackle Shop ($1,200)
           </button>
         </div>
       `;
@@ -4039,18 +4039,23 @@ export class UIManager {
 
     items.forEach((item) => {
       if (item.type === 'fish' || (!item.type && !item.isRelic)) {
-        const fishEntity = specimen(item, 0, 0);
+        const spawnX = 60 + Math.random() * (canvas.width - 120);
+        const spawnY = 40 + Math.random() * (canvas.height - 120);
+        const fishEntity = specimen(item, spawnX, spawnY, { minY: 35, maxY: canvas.height - 65 });
         if (!fishEntity) return;
+        fishEntity.x = spawnX;
+        fishEntity.y = spawnY;
+        fishEntity.minY = 35;
+        fishEntity.maxY = canvas.height - 65;
         fishEntity.isAquarium = true;
         fishEntity._inTank = true;
-        const species = fishEntity.species;
         fishEntity.scale = Math.min(1.4, Math.max(0.4, fishEntity.scale * .85));
 
         aquariumFish.push({
           item,
           entity: fishEntity,
-          x: 60 + Math.random() * (canvas.width - 120),
-          y: 40 + Math.random() * (canvas.height - 120),
+          x: spawnX,
+          y: spawnY,
           vx: (Math.random() < 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.9),
           vy: (Math.random() * 2 - 1) * 0.4,
           cruiseSpeed: 0.6 + Math.random() * 0.5,
@@ -4193,7 +4198,7 @@ export class UIManager {
 
         ctx.font = '10px sans-serif';
         ctx.fillStyle = '#f8fafc';
-        ctx.fillText(relic.name.substring(0, 14), rx, ry + 28);
+        ctx.fillText((relic.name || 'Relic').substring(0, 14), rx, ry + 28);
       });
 
       // Food pellets
@@ -4212,11 +4217,10 @@ export class UIManager {
       // The aquarium and ocean share Fish.update/render, including species paths.
       aquariumFish.forEach(f => {
         const entity = f.entity;
-        if (!entity._inTank) {
-          entity.x = f.x; entity.y = f.y; entity.minY = 35; entity.maxY = canvas.height - 65;
-          entity._inTank = true;
-          entity.isAquarium = true;
-        }
+        entity.minY = 35;
+        entity.maxY = canvas.height - 65;
+        entity.isAquarium = true;
+        entity._inTank = true;
         if (foodPellets.length) {
           const food = foodPellets[0];
           entity.direction = food.x > entity.x ? 1 : -1;
@@ -4253,7 +4257,7 @@ export class UIManager {
     const inv = this.saveSystem.getInventory();
     const save = this.saveSystem;
     const eligible = inv.filter((item) => {
-      const isEligibleType = !item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type);
+      const isEligibleType = !item.isCrate && (!item.type || ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type));
       return isEligibleType && !save.isItemInAquarium(item.instanceId);
     });
 
@@ -4429,7 +4433,7 @@ export class UIManager {
 
               ${inTank ? `
                 <button class="btn btn-sm btn-secondary btn-tank-remove" data-id="${item.instanceId}" title="Remove from personal aquarium back to tackle box"><svg viewBox="0 0 24 24" style="width:13px;height:13px;vertical-align:middle;margin-right:3px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>Return</button>
-              ` : (!item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)) ? `
+              ` : (!item.isCrate && (!item.type || ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type))) ? `
                 ${hasAq ? `
                   <button class="btn btn-sm btn-outline btn-tank-add" data-id="${item.instanceId}" ${tankCount >= aqCap ? 'disabled title="Aquarium is at max capacity"' : 'title="Place in personal aquarium"'}>🐠 To Tank</button>
                 ` : `

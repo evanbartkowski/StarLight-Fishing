@@ -40,13 +40,28 @@ export const aquariumAction = onCall(options, async request => {
     }
     if (!/^[\w-]{1,128}$/.test(host || '')) throw new Error('invalid-argument');
     if (action === 'visit') {
-      const [saved, profile, daily] = await Promise.all([
+      const [saved, profile, published, daily] = await Promise.all([
         db.doc(`captainSaves/${host}`).get(), db.doc(`leaderboard/${host}`).get(),
+        db.doc(`aquariums/${host}`).get(),
         signedIn ? db.doc(`daily_tips/${uid}_${Math.floor(Date.now() / 86400000)}`).get() : Promise.resolve(null),
       ]);
-      if (!saved.exists) throw new Error('not-found');
-      const exhibit = publicAquarium(JSON.parse(saved.data().snapshot), profile.data()?.username);
-      if (signedIn) await db.doc(`aquariums/${host}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() });
+      let exhibit = null;
+      if (saved.exists) {
+        try {
+          exhibit = publicAquarium(JSON.parse(saved.data().snapshot), profile.data()?.username || saved.data()?.username);
+        } catch (_) {}
+      }
+      if (!exhibit && published.exists) {
+        const pubData = published.data() || {};
+        exhibit = {
+          username: pubData.username || profile.data()?.username || 'Captain',
+          theme: pubData.theme || 'reef',
+          decor: pubData.decor || {},
+          items: pubData.items || [],
+        };
+      }
+      if (!exhibit) throw new Error('not-found');
+      if (signedIn) await db.doc(`aquariums/${host}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       return { ...exhibit, remaining: Math.max(0, 3 - (daily?.data()?.count || 0)), canTip: signedIn && host !== uid, isOwn: host === uid, signedIn };
     }
     if (action === 'tip') return await tipAquarium(db, uid, host, requestId, FieldValue);

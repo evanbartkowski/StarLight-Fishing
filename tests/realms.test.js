@@ -219,7 +219,7 @@ test('every realm has 42 real native fish, distinct content, and complete journa
 });
 
 test('charter prices and common rewards rise together; gates charge the authoritative price', () => {
-  assert.deepEqual(FANTASY_SEAS.map(s => s.gates.unlockFee), [0,6000,35000,35000,210000,420000,3000000]);
+  assert.deepEqual(FANTASY_SEAS.map(s => s.gates.unlockFee), [0,4000,35000,35000,210000,420000,3000000]);
   for (let i = 1; i < FANTASY_SEAS.length; i++) {
     const sea = FANTASY_SEAS[i], previous = FANTASY_SEAS[i-1];
     assert.equal(sea.gates.unlockFee, REALM_PROFILES[sea.id].fee);

@@ -2472,15 +2472,15 @@ export class OceanWorld {
     const h = screenHeight || 800;
 
     // Trench titan configurations: massive scale, slow ominous swim, wide horizontal cycle so they appear rarely
-    const spanX = w + 4800;
+    const spanX = w + 16000;
     const parallaxY = Math.max(0, cameraY - this.surfaceY) * 0.32;
-    const vSpan = 1400;
+    const vSpan = 4800;
 
     const titanConfigs = [
       // Titan 1: The Abyssal Phantasm Leviathan (Colossal Deep-Trench Gulper with luminous lure and glowing ribcage)
-      { type: 'gulper', dir: 1, speed: 20, scale: 1.45, baseY: 380, phaseOffset: 0 },
+      { type: 'gulper', dir: 1, speed: 11, scale: 1.45, baseY: 380, phaseOffset: 0 },
       // Titan 2: The Dread Umbral Shadow Behemoth (Segmented prehistoric leviathan with multi-eye clusters & glowing photophores)
-      { type: 'shadow', dir: -1, speed: 17, scale: 1.35, baseY: 960, phaseOffset: 2600 },
+      { type: 'shadow', dir: -1, speed: 9, scale: 1.35, baseY: 960, phaseOffset: 8600 },
     ];
 
     for (let tIdx = 0; tIdx < titanConfigs.length; tIdx++) {

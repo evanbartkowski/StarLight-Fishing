@@ -46,10 +46,14 @@ export async function tipAquarium(db, uid, host, requestId, fieldValue, now = Da
  */
 export function publicAquarium(snapshot, username) {
   if (!snapshot.aquarium?.isUnlocked && !((snapshot.upgrades?.personalAquarium || 0) > 0)) throw new Error('failed-precondition');
-  const slots = new Set(snapshot.aquarium?.slottedItemIds || []);
+  const slots = new Set((snapshot.aquarium?.slottedItemIds || []).map(String));
   const fields = ['instanceId', 'id', 'speciesId', 'name', 'rarity', 'size', 'weight', 'weightClass', 'mutation', 'scaleFactor', 'isShiny', 'crown', 'type', 'category', 'isRelic'];
-  const items = (snapshot.inventory || []).filter(item => slots.has(item.instanceId) && !item.isCrate && ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type)).slice(0, 50)
-    .map(item => Object.fromEntries(fields.filter(key => item[key] !== undefined).map(key => [key, item[key]])));
+  const items = (snapshot.inventory || []).filter(item => slots.has(String(item.instanceId)) && !item.isCrate && (!item.type || ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type))).slice(0, 50)
+    .map(item => {
+      const obj = Object.fromEntries(fields.filter(key => item[key] !== undefined).map(key => [key, item[key]]));
+      if (!obj.type) obj.type = obj.isRelic ? 'relic' : 'fish';
+      return obj;
+    });
   const decor = Object.fromEntries(['substrate', 'decoration', 'lighting', 'bubbles']
     .filter(key => typeof snapshot.aquarium?.decor?.[key] === 'string')
     .map(key => [key, String(snapshot.aquarium?.decor?.[key]).slice(0, 24)]));

@@ -1845,6 +1845,56 @@ test('Technical SEO, sitemap, robots.txt, structured data, and endgame Back butt
   assert.ok(/<button[^>]*id="endgame-back-btn"[^>]*>\s*Back\s*<\/button>/.test(endgameCode), 'EndgameScene back button must say Back');
 });
 
+test('Bioluminescent Trench fee is 4000, titan spawn rate is lowered, and aquarium & visiting aquarium work reliably', async () => {
+  const { FANTASY_SEAS } = await import('../src/entities/SeasData.js');
+  const { extractAquariumHost } = await import('../src/ui/AquariumSocial.js');
+  const { specimen } = await import('../src/ui/CatchCard.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const fs = await import('fs');
+
+  // 1. Bioluminescent Trench unlock fee must be exactly 4000
+  const trenchSea = FANTASY_SEAS.find(s => s.id === 2);
+  assert.ok(trenchSea, 'Sea 2 must exist');
+  assert.equal(trenchSea.gates.unlockFee, 4000, 'Bioluminescent Trench unlock fee must be 4,000 gold');
+
+  // 2. Titan spawn cycle span must be wide to lower spawn frequency
+  const oceanWorldCode = fs.readFileSync('src/world/OceanWorld.js', 'utf-8');
+  assert.ok(oceanWorldCode.includes('spanX = w + 16000'), 'Titan spanX must be at least w + 16000 for rare appearances');
+  assert.ok(oceanWorldCode.includes('vSpan = 4800'), 'Titan vSpan must be expanded to 4800 to prevent vertical looping');
+
+  // 3. extractAquariumHost must reliably parse full URLs, query params, paths, or raw captain IDs
+  assert.equal(extractAquariumHost('https://starlightfishing.com/?aquarium=captain-123'), 'captain-123');
+  assert.equal(extractAquariumHost('starlightfishing.com/?aquarium=captain-456'), 'captain-456');
+  assert.equal(extractAquariumHost('?aquarium=captain-789'), 'captain-789');
+  assert.equal(extractAquariumHost('/aquarium/captain-abc'), 'captain-abc');
+  assert.equal(extractAquariumHost('captain-xyz'), 'captain-xyz');
+
+  // 4. specimen() must properly initialize x, y, minY, maxY, and tank flags
+  const testItem = { id: FISH_SPECIES[0].id, speciesId: FISH_SPECIES[0].id, name: FISH_SPECIES[0].name, type: 'fish' };
+  const aqFish = specimen(testItem, 250, 180, { minY: 35, maxY: 300 });
+  assert.ok(aqFish, 'Specimen must create valid fish entity');
+  assert.equal(aqFish.x, 250, 'Fish x must be set to spawnX');
+  assert.equal(aqFish.y, 180, 'Fish y must be set to spawnY');
+  assert.equal(aqFish.minY, 35, 'Fish minY must be set to tank top bound');
+  assert.equal(aqFish.maxY, 300, 'Fish maxY must be set to tank bottom bound');
+  assert.equal(aqFish.isAquarium, true, 'Fish must have isAquarium flag');
+  assert.equal(aqFish._inTank, true, 'Fish must have _inTank flag');
+
+  // 5. SaveSystem moveItemToAquarium prunes stale IDs
+  const testSave = new SaveSystem();
+  testSave.data = {
+    inventory: [{ instanceId: 'real-fish-1', name: 'Glow Fish', type: 'fish' }],
+    aquarium: { isUnlocked: true, slottedItemIds: ['ghost-1', 'ghost-2'], maxCapacity: 2 },
+    upgrades: { personalAquarium: 1 }
+  };
+  const moveRes = testSave.moveItemToAquarium('real-fish-1');
+  assert.equal(moveRes.success, true, 'moveItemToAquarium must succeed after pruning ghost IDs');
+  assert.ok(testSave.data.aquarium.slottedItemIds.includes('real-fish-1'), 'real-fish-1 must be slotted');
+  assert.ok(!testSave.data.aquarium.slottedItemIds.includes('ghost-1'), 'ghost-1 must be pruned');
+});
+
+
 
 
 

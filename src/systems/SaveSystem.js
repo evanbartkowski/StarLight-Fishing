@@ -299,10 +299,17 @@ export class SaveSystem {
         skeletons: { ...def.skeletons, ...(parsed.skeletons || {}) },
         stats: { ...def.stats, ...(parsed.stats || {}) },
         unlockedBobbers: parsed.unlockedBobbers || def.unlockedBobbers || ['pelican_bobber'],
-        inventory: Array.isArray(parsed.inventory) ? parsed.inventory : [],
+        inventory: (Array.isArray(parsed.inventory) ? parsed.inventory : []).map(item => {
+          if (!item.type) {
+            item.type = item.isRelic ? 'relic' : (item.isCrate ? 'crate' : (item.isTreasure || item.category === 'fossil' || item.category === 'treasure' ? 'trinket' : 'fish'));
+          }
+          return item;
+        }),
         aquarium: {
           ...def.aquarium,
+          decor: { substrate: 'sand', decoration: 'kelp', lighting: 'daylight', bubbles: 'normal' },
           ...(parsed.aquarium || {}),
+          decor: { substrate: 'sand', decoration: 'kelp', lighting: 'daylight', bubbles: 'normal', ...(parsed.aquarium?.decor || {}) },
           slottedItemIds: Array.isArray(parsed.aquarium?.slottedItemIds) ? parsed.aquarium.slottedItemIds : [],
           unlockedThemes: Array.isArray(parsed.aquarium?.unlockedThemes) ? parsed.aquarium.unlockedThemes : ['reef'],
         },
@@ -987,6 +994,10 @@ export class SaveSystem {
     if (!this.hasAquarium()) return { success: false, reason: 'unlocked' };
     const capacity = this.getAquariumCapacity();
     if (!this.data.aquarium.slottedItemIds) this.data.aquarium.slottedItemIds = [];
+    const inv = this.getInventory();
+    this.data.aquarium.slottedItemIds = this.data.aquarium.slottedItemIds.filter((id) =>
+      inv.some((item) => String(item.instanceId) === String(id))
+    );
     if (this.data.aquarium.slottedItemIds.length >= capacity) {
       return { success: false, reason: 'full' };
     }

@@ -4,12 +4,17 @@ import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { getSeaById } from '../entities/SeasData.js';
 
 /** Restore a specimen without changing its saved traits or the species catalog. */
-export function specimen(item, x, y) {
-  const species = item.species || [...FISH_SPECIES, ...LEGENDARY_SPECIES].find(entry => entry.id === (item.speciesId || item.id));
+export function specimen(item, x, y, options = {}) {
+  const species = item?.species || [...FISH_SPECIES, ...LEGENDARY_SPECIES].find(entry => entry.id === (item?.speciesId || item?.id));
   if (!species) return null;
-  const fish = new Fish(species, x, y, { shinyChance: 0, surfaceY: -100000 });
+  const fish = new Fish(species, x, y, { shinyChance: 0, surfaceY: options.surfaceY ?? 0 });
   for (const key of ['size', 'weight', 'weightClass', 'mutation', 'isShiny', 'crown']) if (item[key] !== undefined) fish[key] = item[key];
-  fish.x = x; fish.y = y;
+  fish.x = x;
+  fish.y = y;
+  fish.minY = options.minY ?? 35;
+  fish.maxY = options.maxY ?? 320;
+  fish.isAquarium = true;
+  fish._inTank = true;
   fish.scale = Math.min(2, item.scaleFactor || item.scale || species.scaleFactor || 1);
   return fish;
 }
