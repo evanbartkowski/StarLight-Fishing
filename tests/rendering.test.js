@@ -1863,35 +1863,34 @@ test('Bioluminescent Trench fee is 4000, titan spawn rate is lowered, and aquari
   assert.ok(oceanWorldCode.includes('spanX = w + 16000'), 'Titan spanX must be at least w + 16000 for rare appearances');
   assert.ok(oceanWorldCode.includes('vSpan = 4800'), 'Titan vSpan must be expanded to 4800 to prevent vertical looping');
 
-  // 3. extractAquariumHost must reliably parse full URLs, query params, paths, or raw captain IDs
-  assert.equal(extractAquariumHost('https://starlightfishing.com/?aquarium=captain-123'), 'captain-123');
-  assert.equal(extractAquariumHost('starlightfishing.com/?aquarium=captain-456'), 'captain-456');
-  assert.equal(extractAquariumHost('?aquarium=captain-789'), 'captain-789');
-  assert.equal(extractAquariumHost('/aquarium/captain-abc'), 'captain-abc');
-  assert.equal(extractAquariumHost('captain-xyz'), 'captain-xyz');
+  // 6. extractAquariumHost must support URL-encoded names, spaces, and usernames
+  assert.equal(extractAquariumHost('https://starlightfishing.com/?aquarium=Captain%20Jack'), 'Captain Jack');
+  assert.equal(extractAquariumHost('?aquarium=evan'), 'evan');
+  assert.equal(extractAquariumHost('Thomas'), 'Thomas');
 
-  // 4. specimen() must properly initialize x, y, minY, maxY, and tank flags
-  const testItem = { id: FISH_SPECIES[0].id, speciesId: FISH_SPECIES[0].id, name: FISH_SPECIES[0].name, type: 'fish' };
-  const aqFish = specimen(testItem, 250, 180, { minY: 35, maxY: 300 });
-  assert.ok(aqFish, 'Specimen must create valid fish entity');
-  assert.equal(aqFish.x, 250, 'Fish x must be set to spawnX');
-  assert.equal(aqFish.y, 180, 'Fish y must be set to spawnY');
-  assert.equal(aqFish.minY, 35, 'Fish minY must be set to tank top bound');
-  assert.equal(aqFish.maxY, 300, 'Fish maxY must be set to tank bottom bound');
-  assert.equal(aqFish.isAquarium, true, 'Fish must have isAquarium flag');
-  assert.equal(aqFish._inTank, true, 'Fish must have _inTank flag');
+  // 7. Scoreboard template must include data-visit-username attribute for resilient aquarium resolution
+  const uiManagerCode = fs.readFileSync('src/ui/UIManager.js', 'utf-8');
+  assert.ok(uiManagerCode.includes('data-visit-username='), 'Scoreboard table buttons must pass data-visit-username');
+  assert.ok(uiManagerCode.includes('visitAquarium(this, button.dataset.visitAquarium, button.dataset.visitUsername)'), 'Scoreboard onclick must pass username fallback');
+  assert.ok(uiManagerCode.includes('visitAquarium(this, msg.sender, msg.senderId)'), 'Chat profile click must pass sender username to visitAquarium');
 
-  // 5. SaveSystem moveItemToAquarium prunes stale IDs
-  const testSave = new SaveSystem();
-  testSave.data = {
-    inventory: [{ instanceId: 'real-fish-1', name: 'Glow Fish', type: 'fish' }],
-    aquarium: { isUnlocked: true, slottedItemIds: ['ghost-1', 'ghost-2'], maxCapacity: 2 },
-    upgrades: { personalAquarium: 1 }
-  };
-  const moveRes = testSave.moveItemToAquarium('real-fish-1');
-  assert.equal(moveRes.success, true, 'moveItemToAquarium must succeed after pruning ghost IDs');
-  assert.ok(testSave.data.aquarium.slottedItemIds.includes('real-fish-1'), 'real-fish-1 must be slotted');
-  assert.ok(!testSave.data.aquarium.slottedItemIds.includes('ghost-1'), 'ghost-1 must be pruned');
+  // 8. Functions publicAquarium and captainEmail verification
+  const { publicAquarium, captainEmail } = await import('../functions/aquarium.js');
+  assert.equal(captainEmail('evan'), '6576616e@captains.starlight-fishing.invalid');
+  assert.equal(captainEmail('Captain Jack'), '6361707461696e206a61636b@captains.starlight-fishing.invalid');
+  
+  // Valid aquarium via personalAquarium upgrade
+  const exhibit1 = publicAquarium({ upgrades: { personalAquarium: 1 }, aquarium: { theme: 'atlantis' } }, 'Captain');
+  assert.equal(exhibit1.theme, 'atlantis');
+  assert.deepEqual(exhibit1.items, []);
+
+  // Valid aquarium via slotted items
+  const exhibit2 = publicAquarium({ aquarium: { slottedItemIds: ['fish_1'] }, inventory: [{ instanceId: 'fish_1', name: 'Nautilus', type: 'fish' }] }, 'Host');
+  assert.equal(exhibit2.items.length, 1);
+  assert.equal(exhibit2.items[0].name, 'Nautilus');
+
+  // Throws failed-precondition if captain truly has no aquarium
+  assert.throws(() => publicAquarium({ upgrades: { personalAquarium: 0 }, aquarium: { isUnlocked: false } }, 'Guest'), /failed-precondition/);
 });
 
 

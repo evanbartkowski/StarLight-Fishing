@@ -10,25 +10,27 @@ import { Treasure } from '../entities/Treasure.js';
 export function extractAquariumHost(input) {
   if (!input) return '';
   const str = String(input).trim();
-  const queryMatch = str.match(/[?&]aquarium=([\w-]+)/i);
-  if (queryMatch) return queryMatch[1];
-  const pathMatch = str.match(/\/aquarium\/([\w-]+)/i);
-  if (pathMatch) return pathMatch[1];
+  const queryMatch = str.match(/[?&]aquarium=([^&]+)/i);
+  if (queryMatch) return decodeURIComponent(queryMatch[1].trim());
+  const pathMatch = str.match(/\/aquarium\/([^/?#]+)/i);
+  if (pathMatch) return decodeURIComponent(pathMatch[1].trim());
   try {
     const url = new URL(str.includes('://') ? str : `https://${str}`);
     const q = url.searchParams.get('aquarium');
-    if (q) return q;
+    if (q) return decodeURIComponent(q.trim());
     const parts = url.pathname.split('/').filter(Boolean);
-    if (parts.length > 0 && /^[\w-]{1,128}$/.test(parts[parts.length - 1])) {
-      return parts[parts.length - 1];
+    if (parts.length > 0 && /^[\w -]{1,128}$/.test(parts[parts.length - 1])) {
+      return decodeURIComponent(parts[parts.length - 1].trim());
     }
   } catch {}
-  return str.replace(/[^a-zA-Z0-9_-]/g, '');
+  return str.replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
 }
 
-export async function visitAquarium(ui, rawHost) {
+export async function visitAquarium(ui, rawHost, fallbackHost = null) {
   const host = extractAquariumHost(rawHost);
-  if (!host) {
+  const fallback = fallbackHost ? extractAquariumHost(fallbackHost) : null;
+  const targetHost = host || fallback;
+  if (!targetHost) {
     ui.showToast('Please enter a valid aquarium link or captain ID.');
     return;
   }
@@ -51,7 +53,93 @@ export async function visitAquarium(ui, rawHost) {
   document.getElementById('btn-close-visitor-tank')?.addEventListener('click', () => ui.closeModal());
   const loading = document.getElementById('aquarium-loading');
   try {
-    const exhibit = await aquariumAction({ action: 'visit', host });
+    let exhibit = null;
+    let finalHost = targetHost;
+    try {
+      exhibit = await aquariumAction({ action: 'visit', host: targetHost });
+      finalHost = exhibit?.host || targetHost;
+    } catch (firstErr) {
+      if (fallback && fallback !== targetHost) {
+        try {
+          exhibit = await aquariumAction({ action: 'visit', host: fallback });
+          finalHost = exhibit?.host || fallback;
+        } catch (_) {}
+      }
+      if (!exhibit) {
+        // Check if viewing self
+        const curUser = accountManager.getCurrentUser();
+        const curUid = accountManager.cloudSession?.uid;
+        const isSelf = (curUid && (targetHost === curUid || fallback === curUid)) ||
+          (curUser && (targetHost.toLowerCase() === curUser.toLowerCase() || (fallback && fallback.toLowerCase() === curUser.toLowerCase())));
+        if (isSelf && ui.saveSystem?.hasAquarium?.()) {
+          const localItems = ui.saveSystem.getAquariumItems?.() || [];
+          exhibit = {
+            username: curUser || 'Captain',
+            theme: ui.saveSystem.data?.aquarium?.theme || 'reef',
+            decor: ui.saveSystem.data?.aquarium?.decor || {},
+            items: localItems.map(item => ({
+              instanceId: item.instanceId,
+              id: item.id || item.speciesId,
+              speciesId: item.speciesId || item.id,
+              name: item.name,
+              rarity: item.rarity,
+              size: item.size,
+              weight: item.weight,
+              weightClass: item.weightClass,
+              scaleFactor: item.scaleFactor,
+              isShiny: item.isShiny,
+              crown: item.crown,
+              type: item.type || (item.isRelic ? 'relic' : 'fish'),
+            })),
+            remaining: 0,
+            canTip: false,
+            isOwn: true,
+            signedIn: !!curUid,
+          };
+        } else {
+          // Check local captain save on same machine
+          const candidates = [targetHost, fallback].filter(Boolean);
+          for (const cand of candidates) {
+            if (accountManager.hasAccount?.(cand)) {
+              try {
+                const rawSave = localStorage.getItem(accountManager.getSaveKeyForUser(cand));
+                if (rawSave) {
+                  const p = JSON.parse(rawSave);
+                  if (p.aquarium?.isUnlocked || (p.upgrades?.personalAquarium || 0) > 0) {
+                    const slots = new Set((p.aquarium?.slottedItemIds || []).map(String));
+                    const items = (p.inventory || []).filter(item => slots.has(String(item.instanceId))).map(item => ({
+                      instanceId: item.instanceId,
+                      id: item.id || item.speciesId,
+                      speciesId: item.speciesId || item.id,
+                      name: item.name,
+                      rarity: item.rarity,
+                      size: item.size,
+                      weight: item.weight,
+                      scaleFactor: item.scaleFactor,
+                      isShiny: item.isShiny,
+                      crown: item.crown,
+                      type: item.type || (item.isRelic ? 'relic' : 'fish'),
+                    }));
+                    exhibit = {
+                      username: cand,
+                      theme: p.aquarium?.theme || 'reef',
+                      decor: p.aquarium?.decor || {},
+                      items,
+                      remaining: 0,
+                      canTip: false,
+                      isOwn: false,
+                      signedIn: false,
+                    };
+                    break;
+                  }
+                }
+              } catch (_) {}
+            }
+          }
+        }
+        if (!exhibit) throw firstErr;
+      }
+    }
     if (request !== ui._aquariumVisitRequest) return;
     
     document.getElementById('aquarium-host').textContent = exhibit.username || 'Captain';

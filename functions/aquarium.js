@@ -8,7 +8,7 @@
  * @param {number} now
  */
 export async function tipAquarium(db, uid, host, requestId, fieldValue, now = Date.now()) {
-  if (!uid || uid === host || !/^[\w-]{1,128}$/.test(host || '') || !/^[\w-]{8,80}$/.test(requestId || '')) throw new Error('invalid-argument');
+  if (!uid || uid === host || !/^[\w -]{1,128}$/.test(host || '') || !/^[\w-]{8,80}$/.test(requestId || '')) throw new Error('invalid-argument');
   const day = Math.floor(now / 86400000);
   return db.runTransaction(async tx => {
     const dailyRef = db.doc(`daily_tips/${uid}_${day}`);
@@ -45,7 +45,14 @@ export async function tipAquarium(db, uid, host, requestId, fieldValue, now = Da
  * @param {string} username
  */
 export function publicAquarium(snapshot, username) {
-  if (!snapshot.aquarium?.isUnlocked && !((snapshot.upgrades?.personalAquarium || 0) > 0)) throw new Error('failed-precondition');
+  const hasAquarium = !!(
+    snapshot?.aquarium?.isUnlocked ||
+    (Number(snapshot?.upgrades?.personalAquarium) > 0) ||
+    (Number(snapshot?.aquarium?.tier) > 0) ||
+    (Number(snapshot?.aquarium?.maxCapacity) > 0) ||
+    (Array.isArray(snapshot?.aquarium?.slottedItemIds) && snapshot.aquarium.slottedItemIds.length > 0)
+  );
+  if (!hasAquarium) throw new Error('failed-precondition');
   const slots = new Set((snapshot.aquarium?.slottedItemIds || []).map(String));
   const fields = ['instanceId', 'id', 'speciesId', 'name', 'rarity', 'size', 'weight', 'weightClass', 'mutation', 'scaleFactor', 'isShiny', 'crown', 'type', 'category', 'isRelic'];
   const items = (snapshot.inventory || []).filter(item => slots.has(String(item.instanceId)) && !item.isCrate && (!item.type || ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type))).slice(0, 50)
@@ -58,4 +65,8 @@ export function publicAquarium(snapshot, username) {
     .filter(key => typeof snapshot.aquarium?.decor?.[key] === 'string')
     .map(key => [key, String(snapshot.aquarium?.decor?.[key]).slice(0, 24)]));
   return { username: String(username || 'Captain').slice(0, 40), theme: snapshot.aquarium?.theme || 'reef', decor, items };
+}
+
+export function captainEmail(username) {
+  return `${Array.from((username || '').trim().toLowerCase()).map(char => char.charCodeAt(0).toString(16).padStart(2, '0')).join('')}@captains.starlight-fishing.invalid`;
 }

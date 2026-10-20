@@ -135,14 +135,14 @@ export class UIManager {
         profile.disabled = isAnnouncement || !msg.senderId || msg.senderId === 'server';
         profile.title = isAnnouncement ? 'Fleet System Broadcast' : "Visit this captain's aquarium";
         if (!isAnnouncement) {
-          profile.onclick = () => visitAquarium(this, msg.senderId);
+          profile.onclick = () => visitAquarium(this, msg.sender, msg.senderId);
         }
         const separator = isAnnouncement ? ' ' : ': ';
         row.append(profile, document.createTextNode(`${separator}${msg.text}`));
-        const aquarium = msg.text.match(/[?&]aquarium=([\w-]{1,128})/);
+        const aquarium = msg.text.match(/[?&]aquarium=([^&\s]+)/);
         if (aquarium) {
           const visit = document.createElement('button'); visit.className = 'btn btn-secondary btn-sm'; visit.textContent = 'Visit Aquarium';
-          visit.onclick = () => visitAquarium(this, aquarium[1]); row.appendChild(visit);
+          visit.onclick = () => visitAquarium(this, decodeURIComponent(aquarium[1])); row.appendChild(visit);
         }
         return row;
       }));
@@ -3664,7 +3664,7 @@ export class UIManager {
             <td style="text-align: left;">
               <div class="captain-cell">
                 <span class="captain-avatar">${item.level >= 20 ? '👑' : item.level >= 10 ? '⚓' : '⛵'}</span>
-                <span class="captain-username">${escapeScoreboardText(item.username)}</span>${item.id ? `<button class="btn btn-secondary btn-sm" data-visit-aquarium="${escapeScoreboardText(item.id)}">Visit</button>` : ''}
+                <span class="captain-username">${escapeScoreboardText(item.username)}</span>${item.id ? `<button class="btn btn-secondary btn-sm" data-visit-aquarium="${escapeScoreboardText(item.id)}" data-visit-username="${escapeScoreboardText(item.username)}">Visit</button>` : ''}
                 ${item.isCurrent ? '<span class="badge-you">YOU</span>' : ''}
               </div>
             </td>
@@ -3688,7 +3688,7 @@ export class UIManager {
     html += `</div>`;
 
     container.innerHTML = html;
-    container.querySelectorAll('[data-visit-aquarium]').forEach(button => { button.onclick = () => visitAquarium(this, button.dataset.visitAquarium); });
+    container.querySelectorAll('[data-visit-aquarium]').forEach(button => { button.onclick = () => visitAquarium(this, button.dataset.visitAquarium, button.dataset.visitUsername); });
 
     // Bind events for sorting & account buttons
     container.querySelector('#btn-scoreboard-refresh')?.addEventListener('click', () => this.renderScoreboardTab(sortMode));
