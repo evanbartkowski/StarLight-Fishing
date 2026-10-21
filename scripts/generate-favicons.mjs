@@ -93,6 +93,11 @@ async function generate() {
   for (const size of [16, 32, 48, 96, 144, 192, 512]) {
     fs.writeFileSync(path.join(publicDir, `favicon-${size}x${size}.png`), rendered[size]);
   }
+  // One-time move to stable branded URLs avoids the previous seven-day CDN
+  // cache. Keep the legacy paths available for cached pages and browser fallback.
+  for (const size of [48, 96]) {
+    fs.writeFileSync(path.join(publicDir, `starlight-favicon-${size}x${size}.png`), rendered[size]);
+  }
   fs.writeFileSync(path.join(publicDir, 'apple-touch-icon.png'), rendered[180]);
 
   // Include a large frame for search surfaces as well as browser tab sizes.
@@ -100,6 +105,7 @@ async function generate() {
     width: size, height: size, buffer: rendered[size],
   })));
   fs.writeFileSync(path.join(publicDir, 'favicon.ico'), icoBuffer);
+  fs.writeFileSync(path.join(publicDir, 'starlight-favicon.ico'), icoBuffer);
   console.log(`[Favicon Generator] Wrote favicon.ico (${icoBuffer.length} bytes)`);
 
   // Create site.webmanifest
@@ -113,12 +119,12 @@ async function generate() {
     theme_color: '#0a1128',
     icons: [
       {
-        src: '/favicon-48x48.png',
+        src: '/starlight-favicon-48x48.png',
         sizes: '48x48',
         type: 'image/png',
       },
       {
-        src: '/favicon-96x96.png',
+        src: '/starlight-favicon-96x96.png',
         sizes: '96x96',
         type: 'image/png',
       },

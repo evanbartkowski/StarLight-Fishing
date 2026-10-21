@@ -1832,8 +1832,8 @@ test('Technical SEO, sitemap, robots.txt, structured data, and endgame Back butt
   assert.ok(fs.existsSync('public/site.webmanifest'), 'public/site.webmanifest must exist');
   assert.ok(robotsTxt.includes('User-agent: Google-Favicon'), 'robots.txt must explicitly allow Google-Favicon');
   assert.ok(robotsTxt.includes('User-agent: Googlebot-Image'), 'robots.txt must explicitly allow Googlebot-Image');
-  assert.ok(indexHtml.includes('href="/favicon.ico"'), 'index.html must reference favicon.ico');
-  assert.ok(indexHtml.includes('href="/favicon-48x48.png"'), 'index.html must reference favicon-48x48.png');
+  assert.ok(indexHtml.includes('href="/starlight-favicon.ico"'), 'index.html must reference the branded ICO');
+  assert.ok(indexHtml.includes('href="/starlight-favicon-48x48.png"'), 'index.html must reference the branded 48px PNG');
   assert.ok(indexHtml.includes('href="/site.webmanifest"'), 'index.html must reference site.webmanifest');
   assert.ok(indexHtml.includes('"@type": "WebSite"'), 'index.html must include WebSite JSON-LD');
   assert.ok(indexHtml.includes('"@type": "Organization"'), 'index.html must include Organization JSON-LD');
