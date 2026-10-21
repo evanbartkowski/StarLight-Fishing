@@ -311,6 +311,35 @@ Starlight Fishing is optimized for all major search engines across the globe, in
 6. Under **Sitemaps**, submit `sitemap.xml` (URL: `https://starlightfishing.com/sitemap.xml`).
 7. In the top search bar, enter `https://starlightfishing.com/`, click **Test Live URL**, and click **Request Indexing**.
 
+### Favicon publishing and Google Search reindexing
+
+The favicon reuses `public/starlight-logo.png`: the blue fish and yellow star on navy. The master logo and game artwork stay unchanged. Small icons trim 4% of the outer background to make the fish and star easier to recognize. The unrelated hook SVG has been retired. Google discovers the PNG/ICO links directly in the homepage HTML; structured data and social image tags do not replace those links.
+
+Generated assets include PNGs at 16, 32, 48, 96, 144, 192, and 512 pixels, a multi-image ICO (16/32/48/96/256), and a 180-pixel Apple touch icon. The manifest uses the same branding; these images are not advertised as maskable.
+
+```sh
+# Only needed after changing the master logo. Uses Playwright Chromium or Edge.
+npm run favicon:generate
+# Builds dist/ and verifies icon bytes, dimensions, references, and robots rules.
+npm run build
+# Firebase's predeploy hook also builds and verifies, including direct CLI deploys.
+npm run deploy:hosting
+# Check the public deployment without authentication or browser cookies.
+npm run favicon:check:live
+```
+
+Commit the generated files in `public/`. Vite copies them unchanged to `dist/`, Firebase Hosting's public directory. The build fails if an icon is missing, has incorrect dimensions, or differs from its source. Stable icon URLs use one-day caching; avoid renaming them on every release. If Cloudflare still serves old icons, purge the affected URLs after deployment (including `/`), and check that a Cloudflare cache rule is not overriding the origin's cache policy.
+
+After deploying:
+
+1. Open [the 96-pixel favicon](https://starlightfishing.com/favicon-96x96.png), [ICO](https://starlightfishing.com/favicon.ico), and [Apple icon](https://starlightfishing.com/apple-touch-icon.png). They must return HTTP 200 with image content, without login, cookies, an HTML fallback, or a JavaScript challenge. `npm run favicon:check:live` checks all advertised icons and manifest assets with normal, Googlebot, Googlebot-Image, and Google-Favicon user agents, including MIME types, binary dimensions, restrictive response headers, and robots rules.
+2. In [Search Console](https://search.google.com/search-console), select the verified `starlightfishing.com` property and inspect **`https://starlightfishing.com/`**. Run **Test Live URL**, check that crawling and indexing are allowed, and use **View tested page** to confirm the returned HTML contains the favicon links. Then click **Request Indexing** for the homepage. Submitting just an image URL or calling IndexNow does not request Google's homepage reindexing.
+3. Keep `https://starlightfishing.com/sitemap.xml` submitted under **Sitemaps**. Googlebot must be able to fetch the homepage, and Googlebot-Image must be able to fetch the favicon. `public/robots.txt` already allows both, plus Google-Favicon; no new blanket crawler exemption is necessary.
+4. Check Cloudflare **Security Events** for actual Google crawler requests to `/`, `/robots.txt`, and the icon URLs. A successful request with a Google user-agent string comes from this machine, not Google's IP addresses; it cannot prove that verified Googlebot traffic is allowed. If a rule blocks real crawlers, adjust that rule using Cloudflare's verified-bot field as described below. Search Console's live inspection provides a separate check from Google's infrastructure.
+5. Check the hostname shown in Google's result. During the October 21, 2026 audit, the apex homepage and icons returned 200 through Cloudflare, but `https://www.starlightfishing.com/` and its icon URLs returned Firebase **Site Not Found** (404). Google treats each hostname separately. In Firebase Console > Hosting > Custom domains, connect `www.starlightfishing.com` and select the option to redirect requests to `starlightfishing.com`, following [Firebase's custom-domain instructions](https://firebase.google.com/docs/hosting/custom-domain). Alternatively, configure a permanent Cloudflare redirect from `www` to the apex, preserving the path and query string. Verify that both the `www` homepage and favicon requests redirect successfully before requesting reindexing of any indexed `www` homepage. This domain-level setting is outside `firebase.json`; an HTML canonical tag cannot fix a hostname that returns 404.
+
+Google says favicon processing can take **several days to several weeks**, and display is not guaranteed even when the site meets the requirements. Keep the URL stable while waiting. See [Google's favicon guidelines](https://developers.google.com/search/docs/appearance/favicon-in-search) for current eligibility and recrawl guidance.
+
 ---
 
 ### 2. Bing Webmaster Tools & DuckDuckGo Setup
@@ -355,14 +384,10 @@ To ensure legitimate search bots (Googlebot, Bingbot, DuckDuckBot, Bravebot, Yan
 1. **Enable Crawl Hints & IndexNow**:
    - In Cloudflare Dashboard, go to **Speed > Optimization > Content Optimization** (or **Rules > Settings**).
    - Enable **Crawl Hints**: Cloudflare will automatically propagate changes directly to search engines via IndexNow.
-2. **Bot Fight Mode & Verified Bots**:
-   - Go to **Security > Bots**.
-   - Cloudflare automatically whitelists known search engine bots in its **Verified Bots** directory.
-   - If using Custom WAF Rules (**Security > WAF > Custom Rules**), ensure your rules do not challenge verified bots:
-     ```
-     Rule: (cf.bot_management.verified_bot or http.user_agent contains "Bravebot" or http.user_agent contains "IndexNow")
-     Action: Skip (All Security Features)
-     ```
+2. **Bot protection and verified crawlers**:
+   - Review **Security Events** and the rule responsible for any blocked or challenged crawler requests. Check WAF rules, rate limits, bot protection, Access policies, and Workers affecting the homepage, robots.txt, or icons.
+   - In a custom blocking/challenge rule, exclude verified bots by adding `and not cf.client.bot` to the existing condition, with parentheses around that condition. For plans using Bot Management, `cf.bot_management.verified_bot` is also available. See [Cloudflare's verified-bot rule example](https://developers.cloudflare.com/waf/custom-rules/use-cases/allow-traffic-from-verified-bots/).
+   - Match verified bot identity, rather than trusting a spoofable user-agent string. Limit any exception to the rule/product causing the block; no blanket "skip all security" rule is needed for favicons. Confirm the result in Security Events and Search Console after changes.
 3. **SSL/TLS Settings**:
    - In **SSL/TLS > Overview**, ensure encryption mode is set to **Full (strict)**.
    - Under **Edge Certificates**, enable **Always Use HTTPS** and **Automatic HTTPS Rewrites** to eliminate redirect loops between Cloudflare and Firebase Hosting.

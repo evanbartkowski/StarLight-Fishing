@@ -47,52 +47,58 @@ async function generate() {
   const logoData = fs.readFileSync(logoPath);
   const base64Src = `data:image/png;base64,${logoData.toString('base64')}`;
 
-  const browser = await chromium.launch({ channel: 'msedge', headless: true });
-  const page = await browser.newPage();
-
-  const sizes = [16, 32, 48, 96, 144, 180, 192, 512];
+  // Prefer Playwright's bundled Chromium; also support the project's Windows setup.
+  const browser = await chromium.launch({ headless: true }).catch(() =>
+    chromium.launch({ channel: 'msedge', headless: true }));
+  const sizes = [16, 32, 48, 96, 144, 180, 192, 256, 512];
   const rendered = {};
+  try {
+    const page = await browser.newPage();
+    for (const sz of sizes) {
+      const dataUrl = await page.evaluate(async ({ src, size }) => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            if (img.naturalWidth !== img.naturalHeight) {
+              reject(new Error('The master logo must be square.'));
+              return;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            // Trim only the dark outer border for tiny icons. Keep the complete
+            // fish and star; no text or changes to the game's master artwork.
+            const inset = size <= 96 ? Math.round(img.naturalWidth * 0.04) : 0;
+            const sourceSize = img.naturalWidth - inset * 2;
+            ctx.drawImage(img, inset, inset, sourceSize, sourceSize, 0, 0, size, size);
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = () => reject(new Error('Unable to decode the master logo.'));
+          img.src = src;
+        });
+      }, { src: base64Src, size: sz });
 
-  for (const sz of sizes) {
-    const dataUrl = await page.evaluate(async ({ src, size }) => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = size;
-          canvas.height = size;
-          const ctx = canvas.getContext('2d');
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, size, size);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = reject;
-        img.src = src;
-      });
-    }, { src: base64Src, size: sz });
-
-    const rawBase64 = dataUrl.replace(/^data:image\/png;base64,/, '');
-    rendered[sz] = Buffer.from(rawBase64, 'base64');
-    console.log(`[Favicon Generator] Generated ${sz}x${sz} (${rendered[sz].length} bytes)`);
+      const rawBase64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+      rendered[sz] = Buffer.from(rawBase64, 'base64');
+      console.log(`[Favicon Generator] Generated ${sz}x${sz} (${rendered[sz].length} bytes)`);
+    }
+  } finally {
+    await browser.close();
   }
 
-  await browser.close();
-
   // Write PNG files
-  fs.writeFileSync(path.join(publicDir, 'favicon-48x48.png'), rendered[48]);
-  fs.writeFileSync(path.join(publicDir, 'favicon-96x96.png'), rendered[96]);
-  fs.writeFileSync(path.join(publicDir, 'favicon-144x144.png'), rendered[144]);
-  fs.writeFileSync(path.join(publicDir, 'favicon-192x192.png'), rendered[192]);
-  fs.writeFileSync(path.join(publicDir, 'favicon-512x512.png'), rendered[512]);
+  for (const size of [16, 32, 48, 96, 144, 192, 512]) {
+    fs.writeFileSync(path.join(publicDir, `favicon-${size}x${size}.png`), rendered[size]);
+  }
   fs.writeFileSync(path.join(publicDir, 'apple-touch-icon.png'), rendered[180]);
 
-  // Build and write favicon.ico containing 16x16, 32x32, 48x48
-  const icoBuffer = buildIco([
-    { width: 16, height: 16, buffer: rendered[16] },
-    { width: 32, height: 32, buffer: rendered[32] },
-    { width: 48, height: 48, buffer: rendered[48] },
-  ]);
+  // Include a large frame for search surfaces as well as browser tab sizes.
+  const icoBuffer = buildIco([16, 32, 48, 96, 256].map(size => ({
+    width: size, height: size, buffer: rendered[size],
+  })));
   fs.writeFileSync(path.join(publicDir, 'favicon.ico'), icoBuffer);
   console.log(`[Favicon Generator] Wrote favicon.ico (${icoBuffer.length} bytes)`);
 
@@ -131,12 +137,12 @@ async function generate() {
         src: '/favicon-512x512.png',
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any maskable',
+        purpose: 'any',
       },
     ],
   };
 
-  fs.writeFileSync(path.join(publicDir, 'site.webmanifest'), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(path.join(publicDir, 'site.webmanifest'), JSON.stringify(manifest, null, 2) + '\n');
   console.log('[Favicon Generator] Wrote site.webmanifest');
   console.log('[Favicon Generator] Done!');
 }

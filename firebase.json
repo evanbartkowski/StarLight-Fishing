@@ -12,12 +12,19 @@
   },
   "hosting": {
     "public": "dist",
+    "predeploy": ["npm run build"],
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "headers": [
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico|webmanifest|js|css|mp3)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+        ]
+      },
       {
         "source": "/robots.txt",
         "headers": [
@@ -43,7 +50,7 @@
         "source": "/favicon.ico",
         "headers": [
           { "key": "Content-Type", "value": "image/x-icon" },
-          { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+          { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
         ]
       },
       {
@@ -54,9 +61,15 @@
         ]
       },
       {
-        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|ico|webmanifest|js|css|mp3)",
+        "source": "/favicon-*.png",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+          { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/apple-touch-icon.png",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=86400, must-revalidate" }
         ]
       },
       {

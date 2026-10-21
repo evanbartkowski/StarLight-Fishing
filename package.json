@@ -8,10 +8,13 @@
     "test": "node --test tests/*.test.js",
     "test:browser": "node tests/browser-smoke.mjs && node tests/aura-browser.mjs && node tests/visual-polish.mjs",
     "typecheck": "tsc --project tsconfig.json",
-    "build": "vite build",
+    "build": "vite build && npm run favicon:check",
+    "favicon:generate": "node scripts/generate-favicons.mjs",
+    "favicon:check": "node scripts/verify-favicons.mjs",
+    "favicon:check:live": "node scripts/verify-favicons.mjs https://starlightfishing.com/",
     "preview": "vite preview",
     "indexnow": "node scripts/notify-indexnow.js",
-    "deploy:hosting": "npm run build && npx firebase deploy --only hosting && npm run indexnow"
+    "deploy:hosting": "npx firebase deploy --only hosting && npm run indexnow"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
