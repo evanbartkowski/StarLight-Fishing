@@ -1,7 +1,7 @@
 {
   "name": "Starlight Fishing",
-  "short_name": "Starlight",
-  "description": "Free online browser-based fishing adventure game across 7 mystical realms.",
+  "short_name": "Starlight Fishing",
+  "description": "Play Starlight Fishing free in your browser across 7 enchanted ocean realms.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a1128",

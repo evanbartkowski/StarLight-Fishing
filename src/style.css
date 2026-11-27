@@ -83,6 +83,25 @@ html, body {
 .loading-icon {
   font-size: 3.8rem;
   animation: float-bob 2s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-logo-img {
+  display: block;
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  border: 2px solid rgba(56, 189, 248, 0.55);
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.65), 0 0 20px rgba(56, 189, 248, 0.35);
+  object-fit: cover;
+}
+
+.brand-logo-lg {
+  width: 84px;
+  height: 84px;
+  border-radius: 20px;
 }
 
 @keyframes float-bob {
@@ -172,6 +191,9 @@ html, body {
 .welcome-icon {
   font-size: 2.8rem;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .welcome-title {
