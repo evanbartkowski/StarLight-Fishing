@@ -351,3 +351,89 @@ test('All 11 Easter Eggs trigger, persist unlocks, and render with finite canvas
   assert.equal(miniMonster._revealedSmall, true);
   assert.ok(drawCalls > 100);
 });
+
+test('Rare pet adventures, richer 3+ option quests/debuffs with SVG portraits, and security rate-limiting', async () => {
+  const { ShipsCat, PerchingPelican } = await import('../src/entities/BoatCompanions.js');
+  const { NPC_DEFINITIONS } = await import('../src/systems/NPCSystem.js');
+  const { NPC_PORTRAITS, QUEST_ART } = await import('../src/ui/CustomVectorArt.js');
+  const { ChatManager } = await import('../src/systems/ChatManager.js');
+
+  let draws = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key.includes('Gradient')) return () => ({ addColorStop() {} });
+      return (...args) => {
+        draws++;
+        for (const v of args) {
+          if (typeof v === 'number') assert.ok(Number.isFinite(v), `Non-finite number in ${String(key)}`);
+        }
+      };
+    },
+    set: () => true,
+  });
+
+  // 1. Cat rare swim-and-catch adventure & Pelican rare sky flight laps
+  const cat = new ShipsCat();
+  cat.triggerRareSwim();
+  cat.update(3600); // ~midpoint hunting with fish caught
+  assert.ok(cat.swimAdventure && cat.swimAdventure.xOffset > 0 && cat.swimAdventure.yOffset > 0);
+  assert.equal(cat.swimAdventure.fishCaught, true);
+  cat.render(mockCtx, 0);
+  cat.update(5000); // finishes swim cleanly
+  assert.equal(cat.swimAdventure, null);
+
+  const bird = new PerchingPelican();
+  bird.triggerRareFlight();
+  bird.update(2500);
+  assert.ok(bird.skyFlight && bird.skyFlight.yOffset < -20 && bird.isFlapping);
+  bird.render(mockCtx, 0);
+  bird.update(9000);
+  assert.equal(bird.skyFlight, null);
+  assert.ok(draws > 30);
+
+  // 2. NPC quests: every NPC has >= 3 options and bespoke SVG portrait art (no emoji avatars needed)
+  assert.ok(NPC_DEFINITIONS.length >= 8);
+  for (const npc of NPC_DEFINITIONS) {
+    assert.ok(npc.options.length >= 3, `${npc.id} should have >= 3 quest options`);
+    assert.ok(NPC_PORTRAITS[npc.id]?.includes('<svg'), `${npc.id} missing SVG portrait`);
+  }
+  assert.ok(QUEST_ART.noticeboard.includes('<svg') && QUEST_ART.lootBuff.includes('<svg'));
+
+  // 3. Debuffs affect Hook physics cleanly & clearDebuffs restores normal performance
+  storage.clear();
+  const save = new SaveSystem();
+  save.addCoins(1000);
+  const hook = new Hook();
+  hook.applyUpgrades(save);
+  const baseReel = hook.reelSpeed;
+  const baseLantern = hook.lanternRadius;
+
+  save.addBuff('cursedBarnacles', 90000);
+  save.addBuff('foggedLens', 90000);
+  hook.applyUpgrades(save);
+  assert.ok(hook.reelSpeed < baseReel, 'Barnacle Drag debuff slows reel speed');
+  assert.ok(hook.lanternRadius < baseLantern, 'Brine Mist debuff dims lantern radius');
+
+  assert.equal(save.clearDebuffs(), true);
+  hook.applyUpgrades(save);
+  assert.equal(hook.reelSpeed, baseReel);
+  assert.equal(hook.lanternRadius, baseLantern);
+
+  const sealed = save.awardSealedCrate(2);
+  assert.ok(sealed && sealed.isCrate && sealed.crateRank === 2);
+
+  // 4. Security & Anti-DDoS: ChatManager rate-limits bursts and strips control chars
+  save.setUpgradeLevel('maritimeRadio', 1);
+  const sentPayloads = [];
+  const chat = new ChatManager(save);
+  chat.loadBackend = async () => ({
+    subscribe: async () => () => {},
+    send: async (msgText) => { sentPayloads.push(msgText); },
+  });
+  for (let i = 0; i < 5; i++) {
+    assert.equal(await chat.sendMessage(`Hello\u0007\u200B fleet ${i}`), true);
+  }
+  assert.equal(sentPayloads[0], 'Hello fleet 0');
+  assert.equal(await chat.sendMessage('Flood burst 6'), false);
+  assert.equal(chat.lastError, 'rate-limited');
+});

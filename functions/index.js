@@ -109,7 +109,9 @@ export const aquariumAction = onCall(options, async request => {
         };
       }
       if (!exhibit) throw new Error('not-found');
-      if (signedIn && targetUid) await db.doc(`aquariums/${targetUid}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      if (signedIn && targetUid && !published.exists) {
+        await db.doc(`aquariums/${targetUid}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      }
       return { ...exhibit, host: targetUid, remaining: Math.max(0, 3 - (daily?.data()?.count || 0)), canTip: signedIn && targetUid !== uid, isOwn: targetUid === uid, signedIn };
     }
     if (action === 'tip') return await tipAquarium(db, uid, host, requestId, FieldValue);

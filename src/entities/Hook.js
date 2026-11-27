@@ -63,7 +63,8 @@ export class Hook {
     this.capacity = capTier.capacity || 3;
 
     const reelTier = UPGRADE_DEFINITIONS.reelPower?.tiers?.[getLvl('reelPower')] || { multiplier: 1.0 };
-    this.reelSpeed = reelTier.multiplier || 1.0;
+    const barnacleMult = saveSystem.hasActiveBuff?.('cursedBarnacles') ? 0.85 : 1.0;
+    this.reelSpeed = (reelTier.multiplier || 1.0) * barnacleMult;
 
     this.knockbackResistance = Math.min(0.4, (getLvl('highTensionLine') || 0) * 0.05);
 
@@ -76,7 +77,8 @@ export class Hook {
     this.agility = agilTier.speedMult || 1.0;
 
     const lanternTier = UPGRADE_DEFINITIONS.abyssalLantern?.tiers?.[getLvl('abyssalLantern')] || { radius: 100 };
-    this.lanternRadius = lanternTier.radius || 100;
+    const fogLensMult = saveSystem.hasActiveBuff?.('foggedLens') ? 0.72 : 1.0;
+    this.lanternRadius = Math.round((lanternTier.radius || 100) * fogLensMult);
 
     const sonarTier = UPGRADE_DEFINITIONS.treasureSonar?.tiers?.[getLvl('treasureSonar')] || { levelName: 'None' };
     this.sonarLevel = sonarTier.levelName || 'None';

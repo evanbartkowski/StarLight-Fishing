@@ -41,11 +41,17 @@ service cloud.firestore {
     }
     match /captainSaves/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid
+      allow create: if request.auth != null && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['snapshot', 'revision', 'updatedAt'])
         && request.resource.data.snapshot is string && request.resource.data.snapshot.size() <= 900000
         && request.resource.data.revision is int && request.resource.data.revision > 0
         && request.resource.data.updatedAt == request.time;
+      allow update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['snapshot', 'revision', 'updatedAt'])
+        && request.resource.data.snapshot is string && request.resource.data.snapshot.size() <= 900000
+        && request.resource.data.revision is int && request.resource.data.revision >= resource.data.revision
+        && request.resource.data.updatedAt == request.time
+        && request.time >= resource.data.updatedAt + duration.value(1, 's');
     }
     // Public, client-reported scores. Every captain can only update their own row.
     match /leaderboard/{uid} {
@@ -74,6 +80,9 @@ service cloud.firestore {
         && request.resource.data.username == resource.data.username
         && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

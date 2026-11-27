@@ -829,6 +829,32 @@ export class SaveSystem {
     return Math.max(0, Math.ceil((this.data.buffs[buffId] - Date.now()) / 1000));
   }
 
+  clearDebuffs() {
+    if (!this.data.buffs) return false;
+    let cleared = false;
+    for (const id of ['cursedBarnacles', 'foggedLens']) {
+      if (this.data.buffs[id]) {
+        delete this.data.buffs[id];
+        cleared = true;
+      }
+    }
+    if (cleared) this.save();
+    return cleared;
+  }
+
+  awardSealedCrate(crateRank = 2) {
+    const rankCfg = CRATE_RANKS.find(r => r.rank === crateRank) || CRATE_RANKS[1] || CRATE_RANKS[0];
+    return this.addItemToInventory(this.createInventoryItem({
+      id: rankCfg.id,
+      name: rankCfg.name,
+      crateRank: rankCfg.rank,
+      isCrate: true,
+      category: 'crate',
+      rarity: rankCfg.rarity || 'uncommon',
+      value: 0,
+    }));
+  }
+
   // --- Inventory Management ---
   getInventory() {
     if (!Array.isArray(this.data.inventory)) {

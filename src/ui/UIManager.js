@@ -26,7 +26,7 @@ import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/alman
 import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
-import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt } from './CustomVectorArt.js';
+import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt, NPC_PORTRAITS, QUEST_ART } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 import { drawVesselHull, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
 import { renderAquariumFamiliarCaptain } from '../systems/EasterEggs.js';
@@ -1066,6 +1066,14 @@ export class UIManager {
           const sec = this.saveSystem.getBuffRemainingSeconds('cartographerMark');
           buffsHtml += `<span class="hud-buff-pill" title="Secret Hotspot Active">🗺️ Survey Mark (${sec}s)</span>`;
         }
+        if (this.saveSystem.hasActiveBuff('cursedBarnacles')) {
+          const sec = this.saveSystem.getBuffRemainingSeconds('cursedBarnacles');
+          buffsHtml += `<span class="hud-buff-pill hud-debuff-pill" title="Reel speed slowed by sticky hull barnacles (-15%)">⚓ Barnacle Drag (${sec}s)</span>`;
+        }
+        if (this.saveSystem.hasActiveBuff('foggedLens')) {
+          const sec = this.saveSystem.getBuffRemainingSeconds('foggedLens');
+          buffsHtml += `<span class="hud-buff-pill hud-debuff-pill" title="Lantern visibility radius dimmed (-28%)">🌫️ Brine Mist (${sec}s)</span>`;
+        }
         if (this._lastBuffsHtml !== buffsHtml) {
           this._lastBuffsHtml = buffsHtml;
           buffsContainer.innerHTML = buffsHtml;
@@ -1282,19 +1290,23 @@ export class UIManager {
 
     let optionsHtml = '';
     npc.options.forEach((opt, idx) => {
+      const badgeHtml = opt.badge
+        ? `<span class="npc-opt-badge ${/risk|gamble/i.test(opt.badge) ? 'is-risk' : 'is-perk'}">${opt.badge}</span>`
+        : '';
       optionsHtml += `
         <button type="button" class="npc-option-card" data-idx="${idx}" aria-label="${opt.label}">
-          <div class="npc-option-label">${opt.label}</div>
+          <div class="npc-option-label">${opt.label} ${badgeHtml}</div>
           <div class="npc-option-desc">${opt.desc}</div>
         </button>
       `;
     });
 
+    const portraitArt = NPC_PORTRAITS[npc.id] || NPC_PORTRAITS.drifting_merchant;
     const contentHtml = `
       <div class="npc-encounter-modal">
         <div class="npc-header-bar" style="border-bottom: 2px solid ${npc.themeColor || '#38bdf8'};">
-          <div class="npc-avatar-box" style="border-color: ${npc.themeColor || '#38bdf8'};">
-            <span class="npc-avatar-emoji">${npc.avatar}</span>
+          <div class="npc-avatar-box npc-portrait-art" style="border-color: ${npc.themeColor || '#38bdf8'};">
+            ${portraitArt}
           </div>
           <div class="npc-meta">
             <h3 class="npc-name" style="color: ${npc.themeColor || '#f8fafc'};">${npc.name}</h3>
@@ -1316,7 +1328,7 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal(`✨ Atmospheric Encounter: ${npc.name}`, contentHtml);
+    this.openModal(`Harbor Encounter: ${npc.name}`, contentHtml);
 
     const cards = document.querySelectorAll('.npc-option-card');
     cards.forEach((card) => {
@@ -2660,12 +2672,12 @@ export class UIManager {
         <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; gap: 10px;">
           <div>
             <h3 style="margin: 0; color: #f8fafc; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <span>📋</span> Harbor Noticeboard
+              <span class="quest-art-sm">${QUEST_ART.noticeboard}</span> Harbor Noticeboard
             </h3>
-            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem; text-align: center;">Complete daily coastal tasks to earn gold, research XP, and bonus rewards!</p>
+            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 0.88rem; text-align: center;">Complete daily coastal tasks to earn gold, research XP, and unique loot rewards!</p>
           </div>
-          <div style="background: rgba(30, 41, 59, 0.8); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: #fef08a; font-weight: 700; border: 1px solid rgba(254, 240, 138, 0.2); margin: 0 auto;">
-            ⭐ ${completedTotal} Missions Completed
+          <div style="background: rgba(30, 41, 59, 0.8); padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; color: #fef08a; font-weight: 700; border: 1px solid rgba(254, 240, 138, 0.2); margin: 0 auto; display: inline-flex; align-items: center; gap: 6px;">
+            <span class="quest-art-xs">${MISC_ART.trophyCup}</span> ${completedTotal} Missions Completed
           </div>
         </div>
 
@@ -2675,19 +2687,24 @@ export class UIManager {
     quests.forEach((q) => {
       const pct = Math.min(100, Math.round((q.current / q.target) * 100));
       const isComplete = q.isComplete;
+      const qArt = QUEST_ART[q.category] || QUEST_ART.fishing;
+      const rArt = q.realmId && REALM_ART[q.realmId] ? `<span class="quest-art-xs">${REALM_ART[q.realmId]}</span>` : '';
+      const lootArt = q.rewardLoot
+        ? (q.rewardLoot.kind === 'crate' ? QUEST_ART.lootCrate : q.rewardLoot.kind === 'coins_bonus' ? QUEST_ART.lootGold : QUEST_ART.lootBuff)
+        : '';
 
       questsHtml += `
         <div class="quest-card" style="background: ${isComplete ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.8)'}; border: 1px solid ${isComplete ? '#f59e0b' : 'rgba(255, 255, 255, 0.08)'}; border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 14px; width: 100%; box-sizing: border-box; transition: all 0.2s;">
           <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; width: 100%;">
-            <div style="font-size: 2.2rem; background: rgba(0, 0, 0, 0.3); width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-              ${q.icon}
+            <div class="quest-art-icon" style="background: rgba(0, 0, 0, 0.35); width: 58px; height: 58px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 1px solid rgba(56,189,248,0.22);">
+              ${qArt}
             </div>
             <div style="display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%;">
               <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
                 <h4 style="margin: 0; color: #f8fafc; font-size: 1.05rem; text-align: center;">${q.title}</h4>
-                ${q.rarity === 'rare' ? `<span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(240, 171, 252, 0.2); color: #f0abfc; border: 1px solid rgba(240, 171, 252, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700;">✨ RARE QUEST</span>` : ''}
+                ${q.rarity === 'rare' ? `<span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(240, 171, 252, 0.2); color: #f0abfc; border: 1px solid rgba(240, 171, 252, 0.4); padding: 2px 7px; border-radius: 4px; font-weight: 700;">RARE QUEST</span>` : ''}
                 <span style="font-size: 0.75rem; text-transform: uppercase; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${q.category}</span>
-                <span style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.15); color: #facc15; padding: 2px 7px; border-radius: 4px; font-weight: 700;">${q.realmIcon || '🏝️'} Sea ${q.realmId}: ${q.realmName || 'Sunlit Shoals'}</span>
+                <span style="font-size: 0.75rem; background: rgba(245, 158, 11, 0.15); color: #facc15; padding: 2px 7px; border-radius: 4px; font-weight: 700; display:inline-flex; align-items:center; gap:4px;">${rArt} Sea ${q.realmId}: ${q.realmName || 'Sunlit Shoals'}</span>
               </div>
               <p style="margin: 6px 0 10px 0; color: #cbd5e1; font-size: 0.88rem; line-height: 1.4; text-align: center; max-width: 520px;">${q.description}</p>
 
@@ -2702,12 +2719,12 @@ export class UIManager {
 
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%;">
             <div style="font-size: 0.95rem; color: #fef08a; font-weight: 700; text-align: center;">
-              💰 +${q.rewardCoins.toLocaleString()} Coins • ⭐ +${q.rewardXp} XP ${q.rewardGems ? `• <span style="color:#f0abfc;">💎 +${q.rewardGems} Gem${q.rewardGems > 1 ? 's' : ''}</span>` : ''}
-              ${q.realmId > 1 ? `<span style="display: block; font-size: 0.76rem; color: #38bdf8; font-weight: 600; margin-top: 2px;">⚡ Scaled for ${q.realmName}</span>` : ''}
+              +$${q.rewardCoins.toLocaleString()} Coins • +${q.rewardXp} XP ${q.rewardGems ? `• <span style="color:#f0abfc;">+${q.rewardGems} Gem${q.rewardGems > 1 ? 's' : ''}</span>` : ''}
+              ${q.realmId > 1 ? `<span style="display: block; font-size: 0.76rem; color: #38bdf8; font-weight: 600; margin-top: 2px;">Scaled for ${q.realmName}</span>` : ''}
             </div>
             ${q.rewardLoot ? `
               <div class="quest-loot-pill" title="${q.rewardLoot.desc}">
-                <span>${q.rewardLoot.icon}</span>
+                <span class="quest-art-xs">${lootArt}</span>
                 <strong>${q.rewardLoot.name}</strong>
                 <span class="quest-loot-sub">· ${q.rewardLoot.desc}</span>
               </div>
@@ -2715,7 +2732,7 @@ export class UIManager {
             ${
               isComplete
                 ? `<button class="btn btn-primary btn-claim-quest" data-quest="${q.id}" style="padding: 9px 24px; font-size: 0.92rem; font-weight: 700; background: #f59e0b; border-color: #d97706; color: #1e293b; margin: 0 auto;">
-                    🎁 Claim Reward
+                    Claim Reward
                    </button>`
                 : `<button class="btn btn-disabled" disabled style="padding: 8px 20px; font-size: 0.85rem; opacity: 0.6; margin: 0 auto;">In Progress (${pct}%)</button>`
             }
@@ -2727,12 +2744,12 @@ export class UIManager {
     questsHtml += `
         </div>
         <div style="margin-top: 18px; text-align: center; color: #94a3b8; font-size: 0.85rem; background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 8px;">
-          💡 <em>When you claim a mission, a new harbor notice will take its place immediately!</em>
+          <em>When you claim a mission, a new harbor notice will take its place immediately!</em>
         </div>
       </div>
     `;
 
-    this.openModal("📋 Quests", questsHtml);
+    this.openModal("Harbor Noticeboard Quests", questsHtml);
 
     document.querySelectorAll('.btn-claim-quest').forEach((btn) => {
       const handleClaim = (e) => {

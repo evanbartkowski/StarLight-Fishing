@@ -3721,6 +3721,78 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   background: rgba(3, 105, 161, 0.35) !important;
 }
 
+.hud-debuff-pill {
+  border-color: rgba(239, 68, 68, 0.72) !important;
+  color: #fecaca !important;
+  background: rgba(127, 29, 29, 0.55) !important;
+}
+
+.npc-portrait-art {
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.npc-portrait-art svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.npc-opt-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 999px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.npc-opt-badge.is-perk {
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+}
+
+.npc-opt-badge.is-risk {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+}
+
+.quest-art-icon svg {
+  width: 40px;
+  height: 40px;
+}
+
+.quest-art-sm {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+}
+
+.quest-art-sm svg {
+  width: 24px;
+  height: 24px;
+}
+
+.quest-art-xs {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+}
+
+.quest-art-xs svg {
+  width: 16px;
+  height: 16px;
+}
+
 .gacha-card-name {
   font-size: 0.72rem;
   font-weight: 700;

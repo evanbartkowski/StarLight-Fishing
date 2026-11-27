@@ -490,7 +490,7 @@ test('dismissing an NPC allows future visitors and open menus block popup interr
   ui.activeModal = null;
   npc.update(100);
   assert.equal(npc.activeEncounter, null);
-  assert.equal(NPC_DEFINITIONS.length, 7);
+  assert.equal(NPC_DEFINITIONS.length, 8);
 });
 
 test('depth populations taper fish gently and increase hazards and treasure deeper down', () => {

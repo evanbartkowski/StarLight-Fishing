@@ -8,6 +8,7 @@ export class ChatManager {
     this.onMessageReceived = null;
     this.loadBackend = () => import('./FleetFirebase.js');
     this.retryAt = 0;
+    this._sendTimestamps = [];
   }
 
   async connect() {
@@ -38,10 +39,22 @@ export class ChatManager {
       }
     }
     if (!this.saveSystem.isChatUnlocked() || typeof text !== 'string' || !text.trim() || this.sending) return false;
+    const now = Date.now();
+    this._sendTimestamps = (this._sendTimestamps || []).filter(ts => now - ts < 10000);
+    if (this._sendTimestamps.length >= 5) {
+      this.lastError = 'rate-limited';
+      return false;
+    }
+    this._sendTimestamps.push(now);
+    // Strip control / zero-width spoofing characters
+    const sanitized = text.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u202A-\u202E]/g, '').trim().slice(0, 180);
+    if (!sanitized) return false;
     this.sending = true;
     try {
       await this.connect();
-      await (await this.loadBackend()).send(text.trim().slice(0, 180), accountManager.getCurrentUser() || 'Guest Mariner');
+      const senderName = String(accountManager.getCurrentUser() || 'Guest Mariner')
+        .replace(/[\u0000-\u001F\u007F\u200B-\u200F\u202A-\u202E]/g, '').slice(0, 40) || 'Guest Mariner';
+      await (await this.loadBackend()).send(sanitized, senderName);
       return true;
     } catch (error) { this.lastError = error.code || error.message; return false; }
     finally { this.sending = false; }

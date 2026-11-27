@@ -1556,5 +1556,100 @@ export function getCrateLootArt(item, grade = 'fair') {
   return DREDGED_TREASURE_ART.generic_treasure;
 }
 
+/**
+ * 9. NPC CHARACTER PORTRAITS & NOTICEBOARD QUEST ART (Zero Emojis)
+ */
+export const NPC_PORTRAITS = {
+  drifting_merchant: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#1e293b"/>
+    <path d="M9 44c2-11 28-11 30 0z" fill="#78350f" stroke="#f59e0b" stroke-width="1.4"/>
+    <circle cx="24" cy="20" r="8.5" fill="#fed7aa" stroke="#9a3412" stroke-width="1.2"/>
+    <path d="M15 21c2 7 16 7 18 0-2 3-16 3-18 0z" fill="#713f12"/>
+    <path d="M13 15c4-7 18-7 22 0H13z" fill="#b45309" stroke="#fbbf24" stroke-width="1.2"/>
+    <circle cx="21" cy="19" r="1.3" fill="#0f172a"/><circle cx="27" cy="19" r="1.3" fill="#0f172a"/>
+    <circle cx="33" cy="22" r="2.2" fill="none" stroke="#facc15" stroke-width="1.5"/>
+  `),
+  blind_siren: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#0c1a3a"/>
+    <path d="M11 42c1-13 5-22 13-22s12 9 13 22H11z" fill="#0284c7" stroke="#38bdf8" stroke-width="1.4"/>
+    <path d="M14 23c-3-9 2-17 10-17s13 8 10 17" fill="#0ea5e9" stroke="#bae6fd" stroke-width="1.2"/>
+    <circle cx="24" cy="19" r="7.5" fill="#e0f2fe"/>
+    <polygon points="24,6 26,11 31,11 27,14 28,18 24,15 20,18 21,14 17,11 22,11" fill="#fde047"/>
+    <circle cx="21" cy="19" r="1.2" fill="#0369a1"/><circle cx="27" cy="19" r="1.2" fill="#0369a1"/>
+    <circle cx="24" cy="30" r="2.3" fill="#f8fafc" stroke="#38bdf8"/>
+  `),
+  ghost_smuggler: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#1e1035"/>
+    <path d="M10 44c2-11 26-11 28 0z" fill="#312e81" stroke="#a855f7" stroke-width="1.4"/>
+    <circle cx="24" cy="21" r="8" fill="#5eead4" fill-opacity="0.72" stroke="#99f6e4" stroke-width="1.2"/>
+    <path d="M11 16l13-7 13 7-4 3H15l-4-3z" fill="#0f172a" stroke="#c084fc" stroke-width="1.4"/>
+    <circle cx="21" cy="20" r="1.7" fill="#fde047"/><circle cx="27" cy="20" r="1.7" fill="#fde047"/>
+    <path d="M21 25h6" stroke="#0f172a" stroke-width="1.4"/>
+  `),
+  wayward_cartographer: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#062c24"/>
+    <path d="M10 44c2-11 26-11 28 0z" fill="#065f46" stroke="#34d399" stroke-width="1.4"/>
+    <circle cx="24" cy="20" r="8" fill="#fde6c8"/>
+    <path d="M16 16c2-5 14-5 16 0z" fill="#cbd5e1"/>
+    <circle cx="21" cy="20" r="2.6" fill="none" stroke="#fbbf24" stroke-width="1.4"/>
+    <circle cx="27" cy="20" r="2.6" fill="none" stroke="#fbbf24" stroke-width="1.4"/>
+    <line x1="23.6" y1="20" x2="24.4" y2="20" stroke="#fbbf24" stroke-width="1.4"/>
+    <rect x="30" y="29" width="12" height="8" rx="2" fill="#fef3c7" stroke="#b45309" stroke-width="1.2"/>
+  `),
+  harbor_cook: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#2c1608"/>
+    <path d="M10 44c2-11 26-11 28 0z" fill="#ea580c" stroke="#fed7aa" stroke-width="1.4"/>
+    <rect x="17" y="30" width="14" height="14" fill="#f8fafc"/>
+    <circle cx="24" cy="21" r="8" fill="#fed7aa"/>
+    <path d="M15 14c0-5 18-5 18 0v3H15v-3z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+    <circle cx="21" cy="20" r="1.2" fill="#0f172a"/><circle cx="27" cy="20" r="1.2" fill="#0f172a"/>
+    <path d="M21 24q3 2 6 0" stroke="#9a3412" stroke-width="1.3" fill="none"/>
+  `),
+  lantern_keeper: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#131634"/>
+    <path d="M10 44c2-11 26-11 28 0z" fill="#ca8a04" stroke="#fef08a" stroke-width="1.4"/>
+    <circle cx="24" cy="20" r="8" fill="#fed7aa"/>
+    <path d="M14 16c4-6 16-6 20 0H14z" fill="#eab308" stroke="#78350f"/>
+    <circle cx="21" cy="20" r="1.2" fill="#0f172a"/><circle cx="27" cy="20" r="1.2" fill="#0f172a"/>
+    <rect x="34" y="24" width="7" height="10" rx="1.5" fill="#fde047" stroke="#b45309" stroke-width="1.3"/>
+  `),
+  tide_researcher: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#082f49"/>
+    <path d="M10 44c2-11 26-11 28 0z" fill="#0d9488" stroke="#5eead4" stroke-width="1.4"/>
+    <circle cx="24" cy="20" r="8" fill="#fde6c8"/>
+    <path d="M16 18c2-8 14-8 16 0-3-4-13-4-16 0z" fill="#7c2d12"/>
+    <circle cx="21" cy="20" r="1.2" fill="#0f172a"/><circle cx="27" cy="20" r="1.2" fill="#0f172a"/>
+    <circle cx="35" cy="28" r="4" fill="#bae6fd" stroke="#cbd5e1" stroke-width="1.6"/>
+  `),
+  ghost_captain_vane: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#042f2e"/>
+    <path d="M10 44c2-11 26-11 28 0z" fill="#134e4a" stroke="#5eead4" stroke-width="1.5"/>
+    <circle cx="24" cy="21" r="8" fill="#99f6e4" fill-opacity="0.75"/>
+    <path d="M13 15l11-6 11 6H13z" fill="#0f292e" stroke="#2dd4bf" stroke-width="1.4"/>
+    <circle cx="21" cy="20" r="1.5" fill="#2dd4bf"/><circle cx="27" cy="20" r="1.5" fill="#2dd4bf"/>
+  `),
+  deep_trench_broker: svgWrap(`
+    <rect width="48" height="48" rx="10" fill="#1c1917"/>
+    <path d="M9 44c2-11 28-11 30 0z" fill="#7c2d12" stroke="#fb923c" stroke-width="1.4"/>
+    <circle cx="24" cy="20" r="10" fill="#b45309" stroke="#fbbf24" stroke-width="1.8"/>
+    <circle cx="24" cy="20" r="6" fill="#0f172a" stroke="#38bdf8" stroke-width="1.6"/>
+    <line x1="20" y1="20" x2="28" y2="20" stroke="#7dd3fc" stroke-width="1.2"/>
+    <line x1="24" y1="16" x2="24" y2="24" stroke="#7dd3fc" stroke-width="1.2"/>
+  `),
+};
+
+export const QUEST_ART = {
+  noticeboard: svgWrap(`<rect x="8" y="8" width="32" height="34" rx="4" fill="#78350f" stroke="#fbbf24" stroke-width="2"/><rect x="13" y="14" width="22" height="22" rx="2" fill="#fef3c7"/><line x1="17" y1="20" x2="31" y2="20" stroke="#9a3412" stroke-width="2"/><line x1="17" y1="26" x2="29" y2="26" stroke="#9a3412" stroke-width="2"/><line x1="17" y1="31" x2="25" y2="31" stroke="#9a3412" stroke-width="2"/><circle cx="24" cy="11" r="2.2" fill="#facc15"/>`),
+  fishing: svgWrap(`<ellipse cx="22" cy="25" rx="12" ry="7" fill="#38bdf8" stroke="#0284c7" stroke-width="1.6"/><polygon points="33,25 42,18 42,32" fill="#0ea5e9"/><circle cx="15" cy="23" r="1.6" fill="#0f172a"/>`),
+  exploration: SHOP_ART.nauticalAstrolabe,
+  treasure: DREDGED_TREASURE_ART.pirate_chest,
+  idle: SHOP_ART.seabedTraps,
+  cozy: TRINKET_ART.lucky_cat,
+  skill: HULL_ART.standard,
+  lootBuff: svgWrap(`<rect x="20" y="8" width="8" height="5" rx="1" fill="#b45309"/><path d="M20 13l-9 18c-1 2 0 5 3 5h20c3 0 4-3 3-5l-9-18H20z" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8"/><path d="M13 30c3-2 18-2 22 0l2 3c1 2 0 3-3 3H14c-3 0-4-1-3-3l2-3z" fill="#38bdf8"/>`),
+  lootCrate: svgWrap(`<rect x="10" y="13" width="28" height="24" rx="3" fill="#b45309" stroke="#fbbf24" stroke-width="1.8"/><line x1="10" y1="22" x2="38" y2="22" stroke="#fde047" stroke-width="2"/><rect x="21" y="19" width="6" height="8" rx="1" fill="#fde047"/>`),
+  lootGold: BOAT_UI_ART.coinIcon,
+};
+
 
 

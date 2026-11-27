@@ -94,6 +94,39 @@ export const NPC_DEFINITIONS = [
           return { success: true, message: '🪙 Traded beachcomber scraps to Tony for +$150 coins!' };
         },
       },
+      {
+        id: 'tony_mystery_trunk',
+        badge: 'High Risk',
+        baseCoins: 520,
+        baseXp: 160,
+        label: 'Pry Open Tony\'s Sealed Smuggler Trunk ($200)',
+        desc: 'Gamble $200: 65% chance to pull a Sealed Strongbox Crate + Gold Windfall, or 35% chance of Barnacle Trap debuff.',
+        cost: 200,
+        makeLabel: () => 'Pry Open Tony\'s Sealed Smuggler Trunk ($200)',
+        makeDesc: (coins, xp, mult, tag) => `Gamble $200: 65% chance to claim +$${coins.toLocaleString()} & a Sealed Strongbox, or 35% chance a trap inflicts Barnacle Drag debuff.${tag}`,
+        makeAction: (coins, xp) => (saveSystem) => {
+          if (!saveSystem.spendCoins(200)) return { success: false, message: 'You need $200 coins to buy the trunk key!' };
+          if (Math.random() < 0.65) {
+            saveSystem.addCoins(coins);
+            saveSystem.addXp(xp);
+            saveSystem.awardSealedCrate?.(2);
+            return { success: true, message: `Jackpot! Unlocked Strongbox Crate +$${coins.toLocaleString()} & +${xp} XP!` };
+          }
+          saveSystem.addBuff('cursedBarnacles', 90000);
+          return { success: false, message: 'Snap! Sticky barnacles burst out — -15% Reel Speed debuff for 90s!' };
+        },
+        action: (saveSystem) => {
+          if (!saveSystem.spendCoins(200)) return { success: false, message: 'You need $200 coins!' };
+          if (Math.random() < 0.65) {
+            saveSystem.addCoins(520);
+            saveSystem.addXp(160);
+            saveSystem.awardSealedCrate?.(2);
+            return { success: true, message: 'Jackpot! Unlocked Strongbox Crate +$520 & +160 XP!' };
+          }
+          saveSystem.addBuff('cursedBarnacles', 90000);
+          return { success: false, message: 'Snap! Barnacles clung to your hull — Reel Speed slowed for 90s!' };
+        },
+      },
     ],
   },
   {
@@ -147,6 +180,32 @@ export const NPC_DEFINITIONS = [
           return { success: false, message: 'You lack $100 coins for the tribute.' };
         },
       },
+      {
+        id: 'abyssal_hymn',
+        badge: 'Gamble',
+        baseXp: 340,
+        label: 'Channel Forbidden Abyssal Hymn (Free)',
+        desc: 'Gain +1 Gem and massive XP—50% chance for 2x Gold Rush (3m), or 50% chance to dim your lantern (Brine Mist debuff).',
+        cost: 0,
+        makeLabel: (coins, xp) => `Channel Forbidden Abyssal Hymn (+1 Gem, +${xp} XP)`,
+        makeDesc: (coins, xp, mult, tag) => `Gain +1 Gem & +${xp} XP—50% chance for 2x Gold Rush (3m), or 50% chance Brine Mist dims your lantern for 90s.${tag}`,
+        makeAction: (coins, xp) => (saveSystem) => {
+          saveSystem.addGems(1);
+          saveSystem.addXp(xp);
+          if (Math.random() < 0.5) {
+            saveSystem.addBuff('goldSurge', 180000);
+            return { success: true, message: `Blessed by the deep song! +1 Gem, +${xp} XP & 2x Gold Rush (3m)!` };
+          }
+          saveSystem.addBuff('foggedLens', 90000);
+          return { success: true, message: `You claimed +1 Gem & +${xp} XP, but Brine Mist dimmed your lantern for 90s!` };
+        },
+        action: (saveSystem) => {
+          saveSystem.addGems(1);
+          saveSystem.addXp(340);
+          saveSystem.addBuff('foggedLens', 90000);
+          return { success: true, message: 'Claimed +1 Gem & +340 XP, though Brine Mist dimmed your lantern!' };
+        },
+      },
     ],
   },
   {
@@ -198,7 +257,9 @@ export const NPC_DEFINITIONS = [
             return { success: true, message: `🏆 Victory! Ye out-reeled Curtis! Won Corsair's Cursed Cache (+$${coins.toLocaleString()}, +${xp} XP)!` };
           } else {
             saveSystem.breakPerfectReelStreak();
-            return { success: false, message: "💀 The phantom's cutlass severed your line lead! Reel struggle lost." };
+            saveSystem.adjustCoins(-120);
+            saveSystem.addBuff('cursedBarnacles', 75000);
+            return { success: false, message: "Curtis clipped $120 & barnacle-snagged your reel for 75s!" };
           }
         },
         action: (saveSystem) => {
@@ -207,11 +268,37 @@ export const NPC_DEFINITIONS = [
             saveSystem.addCoins(450);
             saveSystem.addXp(180);
             saveSystem.recordPerfectReel();
-            return { success: true, message: "🏆 Victory! Ye out-reeled Curtis! Won Corsair's Cursed Cache (+$450, +180 XP)!" };
+            return { success: true, message: "Victory! Claimed Corsair Cache (+$450, +180 XP)!" };
           } else {
             saveSystem.breakPerfectReelStreak();
-            return { success: false, message: "💀 The phantom's cutlass severed your line lead! Reel struggle lost." };
+            saveSystem.adjustCoins(-120);
+            saveSystem.addBuff('cursedBarnacles', 75000);
+            return { success: false, message: "Reel struggle lost — lost $120 and suffered Barnacle Drag (75s)!" };
           }
+        },
+      },
+      {
+        id: 'phantom_pact',
+        badge: 'Unique Loot',
+        baseXp: 240,
+        label: 'Accept Cursed Smuggler Compass (Risky)',
+        desc: 'Immediately unlock 2x XP Surge (4m) & Compass Bobber—35% chance Curtis steals $180 coins on departure.',
+        cost: 0,
+        makeAction: (coins, xp) => (saveSystem) => {
+          saveSystem.addBuff('xpSurge', 240000);
+          saveSystem.unlockBobber?.('compass_bobber');
+          saveSystem.addXp(xp || 240);
+          if (Math.random() < 0.35) {
+            saveSystem.adjustCoins(-180);
+            return { success: true, message: 'Unlocked 2x XP Surge (4m) & Compass Bobber—Curtis pocketed $180 on his way out!' };
+          }
+          return { success: true, message: 'Claimed 2x XP Surge (4m) & unlocked Brass Compass Bobber!' };
+        },
+        action: (saveSystem) => {
+          saveSystem.addBuff('xpSurge', 240000);
+          saveSystem.unlockBobber?.('compass_bobber');
+          saveSystem.addXp(240);
+          return { success: true, message: 'Claimed 2x XP Surge (4m) & Brass Compass Bobber!' };
         },
       },
     ],
@@ -267,6 +354,28 @@ export const NPC_DEFINITIONS = [
             return { success: true, message: '🏛️ Alden cataloged your fossil findings: Awarded +$240 research grant (+150 XP)!' };
           }
           return { success: false, message: 'You have not excavated any prehistoric fossils yet!' };
+        },
+      },
+      {
+        id: 'deep_chart_bundle',
+        badge: 'Unique Loot',
+        baseXp: 210,
+        label: 'Commission Secret Trench Crate ($350)',
+        desc: 'Pay $350 for a guaranteed Sealed Corsair Crate (Rank 3) & Starlight Sight (3m).',
+        cost: 350,
+        makeAction: (coins, xp) => (saveSystem) => {
+          if (!saveSystem.spendCoins(350)) return { success: false, message: 'Need $350 coins to commission Alden\'s salvage.' };
+          saveSystem.awardSealedCrate?.(3);
+          saveSystem.addBuff('starlightClarity', 180000);
+          saveSystem.addXp(xp);
+          return { success: true, message: `Alden handed over a Sealed Corsair Crate & Starlight Sight (+${xp} XP)!` };
+        },
+        action: (saveSystem) => {
+          if (!saveSystem.spendCoins(350)) return { success: false, message: 'Need $350 coins.' };
+          saveSystem.awardSealedCrate?.(3);
+          saveSystem.addBuff('starlightClarity', 180000);
+          saveSystem.addXp(210);
+          return { success: true, message: 'Alden handed over a Sealed Corsair Crate & Starlight Sight!' };
         },
       },
     ],
@@ -391,6 +500,31 @@ NPC_DEFINITIONS.push(
           return { success: true, message: 'A warm meal and good advice. +100 XP!' };
         },
       },
+      {
+        id: 'mystery_chowder',
+        badge: 'Gamble',
+        baseXp: 190,
+        label: 'Sample Experimental Trench Chowder (Free)',
+        desc: '70% chance for 2x Gold Rush (3m) + cleanses debuffs; 30% chance indigestion costs $100 & slows reel speed.',
+        cost: 0,
+        makeAction: (coins, xp) => (save) => {
+          if (Math.random() < 0.7) {
+            save.clearDebuffs?.();
+            save.addBuff('goldSurge', 180000);
+            save.addXp(xp);
+            return { success: true, message: `Hearty spicy chowder! Cleared debuffs & 2x Gold Rush (3m) (+${xp} XP)!` };
+          }
+          save.adjustCoins(-100);
+          save.addBuff('cursedBarnacles', 60000);
+          return { success: false, message: 'Too spicy! Dropped $100 & slowed down for 60s!' };
+        },
+        action: (save) => {
+          save.clearDebuffs?.();
+          save.addBuff('goldSurge', 180000);
+          save.addXp(190);
+          return { success: true, message: 'Hearty spicy chowder! Cleared debuffs & 2x Gold Rush!' };
+        },
+      },
     ],
   },
   {
@@ -426,6 +560,39 @@ NPC_DEFINITIONS.push(
         action: (save) => {
           save.addXp(75);
           return { success: true, message: 'The lighthouse still shines for every returning boat. +75 XP!' };
+        },
+      },
+      {
+        id: 'trim_storm_wick',
+        badge: 'High Risk',
+        baseCoins: 380,
+        baseXp: 160,
+        label: 'Trim High-Pressure Storm Burner ($90)',
+        desc: '65% chance for 2x Gold Rush (3m) & Coins; 35% chance lamp flare inflicts Brine Mist debuff (75s) & burns $150.',
+        cost: 90,
+        makeAction: (coins, xp) => (save) => {
+          if (!save.spendCoins(90)) return { success: false, message: 'Need $90 for wick oil.' };
+          if (Math.random() < 0.65) {
+            save.addCoins(coins);
+            save.addXp(xp);
+            save.addBuff('goldSurge', 180000);
+            return { success: true, message: `Lantern blazed golden! +$${coins.toLocaleString()}, +${xp} XP & 2x Gold Rush!` };
+          }
+          save.adjustCoins(-60);
+          save.addBuff('foggedLens', 75000);
+          return { success: false, message: 'Flare soot smoked your goggles! Lost $60 extra & Brine Mist (75s)!' };
+        },
+        action: (save) => {
+          if (!save.spendCoins(90)) return { success: false, message: 'Need $90 for wick oil.' };
+          if (Math.random() < 0.65) {
+            save.addCoins(380);
+            save.addXp(160);
+            save.addBuff('goldSurge', 180000);
+            return { success: true, message: 'Lantern blazed golden! +$380, +160 XP & 2x Gold Rush!' };
+          }
+          save.adjustCoins(-60);
+          save.addBuff('foggedLens', 75000);
+          return { success: false, message: 'Flare soot smoked your goggles! Brine Mist debuff (75s)!' };
         },
       },
     ],
@@ -475,6 +642,104 @@ NPC_DEFINITIONS.push(
         action: (save) => {
           save.addXp(45);
           return { success: true, message: 'Check each realm in your journal for fish depth hints. +45 XP!' };
+        },
+      },
+      {
+        id: 'sponsor_expedition',
+        badge: 'Unique Loot',
+        baseXp: 220,
+        label: 'Co-Fund Deep Plankton Probe ($280)',
+        desc: 'Invest $280 into research for +1 Gem & Survey Mark hotspot reveal (5m).',
+        cost: 280,
+        makeAction: (coins, xp) => (save) => {
+          if (!save.spendCoins(280)) return { success: false, message: 'Need $280 to co-fund probe.' };
+          save.addGems(1);
+          save.addBuff('cartographerMark', 300000);
+          save.addXp(xp);
+          return { success: true, message: `Probe succeeded! +1 Gem, Survey Mark (5m) & +${xp} XP!` };
+        },
+        action: (save) => {
+          if (!save.spendCoins(280)) return { success: false, message: 'Need $280.' };
+          save.addGems(1);
+          save.addBuff('cartographerMark', 300000);
+          save.addXp(220);
+          return { success: true, message: 'Probe succeeded! +1 Gem & Survey Mark (5m)!' };
+        },
+      },
+    ],
+  },
+  {
+    id: 'deep_trench_broker',
+    name: 'Kael the Abyssal Salvager',
+    title: 'Hard-Suit Trench Diver',
+    avatar: '🤿⚓',
+    themeColor: '#fb923c',
+    greeting: 'Hull pressure builds fast down below. Want me to scrape barnacles off your tackle, trade a salvage canister, or gamble on pressure-sealed loot?',
+    options: [
+      {
+        id: 'scrape_hull',
+        badge: 'Cleanse',
+        baseXp: 180,
+        label: 'Scrape Hull Cleanse ($150)',
+        desc: 'Removes all active debuffs (Barnacle Drag, Brine Mist) and awards +180 XP.',
+        cost: 150,
+        makeAction: (coins, xp) => (save) => {
+          if (!save.spendCoins(150)) return { success: false, message: 'Need $150 coins for hull scraping.' };
+          save.clearDebuffs?.();
+          save.addXp(xp);
+          return { success: true, message: `Hull scrubbed clean! Debuffs removed & +${xp} XP!` };
+        },
+        action: (save) => {
+          if (!save.spendCoins(150)) return { success: false, message: 'Need $150 coins.' };
+          save.clearDebuffs?.();
+          save.addXp(180);
+          return { success: true, message: 'Hull scrubbed clean! Debuffs removed & +180 XP!' };
+        },
+      },
+      {
+        id: 'salvage_canister',
+        badge: 'Unique Loot',
+        label: 'Crack Unstable Deep Canister ($260)',
+        desc: '60% chance for Sealed Strongbox Crate + 2x XP Surge (4m); 40% chance canister ruptures for Brine Mist debuff (90s).',
+        cost: 260,
+        action: (save) => {
+          if (!save.spendCoins(260)) return { success: false, message: 'Need $260 coins.' };
+          if (Math.random() < 0.6) {
+            save.awardSealedCrate?.(2);
+            save.addBuff('xpSurge', 240000);
+            return { success: true, message: 'Recovered Sealed Strongbox Crate & 2x XP Surge (4m)!' };
+          }
+          save.addBuff('foggedLens', 90000);
+          return { success: false, message: 'Pressurized brine sprayed everywhere! Brine Mist debuff for 90s!' };
+        },
+      },
+      {
+        id: 'force_hatch',
+        badge: 'High Risk',
+        baseCoins: 750,
+        baseXp: 260,
+        label: 'Pry Open Sunken Safe Hatch (Free)',
+        desc: 'Bold move: 55% chance to claim big gold & XP; 45% chance metal shards cost $220 repairs + Barnacle Drag.',
+        cost: 0,
+        makeAction: (coins, xp) => (save) => {
+          if (Math.random() < 0.55) {
+            save.addCoins(coins);
+            save.addXp(xp);
+            return { success: true, message: `Prized open cleanly! Claimed +$${coins.toLocaleString()} & +${xp} XP!` };
+          }
+          save.adjustCoins(-220);
+          save.addBuff('cursedBarnacles', 90000);
+          return { success: false, message: 'Snapped a winch cable! Paid $220 repairs & Barnacle Drag (90s)!' };
+        },
+        action: (save) => {
+          if (Math.random() < 0.55) {
+            save.addCoins(750);
+            save.addXp(260);
+            return { success: true, message: 'Claimed +$750 & +260 XP!' };
+          }
+          save.adjustCoins(-220);
+          save.addBuff('cursedBarnacles', 90000);
+          return { success: false, message: 'Paid $220 repairs & Barnacle Drag!' };
         },
       },
     ],

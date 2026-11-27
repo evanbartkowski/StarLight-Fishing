@@ -658,8 +658,10 @@ let hudElapsed = 0;
 let lastHudState = null;
 
 // Fixed-step Update Logic (60fps)
-const update = (dt) => {
+const update = (rawDt) => {
   if (uiManager?.premiumBusy || uiManager?.socialBusy) return;
+  if (typeof document !== 'undefined' && document.hidden) return;
+  const dt = Math.min(50, Math.max(0, Number.isFinite(rawDt) ? rawDt : 16));
   const deltaSec = dt / 1000;
 
   // Batch aquarium tip playtime every 0.25s instead of allocating/checking every frame

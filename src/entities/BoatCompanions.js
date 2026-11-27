@@ -15,11 +15,56 @@ export class ShipsCat {
     this.pendingGift = null;
     this.petCount = 0;
     this.hasTinyRod = false;
+    // Rare swim-and-catch-fish adventure
+    this.swimAdventure = null;
+    this.swimCooldown = 70 + Math.random() * 80;
+  }
+
+  triggerRareSwim() {
+    this.swimAdventure = { timer: 0, duration: 7.5, fishCaught: false, xOffset: 0, yOffset: 0, facing: 1 };
+    return this.swimAdventure;
   }
 
   update(dt) {
     const sec = dt / 1000;
     this.tailTimer += sec * 2.5;
+
+    if (this.swimAdventure) {
+      const adv = this.swimAdventure;
+      adv.timer += sec;
+      const p = adv.timer / adv.duration;
+      if (p < 0.25) {
+        // Leap outward & down into the water
+        const k = p / 0.25;
+        adv.xOffset = 52 * k;
+        adv.yOffset = -Math.sin(k * Math.PI) * 18 + 30 * k;
+        adv.facing = 1;
+      } else if (p < 0.65) {
+        // Swim & catch tiny fish
+        const k = (p - 0.25) / 0.4;
+        adv.xOffset = 52 + Math.sin(k * Math.PI * 2) * 18;
+        adv.yOffset = 30 + Math.sin(adv.timer * 7) * 2.5;
+        adv.facing = Math.cos(k * Math.PI * 2) >= 0 ? 1 : -1;
+        if (k >= 0.45) adv.fishCaught = true;
+      } else if (p < 1.0) {
+        // Swim back & hop onto cushion
+        const k = (p - 0.65) / 0.35;
+        adv.xOffset = 52 * (1 - k);
+        adv.yOffset = 30 * (1 - k) - Math.sin(k * Math.PI) * 18;
+        adv.facing = -1;
+      } else {
+        this.swimAdventure = null;
+        this.swimCooldown = 95 + Math.random() * 90;
+      }
+    } else {
+      this.swimCooldown -= sec;
+      if (this.swimCooldown <= 0) {
+        this.swimCooldown = 60 + Math.random() * 80;
+        if (Math.random() < 0.32) {
+          this.triggerRareSwim();
+        }
+      }
+    }
 
     this.blinkTimer += sec;
     if (this.blinkTimer > 4.5) {
@@ -93,19 +138,32 @@ export class ShipsCat {
 
   render(ctx, vessel, hullStyle = 'standard') {
     const pos = this.getDeckPosition(vessel, hullStyle);
+    const adv = this.swimAdventure;
 
     ctx.save();
     try {
+      // Cushion stays on the vessel deck
+      ctx.save();
       ctx.translate(pos.x, pos.y);
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath();
+      ctx.ellipse(0, 6, 17, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#2dd4bf';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.restore();
 
-    // Cozy knitted cushion berth
-    ctx.fillStyle = '#0f766e';
-    ctx.beginPath();
-    ctx.ellipse(0, 6, 17, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#2dd4bf';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
+      ctx.translate(pos.x + (adv?.xOffset || 0), pos.y + (adv?.yOffset || 0));
+      if (adv?.facing === -1) ctx.scale(-1, 1);
+      if (adv && (adv.yOffset || 0) > 16) {
+        // Swimming water ripple under Angela
+        ctx.strokeStyle = 'rgba(186, 230, 253, 0.75)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.ellipse(0, 5, 16 + Math.sin(this.tailTimer * 4) * 3, 4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
 
     // Warm cat body (calico ginger-orange curled ball)
     const purrScale = this.isPurring ? 1.0 + Math.sin(this.tailTimer * 6) * 0.05 : 1.0;
@@ -213,6 +271,23 @@ export class ShipsCat {
     ctx.lineTo(-13, -9 + tailWag * 6);
     ctx.stroke();
 
+    // Little silver fish caught in Angela's mouth during her rare swim adventure!
+    if (adv?.fishCaught) {
+      ctx.save();
+      ctx.translate(12, -1);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.ellipse(2, 0, 4.5, 2.2, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(6, 0); ctx.lineTo(9, -2.5); ctx.lineTo(9, 2.5); ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
     // Tiny miniature fishing rod when Angela reaches 7 pets!
     if (this.hasTinyRod) {
       ctx.save();
@@ -260,16 +335,50 @@ export class PerchingPelican {
     this.isFlapping = false;
     this.diveTimer = 0;
     this.isDiving = false;
+    // Rare sky-soaring laps above the vessel
+    this.skyFlight = null;
+    this.flightCooldown = 60 + Math.random() * 80;
+  }
+
+  triggerRareFlight() {
+    this.skyFlight = { timer: 0, duration: 10.5, xOffset: 0, yOffset: 0, facing: 1 };
+    return this.skyFlight;
   }
 
   update(dt) {
     const sec = dt / 1000;
     this.flapTimer += sec;
-    if (this.flapTimer > 5.5) {
-      this.isFlapping = true;
-      if (this.flapTimer > 6.2) {
+    if (this.skyFlight) {
+      const fl = this.skyFlight;
+      fl.timer += sec;
+      const p = fl.timer / fl.duration;
+      if (p < 1.0) {
+        this.isFlapping = true;
+        // 2 wide scenic figure-8 / oval laps high in the sky over the boat
+        const angle = p * Math.PI * 4;
+        const envelope = Math.sin(p * Math.PI);
+        fl.xOffset = Math.sin(angle) * 145 * envelope;
+        fl.yOffset = -(72 + Math.sin(angle * 0.5) * 28) * Math.min(1, envelope * 2.2);
+        fl.facing = Math.cos(angle) >= 0 ? 1 : -1;
+      } else {
+        this.skyFlight = null;
         this.isFlapping = false;
-        this.flapTimer = 0;
+        this.flightCooldown = 90 + Math.random() * 90;
+      }
+    } else {
+      this.flightCooldown -= sec;
+      if (this.flightCooldown <= 0) {
+        this.flightCooldown = 55 + Math.random() * 80;
+        if (Math.random() < 0.32) {
+          this.triggerRareFlight();
+        }
+      }
+      if (this.flapTimer > 5.5) {
+        this.isFlapping = true;
+        if (this.flapTimer > 6.2) {
+          this.isFlapping = false;
+          this.flapTimer = 0;
+        }
       }
     }
 
@@ -305,10 +414,12 @@ export class PerchingPelican {
 
   render(ctx, vessel, hullStyle = 'standard') {
     const pos = this.getBowspritPosition(vessel, hullStyle);
+    const fl = this.skyFlight;
 
     ctx.save();
     try {
-      ctx.translate(pos.x, pos.y);
+      ctx.translate(pos.x + (fl?.xOffset || 0), pos.y + (fl?.yOffset || 0));
+      if (fl?.facing === -1) ctx.scale(-1, 1);
 
       // Body (white/grey pelican with subtle feather shading)
       const bodyGrad = ctx.createLinearGradient(-10, -5, 10, 8);
@@ -432,7 +543,10 @@ export class BackgroundDolphin {
     this.arcY = jumping ? -(Math.sin(jumpPhase) ** 2) * 78 : 0;
     const jumpVelocity = jumping ? (-78 * Math.PI / this.arcDuration) * Math.sin(jumpPhase * 2) : 0;
     const verticalVelocity = Math.cos(verticalPhase) * 16 * 1.4 + jumpVelocity;
-    this.rotation = Math.atan2(verticalVelocity, Math.max(0.001, Math.abs(horizontalVelocity))) * .7;
+    // Rare full 360-degree barrel flip on every 3rd leap cycle
+    const jumpIndex = Math.floor(this.timer / 18);
+    const spinOffset = (jumping && jumpIndex % 3 === 2) ? (cycle / this.arcDuration) * Math.PI * 2 : 0;
+    this.rotation = Math.atan2(verticalVelocity, Math.max(0.001, Math.abs(horizontalVelocity))) * .7 + spinOffset;
   }
 
   render(ctx, cameraY = 0) {
