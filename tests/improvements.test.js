@@ -352,7 +352,7 @@ test('All 11 Easter Eggs trigger, persist unlocks, and render with finite canvas
   assert.ok(drawCalls > 100);
 });
 
-test('Rare pet adventures, richer 3+ option quests/debuffs with SVG portraits, and security rate-limiting', async () => {
+test('Rare pet adventures, richer 3+ option quests/debuffs with illustrated portraits, and security rate-limiting', async () => {
   const { ShipsCat, PerchingPelican } = await import('../src/entities/BoatCompanions.js');
   const { NPC_DEFINITIONS } = await import('../src/systems/NPCSystem.js');
   const { NPC_PORTRAITS, QUEST_ART } = await import('../src/ui/CustomVectorArt.js');
@@ -391,11 +391,11 @@ test('Rare pet adventures, richer 3+ option quests/debuffs with SVG portraits, a
   assert.equal(bird.skyFlight, null);
   assert.ok(draws > 30);
 
-  // 2. NPC quests: every NPC has >= 3 options and bespoke SVG portrait art (no emoji avatars needed)
+  // 2. NPC quests: every NPC has >= 3 options and its own illustrated portrait.
   assert.ok(NPC_DEFINITIONS.length >= 8);
   for (const npc of NPC_DEFINITIONS) {
     assert.ok(npc.options.length >= 3, `${npc.id} should have >= 3 quest options`);
-    assert.ok(NPC_PORTRAITS[npc.id]?.includes('<svg'), `${npc.id} missing SVG portrait`);
+    assert.ok(NPC_PORTRAITS[npc.id]?.includes(`/art/npcs/${npc.id}.webp`), `${npc.id} missing its own portrait`);
   }
   assert.ok(QUEST_ART.noticeboard.includes('<svg') && QUEST_ART.lootBuff.includes('<svg'));
 

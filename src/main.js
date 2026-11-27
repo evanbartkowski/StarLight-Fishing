@@ -8,6 +8,7 @@ import { soundManager } from './audio/SoundManager.js';
 import { saveSystem } from './systems/SaveSystem.js';
 import { ParticleSystem } from './systems/ParticleSystem.js';
 import { Hook } from './entities/Hook.js';
+import { positionLineAttachment } from './entities/LineAttachment.js';
 import { OceanWorld } from './world/OceanWorld.js';
 import { UIManager } from './ui/UIManager.js';
 import { UPGRADE_DEFINITIONS } from './data/UpgradesData.js';
@@ -922,18 +923,15 @@ const update = (rawDt) => {
               hookTo: (h, idx) => {
                 safeItem.hook = h;
                 safeItem.hookIndex = idx;
-                safeItem.x = h.x;
-                safeItem.y = h.y - 20 - idx * 18;
+                positionLineAttachment(safeItem);
               },
               update: () => {
-                if (safeItem.hook) {
-                  safeItem.x = safeItem.hook.x;
-                  safeItem.y = safeItem.hook.y - 20 - (safeItem.hookIndex || 0) * 18;
-                }
+                positionLineAttachment(safeItem);
               },
               render: (ctx, camY) => {
-                const sx = safeItem.hook ? safeItem.hook.x : (safeItem.x || 0);
-                const sy = (safeItem.hook ? safeItem.hook.y - 20 - (safeItem.hookIndex || 0) * 18 : (safeItem.y || 0)) - camY;
+                positionLineAttachment(safeItem);
+                const sx = safeItem.x;
+                const sy = safeItem.y - camY;
                 ctx.save();
                 ctx.translate(sx, sy);
                 ctx.font = '24px sans-serif';

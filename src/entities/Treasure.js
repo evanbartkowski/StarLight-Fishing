@@ -2,6 +2,7 @@ import { drawChest } from '../rendering/ChestArtwork.js';
 import { RARITY_CONFIG } from '../data/FishData.js';
 import { getRandomBottleMessage } from '../data/DriftMessages.js';
 import { withCanvasState } from '../rendering/CanvasState.js';
+import { positionLineAttachment } from './LineAttachment.js';
 
 function drawRealmArtifact(ctx, item, time) {
   const name = (item.name || '').toLowerCase();
@@ -181,7 +182,6 @@ export class Treasure {
     this.radius = itemConfig.radius || 18;
     this.state = 'IDLE'; // 'IDLE' | 'HOOKED'
     this.hook = null;
-    this.hookOffset = { x: 0, y: 0 };
     this.timer = Math.random() * Math.PI * 2;
     // Rare Chest Impersonator (Mimic) disguised as a pirate chest
     this.isMimic = Boolean(itemConfig.isMimic) || (itemConfig.id === 'pirate_chest' && Math.random() < 0.04);
@@ -196,9 +196,8 @@ export class Treasure {
 
     if (this.state === 'IDLE') {
       this.y = this.baseY + Math.sin(this.timer) * 6 + bobOffset;
-    } else if (this.state === 'HOOKED' && hook) {
-      this.x = hook.x + this.hookOffset.x;
-      this.y = hook.y + this.hookOffset.y;
+    } else if (this.state === 'HOOKED') {
+      positionLineAttachment(this);
     }
   }
 
@@ -206,34 +205,17 @@ export class Treasure {
     this.state = 'HOOKED';
     this.hook = hook;
     this.hookIndex = slotIndex;
-    const side = slotIndex % 2 === 0 ? 1 : -1;
-    this.hookOffset = {
-      x: side * 3,
-      y: -(22 + slotIndex * 26),
-    };
-    this.x = hook.x + this.hookOffset.x;
-    this.y = hook.y + this.hookOffset.y;
+    positionLineAttachment(this);
   }
 
   render(ctx, cameraY = 0) {
+    if (this.state === 'HOOKED') positionLineAttachment(this);
     if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) return;
     return withCanvasState(ctx, () => this.renderArtifact(ctx, Number.isFinite(cameraY) ? cameraY : 0));
   }
 
   renderArtifact(ctx, cameraY) {
     const drawY = this.y - cameraY;
-
-    // Leader wire connecting to hook if hooked
-    if (this.state === 'HOOKED' && this.hook) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(this.hook.x, this.hook.y - cameraY);
-      ctx.lineTo(this.x, drawY);
-      ctx.stroke();
-      ctx.restore();
-    }
 
     ctx.save();
     try {

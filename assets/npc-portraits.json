@@ -1,0 +1,195 @@
+{
+  "purpose": "Distinct nautical quest encounter portraits",
+  "processing": "Resized to 320 square and encoded as WebP at quality 0.84; composition unchanged",
+  "assets": [
+    {
+      "id": "drifting_merchant",
+      "path": "public/art/npcs/drifting_merchant.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 28562,
+      "sha256": "32ab3a1333633ac67a0b8dc06965bf2f139d9eb080e89e56f652243ed521aff6",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "d34dc1a1ef9c52b52d4a05adaf699d0309e09f70bde853567c6a472b70b66bc5"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Tony the Drifting Merchant: cheerful middle-aged maritime trader, sun-worn tan face, curled chestnut beard, rust-orange wool cap, amber coat and teal scarf, small gold hoop earring, holding an unusual pearlescent shell in one hand. Amber lantern harbor bokeh."
+    },
+    {
+      "id": "blind_siren",
+      "path": "public/art/npcs/blind_siren.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 24164,
+      "sha256": "10c23cf15e710f91187d39186e7252d9ef849b9f888e3ffe3441c415fe679f7a",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "ea50bca5bee3ae4a500d417e32abc51f4410d7fea96892be6708edc82919e83f"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Issara the Stargazer Siren: ethereal sea oracle, pale blue skin, flowing deep-blue hair, gently closed eyes, delicate gold star tiara, turquoise fin-shaped ears, pearlescent shawl, holding a luminous celestial pearl. Midnight ocean and sparse stars, serene expression."
+    },
+    {
+      "id": "ghost_smuggler",
+      "path": "public/art/npcs/ghost_smuggler.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 26320,
+      "sha256": "4f3613d77e2e4c43ab17b5caf7931866421ecd49eeef5111bdf0958296932c5e",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "a537774cc8a2bda9e5debf6618cd4ba7d6b6aee61d28a59182f7f8d154c5e938"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Curtis the Ghost Smuggler: sly spectral pirate smuggler, translucent mint-green skin, mischievous yellow eyes, angular smiling face, violet bandana under a battered black tricorn, purple patched coat, copper earring, hugging a small contraband chest. Lavender ghost mist."
+    },
+    {
+      "id": "wayward_cartographer",
+      "path": "public/art/npcs/wayward_cartographer.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 23038,
+      "sha256": "1278faa324eaf8861b3d8c92633258caa00a9dfbfbe0fc1d84aa0e7ddcda3415",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "20f3adee0a623a96eda524867e4a49966ae45bba6547cf792f497da541fd9f8b"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Professor Alden the Cartographer: elderly scholarly maritime geographer, deep brown skin, short silver curls and moustache, round brass spectacles, forest-green traveling coat, rolled parchment sea chart held below face, brass compass pendant. Green sea haze and warm light."
+    },
+    {
+      "id": "harbor_cook",
+      "path": "public/art/npcs/harbor_cook.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 26330,
+      "sha256": "594779118cf224d548897486a63b45cad5c0cc8d6f404b81b198a1d91c1dfa2a",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "f9de3722d19b61e2f81cfdeb7a60bc7e45eaa578fb7387d26c571b481def5d91"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Mara the Harbor Cook: welcoming broad-faced middle-aged woman, warm brown skin, dark curly hair in a loose bun, terracotta blouse, cream kitchen apron, holding a wooden spoon over a copper soup pot visible at bottom. Cozy dockside kitchen, orange lamplight."
+    },
+    {
+      "id": "lantern_keeper",
+      "path": "public/art/npcs/lantern_keeper.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 25552,
+      "sha256": "92aa35a69c9261629f43ff382668981109aaf8eb1814f3ac5c89e2f2a4c751af",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "3cf4336bf44d295cad5a8d6f07c0dc282847ee20b64ed7f005b544586886e3f7"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Jun the Lantern Keeper: thoughtful young East Asian man, swept black hair, indigo weatherproof coat, mustard neck scarf, holding an old glowing brass lantern beside his chest, confident kind eyes. Indigo twilight pier and pale distant beacon."
+    },
+    {
+      "id": "tide_researcher",
+      "path": "public/art/npcs/tide_researcher.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 26918,
+      "sha256": "5ffb0478af8f5a4d780ae0bc0fe356352b3ec83caeeacfb4418bf030e389a289",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "8eda675e6e5d14d23617b820c1cfd39559a26cfafe95f5d213c01afb3eb55150"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Nell the Tide Researcher: curious young woman field naturalist, copper-red wavy bob, freckles, expressive green eyes, teal oilskin coat, brass goggles resting on head, holding a glass specimen vial containing a tiny luminous plankton, satchel strap. Turquoise tidepool glow."
+    },
+    {
+      "id": "deep_trench_broker",
+      "path": "public/art/npcs/deep_trench_broker.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 27134,
+      "sha256": "2bcb8f88bff33ae28d8e232c939fa8c5e4f8167198bd439acf04314e7318b969",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "ecf356de2260fcf4b5b12f4fe6f96a3c0147fb7510c6f1e1a382480d2b5dfbaa"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Kael the Abyssal Salvager: rugged mysterious hard-suit deep-sea diver, face suggested behind a round dark blue glass visor, large weathered copper diving helmet with visible bolts and side valves, heavy rust-red diving shoulders, a small salvaged coral-encrusted mechanical gear held at bottom. Deep ocean teal lighting."
+    },
+    {
+      "id": "ghost_captain_vane",
+      "path": "public/art/npcs/ghost_captain_vane.webp",
+      "dimensions": [
+        320,
+        320
+      ],
+      "bytes": 28490,
+      "sha256": "ae8d7eddbd274bd3784afad40622c65dedddd06613b144ce3f3c6c4375b11582",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "originalDimensions": [
+          1254,
+          1254
+        ],
+        "originalSha256": "b1eae27c6820910b9e97b1f4807044af0e1c234b7c336a6dff515bfef638f36b"
+      },
+      "prompt": "Use case: stylized-concept. Production NPC quest portrait for StarLight Fishing, a cozy fantasy nautical game. Square, close bust, centered face and shoulders with one distinctive prop, entire head visible, strong clear silhouette at 96px, premium hand-painted storybook illustration, confident ink edges, softly textured gouache, warm light from upper left, navy shadows, richly colored restrained palette, dark atmospheric sea backdrop. No lettering, words, numbers, symbols resembling text, watermark, borders, UI, collage or extra people. Ghost Captain Vane: imposing elder ghost sea captain, long pale seafoam beard, spectral turquoise face, luminous icy eyes, dark naval bicorne hat with an antique brass anchor ornament, emerald admiral coat with gold epaulettes, holding an old ship's wheel spoke. Moody green haunted sea mist. Distinct dignified serious expression."
+    }
+  ]
+}

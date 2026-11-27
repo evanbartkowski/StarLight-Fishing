@@ -28,7 +28,7 @@ export function offlineBuild() {
           audio.push(url); audioBytes += (await stat(file)).size;
           audioHash.update(relative); audioHash.update(await readFile(file));
         }
-        else if (relative !== 'sw.js' && /\.(html|js|css|png|ico|webmanifest|ttf|woff2?|txt)$/.test(relative)) {
+        else if (relative !== 'sw.js' && /\.(html|js|css|png|webp|ico|webmanifest|ttf|woff2?|txt)$/.test(relative)) {
           core.push(url); hash.update(relative); hash.update(await readFile(file));
         }
       }

@@ -49,8 +49,27 @@ try {
         check(Math.abs(relic.x - x) < 1e-6, `${type.id} drifted away from the actual line at ${camera}`);
       }
       for (const type of TREASURE_ITEMS) {
-        new Treasure(type, 300, camera + 300).render(p, camera); renderCount++;
+        const treasure = new Treasure(type, 300, camera + 300);
+        treasure.render(p, camera); renderCount++;
         check(state() === canvasState, `${type.id} leaked canvas state`);
+        treasure.hookTo(hook, renderCount % 9);
+        // Catches must follow a moving rod/line even when it moves after update.
+        hook.rodTip.x += 17;
+        const moveTo = p.moveTo;
+        let branches = 0;
+        p.moveTo = function (x, y) {
+          if (x === hook.x && y === hook.y - camera && this.getTransform().isIdentity) branches++;
+          return moveTo.call(this, x, y);
+        };
+        treasure.render(p, camera);
+        p.moveTo = moveTo;
+        check(branches === 0, `${type.id} drew a second wire from the hook`);
+        const t = (hook.y - treasure.y) / (hook.y - hook.rodTip.y);
+        const controlX = (hook.x + hook.rodTip.x) / 2 + Math.min(45, -hook.vx * .035) + Math.sin(.8 * 2.2) * 2.5;
+        const x = (1 - t) ** 2 * hook.x + 2 * (1 - t) * t * controlX + t ** 2 * hook.rodTip.x;
+        check(Math.abs(treasure.x - x) < 1e-6, `${type.id} drifted away from the rendered curve at ${camera}`);
+        check(state() === canvasState, `${type.id} hooked rendering leaked canvas state`);
+        hook.rodTip.x -= 17;
       }
       const original = p.quadraticCurveTo;
       let lineEnd;

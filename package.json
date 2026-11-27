@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tests/browser-smoke.mjs && node tests/aura-browser.mjs && node tests/visual-polish.mjs && node tests/voyage-polish.mjs && node tests/rendering-matrix.mjs && node tests/asset-identity.mjs",
+    "test:browser": "node tests/browser-smoke.mjs && node tests/aura-browser.mjs && node tests/visual-polish.mjs && node tests/voyage-polish.mjs && node tests/rendering-matrix.mjs && node tests/asset-identity.mjs && node tests/harbor-polish.mjs",
     "typecheck": "tsc --project tsconfig.json",
     "build": "vite build && npm run favicon:check",
     "favicon:generate": "node scripts/generate-favicons.mjs",

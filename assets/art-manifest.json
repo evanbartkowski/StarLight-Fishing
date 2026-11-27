@@ -13,6 +13,23 @@
   },
   "assets": [
     {
+      "path": "public/art/npcs/",
+      "role": "Nine distinct illustrated quest encounter portraits",
+      "source": {
+        "kind": "ai-generated",
+        "tool": "built-in image_gen",
+        "rights": "Original generated artwork created for this project",
+        "promptAndProvenanceFile": "assets/npc-portraits.json"
+      },
+      "technical_checks_passed": true,
+      "checks": [
+        "320 by 320 WebP images, 236508 bytes total",
+        "native portrait inspection at desktop and phone sizes",
+        "nine distinct portraits load in matching quest encounters",
+        "complete offline precache and image decoding"
+      ]
+    },
+    {
       "path": "src/rendering/FishAnatomy.js",
       "role": "72 species with distinct body shapes, fins and motifs",
       "source": {

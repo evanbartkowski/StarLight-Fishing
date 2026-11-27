@@ -48,6 +48,8 @@ try {
     assert.ok(installed.urls.some(url => /EndgameScene.*\.js$/.test(url)), 'offline must include the unopened ending and lazy-loaded screens');
     assert.ok(installed.urls.some(url => /game-world.*\.js$/.test(url)));
     assert.ok(installed.urls.some(url => /\.woff2?$|\.ttf$/.test(url)), 'offline font must be local');
+    const portraits = installed.urls.filter(url => url.startsWith('/art/npcs/') && url.endsWith('.webp'));
+    assert.equal(portraits.length, 9, 'every quest portrait must be included in the offline download');
     assert.ok(!installed.urls.some(url => url.endsWith('.mp3')), 'large soundtracks require the explicit download button');
     // Exercise the real optional pack locally; production checks avoid downloading 153 MB.
     if (width === 1280 && process.env.TEST_OFFLINE_MUSIC === '1') {
@@ -73,6 +75,11 @@ try {
     assert.equal(await page.locator('#btn-install-game').evaluate(node => node === document.activeElement), true);
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
+    const portraitStatus = await page.evaluate(async urls => Promise.all(urls.map(async url => {
+      const image = new Image(); image.src = url; await image.decode();
+      return [image.naturalWidth, image.naturalHeight];
+    })), portraits);
+    assert.ok(portraitStatus.every(([w, h]) => w === 320 && h === 320), 'all NPC art must decode without a network connection');
     await page.click('#btn-guest-start');
     await page.waitForFunction(() => document.getElementById('welcome-popup').style.display === 'none');
     if (width < 500) await page.touchscreen.tap(40, 500); else await page.mouse.click(40, 500);

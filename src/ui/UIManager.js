@@ -347,8 +347,8 @@ export class UIManager {
 
       </div>
 
-      <div id="world-event-banner" hidden role="status"></div>
-      <div class="hud-buffs-container" id="hud-buffs" aria-live="polite"></div>
+      <div class="hud-secondary">
+      <div class="hud-buffs-container" id="hud-buffs" role="region" aria-label="Active effects" tabindex="0"></div>
 
       <div class="hud-center">
         <div class="depth-meter-container" id="hud-depth-container" style="display: none;">
@@ -370,6 +370,9 @@ export class UIManager {
             <div class="heat-bar-fill" id="hud-heat-fill"></div>
           </div>
         </div>
+      </div>
+
+      <div id="world-event-banner" hidden role="status"></div>
       </div>
 
       <div class="hud-right" id="hud-right">

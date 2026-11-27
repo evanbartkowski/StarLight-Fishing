@@ -529,6 +529,7 @@ html, body {
    HUD Top Bar
    ========================================= */
 #game-hud {
+  --hud-status-top: 56px;
   position: absolute;
   top: 0;
   left: 0;
@@ -725,17 +726,6 @@ html, body {
   pointer-events: none !important;
   transform: translateY(-16px);
   display: none !important;
-}
-
-#game-hud.hud-diving-mode .hud-center {
-  position: static;
-  top: auto;
-  left: auto;
-  transform: none;
-  margin-left: auto;
-  margin-right: auto;
-  max-width: calc(100vw - 380px);
-  min-width: 0;
 }
 
 #game-hud.hud-diving-mode .weather-display {
@@ -3405,8 +3395,19 @@ html, body {
 }
 
 /* Keep dive indicators centered and aligned with the top GUI row */
-#game-hud .hud-center {
+#game-hud .hud-secondary {
   position: absolute;
+  top: var(--hud-status-top);
+  left: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  pointer-events: none;
+}
+#game-hud .hud-center {
+  position: fixed;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
@@ -3416,17 +3417,54 @@ html, body {
   pointer-events: none;
   z-index: 11;
 }
+#game-hud:not(.hud-diving-mode) .hud-center { display: none; }
 @media (max-width: 800px) {
   #game-hud .hud-center {
     top: 6px;
     max-width: calc(100vw - 160px);
   }
 }
+/* Phones keep dive controls in the HUD rows instead of pushing them offscreen. */
+@media (max-width: 768px) {
+  #game-hud.hud-diving-mode .hud-center {
+    position: static;
+    transform: none;
+    margin: 0;
+    max-width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .hud-center .depth-meter-container { max-width: 100%; min-width: 0; }
+  .hud-center .zone-badge { min-width: 0; }
+}
 .hud-center button { pointer-events: auto; }
-#game-hud .hud-buffs-container:not(:empty) { position: fixed; z-index: 12; top: 116px; left: 50%; transform: translateX(-50%); width: min(700px, calc(100vw - 20px)); max-height: 42px; overflow: hidden; pointer-events: none; }
+#game-hud .hud-buffs-container:not(:empty) {
+  z-index: 12;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 36px));
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  gap: 5px;
+  overflow-x: auto;
+  padding-bottom: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent;
+  pointer-events: auto;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+}
 .hud-buffs-container:empty { display: none; }
-.hud-buff-pill { min-width: 0; max-width: 225px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-@media (max-width: 800px) { #game-hud .hud-buffs-container:not(:empty) { top: 101px; width: calc(100vw - 16px); } }
+.hud-buffs-container:focus-visible { outline: 2px solid #38bdf8; outline-offset: 2px; }
+.hud-buff-pill { flex: 0 0 auto; min-width: 0; max-width: 225px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; background-color: rgba(15, 32, 55, .94); }
+@media (max-width: 800px) {
+  #game-hud { --hud-status-top: 48px; }
+  #game-hud .hud-secondary { left: 4px; right: 4px; }
+  #game-hud .hud-buffs-container:not(:empty) { max-width: calc(100vw - 8px); }
+}
+@media (max-width: 768px) {
+  #game-hud .hud-secondary { left: 8px; right: 8px; }
+  #game-hud .hud-buffs-container:not(:empty) { max-width: calc(100vw - 16px); }
+}
 
 .customize-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; margin: 14px 0; }
 .customize-field { display: flex; flex-direction: column; gap: 6px; color: #cbd5e1; font-size: 0.85rem; }
@@ -3772,8 +3810,8 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 
 .npc-portrait-art {
-  width: 58px;
-  height: 58px;
+  width: 112px;
+  height: 112px;
   padding: 0;
   overflow: hidden;
   display: flex;
@@ -3781,10 +3819,14 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   justify-content: center;
 }
 
-.npc-portrait-art svg {
+.npc-portrait-art img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
   display: block;
+}
+@media (max-width: 500px) {
+  .npc-portrait-art { width: 88px; height: 88px; border-radius: 16px; }
 }
 
 .npc-opt-badge {
@@ -4407,11 +4449,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   display: none;
 }
 #world-event-banner:not([hidden]) {
-  position: fixed;
   z-index: 12;
-  top: 68px;
-  left: 16px;
-  transform: none;
   max-width: min(380px, calc(100vw - 32px));
   max-height: 52px;
   overflow: hidden;
@@ -4422,8 +4460,6 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 }
 @media (max-width: 800px) {
   #world-event-banner:not([hidden]) {
-    top: 62px;
-    left: 10px;
     max-width: calc(100vw - 20px);
     font-size: 10.5px;
   }
