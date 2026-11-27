@@ -182,7 +182,7 @@ export class Treasure {
     this.hookOffset = { x: 0, y: 0 };
     this.timer = Math.random() * Math.PI * 2;
     // Rare Chest Impersonator (Mimic) disguised as a pirate chest
-    this.isMimic = Boolean(itemConfig.isMimic) || (itemConfig.id === 'pirate_chest' && Math.random() < 0.09);
+    this.isMimic = Boolean(itemConfig.isMimic) || (itemConfig.id === 'pirate_chest' && Math.random() < 0.04);
     this.mimicRevealed = false;
     this.mimicBitten = false;
   }

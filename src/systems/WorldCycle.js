@@ -91,8 +91,8 @@ export class WorldCycle {
     }
     if (this.constellationState.lastNightKey !== nightKey) {
       this.constellationState.lastNightKey = nightKey;
-      // Rare starry fish constellation appears on ~38% of nights
-      this.constellationState.active = Math.random() < 0.38;
+      // Rare starry fish constellation appears on ~14% of nights
+      this.constellationState.active = Math.random() < 0.14;
       this.constellationState.clicked = new Set();
       this.constellationState.solved = false;
     }

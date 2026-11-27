@@ -23,6 +23,7 @@ import { accountManager } from './systems/AccountManager.js';
 import { recordDerbyDive } from './systems/WeeklyDerby.js';
 import { GemShop } from './ui/GemShop.js';
 import { handleConstellationClick, createGhostCaptainEncounter } from './systems/EasterEggs.js';
+import { AfkManager } from './systems/AfkManager.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -649,13 +650,24 @@ function startDive() {
 }
 
 let surfaceIdleTimer = 0;
-let captainKnittingTimer = 0;
-let ufoCooldownTimer = 35;
+let ufoCooldownTimer = 95;
 let consecutiveEmptyCasts = 0;
 let aquariumPlaytimeBatch = 0;
 let aquariumAutosaveTimer = 0;
 let hudElapsed = 0;
 let lastHudState = null;
+const afkManager = new AfkManager();
+
+// Track genuine user screen clicks/taps/keys to reset AFK timers cleanly
+const markUserScreenActivity = () => {
+  if (!afkManager.isPaused) {
+    afkManager.recordInteraction();
+    if (oceanWorld) oceanWorld.isAnglerKnitting = false;
+  }
+};
+window.addEventListener('pointerdown', markUserScreenActivity, { capture: true, passive: true });
+window.addEventListener('touchstart', markUserScreenActivity, { capture: true, passive: true });
+window.addEventListener('keydown', markUserScreenActivity, { capture: true, passive: true });
 
 // Fixed-step Update Logic (60fps)
 const update = (rawDt) => {
@@ -663,6 +675,18 @@ const update = (rawDt) => {
   if (typeof document !== 'undefined' && document.hidden) return;
   const dt = Math.min(50, Math.max(0, Number.isFinite(rawDt) ? rawDt : 16));
   const deltaSec = dt / 1000;
+
+  // Pause simulation completely after 30 minutes of AFK and ask if player is still there
+  const afkStatus = afkManager.tick(deltaSec);
+  if (afkStatus.justPaused) {
+    if (oceanWorld) oceanWorld.isAnglerKnitting = false;
+    soundManager.setMusicMode?.('none');
+    uiManager?.showAfkPauseModal?.(() => {
+      afkManager.resume();
+      soundManager.setMusicMode?.(gameState === 'DESCENDING' || gameState === 'REELING' ? 'underwater' : 'surface');
+    });
+  }
+  if (afkStatus.paused) return;
 
   // Batch aquarium tip playtime every 0.25s instead of allocating/checking every frame
   aquariumPlaytimeBatch += deltaSec;
@@ -681,22 +705,19 @@ const update = (rawDt) => {
   // Update NPC director cooldowns
   npcSystem.update(dt);
 
-  // Track surface playtime for cozy visits, idle knitting easter egg, & occasional alien UFO encounters
+  // Track surface playtime for cozy visits, >=5m silent idle knitting, & rare alien UFO encounters
   if (gameState === 'SURFACE_IDLE' && !uiManager?.activeModal) {
     surfaceIdleTimer += deltaSec;
-    captainKnittingTimer += deltaSec;
     ufoCooldownTimer -= deltaSec;
 
-    if (captainKnittingTimer >= 28 && !oceanWorld.isAnglerKnitting) {
+    if (afkManager.isKnittingReady(gameState, uiManager?.activeModal) && !oceanWorld.isAnglerKnitting) {
       oceanWorld.isAnglerKnitting = true;
-      if (save.recordEasterEgg?.('patient_captain')) {
-        uiManager.showToast('🧶 The patient captain passed the time by knitting a tiny fish-shaped sweater!');
-      }
+      save.recordEasterEgg?.('patient_captain');
     }
 
     if (ufoCooldownTimer <= 0 && !oceanWorld.ufoState?.active) {
-      ufoCooldownTimer = 50 + Math.random() * 45;
-      if (Math.random() < 0.25) {
+      ufoCooldownTimer = 120 + Math.random() * 120;
+      if (Math.random() < 0.10) {
         oceanWorld.ufoState = { active: true, x: -50, y: 74, phase: 'approach', timer: 0 };
       }
     }
@@ -709,11 +730,12 @@ const update = (rawDt) => {
     }
   } else {
     surfaceIdleTimer = 0;
-    captainKnittingTimer = 0;
-    if (oceanWorld) oceanWorld.isAnglerKnitting = false;
+    if (oceanWorld && !afkManager.isKnittingReady(gameState, uiManager?.activeModal)) {
+      oceanWorld.isAnglerKnitting = false;
+    }
   }
 
-  // Animate active UFO abduction or Ghost Ship timers
+  // Animate active UFO abduction or floating Spectral Ghost Ship timers
   if (oceanWorld?.ufoState?.active) {
     const ufo = oceanWorld.ufoState;
     ufo.timer += deltaSec;
@@ -741,9 +763,36 @@ const update = (rawDt) => {
     }
   }
   if (oceanWorld?.ghostShipState?.active) {
-    oceanWorld.ghostShipState.timer -= deltaSec;
-    if (oceanWorld.ghostShipState.timer <= 0) {
-      oceanWorld.ghostShipState.active = false;
+    const gs = oceanWorld.ghostShipState;
+    gs.timer -= deltaSec;
+    if (gs.timer <= 0) {
+      gs.active = false;
+    } else if (gs.timer > 12) {
+      // Float and glide slowly back and forth across the moonlit water
+      gs.phase = 'patrol';
+      const speed = Number.isFinite(gs.vx) ? gs.vx : 24;
+      gs.x += speed * deltaSec;
+      const minX = 90;
+      const maxX = Math.max(200, (screenWidth || 1200) - 90);
+      if (gs.x <= minX) {
+        gs.x = minX;
+        gs.vx = Math.abs(speed) || 24;
+      } else if (gs.x >= maxX) {
+        gs.x = maxX;
+        gs.vx = -(Math.abs(speed) || 24);
+      }
+      gs.yOffset = Math.sin(((gs.maxTimer || 32) - gs.timer) * 0.9) * 3;
+      gs.scale = 1;
+      gs.alpha = 0.9;
+    } else {
+      // Sail smoothly out into the moonlit distance and fade away
+      gs.phase = 'departing';
+      const departProg = Math.min(1, Math.max(0, 1 - gs.timer / 12));
+      const driftDir = (gs.vx ?? 1) >= 0 ? 1 : -1;
+      gs.x += driftDir * 18 * deltaSec;
+      gs.yOffset = -departProg * 18;
+      gs.scale = Math.max(0.35, 1 - departProg * 0.58);
+      gs.alpha = Math.max(0, (1 - departProg) * 0.9);
     }
   }
 
@@ -797,7 +846,18 @@ const update = (rawDt) => {
 
       // Ghost Ship Easter Egg: Casting into the moon's reflection at night summons a spectral captain!
       if (worldCycle.getSkyColors?.()?.isNight && Math.abs(hook.x - oceanWorld.worldWidth * 0.2) <= 75) {
-        oceanWorld.ghostShipState = { active: true, x: hook.x, alpha: 0.88, timer: 24 };
+        const sailDir = hook.x < (oceanWorld.worldWidth * 0.5) ? 26 : -26;
+        oceanWorld.ghostShipState = {
+          active: true,
+          x: hook.x,
+          yOffset: 0,
+          vx: sailDir,
+          scale: 1,
+          alpha: 0.9,
+          timer: 32,
+          maxTimer: 32,
+          phase: 'patrol',
+        };
         oceanWorld._pendingGhostCaptain = true;
         save.recordEasterEgg?.('ghost_ship');
         soundManager.playRareChime();
@@ -955,7 +1015,7 @@ const update = (rawDt) => {
       // Track empty casts to summon Unionized Fish pickets!
       if (hook.caughtItems.length === 0) {
         consecutiveEmptyCasts += 1;
-        if (consecutiveEmptyCasts >= 2 && (consecutiveEmptyCasts >= 3 || Math.random() < 0.45)) {
+        if (consecutiveEmptyCasts >= 3 && (consecutiveEmptyCasts >= 5 || Math.random() < 0.22)) {
           oceanWorld.spawnUnionPicket = true;
           save.recordEasterEgg?.('unionized_fish');
           uiManager.showToast('🪧 Down in the shallows... local fish appear to be forming a picket line!');

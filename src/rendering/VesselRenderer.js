@@ -31,17 +31,19 @@ export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'stan
       trinketLeft: { x: -72 * scale, y: -16 },
       trinketRight: { x: 60 * scale, y: -16 },
       anglerPos: { x: -4, y: -14 },
+      anglerScale: 0.96,
       previewScale: 0.67, previewOffsetY: 18,
     };
   }
   if (style === 'submarine') {
     return {
       tier: v, hullStyle: style, scale, halfWidth: hw * 1.34,
-      catPos: { x: -44 * scale, y: -22 },
-      pelicanPos: { x: 82 * scale, y: -22 },
-      trinketLeft: { x: -64 * scale, y: -18 },
-      trinketRight: { x: 46 * scale, y: -22 },
-      anglerPos: { x: 2, y: -24 },
+      catPos: { x: -34 * scale, y: -38 },
+      pelicanPos: { x: 64 * scale, y: -13 },
+      trinketLeft: { x: -64 * scale, y: -13 },
+      trinketRight: { x: 46 * scale, y: -15 },
+      anglerPos: { x: 16, y: -6 },
+      anglerScale: 0.78,
       previewScale: 0.72, previewOffsetY: 12,
     };
   }
@@ -52,7 +54,8 @@ export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'stan
       pelicanPos: { x: 100 * scale, y: -26 },
       trinketLeft: { x: -70 * scale, y: -16 },
       trinketRight: { x: 56 * scale, y: -16 },
-      anglerPos: { x: -4, y: -14 },
+      anglerPos: { x: -4, y: -11 },
+      anglerScale: 0.96,
       previewScale: 0.68, previewOffsetY: 16,
     };
   }
@@ -63,7 +66,8 @@ export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'stan
       pelicanPos: { x: 96 * scale, y: -34 },
       trinketLeft: { x: -68 * scale, y: -16 },
       trinketRight: { x: 54 * scale, y: -15 },
-      anglerPos: { x: -4, y: -12 },
+      anglerPos: { x: -18, y: -8 },
+      anglerScale: 0.96,
       previewScale: 0.70, previewOffsetY: 14,
     };
   }
@@ -75,6 +79,7 @@ export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'stan
       trinketLeft: { x: -70 * scale, y: -16 },
       trinketRight: { x: 58 * scale, y: -16 },
       anglerPos: { x: -4, y: -14 },
+      anglerScale: 0.96,
       previewScale: 0.68, previewOffsetY: 18,
     };
   }
@@ -85,7 +90,8 @@ export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'stan
       pelicanPos: { x: 96 * scale, y: -22 },
       trinketLeft: { x: -68 * scale, y: -16 },
       trinketRight: { x: 56 * scale, y: -16 },
-      anglerPos: { x: -6, y: -14 },
+      anglerPos: { x: -8, y: -14 },
+      anglerScale: 0.96,
       previewScale: 0.69, previewOffsetY: 16,
     };
   }
@@ -623,28 +629,33 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
       ctx.fill();
       ctx.stroke();
 
-      // Conning Tower / Sail Fin + Brass Periscope
+      // Aft Conning Tower / Sail Fin + Brass Periscope (clear of forward pilot dome)
       ctx.fillStyle = pal.hull === '#1c1917' ? '#0f172a' : pal.hull;
-      ctx.fillRect(-sw * 0.35, -36, sw * 0.42, 22);
+      ctx.fillRect(-sw * 0.56, -38, sw * 0.36, 24);
       ctx.strokeStyle = pal.trim;
       ctx.lineWidth = 2.5;
-      ctx.strokeRect(-sw * 0.35, -36, sw * 0.42, 22);
+      ctx.strokeRect(-sw * 0.56, -38, sw * 0.36, 24);
 
-      // Periscope Pipe
+      // Periscope Pipe atop conning tower
       ctx.strokeStyle = pal.trim;
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(-sw * 0.18, -36); ctx.lineTo(-sw * 0.18, -58); ctx.lineTo(-sw * 0.08, -58);
+      ctx.moveTo(-sw * 0.42, -38); ctx.lineTo(-sw * 0.42, -60); ctx.lineTo(-sw * 0.30, -60);
       ctx.stroke();
-      drawGlowDot(ctx, -sw * 0.07, -58, 3, '#38bdf8');
+      drawGlowDot(ctx, -sw * 0.29, -60, 3, '#38bdf8');
 
-      // Glass Dome Cockpit over Angler Seat
-      ctx.fillStyle = 'rgba(125, 211, 252, 0.32)';
-      ctx.strokeStyle = '#bae6fd';
-      ctx.lineWidth = 2;
+      // Recessed Submarine Pilot Cockpit Chamber & Captain Seat Collar (behind angler)
+      ctx.fillStyle = '#090f1d';
       ctx.beginPath();
-      ctx.arc(4, -18, 20, Math.PI, 0);
+      ctx.arc(16, -15, 24, Math.PI, 0);
       ctx.fill();
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(-10, -16, 52, 8);
+      ctx.strokeStyle = pal.trim;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-9, -15);
+      ctx.lineTo(41, -15);
       ctx.stroke();
 
       // Glowing Porthole Windows & Rivet Belt
@@ -1822,6 +1833,52 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
     ctx.strokeStyle = '#451a03';
     ctx.lineWidth = 3;
     ctx.stroke();
+  } finally {
+    ctx.restore();
+  }
+}
+
+/**
+ * Foreground cockpit / glass dome layer drawn after the angler so pressurized
+ * canopies (like the submarine observation bubble) cleanly enclose the captain.
+ */
+export function drawVesselForeground(ctx, vessel = 0, bW = 140, bH = 40, time = 0, skinColor = null, customColors = null) {
+  const v = Math.max(0, Math.min(8, Math.floor(Number(vessel) || 0)));
+  const pal = resolvePalette(v, skinColor, customColors);
+  if (pal.hullStyle !== 'submarine') return;
+
+  ctx.save();
+  try {
+    // Panoramic Submarine Glass Dome over the seated captain (center x: 16, base y: -15, r: 24)
+    const domeGrad = ctx.createRadialGradient(10, -30, 3, 16, -22, 26);
+    domeGrad.addColorStop(0, 'rgba(224, 242, 254, 0.42)');
+    domeGrad.addColorStop(0.65, 'rgba(56, 189, 248, 0.22)');
+    domeGrad.addColorStop(1, 'rgba(14, 165, 233, 0.34)');
+    ctx.fillStyle = domeGrad;
+    ctx.strokeStyle = '#bae6fd';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(16, -15, 24, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Specular curved glass shine highlight
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(16, -15, 19, Math.PI * 1.15, Math.PI * 1.48);
+    ctx.stroke();
+
+    // Bolted brass hatch collar rim
+    ctx.fillStyle = pal.trim;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 1.2;
+    ctx.fillRect(-10, -16, 52, 5);
+    ctx.strokeRect(-10, -16, 52, 5);
+  } catch (err) {
+    console.warn('drawVesselForeground error:', err);
   } finally {
     ctx.restore();
   }

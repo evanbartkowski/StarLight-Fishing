@@ -437,3 +437,69 @@ test('Rare pet adventures, richer 3+ option quests/debuffs with SVG portraits, a
   assert.equal(await chat.sendMessage('Flood burst 6'), false);
   assert.equal(chat.lastError, 'rate-limited');
 });
+
+test('Submarine seating & dome overlay, 5m silent AFK knitting, 30m AFK pause, moving spectral ship with captain, colorful keep/sell art, and Dive Summary X return flow', async () => {
+  const { drawVesselHull, drawVesselForeground, getVesselLayout } = await import('../src/rendering/VesselRenderer.js');
+  const { AfkManager, AFK_KNITTING_SECONDS, AFK_PAUSE_SECONDS } = await import('../src/systems/AfkManager.js');
+  const { renderMoonReflectionAndGhostShip } = await import('../src/systems/EasterEggs.js');
+  const { MISC_ART } = await import('../src/ui/CustomVectorArt.js');
+
+  assert.equal(AFK_KNITTING_SECONDS, 300);
+  assert.equal(AFK_PAUSE_SECONDS, 1800);
+
+  // 1. Submarine fits angler inside cockpit dome & foreground dome renders with finite args
+  const subLayout = getVesselLayout(8, 140, 40, 'submarine');
+  assert.equal(subLayout.anglerPos.x, 16);
+  assert.equal(subLayout.anglerScale < 0.9, true);
+  assert.ok(subLayout.catPos.y <= -36 && subLayout.pelicanPos.x > 0);
+
+  let fgDraws = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key === 'createRadialGradient' || key === 'createLinearGradient') {
+        return () => ({ addColorStop: () => {} });
+      }
+      return (...args) => {
+        fgDraws++;
+        for (const v of args) {
+          if (typeof v === 'number') assert.ok(Number.isFinite(v), `Non-finite draw arg in ${String(key)}`);
+        }
+      };
+    },
+    set: () => true,
+  });
+  drawVesselHull(mockCtx, 8, 140, 40, 1.0, { hullStyle: 'submarine' });
+  drawVesselForeground(mockCtx, 8, 140, 40, 1.0, { hullStyle: 'submarine' });
+  assert.ok(fgDraws > 25);
+
+  // 2. Spectral Ghost Ship patrols and shrinks cleanly into distance
+  renderMoonReflectionAndGhostShip(mockCtx, 1200, 220, 0, 2.5, { isNight: true }, {
+    active: true,
+    x: 420,
+    vx: -26,
+    scale: 0.65,
+    yOffset: -8,
+    alpha: 0.7,
+  });
+
+  // 3. AfkManager: 5m knitting readiness without interaction & 30m pause gate
+  const afk = new AfkManager();
+  afk.tick(299);
+  assert.equal(afk.isKnittingReady('SURFACE_IDLE', null), false);
+  afk.tick(2);
+  assert.equal(afk.isKnittingReady('SURFACE_IDLE', null), true);
+  afk.recordInteraction();
+  assert.equal(afk.isKnittingReady('SURFACE_IDLE', null), false);
+
+  const res = afk.tick(1800);
+  assert.equal(res.paused, true);
+  assert.equal(res.justPaused, true);
+  assert.equal(afk.isKnittingReady('SURFACE_IDLE', null), false);
+  afk.resume();
+  assert.equal(afk.isPaused, false);
+  assert.equal(afk.idleSeconds, 0);
+
+  // 4. Colorful Keep and Sell Now SVG icons
+  assert.ok(MISC_ART.keepItem.includes('#0ea5e9') && !MISC_ART.keepItem.includes('currentColor'));
+  assert.ok(MISC_ART.sellCoin.includes('#fde047') && !MISC_ART.sellCoin.includes('currentColor'));
+});

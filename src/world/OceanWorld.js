@@ -3,7 +3,7 @@ import { drawDepthScenery } from '../rendering/DepthScenery.js';
 import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { drawAngler, drawBoatTrinket, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
-import { drawVesselHull, getVesselLayout } from '../rendering/VesselRenderer.js';
+import { drawVesselHull, drawVesselForeground, getVesselLayout } from '../rendering/VesselRenderer.js';
 import { renderMoonReflectionAndGhostShip, renderAlienUfoEvent, UNION_SIGNS } from '../systems/EasterEggs.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
@@ -137,8 +137,9 @@ export class OceanWorld {
   updateRodTip() {
     const dir = this.aimDirection === -1 ? -1 : 1;
     const angle = Number.isFinite(this.boat?.angle) ? this.boat.angle : 0;
-    const localX = dir * 52;
-    const localY = -68;
+    const hullStyle = this.saveSystem?.getBoatHull?.() || this.saveSystem?.data?.boatHullStyle || 'standard';
+    const localX = dir * (hullStyle === 'submarine' ? 68 : 52);
+    const localY = hullStyle === 'submarine' ? -56 : -68;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
     this.rodTip = {
@@ -243,8 +244,8 @@ export class OceanWorld {
       }
     }
 
-    // Easter Egg Fish: Role-Reversal Fishing Fish (~3%), Misleading Monster (~3%), & Unionized Fish picket line
-    if (Math.random() < 0.03) {
+    // Easter Egg Fish: Role-Reversal Fishing Fish (~1.2%), Misleading Monster (~1.2%), & Unionized Fish picket line
+    if (Math.random() < 0.012) {
       const fDepth = Math.min(activeMaxDepth * 0.7, 14 + Math.random() * 45);
       const anglerFish = new Fish({
         id: 'easter_fishing_fish',
@@ -269,7 +270,7 @@ export class OceanWorld {
       this.entities.fish.push(anglerFish);
     }
 
-    if (Math.random() < 0.03) {
+    if (Math.random() < 0.012) {
       const mDepth = Math.min(activeMaxDepth * 0.85, 22 + Math.random() * 75);
       const shadowPip = new Fish({
         id: 'easter_misleading_monster',
@@ -2087,34 +2088,64 @@ export class OceanWorld {
 
         const fX = vesselLayout.anglerPos?.x ?? -2;
         const fY = vesselLayout.anglerPos?.y ?? -12;
+        const fScale = Number.isFinite(vesselLayout.anglerScale) ? vesselLayout.anglerScale : 1;
 
-        drawAngler(ctx, this.saveSystem?.data?.appearance, fX, fY, {
+        ctx.save();
+        ctx.translate(fX, fY);
+        if (fScale !== 1) ctx.scale(fScale, fScale);
+        drawAngler(ctx, this.saveSystem?.data?.appearance, 0, 0, {
           isKnitting: Boolean(this.isAnglerKnitting),
           time: this.waveTimer || 0,
         });
+        ctx.restore();
+
+        if (hullStyle === 'submarine') {
+          drawVesselForeground(ctx, vessel, b.width, b.height, this.waveTimer || 0, { skinColor, skinMeta, skinId: rawSkin || 'default', hullStyle, boatColors });
+        }
 
         if (this.isAnglerKnitting) {
           ctx.save();
           ctx.fillStyle = '#fda4af';
           ctx.font = 'bold 11px Outfit, sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('🧶 Knitting fish sweater...', fX * aimDir, fY - 48 + Math.sin((this.waveTimer || 0) * 3) * 2);
+          ctx.fillText('🧶 Knitting fish sweater...', fX * aimDir, fY - 48 * fScale + Math.sin((this.waveTimer || 0) * 3) * 2);
           ctx.restore();
         }
 
-        // 3. Fishing Rod
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(fX + 16, fY - 14);
-        ctx.quadraticCurveTo(fX + 38, fY - 38, fX + 54, fY - 56);
-        ctx.stroke();
+        // 3. Fishing Rod (for submarine, mount cleanly on exterior mechanical arm outside the dome!)
+        if (hullStyle === 'submarine') {
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 3.2;
+          ctx.beginPath();
+          ctx.moveTo(40, -14);
+          ctx.lineTo(52, -26);
+          ctx.stroke();
 
-        // Rod spool
-        ctx.fillStyle = '#64748b';
-        ctx.beginPath();
-        ctx.arc(fX + 14, fY - 12, 4, 0, Math.PI * 2);
-        ctx.fill();
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(52, -26);
+          ctx.quadraticCurveTo(60, -44, 68, -56);
+          ctx.stroke();
+
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(52, -26, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(fX + 16 * fScale, fY - 14 * fScale);
+          ctx.quadraticCurveTo(fX + 38, fY - 38, fX + 54, fY - 56);
+          ctx.stroke();
+
+          // Rod spool
+          ctx.fillStyle = '#64748b';
+          ctx.beginPath();
+          ctx.arc(fX + 14 * fScale, fY - 12 * fScale, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
       } catch (e) {
         console.warn('Angler render error:', e);
       } finally {

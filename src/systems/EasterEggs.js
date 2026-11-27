@@ -125,57 +125,207 @@ export function renderMoonReflectionAndGhostShip(ctx, worldWidth, surfaceY, came
       }
     }
 
-    // 2. Summoned Spectral Ghost Ship gliding across the moonlit water horizon
-    if (ghostState?.active && cameraY < surfaceY + 140) {
+    // 2. Summoned Spectral Ghost Ship gliding across the moonlit water & drifting into the horizon
+    if (ghostState?.active && cameraY < surfaceY + 180) {
       const gx = Number.isFinite(ghostState.x) ? ghostState.x : moonX;
-      const gy = drawSurfaceY - 12 + Math.sin(time * 1.8) * 4;
-      const alpha = Math.min(0.85, ghostState.alpha ?? 0.8);
+      const gScale = Number.isFinite(ghostState.scale) ? Math.max(0.28, ghostState.scale) : 1;
+      const yOffset = Number.isFinite(ghostState.yOffset) ? ghostState.yOffset : 0;
+      const gy = drawSurfaceY - 12 * gScale + yOffset + Math.sin(time * 1.8) * 4 * gScale;
+      const alpha = Math.min(0.92, Math.max(0, ghostState.alpha ?? 0.85));
+      const facing = (ghostState.vx ?? 1) < 0 ? -1 : 1;
+
       ctx.save();
       ctx.translate(gx, gy);
+      ctx.scale(facing * gScale, gScale);
       ctx.globalAlpha = alpha;
-      // Ghostly fog aura
-      ctx.fillStyle = 'rgba(45, 212, 191, 0.22)';
+
+      // Spectral Wake Ripples on the moonlit surface
+      for (let wk = 0; wk < 3; wk++) {
+        const wy = 18 + wk * 4;
+        const ww = 66 - wk * 12 + Math.sin(time * 3 + wk) * 5;
+        ctx.strokeStyle = `rgba(94, 234, 212, ${0.42 - wk * 0.1})`;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.ellipse(-6, wy, ww, 3.2, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Volumetric Ectoplasm Aura Halo
+      try {
+        const gGrad = ctx.createRadialGradient(0, -34, 12, 0, -34, 118);
+        gGrad.addColorStop(0, 'rgba(45, 212, 191, 0.34)');
+        gGrad.addColorStop(0.55, 'rgba(14, 116, 144, 0.18)');
+        gGrad.addColorStop(1, 'rgba(45, 212, 191, 0)');
+        ctx.fillStyle = gGrad;
+        ctx.beginPath();
+        ctx.ellipse(0, -34, 118, 86, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } catch (e) {}
+
+      // Multi-tiered Spectral Galleon Hull + Aft Quarterdeck Castle
+      ctx.fillStyle = '#092226';
+      ctx.strokeStyle = '#5eead4';
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.ellipse(0, -16, 74, 38, 0, 0, Math.PI * 2);
+      ctx.moveTo(-66, -24);
+      ctx.lineTo(-64, 16);
+      ctx.quadraticCurveTo(0, 28, 62, 14);
+      ctx.lineTo(74, -14);
+      ctx.lineTo(28, -14);
+      ctx.lineTo(14, -10);
+      ctx.lineTo(-28, -10);
+      ctx.lineTo(-40, -24);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Glowing Skeleton Rib-Timbers along the hull side
+      ctx.strokeStyle = 'rgba(153, 246, 228, 0.55)';
+      ctx.lineWidth = 1.8;
+      for (let r = -3; r <= 3; r++) {
+        const rx = r * 16;
+        ctx.beginPath();
+        ctx.moveTo(rx, -10);
+        ctx.quadraticCurveTo(rx - 2, 4, rx, 19);
+        ctx.stroke();
+      }
+
+      // Aft Quarterdeck Cabin Windows (glowing haunted cyan)
+      for (let wIdx = 0; wIdx < 3; wIdx++) {
+        ctx.fillStyle = '#99f6e4';
+        ctx.fillRect(-58 + wIdx * 9, -18, 5, 8);
+      }
+
+      // Spiked Spectral Bowsprit & Glowing Phantom Skull Figurehead
+      ctx.strokeStyle = '#2dd4bf';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(68, -12);
+      ctx.lineTo(96, -28);
+      ctx.stroke();
+      ctx.fillStyle = '#ccfbf1';
+      ctx.beginPath();
+      ctx.arc(76, -13, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#042f2e';
+      ctx.beginPath();
+      ctx.arc(78, -14, 1.3, 0, Math.PI * 2);
       ctx.fill();
 
-      // Spectral galleon hull
-      ctx.fillStyle = '#0f292e';
+      // Three Tall Phantom Masts + Yardarms + Crow's Nest
       ctx.strokeStyle = '#5eead4';
+      ctx.lineWidth = 2.6;
+      const masts = [
+        { x: -34, top: -92, w: 26 },
+        { x: 4, top: -114, w: 34 },
+        { x: 40, top: -98, w: 28 },
+      ];
+      for (const m of masts) {
+        ctx.beginPath();
+        ctx.moveTo(m.x, -12);
+        ctx.lineTo(m.x, m.top);
+        ctx.stroke();
+
+        // Tattered Translucent Spectral Sails billowing in phantom wind
+        const billow = Math.sin(time * 2.2 + m.x * 0.05) * 7;
+        ctx.fillStyle = 'rgba(153, 246, 228, 0.36)';
+        ctx.strokeStyle = '#5eead4';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.top + 8);
+        ctx.lineTo(m.x + m.w, m.top + 14);
+        ctx.quadraticCurveTo(m.x + m.w * 0.8 + billow, (m.top - 22) * 0.5, m.x + m.w * 0.85, -24);
+        ctx.lineTo(m.x + m.w * 0.52, -31);
+        ctx.lineTo(m.x + m.w * 0.25, -21);
+        ctx.lineTo(m.x, -28);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Mainmast Crow's Nest & Shredded Pennant
+      ctx.fillStyle = '#134e4a';
+      ctx.strokeStyle = '#5eead4';
+      ctx.fillRect(-1, -104, 10, 5);
+      ctx.strokeRect(-1, -104, 10, 5);
+      const pFlap = Math.sin(time * 4.5) * 4;
+      ctx.fillStyle = 'rgba(94, 234, 212, 0.72)';
+      ctx.beginPath();
+      ctx.moveTo(4, -114);
+      ctx.quadraticCurveTo(-12, -120 + pFlap, -28, -113 - pFlap * 0.5);
+      ctx.lineTo(4, -108);
+      ctx.closePath();
+      ctx.fill();
+
+      // Ghost Captain standing cleanly on the raised Aft Quarterdeck Helm!
+      ctx.save();
+      ctx.translate(-46, -24);
+      // Spectral helm wheel in front of captain
+      ctx.strokeStyle = '#5eead4';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(10, -10, 7, 0, Math.PI * 2);
+      ctx.stroke();
+      // Captain tattered ghostly cloak & coat
+      ctx.fillStyle = 'rgba(153, 246, 228, 0.78)';
+      ctx.strokeStyle = '#2dd4bf';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(-7, 0);
+      ctx.lineTo(-5, -18);
+      ctx.lineTo(5, -18);
+      ctx.lineTo(7, 0);
+      ctx.quadraticCurveTo(2, -3, -2, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // Ghostly head & glowing eyes
+      ctx.fillStyle = '#ccfbf1';
+      ctx.beginPath();
+      ctx.arc(0, -23, 4.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#06b6d4';
+      ctx.beginPath();
+      ctx.arc(2, -23, 1.3, 0, Math.PI * 2);
+      ctx.fill();
+      // Spectral Pirate Tricorn Captain's Hat
+      ctx.fillStyle = '#0f766e';
+      ctx.strokeStyle = '#99f6e4';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-9, -26);
+      ctx.lineTo(0, -34);
+      ctx.lineTo(9, -26);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // Extended arm holding a floating phantom lantern
+      ctx.strokeStyle = '#99f6e4';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-48, -10);
-      ctx.lineTo(-40, 14);
-      ctx.quadraticCurveTo(0, 22, 42, 12);
-      ctx.lineTo(52, -10);
-      ctx.closePath();
-      ctx.fill();
+      ctx.moveTo(-4, -14);
+      ctx.lineTo(-14, -18);
       ctx.stroke();
-
-      // Tattered translucent spectral sails
-      ctx.strokeStyle = '#99f6e4';
-      ctx.lineWidth = 2.5;
+      ctx.fillStyle = '#fef08a';
       ctx.beginPath();
-      ctx.moveTo(-12, -10); ctx.lineTo(-14, -74);
-      ctx.moveTo(16, -10); ctx.lineTo(14, -84);
-      ctx.stroke();
-
-      ctx.fillStyle = 'rgba(153, 246, 228, 0.42)';
-      ctx.beginPath();
-      ctx.moveTo(14, -80);
-      ctx.lineTo(42, -72);
-      ctx.quadraticCurveTo(32 + Math.sin(time * 2) * 6, -42, 34, -18);
-      ctx.lineTo(22, -24);
-      ctx.lineTo(14, -16);
-      ctx.closePath();
+      ctx.arc(-15, -14 + Math.sin(time * 4) * 1.5, 3.2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.stroke();
+      ctx.restore();
 
-      // Floating spectral lantern
-      ctx.fillStyle = '#99f6e4';
+      // Floating spectral stern & bow lanterns + drifting soul wisps
+      ctx.fillStyle = '#5eead4';
       ctx.beginPath();
-      ctx.arc(-44, -18, 4.5, 0, Math.PI * 2);
+      ctx.arc(-67, -28, 4, 0, Math.PI * 2);
+      ctx.arc(72, -19, 3.5, 0, Math.PI * 2);
       ctx.fill();
+      for (let sp = 0; sp < 4; sp++) {
+        const wx = -45 + sp * 32 + Math.sin(time * 2.1 + sp * 1.7) * 8;
+        const wy = -46 - sp * 14 + Math.cos(time * 2.6 + sp) * 6;
+        ctx.fillStyle = 'rgba(204, 251, 241, 0.72)';
+        ctx.beginPath();
+        ctx.arc(wx, wy, 2.1, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
   } finally {

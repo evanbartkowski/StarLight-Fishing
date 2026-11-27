@@ -1040,6 +1040,27 @@ export const MISC_ART = {
     <rect x="16" y="16" width="3" height="7" fill="#ca8a04"/>
     <rect x="29" y="16" width="3" height="7" fill="#ca8a04"/>
   `),
+
+  keepItem: svgWrap(`
+    <!-- Sky-blue tackle storage chest with gleaming brass latch & keep arrow -->
+    <rect x="8" y="18" width="32" height="21" rx="4" fill="#0ea5e9" stroke="#bae6fd" stroke-width="2"/>
+    <path d="M8 21h32" stroke="#e0f2fe" stroke-width="2"/>
+    <rect x="13" y="18" width="3.5" height="21" fill="#facc15"/>
+    <rect x="31.5" y="18" width="3.5" height="21" fill="#facc15"/>
+    <rect x="20.5" y="21" width="7" height="7" rx="1.5" fill="#fef08a" stroke="#b45309" stroke-width="1.3"/>
+    <circle cx="24" cy="24.5" r="1.3" fill="#78350f"/>
+    <path d="M24 6v9M20 11l4 4 4-4" stroke="#7dd3fc" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  `),
+
+  sellCoin: svgWrap(`
+    <!-- Gleaming golden doubloon stack with emerald shimmer -->
+    <ellipse cx="24" cy="34" rx="13" ry="5" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+    <ellipse cx="24" cy="28" rx="13" ry="5" fill="#f59e0b" stroke="#92400e" stroke-width="1.5"/>
+    <circle cx="24" cy="21" r="12" fill="#fde047" stroke="#f59e0b" stroke-width="2"/>
+    <circle cx="24" cy="21" r="9" fill="none" stroke="#fef9c3" stroke-width="1.2"/>
+    <text x="24" y="25.5" font-size="13" font-weight="900" fill="#78350f" text-anchor="middle" font-family="sans-serif">$</text>
+    <path d="M36 9l1.3 2.7 2.7 1.3-2.7 1.3-1.3 2.7-1.3-2.7-2.7-1.3 2.7-1.3z" fill="#fef9c3"/>
+  `),
 };
 
 /**

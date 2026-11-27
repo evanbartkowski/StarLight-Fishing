@@ -28,25 +28,25 @@ import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt, NPC_PORTRAITS, QUEST_ART } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
-import { drawVesselHull, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
+import { drawVesselHull, drawVesselForeground, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
 import { renderAquariumFamiliarCaptain } from '../systems/EasterEggs.js';
 
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const HUD_ICONS = {
-  map: '<svg viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15m6-12v15"/></svg>',
-  trap: '<svg viewBox="0 0 24 24"><path d="M4 8h16l-2 12H6L4 8Zm2 0 2-5h8l2 5M8 12v4m4-4v4m4-4v4M12 3v-1"/></svg>',
-  quests: '<svg viewBox="0 0 24 24"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Zm2 5h8m-8 4h8m-8 4h5"/></svg>',
-  inventory: '<svg viewBox="0 0 24 24"><path d="M5 8h14l1 13H4L5 8Zm3 0V6a4 4 0 0 1 8 0v2m-4 4v4m-2-2 2 2 2-2"/></svg>',
-  shop: '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 1.9-1.4L21 9H6m4 12h.01M18 21h.01"/></svg>',
-  journal: '<svg viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5zm0 0v13M8 6h8m-8 4h8m-8 4h6"/></svg>',
-  aquarium: '<svg viewBox="0 0 24 24"><path d="M3 12c3-5 10-7 15-3l3-3v12l-3-3c-5 4-12 2-15-3Zm5-1h.01m2 5 2-2m-8-3-2-2m16 3h1"/></svg>',
-  radio: '<svg viewBox="0 0 24 24"><path d="M4 7h16v14H4zM7 7l10-4m-9 8h5m-5 4h5m5 1h.01"/><circle cx="17" cy="12" r="1"/></svg>',
-  settings: '<svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
-  help: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.6 1.3c-.9 1.1-2.2 1.4-2.2 3.2m0 3h.01"/></svg>',
-  sound: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1a5 5 0 0 1 0 6m2-9a9 9 0 0 1 0 12"/></svg>',
-  muted: '<svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1 5 6m0-6-5 6"/></svg>',
-  menu: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15m6-12v15"/></svg>',
+  trap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16l-2 12H6L4 8Zm2 0 2-5h8l2 5M8 12v4m4-4v4m4-4v4M12 3v-1"/></svg>',
+  quests: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a2 2 0 0 1 2 2v16l-4-2-4 2-4-2-4 2V5a2 2 0 0 1 2-2Zm2 5h8m-8 4h8m-8 4h5"/></svg>',
+  inventory: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l1 13H4L5 8Zm3 0V6a4 4 0 0 1 8 0v2m-4 4v4m-2-2 2 2 2-2"/></svg>',
+  shop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 1.9-1.4L21 9H6m4 12h.01M18 21h.01"/></svg>',
+  journal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5zm0 0v13M8 6h8m-8 4h8m-8 4h6"/></svg>',
+  aquarium: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-5 10-7 15-3l3-3v12l-3-3c-5 4-12 2-15-3Zm5-1h.01m2 5 2-2m-8-3-2-2m16 3h1"/></svg>',
+  radio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v14H4zM7 7l10-4m-9 8h5m-5 4h5m5 1h.01"/><circle cx="17" cy="12" r="1"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.6 1.3c-.9 1.1-2.2 1.4-2.2 3.2m0 3h.01"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1a5 5 0 0 1 0 6m2-9a9 9 0 0 1 0 12"/></svg>',
+  muted: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h4l5 4V6l-5 4H4Zm12-1 5 6m0-6-5 6"/></svg>',
+  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
 };
 const hudIcon = name => `<span class="hud-icon" aria-hidden="true">${HUD_ICONS[name]}</span>`;
 
@@ -1261,9 +1261,9 @@ export class UIManager {
     const catchContinue = this._onCatchSummaryContinue;
     this._onCatchSummaryContinue = null;
 
-    const wasInventory = this.activeModal === 'inventory';
-    const returnToSummary = wasInventory ? this._returnToCatchSummary : null;
-    if (wasInventory || wasCatchSummary) {
+    const isInventoryFlowModal = ['inventory', 'bulkSellConfirm', 'inspectItem', 'aquarium'].includes(this.activeModal);
+    const returnToSummary = isInventoryFlowModal ? this._returnToCatchSummary : null;
+    if (isInventoryFlowModal || wasCatchSummary) {
       this._returnToCatchSummary = null;
     }
 
@@ -1278,7 +1278,7 @@ export class UIManager {
     if (wasCrateModal && crateCtx) {
       if (crateCtx.hook) this.openCatchSummary(crateCtx.hook, crateCtx.onContinue);
       else this.openInventory();
-    } else if (wasInventory && typeof returnToSummary === 'function') {
+    } else if (isInventoryFlowModal && typeof returnToSummary === 'function') {
       returnToSummary();
     } else if (wasCatchSummary && catchContinue) {
       catchContinue();
@@ -1798,11 +1798,11 @@ export class UIManager {
                     </button>
                   ` : ''}
                   <button class="btn btn-sm btn-outline btn-catch-keep" data-id="${instId}" data-idx="${itemIdx}" title="Keep safe in tackle box">
-                    <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.inventory}</span> Keep
+                    <span class="catch-action-art">${MISC_ART.keepItem}</span> Keep
                   </button>
                   ${!(item.isBottle || item.id === 'bottle') ? `
                     <button class="btn btn-sm btn-buy btn-catch-sell" data-id="${instId}" data-idx="${itemIdx}" data-val="${itemVal}" title="Sell immediately for gold">
-                      <span style="display:inline-block;width:13px;height:13px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sell Now
+                      <span class="catch-action-art">${MISC_ART.sellCoin}</span> Sell Now
                     </button>
                   ` : ''}
                 </div>
@@ -1958,7 +1958,7 @@ export class UIManager {
         }
         const actionsDiv = document.getElementById(`catch-actions-${instId}`);
         if (actionsDiv) {
-          actionsDiv.innerHTML = `<span class="status-badge kept-badge"><span style="display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.inventory}</span> In Tackle Box</span>`;
+          actionsDiv.innerHTML = `<span class="status-badge kept-badge"><span class="catch-action-art">${MISC_ART.keepItem}</span> In Tackle Box</span>`;
         }
         soundManager.playButtonClick();
       });
@@ -1993,7 +1993,7 @@ export class UIManager {
           soundManager.playCoin();
           const actionsDiv = document.getElementById(`catch-actions-${instId}`);
           if (actionsDiv) {
-            actionsDiv.innerHTML = `<span class="status-badge sold-badge"><span style="display:inline-block;width:12px;height:12px;vertical-align:middle;margin-right:3px;">${HUD_ICONS.shop}</span> Sold (+$${soldGold.toLocaleString()})</span>`;
+            actionsDiv.innerHTML = `<span class="status-badge sold-badge"><span class="catch-action-art">${MISC_ART.sellCoin}</span> Sold (+$${soldGold.toLocaleString()})</span>`;
           }
           remainingGold = Math.max(0, remainingGold - soldGold);
           const totalEl = document.getElementById('summary-total-cash');
@@ -2085,9 +2085,10 @@ export class UIManager {
 
     // View Inventory (remember return callback so X inside Inventory brings player back to Dive Completed)
     document.getElementById('btn-summary-inventory')?.addEventListener('click', () => {
+      const returnFn = () => this.openCatchSummary(hook, onContinue, Boolean(storageOverflow));
       this._onCatchSummaryContinue = null;
       this.closeModal();
-      this._returnToCatchSummary = () => this.openCatchSummary(hook, onContinue, ranOutOfStorage);
+      this._returnToCatchSummary = returnFn;
       this.openInventory();
     });
   }
@@ -4292,7 +4293,7 @@ export class UIManager {
     const foodPellets = [];
     const bubbles = [];
     const familiarCaptain = {
-      active: Math.random() < 0.16,
+      active: Math.random() < 0.06,
       x: 80 + Math.random() * Math.max(120, canvas.width - 160),
       vx: (Math.random() < 0.5 ? 1 : -1) * 20,
     };
@@ -5746,11 +5747,16 @@ export class UIManager {
       const previewSkinColor = skinMeta?.color || null;
       drawVesselHull(ctx, vessel, bW, bH, animTimer, { skinColor: previewSkinColor, skinMeta, skinId: selectedSkin, hullStyle: selectedHull, boatColors: draftColors });
 
+      const previewAnglerScale = (layout.anglerScale || 1) * 1.12;
       ctx.save();
       ctx.translate(layout.anglerPos.x, layout.anglerPos.y);
-      ctx.scale(1.12, 1.12);
+      ctx.scale(previewAnglerScale, previewAnglerScale);
       drawAngler(ctx, save.data?.appearance || {});
       ctx.restore();
+
+      if (selectedHull === 'submarine') {
+        drawVesselForeground(ctx, vessel, bW, bH, animTimer, { skinColor: previewSkinColor, skinMeta, skinId: selectedSkin, hullStyle: selectedHull, boatColors: draftColors });
+      }
 
       if (selectedTrinket && selectedTrinket !== 'none') {
         drawBoatTrinket(ctx, selectedTrinket, vessel, animTimer, bW, bH, selectedHull);
@@ -6166,6 +6172,29 @@ export class UIManager {
     this.openModal("Starlight Angler's Field Guide", modalBody);
 
     document.getElementById('btn-tutorial-ready').addEventListener('click', () => {
+      this.closeModal();
+    });
+  }
+
+  showAfkPauseModal(onResume) {
+    this.activeModal = 'afk_pause';
+    this._activeModalCleanup = () => {
+      if (typeof onResume === 'function') onResume();
+    };
+    const modalBody = `
+      <div class="afk-pause-panel" style="text-align:center;padding:18px 12px;">
+        <div style="font-size:2.4rem;margin-bottom:10px;">⚓🌙</div>
+        <h3 style="margin:0 0 8px 0;color:#f8fafc;font-size:1.35rem;">Are you still there, Captain?</h3>
+        <p style="margin:0 auto 18px;max-width:420px;color:#cbd5e1;font-size:0.95rem;line-height:1.5;">
+          You have been away for 30 minutes, so the game has been paused to rest your vessel and preserve your catch.
+        </p>
+        <button class="btn btn-primary btn-lg" id="btn-afk-resume" style="padding:10px 24px;font-weight:800;">
+          Yes, Still Here — Resume Fishing
+        </button>
+      </div>
+    `;
+    this.openModal('Voyage Paused (AFK)', modalBody);
+    document.getElementById('btn-afk-resume')?.addEventListener('click', () => {
       this.closeModal();
     });
   }
