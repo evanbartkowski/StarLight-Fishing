@@ -850,6 +850,11 @@ const update = (rawDt) => {
 
   const isReelingInput = isMouseDown || !!keysDown[' '] || !!keysDown['arrowup'] || !!keysDown['w'];
 
+  // Sync live fishing state & tension so angler/rod animate smoothly
+  oceanWorld.fishingState = gameState;
+  oceanWorld.fishingTension = hook?.tension || 0;
+  oceanWorld.isReelingInput = isReelingInput;
+
   // Update world environment
   oceanWorld.update(dt, hook, particles);
 
@@ -1057,6 +1062,17 @@ const update = (rawDt) => {
       }
 
       // Record items to journal, stats, achievements, and persistent inventory!
+      const firstCatchItems = [];
+      const firstCatchSeen = new Set();
+      hook.caughtItems.forEach((item) => {
+        const spId = item.speciesId || (item.species ? item.species.id : null);
+        if (spId && !save.data.journal?.[spId] && !firstCatchSeen.has(spId)) {
+          firstCatchSeen.add(spId);
+          firstCatchItems.push(item);
+        }
+      });
+      hook.firstCatchItems = firstCatchItems;
+
       let ranOutOfStorage = false;
       hook.caughtItems.forEach((item) => {
         if (!item._recordedInInventory) {

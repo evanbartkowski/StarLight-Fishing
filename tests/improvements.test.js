@@ -669,3 +669,70 @@ test('Dive Completed modal uses actual relic canvas preview instead of generic s
   assert.ok(uiCode.includes('drawRelicArtifact'), 'UIManager imports and calls drawRelicArtifact for summary relics');
   assert.ok(uiCode.includes('catch-relic-canvas'), 'Dive Completed renders a canvas element for caught relics');
 });
+
+test('Richer scenery, water lighting, smooth angler animation, fish turns/schools, and rare first-catch reveal lore', async () => {
+  const { drawDepthScenery } = await import('../src/rendering/DepthScenery.js');
+  const { drawAngler } = await import('../src/data/CustomizationData.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { getFirstCatchLore } = await import('../src/data/RareCatchLore.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+
+  let finiteErrors = 0;
+  let drawCalls = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key === 'createLinearGradient' || key === 'createRadialGradient') {
+        return () => ({ addColorStop: () => {} });
+      }
+      if (key === 'measureText') return () => ({ width: 70 });
+      return (...args) => {
+        drawCalls++;
+        for (const v of args) {
+          if (typeof v === 'number' && !Number.isFinite(v)) finiteErrors++;
+        }
+      };
+    },
+    set: () => true,
+  });
+
+  // 1. Richer depth scenery renders rocks, coral shelves, kelp, and wrecks cleanly
+  drawDepthScenery(mockCtx, 1, 1000, 220, 1280, 720, 1.5);
+  drawDepthScenery(mockCtx, 1, 4600, 220, 1280, 720, 1.5);
+  assert.ok(drawCalls > 40, 'DepthScenery draws rich rocks, wrecks, kelp, and coral');
+
+  // 2. Water lighting, depth shading, and surface reflections render cleanly
+  const world = new OceanWorld({ width: 1280, height: 720, getContext: () => mockCtx });
+  world.currentSeaId = 1;
+  world.renderUnderwaterBackground(mockCtx, 100, 720);
+  world.renderWaterSurface(mockCtx, 0);
+
+  // 3. Player angler smooth animation states render cleanly
+  for (const state of ['SURFACE_IDLE', 'AIMING', 'CASTING', 'REELING']) {
+    assert.doesNotThrow(() => drawAngler(mockCtx, {}, 0, 0, { state, time: 2.3, tension: 0.75, isReeling: state === 'REELING' }));
+  }
+
+  // 4. Fish natural turning pivot and coordinated schooling behavior
+  const commonSp = FISH_SPECIES.find(s => s.zone === 1 && s.rarity === 'common');
+  const leader = new Fish(commonSp, 300, 400, { schoolId: 'test_school', schoolOffset: { x: 0, y: 0 } });
+  const wingman = new Fish(commonSp, 240, 430, { schoolId: 'test_school', schoolOffset: { x: -22, y: 12 } });
+  leader.direction = 1; leader.facingScale = 1;
+  wingman.direction = -1; wingman.facingScale = -1;
+  const env = {
+    timeOfDay: 'DAY',
+    surfaceY: 220,
+    pixelsPerMeter: 15,
+    schools: {
+      test_school: { sumX: leader.x + wingman.x, sumY: leader.y + wingman.y, sumDir: 2, count: 2, members: [leader, wingman] },
+    },
+  };
+  wingman.update(100, 1280, null, null, env);
+  assert.equal(wingman.direction, 1, 'Schoolmate aligns direction with school');
+  assert.ok(wingman.facingScale > -1 && wingman.facingScale < 1, 'Facing scale eases smoothly during natural turn');
+
+  // 5. First-catch rare lore ties into game realms/lore
+  const rareSp = FISH_SPECIES.find(s => s.rarity === 'rare' && s.zone === 3) || FISH_SPECIES.find(s => s.rarity === 'rare');
+  const loreText = getFirstCatchLore(rareSp);
+  assert.ok(loreText.length > (rareSp.lore || '').length, 'Rare+ first catch appends cool world-lore tie');
+  assert.equal(finiteErrors, 0);
+});

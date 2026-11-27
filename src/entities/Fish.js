@@ -169,6 +169,8 @@ export class Fish {
 
     // Movement & direction
     this.direction = Math.random() < 0.5 ? 1 : -1; // 1 = right, -1 = left
+    this.facingScale = this.direction;
+    this.turnTilt = 0;
     this.baseSpeed = species.swimSpeed * (0.85 + Math.random() * 0.35);
     this.speed = this.baseSpeed;
     this.wiggleTimer = Math.random() * Math.PI * 2;
@@ -482,8 +484,9 @@ export class Fish {
         }
       }
 
-      // School flocking and panic scatter
+      // School flocking: cohesion, directional alignment, gentle separation, and panic scatter
       if (this.schoolId) {
+        const school = environment?.schools?.[this.schoolId];
         if (hook && ['DESCENDING', 'REELING'].includes(hook.state) && Math.hypot(hook.x - this.x, hook.y - this.y) < 85) {
           this.schoolScatter = 1.4; // scatter in panic
           const scatterX = this.x - hook.x;
@@ -491,8 +494,35 @@ export class Fish {
           const sLen = Math.hypot(scatterX, scatterY) || 1;
           vx += (scatterX / sLen) * 110 * deltaSec;
           vy += (scatterY / sLen) * 90 * deltaSec;
-        } else if (this.schoolScatter > 0) {
-          this.schoolScatter -= deltaSec;
+          if (Math.abs(scatterX) > 4) this.direction = scatterX >= 0 ? 1 : -1;
+        } else {
+          if (this.schoolScatter > 0) {
+            this.schoolScatter -= deltaSec;
+          }
+          if (school && school.count > 1 && this.schoolScatter <= 0.3) {
+            const cx = school.sumX / school.count;
+            const cy = school.sumY / school.count;
+            const majDir = school.sumDir >= 0 ? 1 : -1;
+            // Align swim direction smoothly with the school
+            if (this.x > 80 && this.x < worldWidth - 80) {
+              this.direction = majDir;
+            }
+            const targetX = cx + (this.schoolOffset?.x || 0) * majDir;
+            const targetY = cy + (this.schoolOffset?.y || 0);
+            vx += Math.max(-28, Math.min(28, (targetX - this.x) * 1.4)) * deltaSec;
+            vy += Math.max(-22, Math.min(22, (targetY - this.y) * 1.4)) * deltaSec;
+            // Soft separation from neighbors
+            for (const mate of school.members) {
+              if (mate === this) continue;
+              const dx = this.x - mate.x;
+              const dy = this.y - mate.y;
+              const d = Math.hypot(dx, dy);
+              if (d > 0.1 && d < 18) {
+                vx += (dx / d) * 24 * deltaSec;
+                vy += (dy / d) * 18 * deltaSec;
+              }
+            }
+          }
         }
       }
 
@@ -537,6 +567,19 @@ export class Fish {
       // Random spontaneous direction turn (except for hover)
       if (this.movementType !== 'hover' && Math.random() < 0.002) {
         this.direction *= -1;
+      }
+
+      // Smooth visual turn pivot (natural turn easing + banking tilt without instant 1-frame snap)
+      const targetFacing = this.direction || 1;
+      if (!Number.isFinite(this.facingScale)) this.facingScale = targetFacing;
+      const turnDiff = targetFacing - this.facingScale;
+      if (Math.abs(turnDiff) > 0.02) {
+        this.facingScale += turnDiff * Math.min(1, deltaSec * 6.5);
+        this.turnTilt = (1 - Math.abs(this.facingScale)) * 0.22 * -targetFacing;
+        this.wiggleTimer += this.wiggleFreq * deltaSec * 0.7; // Brisker fin beat while turning
+      } else {
+        this.facingScale = targetFacing;
+        this.turnTilt *= Math.max(0, 1 - deltaSec * 8);
       }
     } else if (this.state === 'HOOKED' && hook) {
       this.isDashing = false;
@@ -713,9 +756,11 @@ export class Fish {
       ctx.rotate(hangAngle);
       ctx.translate(-16, 0); // Aligns fish mouth directly at (posX, drawY)
     } else {
-      ctx.scale(this.direction || 1, 1);
-      if (this.swimAngle) {
-        ctx.rotate(this.swimAngle);
+      const rawFacing = Number.isFinite(this.facingScale) ? this.facingScale : (this.direction || 1);
+      const visualFacing = Math.abs(rawFacing) < 0.28 ? Math.sign(rawFacing || this.direction || 1) * 0.28 : rawFacing;
+      ctx.scale(visualFacing, 1);
+      if (this.swimAngle || this.turnTilt) {
+        ctx.rotate((this.swimAngle || 0) + (this.turnTilt || 0));
       }
     }
 

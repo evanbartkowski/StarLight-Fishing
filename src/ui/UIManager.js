@@ -33,6 +33,7 @@ import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt, NPC_PORTRAITS, QUEST_ART } from './CustomVectorArt.js';
 import { drawTreasureArtwork, treasureSvg } from '../rendering/TreasureArtwork.js';
 import { drawRelicArtifact } from '../rendering/RelicArtwork.js';
+import { getFirstCatchLore } from '../data/RareCatchLore.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 import { drawVesselHull, drawVesselForeground, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
 import { renderAquariumFamiliarCaptain } from '../systems/EasterEggs.js';
@@ -1871,6 +1872,35 @@ export class UIManager {
     const summaryCapTier = UPGRADE_DEFINITIONS.hookCapacity?.tiers?.[summaryCapLvl] || { capacity: 3 };
     const summaryMaxCap = Math.max(hook?.capacity || 3, summaryCapTier.capacity || 3) + (hook?.capacityBoost || 0);
 
+    const firstCatches = Array.isArray(hook.firstCatchItems) ? hook.firstCatchItems : [];
+    const firstCatchHtml = firstCatches.length > 0 ? (() => {
+      const first = firstCatches[0];
+      const sp = first.species || FISH_SPECIES.find(s => s.id === (first.speciesId || first.id)) || first;
+      const rKey = (sp.rarity || 'common').toLowerCase();
+      const isRarePlus = rKey === 'rare' || rKey === 'epic' || rKey === 'legendary' || sp.isMythic || sp.isGodTier;
+      const lore = getFirstCatchLore(sp);
+      const seaInfo = FANTASY_SEAS.find(s => s.id === (sp.zone || 1));
+      return `
+        <div class="first-catch-spotlight rarity-border-${rKey} ${isRarePlus ? 'is-rare-discovery' : ''}" id="first-catch-spotlight">
+          <div class="first-catch-header">
+            <span class="first-catch-badge">${isRarePlus ? '★ RARE FIRST DISCOVERY ★' : '✨ FIRST CATCH UNLOCKED'}</span>
+            ${firstCatches.length > 1 ? `<div class="first-catch-pager"><button type="button" class="btn btn-sm btn-secondary" id="btn-first-prev">‹</button><span id="first-catch-page-lbl">1 / ${firstCatches.length}</span><button type="button" class="btn btn-sm btn-secondary" id="btn-first-next">›</button></div>` : ''}
+          </div>
+          <div class="first-catch-body">
+            <div class="first-catch-stage">
+              <div class="first-catch-glow"></div>
+              <canvas id="first-catch-reveal-canvas" width="220" height="136"></canvas>
+            </div>
+            <div class="first-catch-info">
+              <h4 class="first-catch-title" id="first-catch-title">${escapeScoreboardText(first.name || sp.name || 'New Discovery')}</h4>
+              <div class="first-catch-meta" id="first-catch-meta">${(sp.rarity || 'common').toUpperCase()} • ${seaInfo?.name || 'Seven Seas'} • ${first.size || 0} cm • ${first.weight || 0} kg</div>
+              ${lore ? `<p class="first-catch-lore ${isRarePlus ? 'is-rare-lore' : ''}" id="first-catch-lore">${escapeScoreboardText(lore)}</p>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    })() : '';
+
     const modalBody = `
       <div class="summary-container">
       <div class="summary-scroll">
@@ -1879,6 +1909,7 @@ export class UIManager {
             You ran out of storage and need to sell items!
           </div>
         ` : ''}
+        ${firstCatchHtml}
         <div class="summary-header-stats">
           <div class="stat-box">
             <span class="stat-label">Max Depth</span>
@@ -1922,6 +1953,81 @@ export class UIManager {
     `;
 
     this.openModal('Dive Completed', modalBody, 'catch-summary');
+
+    // Animate large First Catch Discovery specimen spotlight
+    if (firstCatches.length > 0) {
+      let fcIdx = 0;
+      let fcAnimFrame = null;
+      let fcTime = 0;
+      const revealCanvas = document.getElementById('first-catch-reveal-canvas');
+      const revealCtx = revealCanvas?.getContext?.('2d');
+      let revealFish = null;
+
+      const loadRevealItem = (idx) => {
+        const entry = firstCatches[idx];
+        const sp = entry?.species || FISH_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || entry;
+        revealFish = specimen(entry, (revealCanvas?.width || 220) / 2, (revealCanvas?.height || 136) / 2);
+        if (revealFish) {
+          revealFish.scale = Math.min(3.2, Math.max(2.15, (sp.scaleFactor || 1) * 2.15));
+          revealFish.direction = 1;
+          revealFish.facingScale = 1;
+        }
+        const tEl = document.getElementById('first-catch-title');
+        const mEl = document.getElementById('first-catch-meta');
+        const lEl = document.getElementById('first-catch-lore');
+        const pEl = document.getElementById('first-catch-page-lbl');
+        const spot = document.getElementById('first-catch-spotlight');
+        const rKey = (sp?.rarity || 'common').toLowerCase();
+        const isRare = rKey === 'rare' || rKey === 'epic' || rKey === 'legendary' || sp?.isMythic || sp?.isGodTier;
+        const seaInfo = FANTASY_SEAS.find(s => s.id === (sp?.zone || 1));
+        if (tEl) tEl.textContent = entry?.name || sp?.name || 'New Discovery';
+        if (mEl) mEl.textContent = `${(sp?.rarity || 'common').toUpperCase()} • ${seaInfo?.name || 'Seven Seas'} • ${entry?.size || 0} cm • ${entry?.weight || 0} kg`;
+        if (lEl) {
+          lEl.textContent = getFirstCatchLore(sp) || '';
+          lEl.className = `first-catch-lore ${isRare ? 'is-rare-lore' : ''}`;
+        }
+        if (pEl) pEl.textContent = `${idx + 1} / ${firstCatches.length}`;
+        if (spot) {
+          spot.classList.remove('first-catch-pop');
+          void spot.offsetWidth;
+          spot.classList.add('first-catch-pop');
+        }
+      };
+
+      const renderRevealFrame = () => {
+        if (this.activeModal !== 'catchSummary' || !revealCtx || !revealCanvas) return;
+        fcTime += 0.035;
+        revealCtx.clearRect(0, 0, revealCanvas.width, revealCanvas.height);
+        if (revealFish) {
+          revealFish.wiggleTimer = fcTime * 2.2;
+          revealFish.auraTime = fcTime;
+          revealFish.x = revealCanvas.width / 2;
+          revealFish.y = revealCanvas.height / 2 + Math.sin(fcTime * 1.8) * 5;
+          revealFish.swimAngle = Math.cos(fcTime * 1.8) * 0.06;
+          revealFish.render(revealCtx, 0);
+        }
+        if (typeof requestAnimationFrame === 'function') {
+          fcAnimFrame = requestAnimationFrame(renderRevealFrame);
+        }
+      };
+
+      loadRevealItem(0);
+      if (revealCtx && revealCanvas) {
+        if (typeof requestAnimationFrame === 'function') fcAnimFrame = requestAnimationFrame(renderRevealFrame);
+        else renderRevealFrame();
+      }
+      document.getElementById('btn-first-prev')?.addEventListener('click', () => {
+        fcIdx = (fcIdx - 1 + firstCatches.length) % firstCatches.length;
+        loadRevealItem(fcIdx);
+      });
+      document.getElementById('btn-first-next')?.addEventListener('click', () => {
+        fcIdx = (fcIdx + 1) % firstCatches.length;
+        loadRevealItem(fcIdx);
+      });
+      this._activeModalCleanup = () => {
+        if (fcAnimFrame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(fcAnimFrame);
+      };
+    }
 
     // Render authentic fish previews onto summary canvases with bulletproof fallback icon
     hook.caughtItems.forEach((item, itemIdx) => {

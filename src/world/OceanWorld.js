@@ -571,11 +571,55 @@ export class OceanWorld {
       const depth = low + Math.random() * (high - low);
       const centerX = 110 + Math.random() * Math.max(1, this.worldWidth - 220);
       const schoolSize = 10 + Math.floor(Math.random() * 7);
+      const schoolId = `school_${this.currentSeaId}_${start}_${Math.floor(Math.random() * 1e6)}`;
+      const schoolDir = Math.random() < 0.5 ? 1 : -1;
       for (let member = 0; member < schoolSize; member++) {
-        const x = Math.max(70, Math.min(this.worldWidth - 70, centerX + (member - (schoolSize - 1) / 2) * 9));
+        const col = Math.floor(member / 2);
+        const row = (member % 2 === 0 ? 1 : -1) * Math.ceil(member / 2);
+        const offsetX = -col * 18 * schoolDir + (Math.random() - 0.5) * 6;
+        const offsetY = row * 10 + (Math.random() - 0.5) * 4;
+        const x = Math.max(70, Math.min(this.worldWidth - 70, centerX + offsetX));
         const memberDepth = Math.max(0, Math.min(Math.min(activeMaxDepth, 3000), depth + ((Math.random() - .5) * 44) / this.pixelsPerMeter));
         const y = this.surfaceY + memberDepth * this.pixelsPerMeter;
-        this.entities.fish.push(new Fish(species, x, y, fishOptions));
+        const f = new Fish(species, x, y, {
+          ...fishOptions,
+          schoolId,
+          schoolOffset: { x: offsetX, y: offsetY },
+        });
+        f.direction = schoolDir;
+        f.facingScale = schoolDir;
+        this.entities.fish.push(f);
+      }
+    }
+
+    // Group nearby resident common/uncommon swimmers of the same species into coordinated schools without inflating counts
+    const bySpecies = new Map();
+    for (const f of this.entities.fish) {
+      if (f.schoolId || !['common', 'uncommon'].includes(f.rarity)) continue;
+      const list = bySpecies.get(f.speciesId);
+      if (list) list.push(f);
+      else bySpecies.set(f.speciesId, [f]);
+    }
+    let autoSchoolIdx = 0;
+    for (const list of bySpecies.values()) {
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].schoolId) continue;
+        const group = [list[i]];
+        for (let j = i + 1; j < list.length && group.length < 5; j++) {
+          if (!list[j].schoolId && Math.abs(list[j].y - list[i].y) < 130 && Math.abs(list[j].x - list[i].x) < 260) {
+            group.push(list[j]);
+          }
+        }
+        if (group.length >= 2) {
+          const sid = `reef_school_${this.currentSeaId}_${autoSchoolIdx++}`;
+          const dir = group[0].direction || 1;
+          group.forEach((member, idx) => {
+            member.schoolId = sid;
+            member.direction = dir;
+            member.facingScale = dir;
+            member.schoolOffset = { x: -(idx % 3) * 20 * dir, y: ((idx % 2) ? 1 : -1) * Math.floor((idx + 1) / 2) * 11 };
+          });
+        }
       }
     }
 
@@ -745,8 +789,27 @@ export class OceanWorld {
 
     this.updateRodTip();
 
+    // Coordinate active fish schools & environment context
+    const schools = Object.create(null);
+    for (const f of this.entities.fish) {
+      if (f.schoolId && f.state === 'SWIMMING') {
+        const bucket = (schools[f.schoolId] ??= { sumX: 0, sumY: 0, sumDir: 0, count: 0, members: [] });
+        bucket.sumX += f.x;
+        bucket.sumY += f.y;
+        bucket.sumDir += f.direction || 1;
+        bucket.count++;
+        bucket.members.push(f);
+      }
+    }
+    const fishEnv = {
+      timeOfDay: worldCycle.getTimeOfDay(),
+      surfaceY: this.surfaceY,
+      pixelsPerMeter: this.pixelsPerMeter,
+      schools,
+    };
+
     // Update active entities
-    this.entities.fish.forEach((fish) => fish.update(dt, this.worldWidth, hook, particles));
+    this.entities.fish.forEach((fish) => fish.update(dt, this.worldWidth, hook, particles, fishEnv));
     this.entities.hazards.forEach((hazard) => hazard.update(dt, this.worldWidth, hook));
     this.entities.treasures.forEach((treasure) => treasure.update(dt, this.worldWidth, hook));
     this.entities.flora?.forEach((flora) => flora.update(dt));
@@ -2110,6 +2173,34 @@ export class OceanWorld {
     ctx.closePath();
     ctx.fill();
 
+    // Subtle water surface reflections of sky & boat hull shimmer
+    try {
+      const reflSky = worldCycle.getSkyColors();
+      const reflGrad = ctx.createLinearGradient(0, drawSurfaceY, 0, drawSurfaceY + 34);
+      reflGrad.addColorStop(0, reflSky.isNight ? 'rgba(148, 163, 184, 0.16)' : 'rgba(224, 242, 254, 0.22)');
+      reflGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+      ctx.fillStyle = reflGrad;
+      ctx.fillRect(0, drawSurfaceY + 2, this.worldWidth, 32);
+
+      const tWave = this.waveTimer || 0;
+      ctx.fillStyle = reflSky.isNight ? 'rgba(186, 230, 253, 0.12)' : 'rgba(255, 255, 255, 0.16)';
+      for (let r = 0; r < 6; r++) {
+        const rx = ((r * 210 + Math.sin(tWave * 0.9 + r) * 35) % (this.worldWidth + 100)) - 50;
+        const ry = drawSurfaceY + 6 + (r % 3) * 7 + Math.sin(tWave * 1.8 + r) * 1.5;
+        ctx.beginPath();
+        ctx.ellipse(rx, ry, 28 + (r % 2) * 18, 1.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (this.boat && Number.isFinite(this.boat.x)) {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.14)';
+        for (let sh = 0; sh < 3; sh++) {
+          ctx.beginPath();
+          ctx.ellipse(this.boat.x + Math.sin(tWave * 2 + sh) * 8, drawSurfaceY + 8 + sh * 6, 48 - sh * 10, 2.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } catch (e) {}
+
     // Crest line matching sea horizon tint or undulating rainbow
     ctx.strokeStyle = crestStyle;
     ctx.lineWidth = sea.id === 7 ? 4 : 3;
@@ -2308,6 +2399,9 @@ export class OceanWorld {
         drawAngler(ctx, this.saveSystem?.data?.appearance, 0, 0, {
           isKnitting: Boolean(this.isAnglerKnitting),
           time: this.waveTimer || 0,
+          state: this.fishingState || 'SURFACE_IDLE',
+          tension: this.fishingTension || 0,
+          isReeling: Boolean(this.isReelingInput),
         });
         ctx.restore();
 
@@ -2315,8 +2409,12 @@ export class OceanWorld {
           drawVesselForeground(ctx, vessel, b.width, b.height, this.waveTimer || 0, { skinColor, skinMeta, skinId: rawSkin || 'default', hullStyle, boatColors });
         }
 
-        // The visible rod and world-space line share the same vessel rig.
+        // The visible rod and world-space line share the same vessel rig (with smooth flex under tension).
         if (!this.isAnglerKnitting) {
+          const flexDip = (this.fishingState === 'REELING' ? (4 + (this.fishingTension || 0) * 10 + Math.sin((this.waveTimer || 0) * 10) * 1.8)
+            : this.fishingState === 'CASTING' ? 5 : 0);
+          const ctrlY = rig.rodControl.y + flexDip * 0.45;
+          const tipY = rig.rodTip.y + flexDip;
           if (hullStyle === 'submarine') {
             ctx.strokeStyle = '#94a3b8';
             ctx.lineWidth = 3.2;
@@ -2329,7 +2427,7 @@ export class OceanWorld {
           ctx.lineWidth = 3;
           ctx.beginPath();
           ctx.moveTo(rig.rodStart.x, rig.rodStart.y);
-          ctx.quadraticCurveTo(rig.rodControl.x, rig.rodControl.y, rig.rodTip.x, rig.rodTip.y);
+          ctx.quadraticCurveTo(rig.rodControl.x, ctrlY, rig.rodTip.x, tipY);
           ctx.stroke();
           ctx.fillStyle = hullStyle === 'submarine' ? '#f59e0b' : '#64748b';
           ctx.beginPath();
@@ -2380,6 +2478,16 @@ export class OceanWorld {
 
     ctx.fillRect(0, topY, this.worldWidth, bottomY - topY);
 
+    // Subtle atmospheric depth shading as depth increases
+    try {
+      const midDepthRatio = Math.min(1, Math.max(0, ((visibleTopM + visibleBottomM) * 0.5) / 800));
+      const depthWash = ctx.createLinearGradient(0, topY, 0, bottomY);
+      depthWash.addColorStop(0, `rgba(2, 6, 23, ${(0.04 + midDepthRatio * 0.14).toFixed(3)})`);
+      depthWash.addColorStop(1, `rgba(2, 6, 23, ${(0.16 + midDepthRatio * 0.24).toFixed(3)})`);
+      ctx.fillStyle = depthWash;
+      ctx.fillRect(0, topY, this.worldWidth, bottomY - topY);
+    } catch (e) {}
+
     // Undulating rainbow water wash for Sea 7 (Eldritch Chrono Void)
     if (this.currentSeaId === 7) {
       try {
@@ -2399,7 +2507,7 @@ export class OceanWorld {
     ctx.beginPath(); ctx.rect(0, topY, this.worldWidth, bottomY - topY); ctx.clip();
 
     this.renderAmbientWater(ctx, cameraY, screenHeight);
-    drawDepthScenery(ctx, this.currentSeaId, cameraY, this.surfaceY, this.worldWidth, screenHeight);
+    drawDepthScenery(ctx, this.currentSeaId, cameraY, this.surfaceY, this.worldWidth, screenHeight, this.causticTimer || 0);
 
     if (getRealmDepthZone((visibleTopM + visibleBottomM) * .5, this.currentSeaId).index > 0) {
       this.renderUnderwaterStarlight(ctx, cameraY, screenHeight);
@@ -2584,24 +2692,39 @@ export class OceanWorld {
     ctx.restore();
   }
 
-  // Sea 1: Sunlit Caustics
+  // Sea 1: Sunlit Caustics (soft feathered sunbeams reacting gently to time of day)
   renderCaustics(ctx, topY) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < 6; i++) {
-      const xOffset = (i * 220 + Math.sin(this.causticTimer + i) * 40) % (this.worldWidth + 200) - 100;
+    const sky = worldCycle.getSkyColors?.() || { isNight: false };
+    const beamAlpha = sky.isNight ? 0.055 : 0.105;
+    for (let i = 0; i < 7; i++) {
+      const xOffset = (i * 195 + Math.sin((this.causticTimer || 0) * 0.75 + i) * 32) % (this.worldWidth + 220) - 110;
+      const sway = Math.cos((this.causticTimer || 0) * 0.55 + i * 1.1) * 18;
       try {
-        const beamGrad = ctx.createLinearGradient(xOffset, topY, xOffset + 150, topY + 450);
-        beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-        beamGrad.addColorStop(0.5, 'rgba(224, 242, 254, 0.08)');
-        beamGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = beamGrad;
-
+        const outerGrad = ctx.createLinearGradient(xOffset, topY, xOffset + 190 + sway, topY + 520);
+        outerGrad.addColorStop(0, `rgba(224, 242, 254, ${(beamAlpha * 0.7).toFixed(3)})`);
+        outerGrad.addColorStop(0.45, `rgba(186, 230, 253, ${(beamAlpha * 0.35).toFixed(3)})`);
+        outerGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = outerGrad;
         ctx.beginPath();
-        ctx.moveTo(xOffset, topY);
-        ctx.lineTo(xOffset + 60, topY);
-        ctx.lineTo(xOffset + 240, topY + 500);
-        ctx.lineTo(xOffset + 140, topY + 500);
+        ctx.moveTo(xOffset - 18, topY);
+        ctx.lineTo(xOffset + 78, topY);
+        ctx.lineTo(xOffset + 280 + sway, topY + 520);
+        ctx.lineTo(xOffset + 115 + sway, topY + 520);
+        ctx.closePath();
+        ctx.fill();
+
+        const innerGrad = ctx.createLinearGradient(xOffset, topY, xOffset + 160 + sway, topY + 420);
+        innerGrad.addColorStop(0, `rgba(255, 255, 255, ${(beamAlpha * 0.85).toFixed(3)})`);
+        innerGrad.addColorStop(0.55, `rgba(224, 242, 254, ${(beamAlpha * 0.25).toFixed(3)})`);
+        innerGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = innerGrad;
+        ctx.beginPath();
+        ctx.moveTo(xOffset + 10, topY);
+        ctx.lineTo(xOffset + 46, topY);
+        ctx.lineTo(xOffset + 215 + sway, topY + 440);
+        ctx.lineTo(xOffset + 150 + sway, topY + 440);
         ctx.closePath();
         ctx.fill();
       } catch (e) {}
@@ -2614,18 +2737,27 @@ export class OceanWorld {
     ctx.save();
     const time = this.causticTimer || 0;
     const w = this.worldWidth;
-    
-    // Depth clusters: spaced well below the surface, sparse and spread out (55m+ depth)
-    const clusterCount = 4;
+
+    // Richer reef & rock clusters distributed through upper-mid shoals (40m+)
+    const clusterCount = 7;
     for (let c = 0; c < clusterCount; c++) {
-      const worldX = ((c * 420 + 130) % (w - 140)) + 70;
-      const worldY = this.surfaceY + 820 + (c * 240) % 900;
+      const worldX = ((c * 310 + 95) % Math.max(200, w - 120)) + 60;
+      const worldY = this.surfaceY + 620 + (c * 210) % 1050;
       const screenY = worldY - cameraY;
-      if (screenY < -120 || screenY > screenHeight + 120) continue;
+      if (screenY < -140 || screenY > screenHeight + 140) continue;
 
       ctx.save();
       ctx.translate(worldX, screenY);
-      ctx.globalAlpha = 0.35 + (c % 3) * 0.15;
+      ctx.globalAlpha = 0.34 + (c % 3) * 0.14;
+
+      // Grounding rocky reef mound beneath every cluster
+      ctx.fillStyle = '#1e3a44';
+      ctx.beginPath();
+      ctx.moveTo(-36, 12);
+      ctx.quadraticCurveTo(-18, -6, 0, -2);
+      ctx.quadraticCurveTo(22, -8, 38, 12);
+      ctx.closePath();
+      ctx.fill();
 
       const clusterType = c % 4;
       if (clusterType === 0) {

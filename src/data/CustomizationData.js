@@ -32,12 +32,33 @@ export function normalizeCustomization(options, values = {}) {
 export function drawAngler(ctx, appearance, x = 0, y = 0, options = {}) {
   const safeX = Number.isFinite(x) ? x : 0;
   const safeY = Number.isFinite(y) ? y : 0;
+  const time = Number.isFinite(options.time) ? options.time : 0;
+  const state = options.state || 'SURFACE_IDLE';
+  const tension = Number.isFinite(options.tension) ? Math.max(0, Math.min(1, options.tension)) : 0;
+  const isReeling = state === 'REELING' || Boolean(options.isReeling);
+  const isCasting = state === 'CASTING';
+  const isAiming = state === 'AIMING';
+
   ctx.save();
   try {
     ctx.translate(safeX, safeY);
     const look = normalizeCustomization(ANGLER_OPTIONS, appearance);
-    // Boots meet the shared deck/seat anchor instead of leaving the coat floating.
+
+    // Subtle living torso lean & breathing bob based on fishing state
+    const breatheY = Math.sin(time * 2.1) * 0.9;
+    let bodyTilt = Math.sin(time * 1.1) * 0.025;
+    if (isAiming) bodyTilt = 0.06;
+    else if (isCasting) bodyTilt = 0.14;
+    else if (isReeling) bodyTilt = -0.07 - tension * 0.09 + Math.sin(time * 8) * 0.025;
+
+    // Boots stay planted on the boat deck/seat anchor
     ctx.fillStyle = '#292524'; ctx.fillRect(-10, -3, 8, 5); ctx.fillRect(2, -3, 9, 5);
+
+    ctx.save();
+    ctx.translate(0, -2);
+    ctx.rotate(bodyTilt);
+    ctx.translate(0, 2 + breatheY);
+
     ctx.fillStyle = look.coat || '#eab308';
     ctx.beginPath(); ctx.moveTo(-9, -26); ctx.lineTo(9, -26); ctx.lineTo(11, -2); ctx.lineTo(-11, -2); ctx.closePath(); ctx.fill();
     ctx.fillStyle = look.skin || '#fde6c8'; ctx.beginPath(); ctx.arc(0, -32, 7, 0, Math.PI * 2); ctx.fill();
@@ -48,9 +69,16 @@ export function drawAngler(ctx, appearance, x = 0, y = 0, options = {}) {
       else if (look.hat === 'cap') ctx.fillRect(-7, -35, 23, 3);
       else { ctx.fillRect(-8, -36, 16, 4); ctx.beginPath(); ctx.arc(0, -45, 3, 0, Math.PI * 2); ctx.fill(); }
     }
-    ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(3, -32, 1, 0, Math.PI * 2); ctx.fill();
+    // Natural occasional eye blink
+    const blinkCycle = (time % 4.5);
+    ctx.fillStyle = '#0f172a';
+    if (blinkCycle > 4.35) {
+      ctx.fillRect(1.5, -32, 3, 1);
+    } else {
+      ctx.beginPath(); ctx.arc(3, -32, 1, 0, Math.PI * 2); ctx.fill();
+    }
     if (options.isKnitting) {
-      const kTime = options.time || 0;
+      const kTime = time;
       const needleBob = Math.sin(kTime * 8) * 2.5;
       // Arm folded forward knitting
       ctx.strokeStyle = look.coat || '#eab308';
@@ -77,8 +105,34 @@ export function drawAngler(ctx, appearance, x = 0, y = 0, options = {}) {
       ctx.fillStyle = '#f43f5e';
       ctx.beginPath(); ctx.arc(14, -2, 3.2, 0, Math.PI * 2); ctx.fill();
     } else {
-      ctx.strokeStyle = look.coat || '#eab308'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(22, -16); ctx.stroke();
+      // Forearm & second reeling hand articulated cleanly across cast, idle, and reel-up
+      ctx.strokeStyle = look.coat || '#eab308';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      let handX = 22;
+      let handY = -16 + Math.sin(time * 2.1) * 1.1;
+      if (isAiming) {
+        handX = 21;
+        handY = -20;
+      } else if (isCasting) {
+        handX = 25;
+        handY = -12;
+      } else if (isReeling) {
+        handX = 20 + Math.cos(time * 10) * 3.2;
+        handY = -18 + Math.sin(time * 10) * 3.2;
+      }
+      ctx.beginPath();
+      ctx.moveTo(4, -18);
+      ctx.quadraticCurveTo(13, isReeling ? -14 : -17, handX, handY);
+      ctx.stroke();
+
+      // Secondary stabilizing / cranking hand
+      ctx.fillStyle = look.skin || '#fde6c8';
+      ctx.beginPath();
+      ctx.arc(handX, handY, 2.3, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.restore();
   } catch (err) {
     console.warn('drawAngler render error:', err);
   } finally {

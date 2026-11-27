@@ -587,7 +587,8 @@ function drawApexPelagic(ctx, species, primary, secondary, finColor, time) {
 function drawSpecializedFish(ctx, species, primary, secondary, finColor, time) {
   const sh = species.shape;
   const name = (species.name || '').toLowerCase();
-  const wave = Math.sin(time * 2.2) * 2.2;
+  const wave = Math.sin(time * 2.6) * 2.8;
+  const finRow = Math.sin(time * 3.2) * 2.4;
   const isCaldera = species.zone === 6;
 
   // Pick body silhouette archetype
@@ -783,8 +784,8 @@ function drawSpecializedFish(ctx, species, primary, secondary, finColor, time) {
     }
   }
 
-  // Pectoral fin + crisp unobstructed eye
-  drawFin(ctx, l * 0.25, 3, 9, 6 + wave * 0.3, finColor);
+  // Pectoral fin (smooth rowing beat) + crisp unobstructed eye
+  drawFin(ctx, l * 0.25, 3, 9.5, 6.5 + (finRow || wave * 0.5), finColor);
   const eyeX = sh === 'blobfish' ? l * 0.56 : l * 0.64;
   const eyeY = sh === 'blobfish' ? -h * 0.62 : -h * 0.26;
   drawEye(ctx, eyeX, eyeY, sh === 'lanternfish' ? 3.1 : 2.5, species.eyeColor, fierce);
