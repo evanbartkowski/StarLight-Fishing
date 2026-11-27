@@ -1,7 +1,7 @@
 {
   "name": "Starlight Fishing",
   "short_name": "Starlight Fishing",
-  "description": "Play Starlight Fishing free in your browser across 7 enchanted ocean realms.",
+  "description": "Explore seven enchanted seas, collect fish and restore relics. Install to play offline.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a1128",
@@ -34,5 +34,12 @@
       "type": "image/png",
       "purpose": "any"
     }
-  ]
+  ],
+  "id": "/",
+  "scope": "/",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "lang": "en"
 }

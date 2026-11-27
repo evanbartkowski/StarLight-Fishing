@@ -562,7 +562,9 @@ export class OceanWorld {
     }
     if (this.shark && this.saveSystem?.isPetEquipped('shark')) this.shark.update(dt, this.boat, this.surfaceY);
     if (this.dolphin && this.saveSystem?.isPetEquipped('dolphin')) {
-      this.dolphin.update(dt, this.surfaceY, worldCycle.getWeather());
+      const layout = getVesselLayout(this.saveSystem?.getUpgradeLevel?.('boatVessel') || 0,
+        this.boat.width, this.boat.height, this.saveSystem?.getBoatHull?.() || 'standard');
+      this.dolphin.update(dt, this.surfaceY, worldCycle.getWeather(), { x: this.boat.x, halfWidth: layout.halfWidth });
     }
 
     // Update drift items

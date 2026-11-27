@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@font-face { font-family: 'Outfit'; src: url('/fonts/outfit-variable.ttf') format('truetype'); font-style: normal; font-weight: 100 900; font-display: swap; }
 
 * {
   box-sizing: border-box;
@@ -4368,12 +4368,11 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .depth-active { animation:depthPulse 2s ease-in-out infinite; }
 .minimap-modal-container path[stroke-dasharray="4 6"] { stroke:var(--depth-color); }
 @media (prefers-reduced-motion:reduce) { .depth-active { animation:none; } }
-.relic-case { --case-color: #b98b60; position: relative; width: 104px; height: 72px; margin: 20px auto; border: 3px solid var(--case-color); border-radius: 12px 12px 8px 8px; background: linear-gradient(145deg,#334155,#0b1324); box-shadow: 0 0 28px color-mix(in srgb,var(--case-color) 30%,transparent), inset 0 0 16px #020617; transform: perspective(250px) rotateY(-12deg); }
-.relic-case-2 { --case-color: #6ee7b7; } .relic-case-3 { --case-color: #38bdf8; } .relic-case-4 { --case-color: #c084fc; } .relic-case-5 { --case-color: #eab308; }
-.relic-case-6 { --case-color: #f97316; } .relic-case-7 { --case-color: #2dd4bf; } .relic-case-8 { --case-color: #e879f9; }
-.relic-case i { position: absolute; left: -3px; right: -3px; top: 20px; height: 3px; background: var(--case-color); box-shadow: 0 0 9px var(--case-color); }
-.relic-case b { position: absolute; left: 36px; top: 17px; width: 30px; height: 32px; font: bold 17px/32px serif; text-align: center; color: #071321; background: var(--case-color); clip-path: polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%); }
-.relic-case span { position: absolute; inset: 7px; border-left: 5px solid var(--case-color); border-right: 5px solid var(--case-color); opacity: .55; }
+.crate-artwork { position: relative; width: 144px; height: 132px; margin: 8px auto; }
+.crate-artwork img { display: block; width: 144px; height: 120px; object-fit: contain; }
+.crate-artwork b { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); color: #e5d2a2; background: #0c2231; border: 1px solid #6b858a; border-radius: 7px; padding: 2px 7px; font: 700 12px Georgia, serif; }
+.chest-small-art { display: block; width: 64px; height: 52px; max-width: 100%; object-fit: contain; flex-shrink: 0; }
+
 .crate-rewards { text-align: left; margin: 22px 0; padding: 16px; border: 1px solid #334155; border-radius: 14px; background: #081321; }
 .crate-rewards p { font-size: .8rem; color: #a9bed1; line-height: 1.5; }
 .crate-reward-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(125px,1fr)); gap: 8px; max-height: 260px; overflow-y: auto; }
@@ -6434,3 +6433,22 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 
 .derby-timer { font-size: 0.78rem; color: #93c5fd; }
 .derby-own-score { font-size: 0.95rem; color: #f8fafc; }
+
+/* Corner installation control and a native dialog with built-in focus trapping. */
+.install-game-icon { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; color: #bce9ee; background: #112535; border: 1px solid #3a6472; cursor: pointer; z-index: 2; }
+.install-game-icon svg { width: 23px; height: 23px; }
+.install-game-icon:hover { background: #204452; color: #fff; }
+.install-game-icon:focus-visible, .install-dialog button:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
+.install-dialog { margin: auto; width: min(480px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow-y: auto; padding: 25px; color: #dfedf3; background: #101f30; border: 1px solid #4c747e; border-radius: 20px; box-shadow: 0 22px 80px #0008; }
+.install-dialog::backdrop { background: #020c18bb; backdrop-filter: blur(8px); }
+.install-dialog-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.install-dialog-heading button { width: 44px; height: 44px; flex-shrink: 0; border: 0; background: transparent; color: #b1cdd3; font-size: 28px; cursor: pointer; }
+.install-dialog h2 { color: #f4e1b5; font: 1.8rem Georgia, serif; margin: 10px 0 16px; }
+.install-dialog p { font-size: .93rem; line-height: 1.65; margin: 10px 0; }
+.install-dialog > .btn { width: 100%; margin-top: 12px; white-space: normal; }
+.install-dialog [hidden] { display: none !important; }
+.offline-game-status { display: flex; align-items: center; gap: 10px; margin-top: 20px; border-top: 1px solid #34535d; padding-top: 12px; }
+.offline-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #fbbf24; }
+.offline-game-status:has([data-ready=true]) .offline-status-dot { background: #5eead4; }
+.install-dialog .install-online-note { font-size: .79rem; color: #9cb4c1; margin-top: 20px; }
+@media (max-height: 650px) and (min-width: 600px) { .install-game-icon { top: 8px; right: 8px; } }

@@ -49,6 +49,14 @@ Underwater relics show the same artifact as the workshop. Restoration uses three
 
 After five minutes without any pointer movement or button/key input, the captain puts away the rod and silently knits a fish sweater. Any activity ends the animation. Rare fish constellations are smaller, fade out within three minutes, and leave before dawn even after being solved.
 
+## Install and play offline
+
+Use the small download icon in the top-right corner of the start screen. Supported browsers can install Starlight Fishing as an app; the dialog also gives installation steps for Safari. Wait for **Ready for offline play** before disconnecting. Guest fishing, every realm, inventory, restoration and the ending work offline, and progress remains on this device. Signing in, cloud saves, chat, leaderboards and purchases need a connection.
+
+The core download includes all game code, artwork and fonts. The full soundtrack is an optional **153 MB** download with progress and resumable retries. Updates download in the background and wait for an explicit refresh so they cannot replace a running game with mismatched files.
+
+Fish with shared oval/disc bodies now have species-specific anatomy, fins and markings, including amphora handles, a temple-bell clapper, gear spokes, lantern lures, broad grouper jaws and flatfish eyes. The eight chest ranks have different silhouettes and hardware; realm caches have native materials. Chest artwork is 16% larger, with unchanged catch collision sizes. Pet perches, scales and hit areas follow the chosen boat, including swim and flight positions.
+
 ## Make it your own
 
 Open **Settings > Customize Appearance** to choose your angler's skin tone, coat, hair, hat color, and headwear, with a live preview. Choices save with the active local profile.
@@ -103,10 +111,11 @@ Open the URL printed by Vite, normally `http://localhost:5173`.
 | `npm test` | Run gameplay data and realm regression checks |
 | `npm run typecheck` | Check typed gameplay and server contracts |
 | `npm run test:browser` | Run Edge browser checks against the local dev server (override with `GAME_TEST_URL`) |
+| `npm run test:offline` | Check worker updates and offline play against a production preview (`OFFLINE_TEST_URL`, default port 5180) |
 | `npm run build` | Generate the production site in `dist/` |
 | `npm run preview` | Preview the existing production build locally |
 
-Run `npm test` for realm roster, spawning, economy, journal, inventory, and rendering regression checks. Run `npm run build` before publishing.
+Run `npm test` for realm roster, spawning, economy, journal, inventory, and rendering regression checks. Run `npm run build` before publishing. To test offline play, run `npm run preview -- --port 5180`, then `npm run test:offline`. Set `TEST_OFFLINE_MUSIC=1` to validate the complete optional soundtrack download locally.
 
 ## Firebase Hosting deployment
 

@@ -211,6 +211,9 @@
 
     <!-- Small Screen Welcome Popup (Appears on Load Before You Play) -->
     <div id="welcome-popup" class="welcome-overlay">
+      <button type="button" id="btn-install-game" class="install-game-icon" aria-label="Install game and play offline" title="Install game and play offline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11m-4-4 4 4 4-4M4 16v4h16v-4"/></svg>
+      </button>
       <div class="welcome-card">
         <div class="welcome-icon">
           <img src="/favicon-192x192.png" alt="Starlight Fishing Logo" class="brand-logo-img" width="76" height="76" />
@@ -380,5 +383,18 @@
         setTimeout(dismissLoading, 3000);
       })();
     </script>
+
+    <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-title">
+      <div class="install-dialog-heading"><span class="eyebrow">Take the Seven Seas with you</span><button type="button" id="install-close" aria-label="Close install options">&times;</button></div>
+      <h2 id="install-title">Starlight, wherever you go</h2>
+      <p>Install the game as an app and explore every sea offline. Catches and upgrades save on this device.</p>
+      <p id="install-guidance"></p>
+      <button type="button" id="install-native" class="btn btn-primary" hidden>Install game</button>
+      <div class="offline-game-status"><span class="offline-status-dot" aria-hidden="true"></span><p id="offline-status" data-ready="false" role="status">Preparing the offline game?</p></div>
+      <button type="button" id="offline-retry" class="btn btn-secondary" hidden>Retry offline download</button>
+      <button type="button" id="offline-update" class="btn btn-primary" hidden>Update and refresh</button>
+      <button type="button" id="offline-music" class="btn btn-secondary" hidden>Save music offline</button>
+      <p class="install-online-note">Cloud saves, signing in, chat and purchases need an internet connection. Guest play works offline.</p>
+    </dialog>
   </body>
 </html>

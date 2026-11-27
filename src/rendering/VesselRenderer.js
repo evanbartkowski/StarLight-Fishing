@@ -17,6 +17,21 @@ export const VESSEL_NAMES = [
  * Shared deck, bow, stern, trinket, and pet layout per vessel tier (0..8)
  * so boats, trinkets, and companions (cat, pelican) align cleanly across all vessels.
  */
+const seats = [[0, -10], [-2, -11], [-4, -12], [0, -11], [8, -12], [12, -14], [18, -14], [18, -14], [10, -15]];
+
+const exoticSeats = { pirate: [6, -16], chinese_junk: [20, -12], viking: [-22, -10], ghost_ship: [18, -14], steampunk: [8, -14] };
+
+const standardPerches = [[-24, -10, 26, -10], [-26, -11, 29, -11], [-29, -12, 33, -12],
+  [-34, -12, 38, -12], [-35, -14, 42, -14], [-51, -14, 76, -18],
+  [-34, -27, 84, -18], [-38, -29, 91, -18], [-48, -45, 100, -22]];
+
+const exoticPerches = { pirate: [-49, -46, 106, -27], submarine: [-29, -38, 79, -13],
+  chinese_junk: [-49, -51, 94, -25], viking: [-62, -15, 79, -23],
+  ghost_ship: [-59, -16, 94, -16], steampunk: [-79, -14, 85, -16] };
+
+const catScales = [.6, .64, .68, .72, .75, .84, .85, .87, .9];
+const pelicanScales = [.62, .64, .68, .72, .75, .82, .84, .86, .9];
+
 export function getSubmarineCockpit(bW = 140) {
   const scale = Number.isFinite(bW) && bW > 0 ? bW / 140 : 1;
   return { x: 26 * scale, y: -18, radius: 29, seatY: -15, anglerScale: .64 };
@@ -24,8 +39,7 @@ export function getSubmarineCockpit(bW = 140) {
 
 export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'standard') {
   const layout = getDeckLayout(vessel, bW, bH, hullStyle);
-  const seats = [[-2, -10], [-5, -11], [-6, -12], [0, -11], [8, -12], [12, -14], [18, -14], [18, -14], [10, -15]];
-  const exoticSeats = { pirate: [6, -16], chinese_junk: [20, -12], viking: [-22, -10], ghost_ship: [18, -14], steampunk: [8, -14] };
+
   const seat = hullStyle === 'standard' ? seats[layout.tier] : exoticSeats[hullStyle];
   if (seat) layout.anglerPos = { x: seat[0] * layout.scale, y: seat[1] };
   if (hullStyle === 'submarine') {
@@ -35,6 +49,15 @@ export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'stan
     layout.trinketRight = { x: cockpit.x + cockpit.radius + 12, y: -13 };
     layout.pelicanPos = { x: cockpit.x + cockpit.radius + 23, y: -13 };
   }
+  // Perches describe the supporting deck/roof, not the animal's center. The
+  // cushion and webbed feet are then placed directly on that surface.
+
+  const perch = exoticPerches[hullStyle] || standardPerches[layout.tier];
+  layout.catFacing = hullStyle === 'submarine' ? 1 : -1;
+  layout.catScale = hullStyle === 'submarine' ? .68 : hullStyle !== 'standard' ? .8 : catScales[layout.tier];
+  layout.pelicanScale = hullStyle === 'submarine' ? .7 : hullStyle !== 'standard' ? .8 : pelicanScales[layout.tier];
+  layout.catPos = { x: perch[0] * layout.scale, y: perch[1] - 6 * layout.catScale };
+  layout.pelicanPos = { x: perch[2] * layout.scale, y: perch[3] - 10.8 * layout.pelicanScale };
   return layout;
 }
 

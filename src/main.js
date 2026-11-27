@@ -1,3 +1,4 @@
+import { initializeInstallGame } from './ui/InstallGame.js';
 import { createTouchControls } from './ui/TouchControls.js';
 import { serverOffset } from './systems/SocialFirebase.js';
 import { visitAquarium } from './ui/AquariumSocial.js';
@@ -406,7 +407,7 @@ function handlePointerDown(e) {
     const localY = dx * sin + dy * cos;
 
     // Check Cat (only if player has unlocked this companion)
-    if (save.isPetEquipped('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
+    if (save.isPetEquipped('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel, save.getBoatHull())) {
       if (oceanWorld.shipsCat.hasMorningGift) {
         const gift = oceanWorld.shipsCat.collectGift();
         if (gift) {
@@ -432,7 +433,7 @@ function handlePointerDown(e) {
     }
 
     // Check Pelican (only if player has unlocked this companion)
-    if (save.isPetEquipped('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
+    if (save.isPetEquipped('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel, save.getBoatHull())) {
       oceanWorld.pelican.feedFish();
       if (questSystem) questSystem.dispatch({ type: 'pet_companion', pet: 'pelican' });
       soundManager.playPelicanChirp();
@@ -485,10 +486,10 @@ function handlePointerMove(e) {
     const localX = dx * cos - dy * sin;
     const localY = dx * sin + dy * cos;
 
-    if (save.isPetEquipped('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel)) {
+    if (save.isPetEquipped('cat') && oceanWorld.shipsCat && oceanWorld.shipsCat.hitTest(localX, localY, vessel, save.getBoatHull())) {
       oceanWorld.hoveredCompanion = 'angela';
       if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
-    } else if (save.isPetEquipped('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel)) {
+    } else if (save.isPetEquipped('pelican') && oceanWorld.pelican && oceanWorld.pelican.hitTest(localX, localY, vessel, save.getBoatHull())) {
       oceanWorld.hoveredCompanion = 'evan';
       if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
     } else if (save.isPetEquipped('dolphin') && oceanWorld.dolphin && oceanWorld.dolphin.checkHover(mousePos.x, mousePos.y, cameraY)) {
@@ -1635,10 +1636,4 @@ window.addEventListener('focus', () => {
   soundManager.syncRecordedMusic?.();
 });
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  });
-}
-
-
+initializeInstallGame();

@@ -5,6 +5,7 @@ import { calculateCrown, getCrownMultiplier } from '../data/legendaries.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { rollCatchTraits, depthRewardMultiplier } from '../systems/CatchTraits.js';
 import { drawMarineCreature } from '../rendering/MarineCreatureSilhouettes.js';
+import { getFishAnatomy, drawDistinctFish } from '../rendering/FishAnatomy.js';
 import { renderFishEasterEggOverlay } from '../systems/EasterEggs.js';
 
 /**
@@ -1066,7 +1067,8 @@ export class Fish {
       'void_wyrm',
     ].includes(s.shape);
 
-    const hasOwnAppendages = isCustomTailLeviathan || [
+    const anatomy = getFishAnatomy(s);
+    const hasOwnAppendages = Boolean(anatomy) || isCustomTailLeviathan || [
       'mossback_turtle', 'sea_turtle', 'nautilus', 'dolphin', 'whale',
       'cuttlefish', 'salp', 'krill', 'copepod', 'seal', 'sea_lion', 'walrus',
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
@@ -1110,7 +1112,8 @@ export class Fish {
     ctx.fillStyle = primary;
     ctx.beginPath();
 
-    const isCustomMarine = drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this);
+    const isCustomMarine = drawDistinctFish(ctx, anatomy, primary, secondary, finColor, this.wiggleTimer) ||
+      drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this);
     if (isCustomMarine) {
       // Specialized marine creature silhouette rendered
     } else if (s.name === 'Giant Cave Salamander') {

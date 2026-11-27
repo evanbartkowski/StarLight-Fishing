@@ -1,8 +1,10 @@
-import { getCrateDropPreview } from '../data/CrateData.js';
+import { getCrateDropPreview, CRATE_RANKS } from '../data/CrateData.js';
+import { chestThumbnail } from '../rendering/ChestArtwork.js';
 import { getCrateLootArt } from './CustomVectorArt.js';
 
-export function crateArtwork(rank) {
-  return `<div class="relic-case relic-case-${rank}" aria-hidden="true"><i></i><b>${['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'][rank] || String(rank)}</b><span></span></div>`;
+export function crateArtwork(rank, item = {}) {
+  const config = { ...CRATE_RANKS.find(crate => crate.rank === rank), ...item, crateRank: rank };
+  return `<div class="crate-artwork" aria-hidden="true"><img src="${chestThumbnail(config)}" alt="" width="144" height="120"><b>${['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'][rank] || String(rank)}</b></div>`;
 }
 
 export function crateRewardGallery(rank, save) {

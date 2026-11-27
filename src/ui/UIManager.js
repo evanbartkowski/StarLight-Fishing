@@ -2,6 +2,7 @@ import { openRestorationDesk as openRelicWorkshop } from './RestorationDesk.js';
 import { getRandomBottleMessage } from '../data/DriftMessages.js';
 import { getRealmDepthZone as getDepthSubZone } from '../data/RealmDepths.js';
 import { crateArtwork, crateRewardGallery } from './CratePresentation.js';
+import { chestThumbnail, drawChest } from '../rendering/ChestArtwork.js';
 import { displaySpeciesName } from '../systems/CatchTraits.js';
 import { openCatchCard, specimen } from './CatchCard.js';
 import { shareAquarium, visitAquarium, getAquariumReactionSummary } from './AquariumSocial.js';
@@ -1739,7 +1740,7 @@ export class UIManager {
         if (isFish) {
           iconHtml = `<canvas class="catch-item-canvas" id="catch-summary-canvas-${itemIdx}" width="112" height="88"></canvas>`;
         } else if (isCrate) {
-          iconHtml = `<div class="catch-item-art-icon" style="transform: scale(0.65);">${crateArtwork(item.crateRank || 1)}</div>`;
+          iconHtml = `<img class="chest-small-art" src="${chestThumbnail(item)}" alt="" width="64" height="52">`;
         } else if (isSafe) {
           iconHtml = `<div class="catch-item-art-icon" style="font-size: 2.2rem; display: flex; align-items: center; justify-content: center;">🔒</div>`;
         } else if (isFossil) {
@@ -2128,7 +2129,7 @@ export class UIManager {
 
         <div id="crate-display-stage" style="margin: 20px auto; width: 140px; height: 140px; background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(15, 23, 42, 0) 70%); display: flex; align-items: center; justify-content: center; border-radius: 50%;">
           <span id="crate-icon-anim" style="font-size: 4.8rem; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6)); transition: transform 0.2s;">
-            ${crateArtwork(rank)}
+            ${crateArtwork(rank, currentCrate)}
           </span>
         </div>
 
@@ -2138,7 +2139,7 @@ export class UIManager {
           <div class="gacha-reel-strip" id="gacha-reel-track">
             <!-- Populated dynamically on spin -->
             <div class="gacha-reel-placeholder">
-              <div class="gacha-placeholder-art">${crateArtwork(rank)}</div>
+              <div class="gacha-placeholder-art">${crateArtwork(rank, currentCrate)}</div>
             </div>
           </div>
         </div>
@@ -4456,7 +4457,7 @@ export class UIManager {
           <div class="inventory-card rarity-border-${item.rarity} ${isLocked ? 'item-locked-border' : ''}">
             <div class="inv-card-header">
               <div class="inv-card-icon ${isFish ? 'inv-card-icon-canvas' : ''}" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
-                ${isFish ? `<canvas id="inv-fish-canvas-${item.instanceId}" width="64" height="48" class="inv-specimen-canvas" aria-label="${item.name}"></canvas>` : (item.icon || getSpeciesIcon(item))}
+                ${isFish ? `<canvas id="inv-fish-canvas-${item.instanceId}" width="64" height="48" class="inv-specimen-canvas" aria-label="${item.name}"></canvas>` : item.isCrate || item.category === 'crate' ? `<img class="chest-small-art" src="${chestThumbnail(item)}" alt="" width="64" height="52">` : (item.icon || getSpeciesIcon(item))}
               </div>
               <div class="inv-card-title-col">
                 <div class="inv-card-name">${item.name}</div>
@@ -4878,10 +4879,14 @@ export class UIManager {
           ctx.fillStyle = spot;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-          ctx.font = '64px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(item.icon || getSpeciesIcon(item), 170, 70);
+          if (item.isCrate || item.category === 'crate') {
+            ctx.save(); ctx.translate(170, 77); drawChest(ctx, item, 38); ctx.restore();
+          } else {
+            ctx.font = '64px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(item.icon || getSpeciesIcon(item), 170, 70);
+          }
         }
       }
     }

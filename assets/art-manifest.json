@@ -1,0 +1,61 @@
+{
+  "renderer": "HTML5 Canvas 2D",
+  "view": "side",
+  "platforms": [
+    "desktop web",
+    "touch web",
+    "offline PWA"
+  ],
+  "style": {
+    "palette": "Existing fantasy-sea palettes with pale highlights and dark outlines",
+    "scale": "Fish geometry approximately 40-65 game pixels; chest artwork enlarged 16 percent",
+    "motion": "Deterministic fins and anatomy, cached species descriptors and thumbnails"
+  },
+  "assets": [
+    {
+      "path": "src/rendering/FishAnatomy.js",
+      "role": "72 species with distinct body shapes, fins and motifs",
+      "source": {
+        "kind": "original-code",
+        "rights": "Original artwork authored for this project"
+      },
+      "technical_checks_passed": true,
+      "checks": [
+        "native-scale contact sheet",
+        "distinct neutral-color silhouettes",
+        "gameplay rendering tests"
+      ]
+    },
+    {
+      "path": "src/rendering/ChestArtwork.js",
+      "role": "Eight chest ranks, seven realm caches and shared UI thumbnails",
+      "source": {
+        "kind": "original-code",
+        "rights": "Original artwork authored for this project"
+      },
+      "technical_checks_passed": true,
+      "checks": [
+        "eight unique silhouettes",
+        "shared artwork in water and UI",
+        "canvas state recovery"
+      ]
+    },
+    {
+      "path": "public/fonts/outfit-variable.ttf",
+      "role": "Offline variable-weight UI font",
+      "source": {
+        "kind": "licensed-font",
+        "url": "https://github.com/google/fonts/tree/main/ofl/outfit",
+        "license": "SIL Open Font License 1.1",
+        "licenseFile": "public/fonts/OFL.txt"
+      },
+      "sha256": "fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade",
+      "technical_checks_passed": true,
+      "checks": [
+        "TrueType signature",
+        "browser rendering",
+        "offline precache and reload"
+      ]
+    }
+  ]
+}

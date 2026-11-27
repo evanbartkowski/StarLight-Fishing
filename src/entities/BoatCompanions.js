@@ -126,10 +126,12 @@ export class ShipsCat {
 
   // Coords relative to boat center
   hitTest(localX, localY, vessel, hullStyle = 'standard') {
-    const pos = this.getDeckPosition(vessel, hullStyle);
-    const dx = localX - pos.x;
-    const dy = localY - pos.y;
-    return (dx * dx + dy * dy) < 22 * 22;
+    const layout = getVesselLayout(vessel, 140, 40, hullStyle);
+    const pos = layout.catPos;
+    const scale = layout.catScale;
+    const dx = localX - pos.x - (this.swimAdventure?.xOffset || 0);
+    const dy = localY - pos.y - (this.swimAdventure?.yOffset || 0);
+    return (dx / (22 * scale)) ** 2 + (dy / (18 * scale)) ** 2 < 1;
   }
 
   getDeckPosition(vessel, hullStyle = 'standard') {
@@ -137,14 +139,17 @@ export class ShipsCat {
   }
 
   render(ctx, vessel, hullStyle = 'standard') {
-    const pos = this.getDeckPosition(vessel, hullStyle);
+    const layout = getVesselLayout(vessel, 140, 40, hullStyle);
+    const pos = layout.catPos;
     const adv = this.swimAdventure;
+    const scale = layout.catScale;
 
     ctx.save();
     try {
       // Cushion stays on the vessel deck
       ctx.save();
       ctx.translate(pos.x, pos.y);
+      ctx.scale(scale, scale);
       ctx.fillStyle = '#0f766e';
       ctx.beginPath();
       ctx.ellipse(0, 6, 17, 5, 0, 0, Math.PI * 2);
@@ -155,7 +160,7 @@ export class ShipsCat {
       ctx.restore();
 
       ctx.translate(pos.x + (adv?.xOffset || 0), pos.y + (adv?.yOffset || 0));
-      if (adv?.facing === -1) ctx.scale(-1, 1);
+      ctx.scale(scale * (adv ? (adv.facing === -1 ? -1 : 1) : layout.catFacing), scale);
       if (adv && (adv.yOffset || 0) > 16) {
         // Swimming water ripple under Angela
         ctx.strokeStyle = 'rgba(186, 230, 253, 0.75)';
@@ -402,10 +407,12 @@ export class PerchingPelican {
   }
 
   hitTest(localX, localY, vessel, hullStyle = 'standard') {
-    const pos = this.getBowspritPosition(vessel, hullStyle);
-    const dx = localX - pos.x;
-    const dy = localY - pos.y;
-    return (dx * dx + dy * dy) < 26 * 26;
+    const layout = getVesselLayout(vessel, 140, 40, hullStyle);
+    const pos = layout.pelicanPos;
+    const scale = layout.pelicanScale;
+    const dx = localX - pos.x - (this.skyFlight?.xOffset || 0);
+    const dy = localY - pos.y - (this.skyFlight?.yOffset || 0);
+    return (dx / (27 * scale)) ** 2 + (dy / (20 * scale)) ** 2 < 1;
   }
 
   getBowspritPosition(vessel, hullStyle = 'standard') {
@@ -413,13 +420,15 @@ export class PerchingPelican {
   }
 
   render(ctx, vessel, hullStyle = 'standard') {
-    const pos = this.getBowspritPosition(vessel, hullStyle);
+    const layout = getVesselLayout(vessel, 140, 40, hullStyle);
+    const pos = layout.pelicanPos;
     const fl = this.skyFlight;
+    const scale = layout.pelicanScale;
 
     ctx.save();
     try {
       ctx.translate(pos.x + (fl?.xOffset || 0), pos.y + (fl?.yOffset || 0));
-      if (fl?.facing === -1) ctx.scale(-1, 1);
+      ctx.scale(scale * (fl?.facing === -1 ? -1 : 1), scale);
 
       // Body (white/grey pelican with subtle feather shading)
       const bodyGrad = ctx.createLinearGradient(-10, -5, 10, 8);
@@ -523,7 +532,7 @@ export class BackgroundDolphin {
     this.rotation = 0;
   }
 
-  update(dt, surfaceY, weather) {
+  update(dt, surfaceY, weather, boatBounds = null) {
     if (!Number.isFinite(dt) || dt <= 0) return;
     this.timer += dt / 1000;
     this.active = true;
@@ -533,18 +542,30 @@ export class BackgroundDolphin {
     const radius = Math.min(100, Math.max(20, width * .15));
     this.x = Math.max(35, Math.min(width - 35, width * .65 + Math.sin(phase) * radius));
     const verticalPhase = phase * 1.4;
-    this.y = surfY + 56 + Math.sin(verticalPhase) * 16;
+    const nearHull = boatBounds && Math.abs(this.x - boatBounds.x) < boatBounds.halfWidth + 90;
+    const targetDepth = nearHull ? 80 : 56;
+    this.cruiseDepth = (this.cruiseDepth ?? targetDepth) + (targetDepth - (this.cruiseDepth ?? targetDepth)) * Math.min(1, dt / 1000 * 3);
+    this.y = surfY + this.cruiseDepth + Math.sin(verticalPhase) * 16;
     const horizontalVelocity = Math.cos(phase) * radius * .48;
     this.direction = horizontalVelocity >= 0 ? 1 : -1;
     const cycle = this.timer % 18;
     this.arcTimer = cycle;
-    const jumping = cycle < this.arcDuration;
+    const jumpIndex = Math.floor(this.timer / 18);
+    if (this._jumpIndex !== jumpIndex) {
+      this._jumpIndex = jumpIndex;
+      this._jumpAllowed = true;
+      // Check the entire leap once to avoid starting it halfway over a hull.
+      if (boatBounds) for (let step = 0; step <= 8; step++) {
+        const futureX = width * .65 + Math.sin((jumpIndex * 18 + step * this.arcDuration / 8) * .48) * radius;
+        if (Math.abs(futureX - boatBounds.x) < boatBounds.halfWidth + 55) this._jumpAllowed = false;
+      }
+    }
+    const jumping = cycle < this.arcDuration && this._jumpAllowed;
     const jumpPhase = (cycle / this.arcDuration) * Math.PI;
     this.arcY = jumping ? -(Math.sin(jumpPhase) ** 2) * 78 : 0;
     const jumpVelocity = jumping ? (-78 * Math.PI / this.arcDuration) * Math.sin(jumpPhase * 2) : 0;
     const verticalVelocity = Math.cos(verticalPhase) * 16 * 1.4 + jumpVelocity;
     // Rare full 360-degree barrel flip on every 3rd leap cycle
-    const jumpIndex = Math.floor(this.timer / 18);
     const spinOffset = (jumping && jumpIndex % 3 === 2) ? (cycle / this.arcDuration) * Math.PI * 2 : 0;
     this.rotation = Math.atan2(verticalVelocity, Math.max(0.001, Math.abs(horizontalVelocity))) * .7 + spinOffset;
   }

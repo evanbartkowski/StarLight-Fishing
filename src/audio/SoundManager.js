@@ -1122,6 +1122,25 @@ export class SoundManager {
     });
   }
 
+  playPelicanChirp() {
+    this.ensureAudio();
+    if (this.isMuted || !this.audioCtx) return;
+    const ctx = this.audioCtx, now = ctx.currentTime;
+    for (let i = 0; i < 2; i++) {
+      const start = now + i * .13, osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(640 + i * 90, start);
+      osc.frequency.exponentialRampToValueAtTime(1050 + i * 100, start + .04);
+      osc.frequency.exponentialRampToValueAtTime(470, start + .11);
+      gain.gain.setValueAtTime(.001, start);
+      gain.gain.linearRampToValueAtTime(this.sfxVolume * .05, start + .015);
+      gain.gain.exponentialRampToValueAtTime(.001, start + .12);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+      osc.start(start); osc.stop(start + .125);
+    }
+  }
+
   playCatPurr() {
     this.ensureAudio();
     if (this.isMuted || !this.audioCtx) return;
