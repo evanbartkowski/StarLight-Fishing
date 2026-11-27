@@ -2015,9 +2015,11 @@ export class OceanWorld {
       // Companions (rendered relative to boat transform - only if unlocked)
       try {
         if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
-          this.shipsCat.render(ctx, vessel, hullStyle);
+          this.shipsCat.render(ctx, vessel, hullStyle, {
+            boatY: drawBoatY + effectiveCameraY, surfaceY, angle: b.angle, scale: 1,
+          });
           if (this.hoveredCompanion === 'angela') {
-            const catPos = this.shipsCat.getDeckPosition(vessel, hullStyle);
+            const catPos = this.shipsCat.getPose(vessel, hullStyle);
             ctx.save();
             try {
               ctx.translate(catPos.x - 55, catPos.y - 30);

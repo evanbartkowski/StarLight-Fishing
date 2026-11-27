@@ -33,28 +33,16 @@ export class ShipsCat {
       const adv = this.swimAdventure;
       adv.timer += sec;
       const p = adv.timer / adv.duration;
-      if (p < 0.25) {
-        // Leap outward & down into the water
-        const k = p / 0.25;
-        adv.xOffset = 52 * k;
-        adv.yOffset = -Math.sin(k * Math.PI) * 18 + 30 * k;
-        adv.facing = 1;
-      } else if (p < 0.65) {
-        // Swim & catch tiny fish
-        const k = (p - 0.25) / 0.4;
-        adv.xOffset = 52 + Math.sin(k * Math.PI * 2) * 18;
-        adv.yOffset = 30 + Math.sin(adv.timer * 7) * 2.5;
-        adv.facing = Math.cos(k * Math.PI * 2) >= 0 ? 1 : -1;
-        if (k >= 0.45) adv.fishCaught = true;
-      } else if (p < 1.0) {
-        // Swim back & hop onto cushion
-        const k = (p - 0.65) / 0.35;
-        adv.xOffset = 52 * (1 - k);
-        adv.yOffset = 30 * (1 - k) - Math.sin(k * Math.PI) * 18;
-        adv.facing = -1;
-      } else {
+      if (p >= 1) {
         this.swimAdventure = null;
         this.swimCooldown = 95 + Math.random() * 90;
+      } else {
+        if (p >= .43) adv.fishCaught = true;
+        const layout = getVesselLayout(this.lastVessel || 0, 140, 40, this.lastHullStyle || 'standard');
+        const pose = this.getPose(this.lastVessel || 0, this.lastHullStyle || 'standard');
+        adv.xOffset = pose.x - layout.catPos.x;
+        adv.yOffset = pose.y - layout.catPos.y;
+        adv.facing = pose.facing;
       }
     } else {
       this.swimCooldown -= sec;
@@ -126,11 +114,10 @@ export class ShipsCat {
 
   // Coords relative to boat center
   hitTest(localX, localY, vessel, hullStyle = 'standard') {
-    const layout = getVesselLayout(vessel, 140, 40, hullStyle);
-    const pos = layout.catPos;
-    const scale = layout.catScale;
-    const dx = localX - pos.x - (this.swimAdventure?.xOffset || 0);
-    const dy = localY - pos.y - (this.swimAdventure?.yOffset || 0);
+    const pos = this.getPose(vessel, hullStyle);
+    const scale = pos.scale;
+    const dx = localX - pos.x;
+    const dy = localY - pos.y;
     return (dx / (22 * scale)) ** 2 + (dy / (18 * scale)) ** 2 < 1;
   }
 
@@ -138,11 +125,45 @@ export class ShipsCat {
     return getVesselLayout(vessel, 140, 40, hullStyle).catPos;
   }
 
-  render(ctx, vessel, hullStyle = 'standard') {
+  getPose(vessel, hullStyle = 'standard', frame = this.boatFrame) {
+    const layout = getVesselLayout(vessel, 140, 40, hullStyle);
+    const rest = { ...layout.catPos, scale: layout.catScale, facing: layout.catFacing, rotation: 0, swimming: false };
+    const adv = this.swimAdventure;
+    if (!adv) return rest;
+    if (!Number.isFinite(adv.timer) || !adv.duration) {
+      return { ...rest, x: rest.x + (adv.xOffset || 0), y: rest.y + (adv.yOffset || 0), facing: adv.facing || rest.facing };
+    }
+    const progress = Math.max(0, Math.min(1, adv.timer / adv.duration));
+    const angle = Number.isFinite(frame?.angle) ? frame.angle : 0;
+    const parentScale = Number.isFinite(frame?.scale) && frame.scale > 0 ? frame.scale : 1;
+    const boatY = Number.isFinite(frame?.boatY) ? frame.boatY : 0;
+    const surfaceY = Number.isFinite(frame?.surfaceY) ? frame.surfaceY : boatY + 14 * parentScale;
+    const swimming = progress >= .25 && progress < .65;
+    const swimProgress = swimming ? (progress - .25) / .4 : 0;
+    const dx = (-layout.halfWidth - 30 + Math.sin(swimProgress * Math.PI * 2) * 10) * parentScale;
+    const dy = surfaceY - boatY - 4 * rest.scale * parentScale + Math.sin(adv.timer * 7) * .5 * parentScale;
+    // Convert the waterline into the rolling boat's local coordinates. Rendering
+    // and pointer hit testing use this same pose.
+    const waterX = (dx * Math.cos(angle) + dy * Math.sin(angle)) / parentScale;
+    const waterY = (-dx * Math.sin(angle) + dy * Math.cos(angle)) / parentScale;
+    if (swimming) return { ...rest, x: waterX, y: waterY, swimming: true,
+      rotation: -angle, facing: Math.cos(swimProgress * Math.PI * 2) < 0 ? -1 : 1 };
+    const leaving = progress < .25;
+    const jump = leaving ? progress / .25 : (1 - progress) / .35;
+    return { ...rest, x: rest.x + (waterX - rest.x) * jump,
+      y: rest.y + (waterY - rest.y) * jump - Math.sin(jump * Math.PI) * 24,
+      rotation: -angle * jump, facing: leaving ? -1 : 1 };
+  }
+
+  render(ctx, vessel, hullStyle = 'standard', frame) {
+    this.lastVessel = vessel;
+    this.lastHullStyle = hullStyle;
+    if (frame) this.boatFrame = frame;
     const layout = getVesselLayout(vessel, 140, 40, hullStyle);
     const pos = layout.catPos;
     const adv = this.swimAdventure;
     const scale = layout.catScale;
+    const pose = this.getPose(vessel, hullStyle);
 
     ctx.save();
     try {
@@ -159,9 +180,10 @@ export class ShipsCat {
       ctx.stroke();
       ctx.restore();
 
-      ctx.translate(pos.x + (adv?.xOffset || 0), pos.y + (adv?.yOffset || 0));
-      ctx.scale(scale * (adv ? (adv.facing === -1 ? -1 : 1) : layout.catFacing), scale);
-      if (adv && (adv.yOffset || 0) > 16) {
+      ctx.translate(pose.x, pose.y);
+      ctx.rotate(pose.rotation);
+      ctx.scale(scale * pose.facing, scale);
+      if (pose.swimming) {
         // Swimming water ripple under Angela
         ctx.strokeStyle = 'rgba(186, 230, 253, 0.75)';
         ctx.lineWidth = 1.4;

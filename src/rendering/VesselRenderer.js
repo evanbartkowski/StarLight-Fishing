@@ -56,7 +56,8 @@ export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'stan
   layout.catFacing = hullStyle === 'submarine' ? 1 : -1;
   layout.catScale = hullStyle === 'submarine' ? .68 : hullStyle !== 'standard' ? .8 : catScales[layout.tier];
   layout.pelicanScale = hullStyle === 'submarine' ? .7 : hullStyle !== 'standard' ? .8 : pelicanScales[layout.tier];
-  layout.catPos = { x: perch[0] * layout.scale, y: perch[1] - 6 * layout.catScale };
+  // Cushion artwork spans y=1..11; its bottom is the contact with the deck.
+  layout.catPos = { x: perch[0] * layout.scale, y: perch[1] - 11 * layout.catScale };
   layout.pelicanPos = { x: perch[2] * layout.scale, y: perch[3] - 10.8 * layout.pelicanScale };
   return layout;
 }

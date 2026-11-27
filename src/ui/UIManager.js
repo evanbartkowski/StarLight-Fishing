@@ -5577,7 +5577,9 @@ export class UIManager {
 
       if (previewCat) {
         previewCat.update(16);
-        previewCat.render(ctx, vessel, selectedHull);
+        previewCat.render(ctx, vessel, selectedHull, {
+          boatY: bobY, surfaceY: waterY + 6, angle: boatAngle, scale: layout.previewScale || 1,
+        });
       }
       if (previewPelican) {
         previewPelican.update(16);

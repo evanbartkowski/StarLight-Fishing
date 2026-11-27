@@ -19,14 +19,21 @@ try{
   names.forEach((name,i)=>{const species=FISH_SPECIES.find(s=>s.name===name);if(!species)throw Error(`Missing ${name}`);const fish=new Fish(species,0,0);fish.y=0;fish.scale=1.7;fish.direction=1;fish.crown=null;fish.mutation=null;fish.isShiny=false;fish.wiggleTimer=1;fish.auraTime=1;const x=i%7*200+100,y=Math.floor(i/7)*170+75;ctx.save();ctx.translate(x,y);fish.render(ctx);ctx.restore();ctx.fillStyle='#d7eef6';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText(name,x,y+67,190);
    if(i<2){const p=document.createElement('canvas');p.width=160;p.height=120;const pc=p.getContext('2d');const test=new Fish({...species,rarity:'common',fantasyTrail:null,primaryColor:'#65a7b6',secondaryColor:'#d3ebe4',finColor:'#298a91'},80,60);test.y=60;test.scale=1.7;test.direction=1;test.crown=null;test.mutation=null;test.isShiny=false;test.wiggleTimer=1;test.render(pc);masks.push([...pc.getImageData(0,0,160,120).data].filter((_,i)=>i%4===3).map(a=>a>180));}
   });
+  const {getVesselLayout}=await import('/src/rendering/VesselRenderer.js');
   const styles=['standard','pirate','submarine','chinese_junk','viking','ghost_ship','steampunk'];
   let crewCases=0;
   const probe=document.createElement('canvas');probe.width=800;probe.height=600;const p=probe.getContext('2d');
   for(const style of styles)for(let tier=0;tier<=8;tier++)for(const dir of [-1,1]){
-   const world=new OceanWorld({width:800,height:600,clientWidth:800});world.boat.x=400;world.boat.y=220;world.aimDirection=dir;world.driftItems=null;
+   const world=new OceanWorld({width:800,height:600,clientWidth:800});world.boat.x=400;world.boat.y=220;world.boat.angle=dir*.1;world.boat.bobOffset=dir*4;world.aimDirection=dir;world.driftItems=null;
    world.saveSystem={data:{boatHullStyle:style},getBoatHull:()=>style,getUpgradeLevel:()=>tier,isPetEquipped:()=>true};
    world.shipsCat.hasTinyRod=true;world.pelican.trust=80;world.renderBoatAndFisherman(p,0,true);
-   world.shipsCat.triggerRareSwim();world.shipsCat.update(1800);world.pelican.triggerRareFlight();world.pelican.update(1800);world.renderBoatAndFisherman(p,0,true);crewCases++;
+   world.shipsCat.triggerRareSwim();world.shipsCat.update(3600);world.pelican.triggerRareFlight();world.pelican.update(1800);
+   const gradient=p.createRadialGradient;let catOrigin;
+   p.createRadialGradient=function(...args){if(args.join(',')==='-2,-2,2,0,0,11'){const transform=this.getTransform();catOrigin={x:transform.e,y:transform.f};}return gradient.apply(this,args);};
+   world.renderBoatAndFisherman(p,0,true);p.createRadialGradient=gradient;crewCases++;
+   const layout=getVesselLayout(tier,140,40,style);
+   if(!catOrigin||Math.abs(catOrigin.y-(world.surfaceY-4*layout.catScale))>1)throw Error('Angela floats above the water on '+style);
+   if(catOrigin.x>=world.boat.x-layout.halfWidth-15)throw Error('Angela swims through the hull on '+style);
    if(!p.getTransform().isIdentity)throw Error('Crew leaked a canvas transform');
   }
   const chestMasks=CRATE_RANKS.map(rank=>{p.clearRect(0,0,800,600);new Treasure({...rank,isCrate:true,crateRank:rank.rank,radius:25},100,100).render(p);const pixels=p.getImageData(40,40,120,120).data;return [...pixels].filter((_,i)=>i%4===3).map(a=>a>180?'1':'0').join('');});

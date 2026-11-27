@@ -376,7 +376,7 @@ test('Rare pet adventures, richer 3+ option quests/debuffs with SVG portraits, a
   const cat = new ShipsCat();
   cat.triggerRareSwim();
   cat.update(3600); // ~midpoint hunting with fish caught
-  assert.ok(cat.swimAdventure && cat.swimAdventure.xOffset > 0 && cat.swimAdventure.yOffset > 0);
+  assert.ok(cat.swimAdventure && cat.swimAdventure.xOffset < 0 && cat.swimAdventure.yOffset > 0);
   assert.equal(cat.swimAdventure.fishCaught, true);
   cat.render(mockCtx, 0);
   cat.update(5000); // finishes swim cleanly
