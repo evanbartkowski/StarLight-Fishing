@@ -9,7 +9,7 @@ import { renderMoonReflectionAndGhostShip, renderAlienUfoEvent, UNION_SIGNS } fr
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
 import { belongsToRealm, REALM_PROFILES } from '../data/RealmContent.js';
-import { DEPTH_ZONES, FISH_SPECIES } from '../data/FishData.js';
+import { DEPTH_ZONES, FISH_SPECIES, TIME_EVENT_SPECIES } from '../data/FishData.js';
 import { FANTASY_SEAS, getSeaById } from '../entities/SeasData.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { TREASURE_ITEMS, HAZARD_TYPES } from '../data/TreasureData.js';
@@ -407,7 +407,10 @@ export class OceanWorld {
     const luckLevel = saveSystem.getUpgradeLevel('lureLuck');
     const luckTier = UPGRADE_DEFINITIONS.lureLuck.tiers[luckLevel] || UPGRADE_DEFINITIONS.lureLuck.tiers[0];
     const weatherApexMult = worldCycle.getApexSpawnMultiplier ? worldCycle.getApexSpawnMultiplier() : 1.0;
-    const rareBoost = luckTier.rareBoost * weatherApexMult;
+    const buffRareMult = (saveSystem.hasActiveBuff?.('sirensGrace') ? 1.35 : 1.0)
+      * (saveSystem.hasActiveBuff?.('cartographerMark') ? 1.25 : 1.0);
+    const rareBoost = luckTier.rareBoost * weatherApexMult * buffRareMult;
+    const surveyTreasureMult = saveSystem.hasActiveBuff?.('cartographerMark') ? 1.35 : 1.0;
     const shinyChance = luckTier.shinyChance;
 
     const fossilLevel = saveSystem.getUpgradeLevel('fossilRadar') || 0;
@@ -421,7 +424,8 @@ export class OceanWorld {
     const fishOptions = { shinyChance, surfaceY: this.surfaceY, sizeMultiplier: ecology.size, valueMultiplier: ecology.value };
 
     // Depth-band budgets prevent overlapping species habitats crowding the surface.
-    const environment = { time: worldCycle.getTimeOfDay(), weather: worldCycle.getWeather(), minZoneTier: this.currentSeaId };
+    const currentEvent = worldCycle.getGlobalEvent ? worldCycle.getGlobalEvent() : null;
+    const environment = { time: worldCycle.getTimeOfDay(), weather: worldCycle.getWeather(), event: currentEvent, minZoneTier: this.currentSeaId };
     const rarityWeight = { common: 1, uncommon: 0.5, rare: 0.16, epic: 0.045, legendary: 0.006 };
     const populateBands = (pool, density, weight, spawn) => {
       const limit = Math.min(activeMaxDepth, 3000);
@@ -454,8 +458,22 @@ export class OceanWorld {
       (species, depth) => (rarityWeight[species.rarity] || 0.01)
         * ({ common: 1 / (1 + depth / 350), uncommon: 1 / (1 + depth / 700), rare: 1 + depth / 300, epic: 1 + depth / 180, legendary: 1 + depth / 120 }[species.rarity] || 1)
         * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 * ecology.rarity : 1)
+        * (species.conditions ? 2.2 : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
+
+    // Ensure active time-of-day or event-exclusive species spawn cleanly during their matching window
+    const conditionalNatives = [...fishPool, ...TIME_EVENT_SPECIES].filter(s => s.zone === this.currentSeaId && s.conditions && s.minDepth < activeMaxDepth && isConditionMet(s.conditions, environment));
+    for (const cSp of conditionalNatives) {
+      const alreadyPresent = this.entities.fish.some(f => f.speciesId === cSp.id);
+      const isEventSp = !!(cSp.conditions.event || cSp.conditions.events);
+      if (!alreadyPresent && (isEventSp || Math.random() < 0.72)) {
+        const minD = Math.max(2, cSp.minDepth);
+        const maxD = Math.max(minD + 2, Math.min(activeMaxDepth, cSp.maxDepth));
+        const d = minD + Math.random() * (maxD - minD);
+        this.entities.fish.push(new Fish(cSp, 80 + Math.random() * Math.max(40, this.worldWidth - 160), this.surfaceY + d * this.pixelsPerMeter, fishOptions));
+      }
+    }
 
     // Sparse realms still need one reachable resident in deep bands if random rolls leave a >=160m gap
     for (let checkDepth = 600; checkDepth <= Math.min(activeMaxDepth - 40, 2900); checkDepth += 200) {
@@ -574,7 +592,7 @@ export class OceanWorld {
     LEGENDARY_SPECIES.forEach((mythic) => {
       if (!belongsToRealm(mythic, this.currentSeaId)) return;
       if (mythic.minDepth > activeMaxDepth) return;
-      if (checkMythicSpawn(mythic, timeOfDay, weather, activeMaxDepth, weatherApexMult)) {
+      if (checkMythicSpawn(mythic, timeOfDay, weather, activeMaxDepth, currentEvent)) {
         const minSpawnY = this.surfaceY + mythic.minDepth * this.pixelsPerMeter;
         const maxSpawnY = this.surfaceY + Math.min(activeMaxDepth, mythic.maxDepth) * this.pixelsPerMeter;
         if (minSpawnY < maxSpawnY) {
@@ -650,7 +668,7 @@ export class OceanWorld {
     }
 
     populateBands(TREASURE_ITEMS.filter(item => item.category !== 'fossil' && belongsToRealm(item, this.currentSeaId)),
-      depth => (0.06 + 0.45 * depthProgress(depth)) * realmProfile.treasureChance / 0.2 * ecology.treasure,
+      depth => (0.06 + 0.45 * depthProgress(depth)) * (realmProfile.treasureChance * surveyTreasureMult) / 0.2 * ecology.treasure,
       item => (rarityWeight[item.rarity] || 0.01) * (item.category === 'fossil' ? fossilBonus : item.isCrate ? .3 * worldCycle.getCrateDropMultiplier() : (item.id === 'bottle' ? 0.09 : 1)),
       (item, x, y) => this.entities.treasures.push(new Treasure(item, x, y)));
 

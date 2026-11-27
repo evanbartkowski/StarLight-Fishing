@@ -1,12 +1,12 @@
 import { Fish } from '../entities/Fish.js';
-import { FISH_SPECIES, RARITY_CONFIG } from '../data/FishData.js';
+import { FISH_SPECIES, TIME_EVENT_SPECIES, RARITY_CONFIG } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { MYTHICAL_RARE_CREATURES } from '../data/RareCreaturesData.js';
 import { getSeaById } from '../entities/SeasData.js';
 
 /** Restore a specimen without changing its saved traits or the species catalog. */
 export function specimen(item, x, y, options = {}) {
-  const species = item?.species || [...FISH_SPECIES, ...LEGENDARY_SPECIES, ...MYTHICAL_RARE_CREATURES].find(entry => entry.id === (item?.speciesId || item?.id));
+  const species = item?.species || [...FISH_SPECIES, ...LEGENDARY_SPECIES, ...MYTHICAL_RARE_CREATURES, ...TIME_EVENT_SPECIES].find(entry => entry.id === (item?.speciesId || item?.id));
   if (!species) return null;
   const fish = new Fish(species, x, y, { shinyChance: 0, surfaceY: options.surfaceY ?? 0 });
   for (const key of ['size', 'weight', 'weightClass', 'mutation', 'isShiny', 'crown']) if (item[key] !== undefined) fish[key] = item[key];

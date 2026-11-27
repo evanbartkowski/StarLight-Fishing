@@ -18,7 +18,7 @@ import { ShipsCat, PerchingPelican, BackgroundDolphin, BoatShark } from '../enti
 import { getCurrentDerby, getLocalDerbyStandings } from '../systems/WeeklyDerby.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
-import { FISH_SPECIES, DEPTH_ZONES, RARITY_CONFIG, getSpeciesIcon } from '../data/FishData.js';
+import { FISH_SPECIES, TIME_EVENT_SPECIES, DEPTH_ZONES, RARITY_CONFIG, getSpeciesIcon } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
 import { MYTHICAL_RARE_CREATURES } from '../data/RareCreaturesData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
@@ -342,15 +342,15 @@ export class UIManager {
           <span class="basket-icon">🪣</span>
           <span id="capacity-amount">0 / 3</span>
         </div>
-        <div class="weather-type-display" id="hud-weather-badge" title="Current Weather">
+        <div class="weather-type-display" id="hud-weather-badge" title="Clear Waters: Crisp visibility under open skies." data-hud-tip="Clear Waters — Crisp visibility; sunlit & clear-night rare species bite cleanly." tabindex="0">
           <span class="weather-badge-icon" id="hud-weather-badge-icon">✨</span>
           <span class="weather-badge-type" id="hud-weather-badge-type">Clear</span>
         </div>
         </div>
 
-        <div class="weather-display" id="hud-weather" title="Atmospheric Time & Weather">
-          <span class="weather-time" id="hud-time-text">🌅 Dawn</span>
-          <span class="weather-sub" id="hud-weather-text">✨ Clear</span>
+        <div class="weather-display" id="hud-weather">
+          <span class="weather-time" id="hud-time-text" tabindex="0" title="Dawn Twilight — Awakens dawn-exclusive reef swimmers." data-hud-tip="Dawn Twilight — Awakens dawn-exclusive reef swimmers.">🌅 Dawn</span>
+          <span class="weather-sub" id="hud-weather-text" tabindex="0" title="Clear Waters — Crisp visibility under open skies." data-hud-tip="Clear Waters — Crisp visibility under open skies.">✨ Clear</span>
         </div>
 
         <div class="shield-display" id="hud-shields" style="display: none;">
@@ -455,6 +455,84 @@ export class UIManager {
       </div>
     `;
     document.body.appendChild(modalOverlay);
+
+    const hudTooltip = document.createElement('div');
+    hudTooltip.id = 'hud-tooltip';
+    hudTooltip.className = 'hud-tooltip';
+    hudTooltip.setAttribute('role', 'tooltip');
+    hudTooltip.hidden = true;
+    document.body.appendChild(hudTooltip);
+    this._bindHudTooltips();
+  }
+
+  _bindHudTooltips() {
+    const hud = document.getElementById('game-hud');
+    const tipEl = document.getElementById('hud-tooltip');
+    if (!hud || !tipEl || hud.dataset?.tipBound || this._hudTooltipsBound) return;
+    this._hudTooltipsBound = true;
+    if (hud.dataset) hud.dataset.tipBound = 'true';
+
+    let activeAnchor = null;
+    const positionTip = (anchor) => {
+      if (!anchor?.getAttribute) return;
+      const msg = anchor.getAttribute('data-hud-tip');
+      if (!msg) return;
+      tipEl.textContent = msg;
+      tipEl.hidden = false;
+      const rect = anchor.getBoundingClientRect?.() || { left: 16, width: 100, top: 16, bottom: 48 };
+      const tipW = Math.min(280, tipEl.offsetWidth || 220);
+      const tipH = tipEl.offsetHeight || 44;
+      const vw = (typeof window !== 'undefined' && window.innerWidth) || 1280;
+      const vh = (typeof window !== 'undefined' && window.innerHeight) || 720;
+      const left = Math.max(8, Math.min(vw - tipW - 8, rect.left + rect.width * 0.5 - tipW * 0.5));
+      const top = rect.bottom + tipH + 12 <= vh ? rect.bottom + 8 : Math.max(8, rect.top - tipH - 8);
+      if (tipEl.style) {
+        tipEl.style.left = `${Math.round(left)}px`;
+        tipEl.style.top = `${Math.round(top)}px`;
+      }
+    };
+    const hideTip = () => {
+      activeAnchor = null;
+      tipEl.hidden = true;
+    };
+
+    hud.addEventListener?.('pointerover', (e) => {
+      const target = e.target?.closest?.('[data-hud-tip]');
+      if (!target) return;
+      activeAnchor = target;
+      positionTip(target);
+    });
+    hud.addEventListener?.('pointerout', (e) => {
+      if (!activeAnchor) return;
+      if (e.relatedTarget && activeAnchor.contains?.(e.relatedTarget)) return;
+      const next = e.relatedTarget?.closest?.('[data-hud-tip]');
+      if (next) {
+        activeAnchor = next;
+        positionTip(next);
+      } else {
+        hideTip();
+      }
+    });
+    hud.addEventListener?.('focusin', (e) => {
+      const target = e.target?.closest?.('[data-hud-tip]');
+      if (target) {
+        activeAnchor = target;
+        positionTip(target);
+      }
+    });
+    hud.addEventListener?.('focusout', () => hideTip());
+    hud.addEventListener?.('click', (e) => {
+      const target = e.target?.closest?.('[data-hud-tip]');
+      if (!target || target.tagName === 'BUTTON') return;
+      if (activeAnchor === target && !tipEl.hidden) hideTip();
+      else {
+        activeAnchor = target;
+        positionTip(target);
+      }
+    });
+    document.addEventListener?.('pointerdown', (e) => {
+      if (activeAnchor && !hud.contains?.(e.target)) hideTip();
+    });
   }
 
   initWelcomePopup() {
@@ -977,8 +1055,11 @@ export class UIManager {
       if (event.active) {
         const text = `${event.icon} ${event.name} · ${event.description}`;
         if (eventBanner.textContent !== text) eventBanner.textContent = text;
-        const title = `${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} remaining · Legends x${event.legendaryMultiplier} · Crates x${event.crateMultiplier}`;
+        const title = `${event.name} (${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} left) — ${event.description} Legends x${event.legendaryMultiplier} · Crates x${event.crateMultiplier} · Event-exclusive fish active!`;
         if (eventBanner.title !== title) eventBanner.title = title;
+        if (eventBanner.getAttribute('data-hud-tip') !== title) eventBanner.setAttribute('data-hud-tip', title);
+      } else {
+        eventBanner.removeAttribute('data-hud-tip');
       }
     }
     const lvl = this.saveSystem.data.level;
@@ -1015,9 +1096,38 @@ export class UIManager {
       }
     }
 
-    // Update atmospheric time & weather in HUD
+    // Update atmospheric time & weather in HUD with descriptive hover tooltips
     this._setText('hud-time-text', worldCycle.getTimeLabel());
     this._setText('hud-weather-text', worldCycle.getWeatherLabel());
+
+    const tod = worldCycle.getTimeOfDay ? worldCycle.getTimeOfDay() : 'DAY';
+    const todDescriptions = {
+      DAWN: 'Dawn Twilight — Cool morning light awakens dawn-exclusive reef, fog & morning mist species.',
+      DAY: 'Sunlit Noon — Bright midday rays stir surface gliders, coral schools & noon-exclusive hunters.',
+      DUSK: 'Golden Sunset — Amber twilight draws dusk-only eels, sunset discus & rising ocean rays.',
+      NIGHT: 'Bioluminescent Night — Starlight darkness wakes nocturnal rarities, moonbeam koi & night constellations.',
+    };
+    const timeTip = event.active
+      ? `${event.icon} ${event.name} (${Math.floor(event.timeRemainingSec / 60)}:${String(event.timeRemainingSec % 60).padStart(2, '0')} left) — ${event.description} Legends x${event.legendaryMultiplier}, Crates x${event.crateMultiplier}; event-exclusive fish awakened!`
+      : (todDescriptions[tod] || 'Time of Day — Cycles across Dawn, Noon, Sunset & Night, shifting which fish appear.');
+    const timeEl = this._getEl('hud-time-text');
+    if (timeEl) {
+      if (timeEl.title !== timeTip) timeEl.title = timeTip;
+      if (timeEl.getAttribute('data-hud-tip') !== timeTip) timeEl.setAttribute('data-hud-tip', timeTip);
+    }
+
+    const weatherKey = worldCycle.getWeather ? worldCycle.getWeather() : 'CLEAR';
+    const weatherDescriptions = {
+      CLEAR: 'Clear Waters — Crisp underwater clarity; favors sun-loving & clear-night rare species.',
+      FOG: 'Gentle Sea Mist — Rolling mist lures mist-shrouded ambushers & elusive trench crawlers.',
+      RAIN: 'Calming Rain — Raindrops stir the surface, boosting active biters & rain-loving rarities!',
+    };
+    const weatherTip = weatherDescriptions[weatherKey] || weatherDescriptions.CLEAR;
+    const weatherTextEl = this._getEl('hud-weather-text');
+    if (weatherTextEl) {
+      if (weatherTextEl.title !== weatherTip) weatherTextEl.title = weatherTip;
+      if (weatherTextEl.getAttribute('data-hud-tip') !== weatherTip) weatherTextEl.setAttribute('data-hud-tip', weatherTip);
+    }
 
     // Update weather type badge next to the bucket in the top GUI: only show when up on the boat
     const weatherBadgeEl = this._getEl('hud-weather-badge');
@@ -1029,8 +1139,8 @@ export class UIManager {
         const wt = worldCycle.getWeatherType ? worldCycle.getWeatherType() : { icon: '✨', label: 'Clear' };
         this._setText('hud-weather-badge-icon', wt.icon);
         this._setText('hud-weather-badge-type', wt.label);
-        const wTitle = `Atmosphere: ${wt.label}`;
-        if (weatherBadgeEl.title !== wTitle) weatherBadgeEl.title = wTitle;
+        if (weatherBadgeEl.title !== weatherTip) weatherBadgeEl.title = weatherTip;
+        if (weatherBadgeEl.getAttribute('data-hud-tip') !== weatherTip) weatherBadgeEl.setAttribute('data-hud-tip', weatherTip);
       }
     }
 
@@ -1085,31 +1195,38 @@ export class UIManager {
         let buffsHtml = '';
         if (this.saveSystem.hasActiveBuff('goldSurge')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('goldSurge');
-          buffsHtml += `<span class="hud-buff-pill hud-buff-gold" title="2x Gold from catch sales & haul bonuses">🪙 2x Gold (${sec}s)</span>`;
+          const tip = `2x Gold Surge (${sec}s) — Doubles all gold coins earned from selling fish & catch bonuses.`;
+          buffsHtml += `<span class="hud-buff-pill hud-buff-gold" tabindex="0" title="${tip}" data-hud-tip="${tip}">🪙 2x Gold (${sec}s)</span>`;
         }
         if (this.saveSystem.hasActiveBuff('xpSurge')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('xpSurge');
-          buffsHtml += `<span class="hud-buff-pill hud-buff-xp" title="2x Captain Experience gained">✨ 2x XP (${sec}s)</span>`;
+          const tip = `2x XP Surge (${sec}s) — Doubles Captain XP earned from catches, quests & relic salvaging.`;
+          buffsHtml += `<span class="hud-buff-pill hud-buff-xp" tabindex="0" title="${tip}" data-hud-tip="${tip}">✨ 2x XP (${sec}s)</span>`;
         }
         if (this.saveSystem.hasActiveBuff('sirensGrace')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('sirensGrace');
-          buffsHtml += `<span class="hud-buff-pill" title="Increased Rare Catch Rate">🌊 Siren's Grace (${sec}s)</span>`;
+          const tip = `Siren's Grace (${sec}s) — Enchanted currents raise rare, epic & legendary fish spawn odds (+35%).`;
+          buffsHtml += `<span class="hud-buff-pill" tabindex="0" title="${tip}" data-hud-tip="${tip}">🌊 Siren's Grace (${sec}s)</span>`;
         }
         if (this.saveSystem.hasActiveBuff('starlightClarity')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('starlightClarity');
-          buffsHtml += `<span class="hud-buff-pill" title="Reveals fish silhouettes">🌟 Starlight Sight (${sec}s)</span>`;
+          const tip = `Starlight Sight (${sec}s) — Brightens dark waters and illuminates shadowy fish silhouettes below.`;
+          buffsHtml += `<span class="hud-buff-pill" tabindex="0" title="${tip}" data-hud-tip="${tip}">🌟 Starlight Sight (${sec}s)</span>`;
         }
         if (this.saveSystem.hasActiveBuff('cartographerMark')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('cartographerMark');
-          buffsHtml += `<span class="hud-buff-pill" title="Secret Hotspot Active">🗺️ Survey Mark (${sec}s)</span>`;
+          const tip = `Survey Mark (${sec}s) — Charted hotspot! Boosts sunken treasure discovery (+35%) & rare fish luck (+25%).`;
+          buffsHtml += `<span class="hud-buff-pill" tabindex="0" title="${tip}" data-hud-tip="${tip}">🗺️ Survey Mark (${sec}s)</span>`;
         }
         if (this.saveSystem.hasActiveBuff('cursedBarnacles')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('cursedBarnacles');
-          buffsHtml += `<span class="hud-buff-pill hud-debuff-pill" title="Reel speed slowed by sticky hull barnacles (-15%)">⚓ Barnacle Drag (${sec}s)</span>`;
+          const tip = `Barnacle Drag (${sec}s) — Sticky barnacles weigh down your winch (-15% reel speed).`;
+          buffsHtml += `<span class="hud-buff-pill hud-debuff-pill" tabindex="0" title="${tip}" data-hud-tip="${tip}">⚓ Barnacle Drag (${sec}s)</span>`;
         }
         if (this.saveSystem.hasActiveBuff('foggedLens')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('foggedLens');
-          buffsHtml += `<span class="hud-buff-pill hud-debuff-pill" title="Lantern visibility radius dimmed (-28%)">🌫️ Brine Mist (${sec}s)</span>`;
+          const tip = `Brine Mist (${sec}s) — Salt condensation dims your deep-sea lantern beam radius by 28%.`;
+          buffsHtml += `<span class="hud-buff-pill hud-debuff-pill" tabindex="0" title="${tip}" data-hud-tip="${tip}">🌫️ Brine Mist (${sec}s)</span>`;
         }
         if (this._lastBuffsHtml !== buffsHtml) {
           this._lastBuffsHtml = buffsHtml;
@@ -1854,7 +1971,7 @@ export class UIManager {
     const firstCatches = Array.isArray(hook.firstCatchItems) ? hook.firstCatchItems : [];
     const firstCatchHtml = firstCatches.length > 0 ? (() => {
       const first = firstCatches[0];
-      const sp = first.species || FISH_SPECIES.find(s => s.id === (first.speciesId || first.id)) || LEGENDARY_SPECIES.find(s => s.id === (first.speciesId || first.id)) || MYTHICAL_RARE_CREATURES.find(s => s.id === (first.speciesId || first.id)) || first;
+      const sp = first.species || FISH_SPECIES.find(s => s.id === (first.speciesId || first.id)) || LEGENDARY_SPECIES.find(s => s.id === (first.speciesId || first.id)) || MYTHICAL_RARE_CREATURES.find(s => s.id === (first.speciesId || first.id)) || TIME_EVENT_SPECIES.find(s => s.id === (first.speciesId || first.id)) || first;
       const rKey = (sp.rarity || 'common').toLowerCase();
       const isRarePlus = rKey === 'rare' || rKey === 'epic' || rKey === 'legendary' || sp.isMythic || sp.isGodTier;
       const lore = getFirstCatchLore(sp);
@@ -1944,7 +2061,7 @@ export class UIManager {
 
       const loadRevealItem = (idx) => {
         const entry = firstCatches[idx];
-        const sp = entry?.species || FISH_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || LEGENDARY_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || MYTHICAL_RARE_CREATURES.find(s => s.id === (entry?.speciesId || entry?.id)) || entry;
+        const sp = entry?.species || FISH_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || LEGENDARY_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || MYTHICAL_RARE_CREATURES.find(s => s.id === (entry?.speciesId || entry?.id)) || TIME_EVENT_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || entry;
         revealFish = specimen(entry, (revealCanvas?.width || 220) / 2, (revealCanvas?.height || 136) / 2);
         if (revealFish) {
           revealFish.scale = Math.min(3.2, Math.max(2.15, (sp.scaleFactor || 1) * 2.15));
@@ -2936,7 +3053,7 @@ export class UIManager {
   openJournalLogbook(primaryMenu = 'journal', defaultSubTab = 'fieldlog') {
     this.activeModal = primaryMenu === 'logbook' ? 'achievements' : 'journal';
     const save = this.saveSystem;
-    const allSpecies = [...FISH_SPECIES, ...LEGENDARY_SPECIES, ...MYTHICAL_RARE_CREATURES];
+    const allSpecies = [...FISH_SPECIES, ...LEGENDARY_SPECIES, ...MYTHICAL_RARE_CREATURES, ...TIME_EVENT_SPECIES];
     const caughtSpeciesCount = Object.keys(save.data.journal).length;
     const fossilCount = Object.keys(save.data.fossils).length;
 

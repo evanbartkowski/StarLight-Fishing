@@ -372,14 +372,38 @@ export const ZONE_ALMANAC_DATA = {
 };
 
 // Build the bestiary from the live roster so additions and moved species are discoverable.
+const formatConditionTime = (conditions = {}) => {
+  if (conditions.event) {
+    const names = (Array.isArray(conditions.event) ? conditions.event : [conditions.event])
+      .map(id => id === 'blood_moon' ? 'Blood Moon' : id === 'abyssal_storm' ? 'Abyssal Storm' : id === 'aurora_borealis' ? 'Aurora Borealis' : id);
+    return `Event Only (${names.join(' / ')})`;
+  }
+  const t = conditions.time || conditions.timeOfDay;
+  if (t === 'DAWN') return 'Dawn Twilight Only';
+  if (t === 'DAY') return 'Sunlit Noon Only';
+  if (t === 'DUSK') return 'Golden Sunset Only';
+  if (t === 'NIGHT') return 'Bioluminescent Night Only';
+  return null;
+};
+
 for (const sea of FANTASY_SEAS) {
   const entry = ZONE_ALMANAC_DATA[`sea_${sea.id}`];
   entry.description = sea.description;
-  entry.speciesIds = [...FISH_SPECIES, ...LEGENDARY_SPECIES].filter(fish => fish.zone === sea.id).map(fish => fish.id);
+  const zoneRoster = [...FISH_SPECIES, ...LEGENDARY_SPECIES].filter(fish => fish.zone === sea.id);
+  entry.speciesIds = zoneRoster.map(fish => fish.id);
   entry.relicIds = REALM_RELICS.filter(relic => relic.zone === sea.id).map(relic => relic.id);
   entry.depthRange = `0 - ${sea.maxDepth}m`;
   // Old hard-coded depth hints no longer describe the expanded ecology.
-  for (const id of entry.speciesIds) if (entry.hints[id]) delete entry.hints[id].depth;
+  for (const fish of zoneRoster) {
+    if (entry.hints[fish.id]) delete entry.hints[fish.id].depth;
+    if (!entry.hints[fish.id] && fish.conditions) {
+      entry.hints[fish.id] = {
+        weather: fish.conditions.weather || (fish.conditions.event ? 'Global Event Surge' : 'Any'),
+        time: formatConditionTime(fish.conditions) || 'Any',
+        bait: fish.conditions.event ? 'Event Lure / Lucky Hook' : 'Time-Attuned Bait',
+      };
+    }
+  }
 }
 
 // Aliases for legacy saves & backwards compatibility

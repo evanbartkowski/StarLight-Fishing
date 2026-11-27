@@ -973,3 +973,72 @@ test('Sapphire Tang, California Sea Lion, Mosaic Tilefish, Imperial Signet, subm
   aetherFish.render(ctx, 1.2);
   assert.equal(REALM_ECOLOGY[5].fish, 0.33, 'Aether Sea fish spawn density reduced');
 });
+
+test('HUD hover tooltips for Survey Mark, Weather, Time of Day, and time/event-exclusive fish spawning', async () => {
+  const fs = await import('node:fs');
+  const { isConditionMet } = await import('../src/data/weather.config.js');
+  const { TIME_EVENT_SPECIES, FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { checkMythicSpawn } = await import('../src/data/legendaries.js');
+  const { worldCycle } = await import('../src/systems/WorldCycle.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+  const { SaveSystem } = await import('../src/systems/SaveSystem.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+
+  // 1. Condition helpers gate Time of Day and Global Events accurately
+  assert.equal(isConditionMet({ time: 'NIGHT' }, { time: 'NIGHT' }), true);
+  assert.equal(isConditionMet({ time: 'NIGHT' }, { time: 'DAY' }), false);
+  assert.equal(isConditionMet({ event: 'blood_moon' }, { event: { active: true, id: 'blood_moon' } }), true);
+  assert.equal(isConditionMet({ event: 'blood_moon' }, { event: { active: false, id: 'blood_moon' } }), false);
+  assert.equal(isConditionMet({ event: 'blood_moon' }, { event: { active: true, id: 'aurora_borealis' } }), false);
+  assert.equal(
+    checkMythicSpawn({ spawnConditions: { timesOfDay: ['NIGHT'], events: ['blood_moon'], minDepth: 100, chance: 1 } }, 'NIGHT', 'CLEAR', 200, { active: true, id: 'blood_moon' }),
+    true
+  );
+  assert.equal(
+    checkMythicSpawn({ spawnConditions: { timesOfDay: ['NIGHT'], events: ['blood_moon'], minDepth: 100, chance: 1 } }, 'NIGHT', 'CLEAR', 200, { active: false, id: 'blood_moon' }),
+    false
+  );
+
+  // 2. Time-of-day and event species exist, restore via specimen(), and render cleanly
+  const { specimen } = await import('../src/ui/CatchCard.js');
+  const { ctx } = finiteMockCtx();
+  assert.ok(TIME_EVENT_SPECIES.length >= 10, 'Time-of-day & global-event exclusive species defined');
+  for (const sp of TIME_EVENT_SPECIES) {
+    assert.ok(sp.conditions && (sp.conditions.time || sp.conditions.event), `${sp.id} has time/event conditions`);
+    const fish = new Fish(sp, 220, 340);
+    fish.render(ctx, 1.0);
+    assert.ok(specimen({ id: sp.id, speciesId: sp.id, zone: sp.zone }, 100, 100), `${sp.id} restores cleanly`);
+  }
+
+  // 3. OceanWorld spawns time/event fish only when their window is active
+  const origGetEvent = worldCycle.getGlobalEvent.bind(worldCycle);
+  const origTod = worldCycle.getTimeOfDay.bind(worldCycle);
+  try {
+    const save = new SaveSystem();
+    save.data.currentSea = 1;
+    save.data.upgrades.lineLength = 4;
+    const world = new OceanWorld(1280, 720);
+
+    worldCycle.getTimeOfDay = () => 'DAY';
+    worldCycle.getGlobalEvent = () => ({ active: false, id: 'blood_moon', name: 'Blood Moon', icon: '🩸', description: '', legendaryMultiplier: 1, crateMultiplier: 1 });
+    world.populateWorld(save);
+    assert.ok(!world.entities.fish.some(f => f.speciesId === 'midnight_moonbeam_koi'), 'Night-only fish does not spawn during DAY');
+    assert.ok(!world.entities.fish.some(f => f.speciesId === 'eventide_cometfish'), 'Event-only fish does not spawn without active event');
+
+    worldCycle.getTimeOfDay = () => 'NIGHT';
+    worldCycle.getGlobalEvent = () => ({ active: true, id: 'blood_moon', name: 'Blood Moon', icon: '🩸', description: 'Blood Moon active', legendaryMultiplier: 2.5, crateMultiplier: 2.0 });
+    world.populateWorld(save);
+    assert.ok(world.entities.fish.some(f => f.speciesId === 'eventide_cometfish'), 'Event-exclusive fish spawns during active global event');
+  } finally {
+    worldCycle.getGlobalEvent = origGetEvent;
+    worldCycle.getTimeOfDay = origTod;
+  }
+
+  // 4. UIManager HUD tooltips & descriptions exist for Survey Mark, Weather Conditions, Time of Day, and Buffs
+  const uiSrc = fs.readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
+  assert.ok(uiSrc.includes('_bindHudTooltips'), 'Custom HUD hover tooltip binding exists');
+  assert.ok(uiSrc.includes('data-hud-tip'), 'HUD pills expose data-hud-tip hover descriptions');
+  assert.ok(uiSrc.includes('Survey Mark (${sec}s) — Charted hotspot!'), 'Survey Mark includes clear hover description');
+  assert.ok(uiSrc.includes('Dawn Twilight —'), 'Time of Day includes descriptive hover details');
+  assert.ok(uiSrc.includes('Clear Waters —'), 'Weather Conditions include descriptive hover details');
+});

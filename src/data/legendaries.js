@@ -562,7 +562,7 @@ export function getCrownMultiplier(crown) {
   return 1.0;
 }
 
-export function checkMythicSpawn(species, timeOfDay, weather, depthMeters) {
+export function checkMythicSpawn(species, timeOfDay, weather, depthMeters, event = null) {
   if (!species.spawnConditions) return true;
   const cond = species.spawnConditions;
 
@@ -571,6 +571,10 @@ export function checkMythicSpawn(species, timeOfDay, weather, depthMeters) {
   }
   if (cond.weathers && !cond.weathers.includes(weather)) {
     return false;
+  }
+  if (cond.events) {
+    const activeEventId = typeof event === 'string' ? event : (event?.active ? event.id : null);
+    if (!activeEventId || !cond.events.includes(activeEventId)) return false;
   }
   if (depthMeters < cond.minDepth) {
     return false;
