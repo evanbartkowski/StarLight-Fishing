@@ -2187,117 +2187,145 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       }
       ctx.restore();
 
-      // 3. Graceful Feminine Torso & Arms
-      const skinTone = '#fde68a';
-      ctx.fillStyle = skinTone;
+      // 3. Sculpted Mermaid Torso, Flowing Silk Fin Sleeves & Arms
+      const isVoidMermaid = species?.zone === 7 || (species?.id || '').includes('realm_7');
+      const skinBase = isVoidMermaid ? '#f5e1fd' : '#fce4d6';
+      const skinEdge = isVoidMermaid ? '#d8b4fe' : '#f3c1a5';
+      let skinGrad = skinBase;
+      try {
+        skinGrad = ctx.createLinearGradient(0, -14, 16, 4);
+        skinGrad.addColorStop(0, skinEdge);
+        skinGrad.addColorStop(0.55, skinBase);
+        skinGrad.addColorStop(1, '#fff7ed');
+      } catch { /* fallback */ }
 
+      // Delicate translucent silk sleeve-fins from forearm
+      ctx.save();
+      ctx.fillStyle = safeColor(finColor, '#38bdf8');
+      ctx.globalAlpha *= 0.48;
       ctx.beginPath();
-      ctx.moveTo(1, 2);
-      ctx.lineTo(2, -3);
-      ctx.quadraticCurveTo(6, -6, 9, -6);
-      ctx.quadraticCurveTo(13, -7, 14, -11);
-      ctx.quadraticCurveTo(10, -11, 8, -6);
-      ctx.quadraticCurveTo(3, -5, 1, 2);
+      ctx.moveTo(12, -8);
+      ctx.quadraticCurveTo(18, -1 + sway * 0.4, 24, 3 + sway * 0.5);
+      ctx.quadraticCurveTo(16, 4, 10, -4);
       ctx.closePath();
       ctx.fill();
+      ctx.restore();
 
-      // Delicate arms
-      ctx.strokeStyle = skinTone;
-      ctx.lineWidth = 2.4;
+      // Graceful curved torso waist-to-shoulders
+      ctx.fillStyle = skinGrad;
+      ctx.strokeStyle = 'rgba(148, 86, 56, 0.42)';
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(0, 2);
+      ctx.bezierCurveTo(2, -3, 5, -5.5, 9, -6.5);
+      ctx.quadraticCurveTo(12, -8.5, 14, -12);
+      ctx.quadraticCurveTo(15, -9, 13.5, -5.5);
+      ctx.bezierCurveTo(10, -3.5, 5, -2.5, 1.5, 2.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Gracefully extended forward arm & trailing hip arm
+      ctx.strokeStyle = skinBase;
+      ctx.lineWidth = 2.6;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(13, -8);
-      ctx.quadraticCurveTo(19, -4 + sway * 0.3, 25, -5 + sway * 0.4);
+      ctx.moveTo(13, -9);
+      ctx.quadraticCurveTo(19, -5 + sway * 0.3, 25, -6 + sway * 0.4);
       ctx.stroke();
 
-      ctx.fillStyle = skinTone;
+      ctx.fillStyle = skinBase;
       ctx.beginPath();
-      ctx.ellipse(26, -5 + sway * 0.4, 2, 1.2, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(26, -6 + sway * 0.4, 2.1, 1.25, 0.15, 0, Math.PI * 2);
       ctx.fill();
 
+      ctx.strokeStyle = skinEdge;
+      ctx.lineWidth = 2.3;
       ctx.beginPath();
       ctx.moveTo(10, -7);
-      ctx.quadraticCurveTo(7, -1, 3, 1);
+      ctx.quadraticCurveTo(7, -1, 3, 1.5);
       ctx.stroke();
 
-      // 4. Seashell / Pearl Bustier Top
-      ctx.fillStyle = '#f472b6';
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 0.8;
+      // 4. Scalloped Seashell & Pearl Corset Top
+      const topColor = isVoidMermaid ? '#c084fc' : '#f472b6';
+      ctx.fillStyle = topColor;
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 0.85;
       ctx.beginPath();
-      ctx.arc(12, -7, 2.6, 0, Math.PI * 2);
+      ctx.ellipse(12.2, -7.2, 2.8, 2.2, -0.25, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-
       ctx.beginPath();
-      ctx.arc(9, -7, 2.2, 0, Math.PI * 2);
+      ctx.ellipse(9.2, -6.8, 2.4, 1.9, -0.15, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(10.5, -7, 1, 0, Math.PI * 2);
+      ctx.arc(10.8, -7.2, 1.05, 0, Math.PI * 2);
       ctx.fill();
 
-      // 5. Neck and Head
-      ctx.fillStyle = skinTone;
+      // 5. Balanced Neck and Refined Head Profile
+      ctx.fillStyle = skinGrad;
+      ctx.strokeStyle = 'rgba(148, 86, 56, 0.42)';
+      ctx.lineWidth = 0.8;
       ctx.beginPath();
-      ctx.moveTo(13, -11);
-      ctx.lineTo(15, -14);
-      ctx.quadraticCurveTo(19, -15, 19, -18);
-      ctx.quadraticCurveTo(18, -21, 14, -21);
-      ctx.quadraticCurveTo(10, -18, 11, -13);
+      ctx.moveTo(12.5, -11.5);
+      ctx.lineTo(14.5, -14);
+      ctx.quadraticCurveTo(20, -14.8, 19.8, -18.5);
+      ctx.bezierCurveTo(19.5, -22.2, 12.5, -22.5, 11.2, -18.2);
+      ctx.quadraticCurveTo(10.8, -15, 11.2, -12.8);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
 
-      // Pearl choker necklace
-      ctx.fillStyle = '#fef08a';
+      // Luminous Pearl Choker Necklace
+      ctx.fillStyle = '#fef9c3';
       for (let c = -1; c <= 1; c++) {
         ctx.beginPath();
-        ctx.arc(13 + c * 2.2, -10 + Math.abs(c) * 0.8, 1.2, 0, Math.PI * 2);
+        ctx.arc(13 + c * 2.1, -11.2 + Math.abs(c) * 0.6, 1.1, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Rosy cheek blush
-      ctx.fillStyle = 'rgba(244, 63, 94, 0.45)';
+      // Soft coral blush & gentle smile
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.35)';
       ctx.beginPath();
-      ctx.arc(15.5, -17, 1.6, 0, Math.PI * 2);
+      ctx.arc(15.5, -16.8, 1.7, 0, Math.PI * 2);
       ctx.fill();
 
-      // Serene gentle smile
       ctx.strokeStyle = '#e11d48';
-      ctx.lineWidth = 0.8;
+      ctx.lineWidth = 0.85;
       ctx.beginPath();
-      ctx.arc(17.5, -16.2, 1.2, 0.2, Math.PI * 0.7);
+      ctx.arc(17.6, -16.2, 1.25, 0.25, Math.PI * 0.72);
       ctx.stroke();
 
-      // 6. Large Beautiful Anime/Classical Eye
-      const eyeX = 16, eyeY = -18.5;
+      // 6. Luminous Classical Mermaid Eye with Eyelash & Sparkle
+      const eyeX = 16.2, eyeY = -18.6;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.ellipse(eyeX, eyeY, 2.2, 2.6, 0.1, 0, Math.PI * 2);
+      ctx.ellipse(eyeX, eyeY, 2.25, 2.55, 0.08, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#0284c7';
+      ctx.fillStyle = isVoidMermaid ? '#a855f7' : '#0ea5e9';
       ctx.beginPath();
-      ctx.arc(eyeX + 0.3, eyeY, 1.7, 0, Math.PI * 2);
+      ctx.arc(eyeX + 0.3, eyeY, 1.65, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(eyeX + 0.4, eyeY, 1, 0, Math.PI * 2);
+      ctx.arc(eyeX + 0.4, eyeY, 0.95, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(eyeX - 0.4, eyeY - 0.7, 0.8, 0, Math.PI * 2);
-      ctx.arc(eyeX + 0.7, eyeY + 0.6, 0.4, 0, Math.PI * 2);
+      ctx.arc(eyeX - 0.35, eyeY - 0.75, 0.8, 0, Math.PI * 2);
+      ctx.arc(eyeX + 0.7, eyeY + 0.55, 0.4, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1.05;
       ctx.beginPath();
-      ctx.arc(eyeX, eyeY - 0.4, 2.4, -Math.PI * 0.8, -0.2);
+      ctx.arc(eyeX, eyeY - 0.4, 2.45, -Math.PI * 0.82, -0.15);
       ctx.stroke();
 
       // 7. Long Luxurious Flowing Hair (Multi-harmonic billow)

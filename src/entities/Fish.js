@@ -11,6 +11,7 @@ import { positionLineAttachment } from './LineAttachment.js';
 import { drawPipProjection } from '../rendering/LanternPipArtwork.js';
 import { drawShoalsFish, SHOALS_FISH_DESIGNS } from '../rendering/ShoalsFishArtwork.js';
 import { ENHANCED_FISH_VISUALS, isEnhancedFishShape, drawEnhancedFish, renderCalderaEnhancedAccent } from '../rendering/FishVisualUpgrade.js';
+import { isChronoVoidSpecial, drawChronoVoidFish, isRareEncounterShape, drawRareEncounterCreature } from '../rendering/ChronoVoidArtwork.js';
 
 /**
  * Draws a brilliant faceted 4-point diamond star sparkle with needle flares,
@@ -171,6 +172,7 @@ export class Fish {
     this.direction = Math.random() < 0.5 ? 1 : -1; // 1 = right, -1 = left
     this.facingScale = this.direction;
     this.turnTilt = 0;
+    this.wakeProgress = 0.25;
     this.baseSpeed = species.swimSpeed * (0.85 + Math.random() * 0.35);
     this.speed = this.baseSpeed;
     this.wiggleTimer = Math.random() * Math.PI * 2;
@@ -296,6 +298,15 @@ export class Fish {
     if (this.state === 'SWIMMING') {
       let vx = 0;
       let vy = 0;
+
+      // Living Shipwreck & Coral Guardian slowly awaken as the hook approaches
+      if (['living_shipwreck', 'coral_guardian'].includes(this.species.shape)) {
+        const hookDist = hook && ['DESCENDING', 'REELING', 'CASTING'].includes(hook.state)
+          ? Math.hypot((hook.x || 0) - this.x, (hook.y || 0) - this.y)
+          : 9999;
+        const targetWake = hookDist < 220 ? 1.0 : 0.2;
+        this.wakeProgress += (targetWake - this.wakeProgress) * Math.min(1, deltaSec * 2.2);
+      }
 
       // Trailing ocean rainbow star sparkles for swimming legendary fish / animals
       if (this.isLegendary && particles && Math.random() < 0.20) {
@@ -1064,7 +1075,7 @@ export class Fish {
     ].includes(s.shape);
 
     const anatomy = getFishAnatomy(s);
-    const hasOwnAppendages = !!SHOALS_FISH_DESIGNS[s.id] || Boolean(anatomy) || isEnhancedFishShape(s) || isCustomTailLeviathan || [
+    const hasOwnAppendages = !!SHOALS_FISH_DESIGNS[s.id] || Boolean(anatomy) || isEnhancedFishShape(s) || isChronoVoidSpecial(s) || isRareEncounterShape(s) || isCustomTailLeviathan || [
       'mossback_turtle', 'sea_turtle', 'nautilus', 'dolphin', 'whale',
       'cuttlefish', 'salp', 'krill', 'copepod', 'seal', 'sea_lion', 'walrus',
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
@@ -1111,6 +1122,8 @@ export class Fish {
     const isCustomMarine = drawShoalsFish(ctx, s, primary, secondary, finColor, this.wiggleTimer) ||
       drawDistinctFish(ctx, anatomy, primary, secondary, finColor, this.wiggleTimer) ||
       drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this) ||
+      drawChronoVoidFish(ctx, s, primary, secondary, finColor, this.wiggleTimer, this) ||
+      drawRareEncounterCreature(ctx, s, primary, secondary, finColor, this.wiggleTimer, this) ||
       drawEnhancedFish(ctx, s, primary, secondary, finColor, this.wiggleTimer, this);
     if (isCustomMarine) {
       // Specialized marine creature silhouette rendered

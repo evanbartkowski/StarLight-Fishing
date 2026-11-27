@@ -736,3 +736,52 @@ test('Richer scenery, water lighting, smooth angler animation, fish turns/school
   assert.ok(loreText.length > (rareSp.lore || '').length, 'Rare+ first catch appends cool world-lore tie');
   assert.equal(finiteErrors, 0);
 });
+
+test('Wormhole Sturgeon, Causality Ribbonfish, upgraded Mermaids, and all 9 rare encounter creatures render and spawn cleanly', async () => {
+  const { MYTHICAL_RARE_CREATURES } = await import('../src/data/RareCreaturesData.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { specimen } = await import('../src/ui/CatchCard.js');
+  const { isChronoVoidSpecial, isRareEncounterShape } = await import('../src/rendering/ChronoVoidArtwork.js');
+
+  assert.equal(MYTHICAL_RARE_CREATURES.length, 9, 'All 9 rare catchable creatures are defined');
+  const expectedIds = [
+    'kelp_dragon', 'arctic_bluetide_fox', 'hermit_crab_village',
+    'living_shipwreck', 'deep_sea_witch', 'mirror_creature',
+    'coral_guardian', 'ocean_djinn', 'origami_koi',
+  ];
+  for (const id of expectedIds) {
+    const c = MYTHICAL_RARE_CREATURES.find(x => x.id === id);
+    assert.ok(c, `Missing rare creature ${id}`);
+    assert.equal(c.secretEncounter, true);
+    assert.ok(c.spawnChance <= 0.035, `${id} should be hard to find`);
+    assert.equal(isRareEncounterShape(c), true);
+  }
+
+  let finiteErrs = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, k) => k.includes('Gradient') ? () => ({ addColorStop: () => {} }) : (...args) => {
+      for (const v of args) if (typeof v === 'number' && !Number.isFinite(v)) finiteErrs++;
+    },
+    set: () => true,
+  });
+
+  // Wormhole Sturgeon, Causality Ribbonfish, and Mermaids
+  const wormhole = FISH_SPECIES.find(s => s.id === 'realm_7_wormhole_sturgeon');
+  const causality = FISH_SPECIES.find(s => s.id === 'realm_7_causality_ribbonfish');
+  assert.equal(isChronoVoidSpecial(wormhole), true);
+  assert.equal(isChronoVoidSpecial(causality), true);
+  for (const sp of [wormhole, causality, ...FISH_SPECIES.filter(s => s.shape === 'mermaid'), ...MYTHICAL_RARE_CREATURES]) {
+    const f = new Fish(sp, 300, 400, { currentSeaId: sp.zone });
+    f.render(mockCtx, 0);
+    const restored = specimen({ id: sp.id, speciesId: sp.id, zone: sp.zone }, 100, 100);
+    assert.ok(restored, `specimen() restores ${sp.name}`);
+  }
+
+  // Living Shipwreck & Coral Guardian awaken as hook approaches
+  const wreck = new Fish(MYTHICAL_RARE_CREATURES.find(c => c.id === 'living_shipwreck'), 300, 400);
+  const startWake = wreck.wakeProgress;
+  wreck.update(500, 1280, { state: 'DESCENDING', x: wreck.x + 15, y: wreck.y + 10 });
+  assert.ok(wreck.wakeProgress > startWake, 'Living Shipwreck awakens when hook approaches');
+  assert.equal(finiteErrs, 0);
+});

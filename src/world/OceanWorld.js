@@ -14,6 +14,7 @@ import { FANTASY_SEAS, getSeaById } from '../entities/SeasData.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { TREASURE_ITEMS, HAZARD_TYPES } from '../data/TreasureData.js';
 import { LEGENDARY_SPECIES, checkMythicSpawn } from '../data/legendaries.js';
+import { MYTHICAL_RARE_CREATURES } from '../data/RareCreaturesData.js';
 import { Fish, drawRainbowStarSparkle } from '../entities/Fish.js';
 import { drawEventAtmosphere } from '../rendering/EventAtmosphere.js';
 import { Hazard } from '../entities/Hazard.js';
@@ -500,6 +501,19 @@ export class OceanWorld {
       shadowPip.isMisleadingMonster = true;
       shadowPip._revealedSmall = false;
       this.entities.fish.push(shadowPip);
+    }
+
+    // Rare mythical world wonders (Kelp Dragon, Arctic Bluetide Fox, Hermit-Crab Village, Djinn, Living Shipwreck, Mirror Creature, Coral Guardian, Origami Koi, Deep-Sea Witch)
+    const rareCreatures = MYTHICAL_RARE_CREATURES.filter(c => c.zone === this.currentSeaId && c.minDepth < activeMaxDepth);
+    for (const creature of rareCreatures) {
+      const rollChance = (creature.spawnChance || 0.02) * Math.min(1.8, 1 + Math.max(0, rareBoost - 1) * 0.45);
+      if (Math.random() < rollChance) {
+        const maxD = Math.min(activeMaxDepth, creature.maxDepth);
+        const depth = creature.minDepth + Math.random() * Math.max(2, maxD - creature.minDepth);
+        const cx = 95 + Math.random() * Math.max(80, this.worldWidth - 190);
+        const cy = this.surfaceY + depth * this.pixelsPerMeter;
+        this.entities.fish.push(new Fish(creature, cx, cy, fishOptions));
+      }
     }
 
     if (this.spawnUnionPicket) {

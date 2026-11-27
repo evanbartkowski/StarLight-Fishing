@@ -20,6 +20,7 @@ import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
 import { FISH_SPECIES, DEPTH_ZONES, RARITY_CONFIG, getSpeciesIcon } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
+import { MYTHICAL_RARE_CREATURES } from '../data/RareCreaturesData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { RELIC_TYPES } from '../data/RelicsData.js';
 import { PET_DEFINITIONS } from '../data/PetsData.js';
@@ -1875,7 +1876,7 @@ export class UIManager {
     const firstCatches = Array.isArray(hook.firstCatchItems) ? hook.firstCatchItems : [];
     const firstCatchHtml = firstCatches.length > 0 ? (() => {
       const first = firstCatches[0];
-      const sp = first.species || FISH_SPECIES.find(s => s.id === (first.speciesId || first.id)) || first;
+      const sp = first.species || FISH_SPECIES.find(s => s.id === (first.speciesId || first.id)) || LEGENDARY_SPECIES.find(s => s.id === (first.speciesId || first.id)) || MYTHICAL_RARE_CREATURES.find(s => s.id === (first.speciesId || first.id)) || first;
       const rKey = (sp.rarity || 'common').toLowerCase();
       const isRarePlus = rKey === 'rare' || rKey === 'epic' || rKey === 'legendary' || sp.isMythic || sp.isGodTier;
       const lore = getFirstCatchLore(sp);
@@ -1965,7 +1966,7 @@ export class UIManager {
 
       const loadRevealItem = (idx) => {
         const entry = firstCatches[idx];
-        const sp = entry?.species || FISH_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || entry;
+        const sp = entry?.species || FISH_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || LEGENDARY_SPECIES.find(s => s.id === (entry?.speciesId || entry?.id)) || MYTHICAL_RARE_CREATURES.find(s => s.id === (entry?.speciesId || entry?.id)) || entry;
         revealFish = specimen(entry, (revealCanvas?.width || 220) / 2, (revealCanvas?.height || 136) / 2);
         if (revealFish) {
           revealFish.scale = Math.min(3.2, Math.max(2.15, (sp.scaleFactor || 1) * 2.15));
@@ -2957,7 +2958,7 @@ export class UIManager {
   openJournalLogbook(primaryMenu = 'journal', defaultSubTab = 'fieldlog') {
     this.activeModal = primaryMenu === 'logbook' ? 'achievements' : 'journal';
     const save = this.saveSystem;
-    const allSpecies = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
+    const allSpecies = [...FISH_SPECIES, ...LEGENDARY_SPECIES, ...MYTHICAL_RARE_CREATURES];
     const caughtSpeciesCount = Object.keys(save.data.journal).length;
     const fossilCount = Object.keys(save.data.fossils).length;
 
@@ -3114,9 +3115,10 @@ export class UIManager {
         if (sp.isMythic) return 5;
         return rarityOrder[sp.rarity] ?? 0;
       };
-      const sortedSpeciesIds = [...zoneData.speciesIds].sort((aId, bId) => {
-        const spA = FISH_SPECIES.find((s) => s.id === aId) || LEGENDARY_SPECIES.find((s) => s.id === aId);
-        const spB = FISH_SPECIES.find((s) => s.id === bId) || LEGENDARY_SPECIES.find((s) => s.id === bId);
+      const rareWonderIds = MYTHICAL_RARE_CREATURES.filter(c => c.zone === zoneNum).map(c => c.id);
+      const sortedSpeciesIds = [...zoneData.speciesIds, ...rareWonderIds].sort((aId, bId) => {
+        const spA = allSpecies.find((s) => s.id === aId);
+        const spB = allSpecies.find((s) => s.id === bId);
         const rankDiff = getAlmanacRarityRank(spA) - getAlmanacRarityRank(spB);
         if (rankDiff !== 0) return rankDiff;
         const depthDiff = (spA?.minDepth ?? 0) - (spB?.minDepth ?? 0);
@@ -3125,7 +3127,7 @@ export class UIManager {
       });
 
       sortedSpeciesIds.forEach((spId) => {
-        const species = FISH_SPECIES.find((s) => s.id === spId) || LEGENDARY_SPECIES.find((s) => s.id === spId);
+        const species = allSpecies.find((s) => s.id === spId);
         if (!species) return;
 
         const entry = save.getSpeciesJournalEntry(species.id);
