@@ -591,3 +591,66 @@ test('Welcome screen keeps single Instant Guest Sail CTA and centers Log In and 
   assert.ok(html.includes('id="tab-auth-register"'));
   assert.ok(/\.auth-nav-tabs\s*\{[^}]*justify-content:\s*center/.test(css));
 });
+
+test('Enhanced fish visuals and Magma Caldera overhaul render all 294 species cleanly without stripes or NaN', async () => {
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { ENHANCED_FISH_VISUALS, isEnhancedFishShape, drawEnhancedFish } = await import('../src/rendering/FishVisualUpgrade.js');
+
+  assert.equal(ENHANCED_FISH_VISUALS, true);
+  assert.equal(isEnhancedFishShape({ shape: 'predator' }), true);
+  assert.equal(isEnhancedFishShape({ shape: 'eel' }), true);
+  assert.equal(isEnhancedFishShape({ shape: 'ray' }), true);
+  assert.equal(isEnhancedFishShape({ shape: 'colossal_kraken', isLeviathan: true }), false);
+
+  let nonFinite = 0;
+  let shadowBlurCount = 0;
+  let verticalCalderaBarLines = 0;
+  const makeCtx = () => new Proxy({}, {
+    get: (_, key) => {
+      if (key === 'createLinearGradient' || key === 'createRadialGradient') {
+        return () => ({ addColorStop: () => {} });
+      }
+      if (key === 'measureText') return () => ({ width: 60 });
+      return (...args) => {
+        for (const v of args) {
+          if (typeof v === 'number' && !Number.isFinite(v)) nonFinite++;
+        }
+      };
+    },
+    set: (target, key, val) => {
+      if (key === 'shadowBlur' && val > 0) shadowBlurCount++;
+      if (key === 'strokeStyle' && val === '#1c1917') verticalCalderaBarLines++;
+      target[key] = val;
+      return true;
+    },
+  });
+
+  // Every species across all 7 realms renders cleanly with finite geometry
+  for (const s of FISH_SPECIES) {
+    const f = new Fish(s, 300, 400, { currentSeaId: s.zone });
+    f.render(makeCtx(), 0);
+  }
+  assert.equal(nonFinite, 0, 'all species must render with finite coordinates');
+
+  // Verify Caldera eels/monsters use zero legacy black jail-bar strokes or rasterizer shadowBlur
+  shadowBlurCount = 0;
+  verticalCalderaBarLines = 0;
+  const calderaFish = FISH_SPECIES.filter(s => s.zone === 6 && !s.isLeviathan && s.shape !== 'megalodon_behemoth');
+  for (const s of calderaFish) {
+    const f = new Fish(s, 300, 400, { currentSeaId: 6 });
+    f.render(makeCtx(), 0);
+  }
+  assert.equal(verticalCalderaBarLines, 0, 'Caldera fish must not render legacy #1c1917 vertical jail-bar stripes');
+  assert.equal(shadowBlurCount, 0, 'Caldera fish must not force expensive shadowBlur');
+
+  // Direct drawEnhancedFish works on previously unmapped shapes (crab, angler, flatfish, tuna, catfish, etc.)
+  for (const sample of [
+    { id: 'caldera_crab', name: 'Magma Caldera Crab', shape: 'scorpionfish', zone: 6 },
+    { id: 'star_angler', name: 'Starlight Angler', shape: 'angler', zone: 3 },
+    { id: 'pyro_ray', name: 'Pyroclastic Ray', shape: 'flatfish', zone: 6 },
+    { id: 'chan_cat', name: 'Channel Catfish', shape: 'catfish', zone: 2 },
+  ]) {
+    assert.equal(drawEnhancedFish(makeCtx(), sample, '#ef4444', '#fde047', '#f97316', 1.2), true);
+  }
+});

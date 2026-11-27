@@ -10,6 +10,7 @@ import { renderFishEasterEggOverlay } from '../systems/EasterEggs.js';
 import { positionLineAttachment } from './LineAttachment.js';
 import { drawPipProjection } from '../rendering/LanternPipArtwork.js';
 import { drawShoalsFish, SHOALS_FISH_DESIGNS } from '../rendering/ShoalsFishArtwork.js';
+import { ENHANCED_FISH_VISUALS, isEnhancedFishShape, drawEnhancedFish, renderCalderaEnhancedAccent } from '../rendering/FishVisualUpgrade.js';
 
 /**
  * Draws a brilliant faceted 4-point diamond star sparkle with needle flares,
@@ -1018,7 +1019,7 @@ export class Fish {
     ].includes(s.shape);
 
     const anatomy = getFishAnatomy(s);
-    const hasOwnAppendages = !!SHOALS_FISH_DESIGNS[s.id] || Boolean(anatomy) || isCustomTailLeviathan || [
+    const hasOwnAppendages = !!SHOALS_FISH_DESIGNS[s.id] || Boolean(anatomy) || isEnhancedFishShape(s) || isCustomTailLeviathan || [
       'mossback_turtle', 'sea_turtle', 'nautilus', 'dolphin', 'whale',
       'cuttlefish', 'salp', 'krill', 'copepod', 'seal', 'sea_lion', 'walrus',
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
@@ -1064,7 +1065,8 @@ export class Fish {
 
     const isCustomMarine = drawShoalsFish(ctx, s, primary, secondary, finColor, this.wiggleTimer) ||
       drawDistinctFish(ctx, anatomy, primary, secondary, finColor, this.wiggleTimer) ||
-      drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this);
+      drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this) ||
+      drawEnhancedFish(ctx, s, primary, secondary, finColor, this.wiggleTimer, this);
     if (isCustomMarine) {
       // Specialized marine creature silhouette rendered
     } else if (s.name === 'Giant Cave Salamander') {
@@ -2218,6 +2220,9 @@ export class Fish {
 
     // Magma Caldera Trench: Unique, species-tailored volcanic and lava monster artwork
     if (this.isCaldera && !isHooked) {
+      if (ENHANCED_FISH_VISUALS && renderCalderaEnhancedAccent(ctx, this, primary, secondary, finColor)) {
+        // Enhanced Caldera glow/veins already keep eyes & silhouettes sharp
+      } else {
       ctx.save();
       const s = this.species;
       const sh = s.shape || 'oval';
@@ -2369,6 +2374,7 @@ export class Fish {
       }
 
       ctx.restore();
+      }
     }
 
     // Eldritch Chrono Void: Super mythical celestial constellation artwork for select Realm 7 fish

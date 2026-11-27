@@ -1,5 +1,6 @@
 // Original Canvas artwork. Anatomy is resolved once per species, with no textures
 // or random per-frame geometry. Existing species IDs, palettes and stats stay intact.
+import { ENHANCED_FISH_VISUALS } from './FishVisualUpgrade.js';
 const anatomyCache = new WeakMap();
 export function getFishAnatomy(species) {
   if (!species || species.isLeviathan || !['oval', 'disc'].includes(species.shape)) return null;
@@ -110,12 +111,38 @@ export function drawDistinctFish(ctx, anatomy, primary, secondary, finColor, tim
     }
     // Silhouettes differ before markings: deep discus, flat sole, slender tetra,
     // broad-jawed grouper, angular glassfish, and individual reef proportions.
-    fin(ctx, -l + 1, 0, 12 + seed % 5, -9 - wave, finColor);
-    fin(ctx, -l + 1, 0, 12 + seed % 5, 9 - wave, finColor);
+    if (ENHANCED_FISH_VISUALS && (kind === 'tetra' || kind === 'glass')) {
+      ctx.fillStyle = finColor; ctx.beginPath(); ctx.moveTo(-l + 2, 0);
+      ctx.quadraticCurveTo(-l - 7, -h * 0.45, -l - 13, -h * 0.9 - wave * 0.6);
+      ctx.lineTo(-l - 6, -wave * 0.2);
+      ctx.lineTo(-l - 13, h * 0.9 - wave * 0.6);
+      ctx.quadraticCurveTo(-l - 7, h * 0.45, -l + 2, 0); ctx.closePath(); ctx.fill();
+    } else if (ENHANCED_FISH_VISUALS && (kind === 'crown' || kind === 'discus')) {
+      ctx.fillStyle = finColor; ctx.beginPath(); ctx.moveTo(-l + 2, -2);
+      ctx.bezierCurveTo(-l - 9, -h * 0.95 - wave, -l - 18, -h * 0.4, -l - 16, -wave * 0.3);
+      ctx.bezierCurveTo(-l - 18, h * 0.4, -l - 9, h * 0.95 - wave, -l + 2, 2);
+      ctx.closePath(); ctx.fill();
+    } else {
+      fin(ctx, -l + 1, 0, 12 + seed % 5, -9 - wave, finColor);
+      fin(ctx, -l + 1, 0, 12 + seed % 5, 9 - wave, finColor);
+    }
     fin(ctx, 1, -h * .65, 12, kind === 'crown' ? -17 : -6 - seed % 7, finColor);
     fin(ctx, -1, h * .6, 9, kind === 'sole' ? 3 : 8 + seed % 4, finColor);
     if (kind === 'glass') ctx.globalAlpha *= .75;
-    ctx.fillStyle = primary; bodyPath(ctx, l, h, kind); ctx.fill(); ctx.strokeStyle = secondary; ctx.stroke();
+    if (ENHANCED_FISH_VISUALS && typeof primary === 'string' && typeof secondary === 'string') {
+      try {
+        const bodyGrad = ctx.createLinearGradient(0, -h, 0, h);
+        bodyGrad.addColorStop(0, primary);
+        bodyGrad.addColorStop(0.68, primary);
+        bodyGrad.addColorStop(1, secondary);
+        ctx.fillStyle = bodyGrad;
+      } catch {
+        ctx.fillStyle = primary;
+      }
+    } else {
+      ctx.fillStyle = primary;
+    }
+    bodyPath(ctx, l, h, kind); ctx.fill(); ctx.strokeStyle = secondary; ctx.stroke();
     ctx.save(); bodyPath(ctx, l, h, kind); ctx.clip();
     ctx.strokeStyle = secondary; ctx.fillStyle = secondary; ctx.lineWidth = 1.2;
     for (let n = 0; n < 3 + seed % 4; n++) {
