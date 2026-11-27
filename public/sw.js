@@ -10,7 +10,15 @@ let audioDownload = null;
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CORE_CACHE);
-    try { await cache.addAll(CORE_ASSETS.map(url => new Request(url, { cache: 'reload' }))); }
+    try {
+      // Versioned requests bypass previously cached CDN copies of unhashed files.
+      // Store under canonical paths so ordinary and offline requests share them.
+      await Promise.all(CORE_ASSETS.map(async url => {
+        const response = await fetch(new Request(`${url}?offline=${RELEASE}`, { cache: 'reload' }));
+        if (!response.ok) throw Error(`Offline download failed: ${url}`);
+        await cache.put(url, response);
+      }));
+    }
     catch (error) { await caches.delete(CORE_CACHE); throw error; }
   })());
 });
@@ -82,7 +90,7 @@ self.addEventListener('message', event => {
         const cache = await caches.open(AUDIO_CACHE);
         for (const [index, url] of AUDIO_ASSETS.entries()) {
           if (!(await cache.match(url))) {
-            const response = await fetch(new Request(url, { cache: 'reload' }));
+            const response = await fetch(new Request(`${url}?audio=${AUDIO_CACHE}`, { cache: 'reload' }));
             if (!response.ok || response.status === 206) throw Error('Music download interrupted. Reconnect and try again.');
             await cache.put(url, response);
           }

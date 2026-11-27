@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
+import { offlineBuild } from './scripts/offline-build.mjs';
 
 export default defineConfig({
+  plugins: [offlineBuild()],
   build: {
     rollupOptions: {
       output: {

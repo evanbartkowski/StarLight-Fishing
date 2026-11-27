@@ -55,7 +55,7 @@ export function initializeInstallGame({ production = import.meta.env.PROD } = {}
     if (!('serviceWorker' in navigator)) { setStatus('This browser cannot save the game offline. Try a current version of Chrome, Edge or Safari.'); return; }
     try {
       setStatus('Downloading the game for offline play…');
-      registration = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+      registration = await navigator.serviceWorker.register('/sw.js?offline=2', { updateViaCache: 'none' });
       const observe = worker => worker?.addEventListener('statechange', () => {
         if (worker.state === 'installed' && registration.active && registration.waiting) { update.hidden = false; setStatus('An updated offline game is ready. Refresh to use it.'); }
         if (worker.state === 'redundant') { setStatus('Download interrupted. Reconnect to finish saving the game.'); retry.hidden = false; }
