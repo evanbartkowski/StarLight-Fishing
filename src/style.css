@@ -5812,3 +5812,247 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 
 
 
+
+
+/* =========================================
+   Instant Launch, Daily Mystery Vault, Quest Loot, Boat Paint Swatches & Derby UI
+   ========================================= */
+.btn-welcome-instant {
+  width: 100%;
+  margin-bottom: 10px;
+  font-weight: 800;
+  font-size: 0.98rem;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  border: 1px solid rgba(186, 230, 253, 0.55);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
+}
+
+.daily-rewards-hero {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.85));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.daily-hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.daily-hero-badge, .daily-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.daily-hero-gems {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f0abfc;
+}
+
+.daily-hero-streak {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  color: #fde047;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.daily-reset-pill {
+  font-size: 0.78rem;
+  color: #93c5fd;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.daily-streak-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(15, 23, 42, 0.75);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.daily-streak-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #a855f7, #facc15);
+  transition: width 0.35s ease;
+}
+
+.daily-hero-sub {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.daily-mystery-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: rgba(88, 28, 135, 0.32);
+  border: 1px solid rgba(192, 132, 252, 0.55);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.daily-mystery-banner span { font-size: 1.8rem; }
+.daily-mystery-banner strong { display: block; color: #f5d0fe; font-size: 0.92rem; }
+.daily-mystery-banner small { color: #cbd5e1; font-size: 0.8rem; }
+
+.daily-reward-day .day-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.daily-reward-day.mystery {
+  border-color: rgba(192, 132, 252, 0.5);
+  background: rgba(46, 16, 101, 0.38);
+}
+
+.daily-reward-day.claimed {
+  opacity: 0.55;
+  border-color: #22c55e;
+}
+
+.daily-reward-day .mystery-tag {
+  color: #e879f9;
+  font-weight: 700;
+}
+
+.daily-footer-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.quest-loot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(14, 116, 144, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  color: #e0f2fe;
+}
+
+.quest-loot-sub {
+  color: #93c5fd;
+  font-size: 0.76rem;
+}
+
+.boat-colors-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.boat-color-section {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.boat-color-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.86rem;
+  color: #f8fafc;
+}
+
+.boat-picker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.boat-hex-input {
+  width: 28px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.boat-swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.boat-swatch-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.boat-swatch-btn:hover { transform: scale(1.1); }
+.boat-swatch-btn.selected {
+  border-color: #facc15;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.4);
+  transform: scale(1.12);
+}
+
+.derby-banner {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(46, 16, 101, 0.55));
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.derby-banner-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.derby-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.derby-icon { font-size: 2rem; }
+.derby-title-wrap h4 { margin: 0 0 3px 0; color: #fde047; font-size: 1.05rem; }
+.derby-title-wrap p { margin: 0; color: #cbd5e1; font-size: 0.84rem; }
+
+.derby-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.derby-timer { font-size: 0.78rem; color: #93c5fd; }
+.derby-own-score { font-size: 0.95rem; color: #f8fafc; }

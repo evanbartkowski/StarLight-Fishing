@@ -1,3 +1,5 @@
+import { getVesselLayout } from '../rendering/VesselRenderer.js';
+
 export const ANGLER_OPTIONS = {
   skin: { label: 'Skin tone', default: '#fde6c8', choices: [['#fde6c8', 'Ivory'], ['#e7b98a', 'Warm beige'], ['#c88c60', 'Golden tan'], ['#a66c47', 'Bronze'], ['#774a34', 'Chestnut'], ['#4c3028', 'Deep brown']] },
   coat: { label: 'Coat', default: '#eab308', choices: [['#eab308', 'Classic yellow'], ['#0d9488', 'Ocean teal'], ['#ef4444', 'Coral red'], ['#6366f1', 'Indigo'], ['#f472b6', 'Rose'], ['#334155', 'Slate']] },
@@ -304,19 +306,76 @@ export function drawAquariumDecor(ctx, width, height, options, time) {
   ctx.restore();
 }
 
+export const BOAT_PART_PALETTES = {
+  hull: {
+    label: 'Hull Paint',
+    default: 'default',
+    choices: [
+      ['default', 'Classic Wood / Steel'],
+      ['#0f294a', 'Deep Navy'],
+      ['#7f1d1d', 'Royal Crimson'],
+      ['#064e3b', 'Emerald Timber'],
+      ['#18181b', 'Obsidian Slate'],
+      ['#92400e', 'Amber Oak'],
+      ['#cbd5e1', 'Pearl Hull'],
+      ['#3b0764', 'Abyssal Violet'],
+      ['#9d174d', 'Coral Rose'],
+    ],
+  },
+  trim: {
+    label: 'Trim & Railings',
+    default: 'default',
+    choices: [
+      ['default', 'Signature Trim'],
+      ['#fbbf24', 'Imperial Gold'],
+      ['#38bdf8', 'Starlight Cyan'],
+      ['#f8fafc', 'Ivory White'],
+      ['#34d399', 'Seafoam Mint'],
+      ['#f97316', 'Volcanic Amber'],
+      ['#e879f9', 'Astral Magenta'],
+      ['#f43f5e', 'Crimson Stripe'],
+    ],
+  },
+  sails: {
+    label: 'Sails & Canopy',
+    default: 'default',
+    choices: [
+      ['default', 'Classic Canvas'],
+      ['#e0e7ff', 'Celestial Mist'],
+      ['#fef08a', 'Sunset Gold'],
+      ['#fda4af', 'Corsair Blush'],
+      ['#a7f3d0', 'Emerald Breeze'],
+      ['#334155', 'Shadow Stealth'],
+      ['#e9d5ff', 'Aurora Lavender'],
+    ],
+  },
+};
+
+export function normalizeBoatColors(values = {}) {
+  const safeValues = (values && typeof values === 'object') ? values : {};
+  return Object.fromEntries(
+    Object.entries(BOAT_PART_PALETTES).map(([key, config]) => {
+      const val = safeValues[key];
+      const validChoice = config.choices.some(([c]) => c === val);
+      const isHex = typeof val === 'string' && /^#[0-9a-f]{6}$/i.test(val);
+      return [key, (validChoice || isHex) ? val : config.default];
+    })
+  );
+}
+
 export const BOAT_SKIN_OPTIONS = {
   default: { id: 'default', label: 'Classic Oak', desc: 'Timeless varnished oak gunwale finish.', cost: 0, color: null },
-  coral: { id: 'coral', label: 'Coral Blossom', desc: 'Vibrant salmon-coral waterline stripe.', cost: 15, color: '#fb7185' },
-  indigo: { id: 'indigo', label: 'Deep Indigo', desc: 'Abyssal royal indigo racing stripe.', cost: 20, color: '#818cf8' },
-  emerald: { id: 'emerald', label: 'Sea Emerald', desc: 'Luminescent seafoam emerald accent line.', cost: 25, color: '#34d399' },
-  gold: { id: 'gold', label: 'Gilded Gilt', desc: 'Opulent sunken galleon gold trim.', cost: 40, color: '#fbbf24' },
-  celestial: { id: 'celestial', label: 'Celestial Starlight', desc: 'Iridescent starfall violet & stellar cosmic glow.', cost: 45, color: '#c084fc', secondaryColor: '#e0e7ff', glow: '#a855f7' },
-  obsidian: { id: 'obsidian', label: 'Molten Obsidian', desc: 'Volcanic black basalt with glowing magma vein accents.', cost: 40, color: '#ea580c', secondaryColor: '#1c1917', glow: '#f97316' },
-  pearl: { id: 'pearl', label: 'Iridescent Pearl', desc: 'Shimmering lustrous moonlit nacre luster.', cost: 35, color: '#f1f5f9', secondaryColor: '#bae6fd', glow: '#38bdf8' },
-  crimson: { id: 'crimson', label: 'Crimson Phantom', desc: 'Ghostly blood ruby and deep shadow scarlet trim.', cost: 30, color: '#f43f5e', secondaryColor: '#881337', glow: '#fb7185' },
-  amethyst: { id: 'amethyst', label: 'Royal Amethyst', desc: 'Imperial deep royal purple and gilded crystal hue.', cost: 35, color: '#9333ea', secondaryColor: '#581c87', glow: '#c084fc' },
-  midnight: { id: 'midnight', label: 'Midnight Abyss', desc: 'Stealth dark abyssal slate with electric cyan piping.', cost: 25, color: '#06b6d4', secondaryColor: '#0f172a', glow: '#22d3ee' },
-  rose_gold: { id: 'rose_gold', label: 'Rose Gold Sunset', desc: 'Warm metallic sunset copper and blush rose gold trim.', cost: 30, color: '#fb7185', secondaryColor: '#fbcfe8', glow: '#fda4af' },
+  coral: { id: 'coral', label: 'Coral Blossom', desc: 'Vibrant salmon-coral waterline stripe.', cost: 15, color: '#fb7185', hullTint: '#881337' },
+  indigo: { id: 'indigo', label: 'Deep Indigo', desc: 'Abyssal royal indigo racing stripe.', cost: 20, color: '#818cf8', hullTint: '#1e1b4b' },
+  emerald: { id: 'emerald', label: 'Sea Emerald', desc: 'Luminescent seafoam emerald accent line.', cost: 25, color: '#34d399', hullTint: '#064e3b' },
+  gold: { id: 'gold', label: 'Gilded Gilt', desc: 'Opulent sunken galleon gold trim.', cost: 40, color: '#fbbf24', hullTint: '#451a03', sailTint: '#fef3c7' },
+  celestial: { id: 'celestial', label: 'Celestial Starlight', desc: 'Iridescent starfall violet & stellar cosmic glow.', cost: 45, color: '#c084fc', secondaryColor: '#e0e7ff', glow: '#a855f7', hullTint: '#2e1065', sailTint: '#e9d5ff' },
+  obsidian: { id: 'obsidian', label: 'Molten Obsidian', desc: 'Volcanic black basalt with glowing magma vein accents.', cost: 40, color: '#ea580c', secondaryColor: '#1c1917', glow: '#f97316', hullTint: '#1c1917', sailTint: '#fed7aa' },
+  pearl: { id: 'pearl', label: 'Iridescent Pearl', desc: 'Shimmering lustrous moonlit nacre luster.', cost: 35, color: '#38bdf8', secondaryColor: '#bae6fd', glow: '#38bdf8', hullTint: '#475569', sailTint: '#f8fafc' },
+  crimson: { id: 'crimson', label: 'Crimson Phantom', desc: 'Ghostly blood ruby and deep shadow scarlet trim.', cost: 30, color: '#f43f5e', secondaryColor: '#881337', glow: '#fb7185', hullTint: '#4c0519', sailTint: '#ffe4e6' },
+  amethyst: { id: 'amethyst', label: 'Royal Amethyst', desc: 'Imperial deep royal purple and gilded crystal hue.', cost: 35, color: '#9333ea', secondaryColor: '#581c87', glow: '#c084fc', hullTint: '#3b0764', sailTint: '#f3e8ff' },
+  midnight: { id: 'midnight', label: 'Midnight Abyss', desc: 'Stealth dark abyssal slate with electric cyan piping.', cost: 25, color: '#06b6d4', secondaryColor: '#0f172a', glow: '#22d3ee', hullTint: '#0f172a', sailTint: '#cbd5e1' },
+  rose_gold: { id: 'rose_gold', label: 'Rose Gold Sunset', desc: 'Warm metallic sunset copper and blush rose gold trim.', cost: 30, color: '#fb7185', secondaryColor: '#fbcfe8', glow: '#fda4af', hullTint: '#500724', sailTint: '#fce7f3' },
 };
 
 export const BOAT_TRINKETS = {
@@ -331,11 +390,12 @@ export const BOAT_TRINKETS = {
 
 export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, bH = 34) {
   if (!trinketId || trinketId === 'none') return;
+  const layout = getVesselLayout(vessel, bW, bH);
   ctx.save();
   try {
     if (trinketId === 'lucky_cat') {
-    const cx = bW * 0.32;
-    const cy = -9;
+    const cx = layout.trinketRight.x;
+    const cy = layout.trinketRight.y;
     ctx.translate(cx, cy);
     // Red cushion
     ctx.fillStyle = '#dc2626';
@@ -397,8 +457,8 @@ export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, 
     ctx.fill();
     ctx.restore();
   } else if (trinketId === 'rubber_duck') {
-    const dx = bW * 0.30;
-    const dy = -8 + Math.sin(time * 4) * 1.5;
+    const dx = layout.trinketRight.x;
+    const dy = layout.trinketRight.y + Math.sin(time * 4) * 1.5;
     ctx.translate(dx, dy);
     // Yellow body
     ctx.fillStyle = '#facc15';
@@ -432,8 +492,8 @@ export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, 
     ctx.fillStyle = '#fbbf24';
     ctx.fillRect(3, -18, 4, 1.5);
   } else if (trinketId === 'wind_chime') {
-    const wx = -bW * 0.32;
-    const wy = -9;
+    const wx = layout.trinketLeft.x;
+    const wy = layout.trinketLeft.y;
     ctx.translate(wx, wy);
     // Support pole & bracket
     ctx.strokeStyle = '#78350f';
@@ -464,8 +524,8 @@ export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, 
     ctx.fillStyle = '#fed7aa';
     ctx.beginPath(); ctx.ellipse(16 + sway3, -11, 2.5, 3.5, 0.15, 0, Math.PI * 2); ctx.fill();
   } else if (trinketId === 'ship_bell') {
-    const bx = bW * 0.35;
-    const by = -9;
+    const bx = layout.trinketRight.x;
+    const by = layout.trinketRight.y;
     ctx.translate(bx, by);
     // Brass bracket
     ctx.strokeStyle = '#b45309';
@@ -500,8 +560,8 @@ export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, 
     ctx.fill();
     ctx.restore();
   } else if (trinketId === 'pirate_parrot') {
-    const px = -bW * 0.28;
-    const py = -9;
+    const px = layout.trinketLeft.x;
+    const py = layout.trinketLeft.y;
     ctx.translate(px, py);
     // Wood perch post
     ctx.fillStyle = '#78350f';
@@ -555,8 +615,8 @@ export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, 
     ctx.fill();
     ctx.restore();
   } else if (trinketId === 'crystal_orb') {
-    const ox = bW * 0.26;
-    const oy = -9;
+    const ox = layout.trinketRight.x;
+    const oy = layout.trinketRight.y;
     ctx.translate(ox, oy);
     // Polished brass pedestal
     ctx.fillStyle = '#d97706';

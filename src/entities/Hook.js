@@ -25,6 +25,7 @@ export class Hook {
 
     // Caught items
     this.caughtItems = [];
+    this.diveCombo = 0;
     this.tookDamage = false;
 
     // Previous position for continuous collision sweep
@@ -98,6 +99,8 @@ export class Hook {
     this.depthMeters = 0;
     this.maxDepthReachedThisDive = 0;
     this.caughtItems = [];
+    this.diveCombo = 0;
+    this._seenNewSpeciesThisDive = null;
     this.tookDamage = false;
     this.shields = this.initialShields;
     this.tiltAngle = 0;
@@ -124,6 +127,8 @@ export class Hook {
     this.state = 'CASTING';
     this.targetX = startX;
     this.caughtItems = [];
+    this.diveCombo = 0;
+    this._seenNewSpeciesThisDive = null;
     this.tookDamage = false;
     this.shields = this.initialShields;
     this.maxDepthReachedThisDive = 0;
@@ -169,6 +174,11 @@ export class Hook {
     }
   }
 
+  getComboMultiplier() {
+    const combo = Math.max(0, this.diveCombo || 0);
+    return 1 + Math.min(0.5, Math.max(0, combo - 1) * 0.05);
+  }
+
   addCatch(entity, particles) {
     const effectiveCapacity = this.capacity + (this.capacityBoost || 0);
     if (this.caughtItems.length >= effectiveCapacity) return false;
@@ -177,6 +187,7 @@ export class Hook {
     this.vx *= 0.25;
 
     this.caughtItems.push(entity);
+    this.diveCombo = (this.diveCombo || 0) + 1;
     entity.hookTo(this, this.caughtItems.length - 1);
 
     if (entity.isGodTier) {
@@ -217,6 +228,10 @@ export class Hook {
       } else if (entity.isShiny || rarity === 'epic' || rarity === 'legendary' || entity.isMythic || entity.isSpecialDeep) {
         particles.addTrauma(0.35);
       }
+      if (this.diveCombo >= 3) {
+        const pct = Math.round((this.getComboMultiplier() - 1) * 100);
+        particles.addFloatingText(`🔥 ${this.diveCombo}x DIVE COMBO (+${pct}%)`, this.x, this.y - 54, '#38bdf8', 14);
+      }
     }
 
     if (this.caughtItems.length >= effectiveCapacity && this.state === 'DESCENDING') {
@@ -233,6 +248,7 @@ export class Hook {
     this.hazardCooldown = 1.2;
     hazard.restTime = 3;
     this.tookDamage = true;
+    this.diveCombo = 0;
     soundManager.playHazardShock();
 
     if (particles) {

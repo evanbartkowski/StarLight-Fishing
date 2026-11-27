@@ -1,5 +1,6 @@
 // QuestSystem.js — Manages daily noticeboard missions and angler bounty progress
-import { QUEST_POOL, getQuestTargetForRealm, getQuestDescriptionForRealm } from '../data/QuestsData.js';
+import { QUEST_POOL, QUEST_UNIQUE_LOOT, getQuestTargetForRealm, getQuestDescriptionForRealm } from '../data/QuestsData.js';
+import { CRATE_RANKS } from '../data/CrateData.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { REALM_PROFILES } from '../data/RealmContent.js';
 import { getSeaById } from '../entities/SeasData.js';
@@ -35,7 +36,18 @@ export function questReward(def, realmId, target = null) {
   const baseGems = def.rewardGems || (def.rarity === 'rare' ? 2 : 0);
   const rewardGems = baseGems ? Math.max(1, Math.round(baseGems * (realmId >= 5 ? 1.5 : 1))) : 0;
 
-  return { ...def, realmId, rewardCoins, rewardXp, rewardGems };
+  // Deterministic unique useful bounty loot per quest/realm
+  let lootSeed = realmId || 1;
+  for (let i = 0; i < (def.id || '').length; i++) lootSeed += def.id.charCodeAt(i);
+  const template = QUEST_UNIQUE_LOOT[lootSeed % QUEST_UNIQUE_LOOT.length];
+  const crateRank = Math.min(5, Math.max(1, Math.ceil((realmId || 1) / 2)));
+  const rewardLoot = template
+    ? (template.kind === 'crate'
+      ? { ...template, crateRank, name: `Rank ${crateRank} ${template.name}`, desc: `Rank ${crateRank} Sealed Crate` }
+      : { ...template })
+    : null;
+
+  return { ...def, realmId, rewardCoins, rewardXp, rewardGems, rewardLoot };
 }
 
 export class QuestSystem {
@@ -177,6 +189,32 @@ export class QuestSystem {
         this.saveSystem.addGems(reward.rewardGems);
       } else {
         this.saveSystem.data.gems = (this.saveSystem.data.gems || 0) + reward.rewardGems;
+      }
+    }
+
+    // Deliver unique useful quest loot
+    const loot = reward.rewardLoot;
+    if (loot) {
+      if (loot.kind === 'buff') {
+        if (typeof this.saveSystem.addBuff === 'function') {
+          this.saveSystem.addBuff(loot.buffId, loot.durationMs || 180000);
+        } else {
+          this.saveSystem.data.buffs ||= {};
+          this.saveSystem.data.buffs[loot.buffId] = Date.now() + (loot.durationMs || 180000);
+        }
+      } else if (loot.kind === 'crate') {
+        const rank = loot.crateRank || 1;
+        const crateDef = CRATE_RANKS.find(c => c.rank === rank) || CRATE_RANKS[0];
+        let stored = false;
+        if (crateDef && typeof this.saveSystem.addItemToInventory === 'function' && !this.saveSystem.isInventoryFull?.()) {
+          stored = !!this.saveSystem.addItemToInventory({ ...crateDef, isCrate: true, category: 'crate', crateRank: rank, value: 0 });
+        }
+        if (!stored) {
+          this.saveSystem.addCoins(120 * rank);
+        }
+      } else if (loot.kind === 'coins_bonus') {
+        const bonusCoins = Math.max(25, Math.round(reward.rewardCoins * (loot.coinsPct || 0.35)));
+        this.saveSystem.addCoins(bonusCoins);
       }
     }
     this.saveSystem.data.quests.completedCount = (this.saveSystem.data.quests.completedCount || 0) + 1;

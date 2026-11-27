@@ -1,5 +1,13 @@
 // QuestsData.js — Cozy Harbor Noticeboard & Daily Angler Missions
 
+export const QUEST_UNIQUE_LOOT = [
+  { id: 'tide_grace_vial', name: "Siren's Grace Vial", icon: '🌊', kind: 'buff', buffId: 'sirensGrace', durationMs: 180000, desc: '3m Rare+ Catch Boost' },
+  { id: 'abyssal_lantern_oil', name: 'Starlight Sight Oil', icon: '🌟', kind: 'buff', buffId: 'starlightClarity', durationMs: 180000, desc: '3m Fish Silhouette Sight' },
+  { id: 'harbor_hotspot_chart', name: 'Marked Survey Chart', icon: '🗺️', kind: 'buff', buffId: 'cartographerMark', durationMs: 180000, desc: '3m Secret Hotspot Reveal' },
+  { id: 'bosun_salvage_crate', name: "Bosun's Sealed Crate", icon: '📦', kind: 'crate', desc: 'Sealed Loot Crate' },
+  { id: 'golden_crew_ration', name: 'Golden Tide Ration', icon: '🪙', kind: 'coins_bonus', coinsPct: 0.35, desc: '+35% Bonus Gold Haul' },
+];
+
 export const QUEST_POOL = [
   {
     id: 'reef_angler',

@@ -7,6 +7,42 @@ import { drawAquariumDecor, normalizeCustomization, AQUARIUM_OPTIONS } from '../
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { Treasure } from '../entities/Treasure.js';
 
+const REACTION_STORAGE_KEY = 'starlight_aquarium_reactions_v1';
+const AQUARIUM_REACTIONS = [
+  { id: 'star', icon: '⭐', label: 'Star Tank' },
+  { id: 'whale', icon: '🐋', label: 'Epic Crew' },
+  { id: 'sparkle', icon: '✨', label: 'Cosmic Vibe' },
+];
+
+export function getAquariumReactionSummary(hostKey) {
+  if (!hostKey) return { star: 0, whale: 0, sparkle: 0, total: 0 };
+  try {
+    const map = JSON.parse(localStorage.getItem(REACTION_STORAGE_KEY) || '{}');
+    const entry = map[String(hostKey).toLowerCase()] || {};
+    const star = Number(entry.star) || 0;
+    const whale = Number(entry.whale) || 0;
+    const sparkle = Number(entry.sparkle) || 0;
+    return { star, whale, sparkle, total: star + whale + sparkle };
+  } catch {
+    return { star: 0, whale: 0, sparkle: 0, total: 0 };
+  }
+}
+
+function addAquariumReaction(hostKey, reactionId) {
+  if (!hostKey) return getAquariumReactionSummary(hostKey);
+  try {
+    const map = JSON.parse(localStorage.getItem(REACTION_STORAGE_KEY) || '{}');
+    const key = String(hostKey).toLowerCase();
+    const entry = map[key] || { star: 0, whale: 0, sparkle: 0 };
+    entry[reactionId] = (Number(entry[reactionId]) || 0) + 1;
+    map[key] = entry;
+    localStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(map));
+    return getAquariumReactionSummary(key);
+  } catch {
+    return getAquariumReactionSummary(hostKey);
+  }
+}
+
 export function extractAquariumHost(input) {
   if (!input) return '';
   const str = String(input).trim();
@@ -46,7 +82,10 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
       <canvas id="visitor-tank" width="700" height="340" style="width:100%;max-width:700px;background:#082f49;border-radius:12px;display:none;margin:0 auto 10px;"></canvas>
     </div>
     <div id="visitor-tank-controls" style="display:none;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;">
-      <button class="btn btn-primary" id="tip-host">Toss 1 coin · Give host 1 Gem</button>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+        <button class="btn btn-primary" id="tip-host">Toss 1 coin · Give host 1 Gem</button>
+        ${AQUARIUM_REACTIONS.map(r => `<button type="button" class="btn btn-secondary btn-sm btn-aq-react" data-react="${r.id}" title="${r.label}">${r.icon} <span class="aq-react-count" data-react-count="${r.id}">0</span></button>`).join('')}
+      </div>
       <p style="margin:0;font-size:0.82rem;color:#94a3b8;">Maximum 3 tips per captain per UTC day.</p>
     </div>
   `);
@@ -155,6 +194,31 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
     const background = ctx.createLinearGradient(0, 0, 0, 340);
     background.addColorStop(0, colors[0]); background.addColorStop(1, colors[1]);
     const coins = [];
+    const floatingReactions = [];
+    const reactionKey = exhibit.username || finalHost;
+    const refreshReactionCounts = () => {
+      const counts = getAquariumReactionSummary(reactionKey);
+      document.querySelectorAll('[data-react-count]').forEach(el => {
+        const k = el.getAttribute('data-react-count');
+        el.textContent = counts[k] || 0;
+      });
+    };
+    refreshReactionCounts();
+    document.querySelectorAll('.btn-aq-react').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rId = btn.getAttribute('data-react');
+        const rMeta = AQUARIUM_REACTIONS.find(r => r.id === rId);
+        addAquariumReaction(reactionKey, rId);
+        refreshReactionCounts();
+        floatingReactions.push({
+          icon: rMeta?.icon || '⭐',
+          x: 160 + Math.random() * 380,
+          y: 280,
+          alpha: 1,
+        });
+        ui.showToast(`${rMeta?.icon || '⭐'} Left a ${rMeta?.label || 'reaction'} on ${exhibit.username || 'this captain'}'s tank!`);
+      });
+    });
     const decor = normalizeCustomization(AQUARIUM_OPTIONS, exhibit.decor);
     const rawItems = Array.isArray(exhibit?.items) ? exhibit.items : [];
     const fish = rawItems.filter(item => item.type === 'fish' || (!item.type && !item.isRelic)).map((item, index) => {
@@ -214,6 +278,18 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
         const coin = coins[i]; coin.y += dt * .18;
         ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(639, coin.y, 7, 0, Math.PI * 2); ctx.fill();
         if (coin.y > 310) coins.splice(i, 1);
+      }
+      for (let i = floatingReactions.length - 1; i >= 0; i--) {
+        const fr = floatingReactions[i];
+        fr.y -= dt * 0.08;
+        fr.alpha -= dt * 0.0005;
+        if (fr.alpha <= 0) { floatingReactions.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, fr.alpha);
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(fr.icon, fr.x, fr.y);
+        ctx.restore();
       }
       if (!rawItems.length) {
         ctx.fillStyle = '#dbeafe';

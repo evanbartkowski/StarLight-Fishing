@@ -13,7 +13,7 @@ async function withTimeout(task) {
 
 // Deliberately publish only public ranking fields, never saves or passwords.
 export function publicScore(account, data) {
-  return {
+  const score = {
     username: account.username,
     level: safeNumber(data.level, 1000000),
     xp: safeNumber(data.xp),
@@ -23,6 +23,15 @@ export function publicScore(account, data) {
     maxDepthReached: safeNumber(data.stats?.maxDepthReached),
     createdAt: safeNumber(account.createdAt),
   };
+  if (data.weeklyDerby && Number.isFinite(data.weeklyDerby.weekId) && Number.isFinite(data.weeklyDerby.score)) {
+    score.weeklyDerby = {
+      weekId: Math.floor(data.weeklyDerby.weekId),
+      challengeId: String(data.weeklyDerby.challengeId || '').slice(0, 32),
+      score: safeNumber(data.weeklyDerby.score),
+      bestCatchName: data.weeklyDerby.bestCatchName ? String(data.weeklyDerby.bestCatchName).slice(0, 60) : null,
+    };
+  }
+  return score;
 }
 
 export class LeaderboardManager {

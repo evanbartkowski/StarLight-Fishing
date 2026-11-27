@@ -1,4 +1,5 @@
 import { drawMarinePet, drawPetNameplate } from '../rendering/MarinePetArt.js';
+import { getVesselLayout } from '../rendering/VesselRenderer.js';
 // BoatCompanions.js — Cozy low-maintenance crew aboard the vessel
 // ShipsCat, PerchingPelican, and BackgroundDolphin
 
@@ -78,16 +79,7 @@ export class ShipsCat {
   }
 
   getDeckPosition(vessel) {
-    if (vessel >= 4) {
-      return { x: -50, y: -23 }; // seated snugly on rear observation deck of Mythic Ketch (deck surface at y=-18)
-    } else if (vessel === 3) {
-      return { x: -44, y: -15 }; // seated on aft deck of Grand Schooner (deck at y=-10)
-    } else if (vessel === 2) {
-      return { x: -40, y: -15 }; // seated on aft deck of Expedition Trawler (deck at y=-10)
-    } else if (vessel === 1) {
-      return { x: -36, y: -13 }; // seated on seat bench of Coastal Dory
-    }
-    return { x: -30, y: -12 }; // on pine bench of Weathered Dinghy
+    return getVesselLayout(vessel).catPos;
   }
 
   render(ctx, vessel) {
@@ -277,16 +269,7 @@ export class PerchingPelican {
   }
 
   getBowspritPosition(vessel) {
-    if (vessel >= 4) {
-      return { x: 92, y: -26 }; // gilded bowsprit spar on Celestial Ketch
-    } else if (vessel === 3) {
-      return { x: 78, y: -22 }; // bowsprit spar on Grand Schooner
-    } else if (vessel === 2) {
-      return { x: 64, y: -16 }; // bow railing on Expedition Trawler
-    } else if (vessel === 1) {
-      return { x: 54, y: -14 }; // bow post on Coastal Dory
-    }
-    return { x: 44, y: -12 }; // bow tip on Weathered Dinghy
+    return getVesselLayout(vessel).pelicanPos;
   }
 
   render(ctx, vessel) {

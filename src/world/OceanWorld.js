@@ -1887,12 +1887,14 @@ export class OceanWorld {
       ctx.rotate(b.angle);
 
       const rawSkin = this.saveSystem?.data?.boatSkin;
+      const skinMeta = (typeof rawSkin === 'string' && BOAT_SKIN_OPTIONS[rawSkin]) ? BOAT_SKIN_OPTIONS[rawSkin] : null;
       const skinColor = typeof rawSkin === 'string'
-        ? (BOAT_SKIN_OPTIONS[rawSkin]?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[rawSkin] || null)
+        ? (skinMeta?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[rawSkin] || null)
         : null;
+      const boatColors = this.saveSystem?.getBoatColors?.() || this.saveSystem?.data?.boatColors || null;
 
       try {
-        drawVesselHull(ctx, vessel, b.width, b.height, this.waveTimer || 0, skinColor);
+        drawVesselHull(ctx, vessel, b.width, b.height, this.waveTimer || 0, { skinColor, skinMeta, boatColors });
       } catch (hullErr) {
         console.error('Error drawing vessel hull:', hullErr);
         ctx.fillStyle = '#78350f';

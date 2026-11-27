@@ -1,6 +1,6 @@
-import { DAILY_GEMS, DAILY_REWARDS, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
+import { DAILY_GEMS, DAILY_REWARDS, DAILY_MYSTERY_POOL, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
 import { CRATE_RANKS } from '../data/CrateData.js';
-import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization, BOAT_TRINKETS, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization, normalizeBoatColors, BOAT_TRINKETS, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
 import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
@@ -38,6 +38,7 @@ export class SaveSystem {
       gemEconomyVersion: 1,
       appearance: normalizeCustomization(ANGLER_OPTIONS),
       boatSkin: 'default',
+      boatColors: { hull: 'default', trim: 'default', sails: 'default' },
       ownedBoatSkins: ['default'],
       boatTrinket: 'none',
       ownedBoatTrinkets: ['none'],
@@ -290,6 +291,7 @@ export class SaveSystem {
         dailyLogin: { ...def.dailyLogin, ...(parsed.dailyLogin || {}) },
         ownedAppearance: Array.isArray(parsed.ownedAppearance) ? parsed.ownedAppearance : [],
         boatSkin: parsed.boatSkin || 'default',
+        boatColors: normalizeBoatColors(parsed.boatColors),
         ownedBoatSkins: Array.isArray(parsed.ownedBoatSkins) ? parsed.ownedBoatSkins : ['default'],
         boatTrinket: parsed.boatTrinket || 'none',
         ownedBoatTrinkets: Array.isArray(parsed.ownedBoatTrinkets) ? parsed.ownedBoatTrinkets : ['none'],
@@ -1059,10 +1061,21 @@ export class SaveSystem {
   claimDailyLogin(now = Date.now()) {
     const status = this.getDailyLoginStatus(now);
     if (!status.available) return 0;
-    const reward = { gems: status.gems, xp: status.xp, crates: [...status.crates] };
+    const reward = { gems: status.gems, xp: status.xp, crates: [...status.crates], extraGems: 0, coins: 0, mysteryPrize: null };
     if (!status.weekly && !status.monthly) {
       if (Math.random() < 0.08) reward.xp += 200;
       if (Math.random() < 0.03) reward.crates.push(1);
+    }
+    if (status.mystery) {
+      const idx = Math.floor(Math.random() * DAILY_MYSTERY_POOL.length);
+      const prize = DAILY_MYSTERY_POOL[idx];
+      if (prize) {
+        reward.mysteryPrize = { ...prize };
+        if (prize.coins) reward.coins += prize.coins;
+        if (prize.extraXp) reward.xp += prize.extraXp;
+        if (prize.extraGems) reward.extraGems += prize.extraGems;
+        if (prize.crateRank) reward.crates.push(prize.crateRank);
+      }
     }
     this.mutateAtomically(() => {
       this.data.dailyLogin = {
@@ -1072,8 +1085,13 @@ export class SaveSystem {
         lastReward: reward,
         pendingCrates: [...(this.data.dailyLogin.pendingCrates || []), ...reward.crates],
       };
-      this.data.gems += reward.gems;
+      this.data.gems += reward.gems + (reward.extraGems || 0);
+      if (reward.coins) this.data.coins = (this.data.coins || 0) + reward.coins;
       if (reward.xp) this.addXp(reward.xp);
+      if (reward.mysteryPrize?.buffId) {
+        this.data.buffs ||= {};
+        this.data.buffs[reward.mysteryPrize.buffId] = now + (reward.mysteryPrize.durationMs || 240000);
+      }
       this.collectDailyCrates();
     });
     return status.gems;
@@ -1179,6 +1197,17 @@ export class SaveSystem {
 
   setBoatSkin(skinId) {
     return this.purchaseBoatSkin(skinId);
+  }
+
+  getBoatColors() {
+    this.data.boatColors = normalizeBoatColors(this.data.boatColors);
+    return this.data.boatColors;
+  }
+
+  setBoatColors(colors) {
+    this.data.boatColors = normalizeBoatColors(colors);
+    this.save();
+    return this.data.boatColors;
   }
 
   setAquariumDecoration(key, value) {

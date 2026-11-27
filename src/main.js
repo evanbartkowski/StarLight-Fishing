@@ -20,6 +20,7 @@ import { worldCycle } from './systems/WorldCycle.js';
 import { ChatManager } from './systems/ChatManager.js';
 import { leaderboardManager } from './systems/LeaderboardManager.js';
 import { accountManager } from './systems/AccountManager.js';
+import { recordDerbyDive } from './systems/WeeklyDerby.js';
 import { GemShop } from './ui/GemShop.js';
 
 // Setup canvas and rendering context
@@ -853,6 +854,30 @@ const update = (dt) => {
         uiManager.showToast('⚠️ You ran out of storage and need to sell items!');
       }
 
+      const rodLvl = save.getUpgradeLevel('fishingRod') || 0;
+      const rodTier = UPGRADE_DEFINITIONS.fishingRod?.tiers?.[rodLvl] || { sellBonus: 0 };
+      const sellMult = 1 + (rodTier.sellBonus || 0);
+      const rawHaulGold = hook.caughtItems.reduce((sum, item) => {
+        if (item.isCrate || item.category === 'crate') return sum;
+        const val = Number.isFinite(item.value) ? item.value : 0;
+        return sum + Math.max(0, Math.round(val * sellMult));
+      }, 0);
+      const comboCount = hook.diveCombo || 0;
+      const comboMult = hook.getComboMultiplier ? hook.getComboMultiplier() : 1;
+      const comboBonusGold = (comboCount >= 2 && comboMult > 1) ? Math.round(rawHaulGold * (comboMult - 1)) : 0;
+      if (comboBonusGold > 0) {
+        save.addCoins(comboBonusGold);
+      }
+      hook.lastDiveComboCount = comboCount;
+      hook.lastDiveComboBonus = comboBonusGold;
+
+      recordDerbyDive(
+        save,
+        { items: hook.caughtItems, maxDepth: hook.maxDepthReachedThisDive, haulGold: rawHaulGold + comboBonusGold },
+        Date.now(),
+        worldCycle.serverOffset || 0
+      );
+
       if (hook.caughtItems.length >= hook.capacity) {
         save.recordFullHaul();
       }
@@ -908,6 +933,15 @@ const update = (dt) => {
           const hooked = hook.addCatch(fish, particles);
           if (hooked) {
             oceanWorld.entities.fish.splice(i, 1);
+
+            const spId = fish.speciesId || fish.id;
+            if (spId && !save.data.journal?.[spId]) {
+              if (!hook._seenNewSpeciesThisDive) hook._seenNewSpeciesThisDive = new Set();
+              if (!hook._seenNewSpeciesThisDive.has(spId)) {
+                hook._seenNewSpeciesThisDive.add(spId);
+                particles.addFloatingText('🆕 NEW SPECIES!', hook.x, hook.y - 42, '#4ade80', 16, '#16a34a');
+              }
+            }
 
             if (fish.rarity === 'rare' || fish.rarity === 'epic' || fish.rarity === 'legendary' || fish.isMythic) {
               notifyRareCatch(fish);
@@ -1254,6 +1288,36 @@ const render = () => {
     }
   }
 
+  // 13. Lightweight first-dive onboarding ghost hint for new players
+  const totalCasts = save.data.stats?.totalCasts || 0;
+  const totalCaught = save.data.stats?.totalFishCaught || 0;
+  if (totalCasts <= 2 && totalCaught < 3 && !uiManager?.activeModal) {
+    let hintText = null;
+    if (gameState === 'SURFACE_IDLE') hintText = '🎣 Click or tap the water to aim & cast your line!';
+    else if (gameState === 'DESCENDING') hintText = '↔️ Move mouse / drag to steer hook onto fish!';
+    else if (gameState === 'REELING') hintText = '⚠️ Dodge hazards while reeling catches up!';
+    if (hintText) {
+      ctx.save();
+      ctx.font = '700 13px Outfit, sans-serif';
+      const tw = ctx.measureText(hintText).width;
+      const bx = screenWidth * 0.5 - tw * 0.5 - 16;
+      const by = gameState === 'SURFACE_IDLE' ? Math.max(96, oceanWorld.surfaceY - cameraY - 125) : 92;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.84)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(bx, by, tw + 32, 32, 16);
+      else ctx.rect(bx, by, tw + 32, 32);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#e0f2fe';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(hintText, screenWidth * 0.5, by + 16);
+      ctx.restore();
+    }
+  }
+
   ctx.restore();
 };
 
@@ -1341,5 +1405,11 @@ window.addEventListener('focus', () => {
   unlockAudioOnGesture();
   soundManager.syncRecordedMusic?.();
 });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 
 
