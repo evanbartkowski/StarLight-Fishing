@@ -1350,8 +1350,6 @@ export class Hazard {
     if (isVoid) {
       // Pulsing concentric danger warning perimeter ring for Realm 7 obstacles
       ctx.save();
-      ctx.shadowColor = '#ef4444';
-      ctx.shadowBlur = 12 + pulse * 8;
       ctx.strokeStyle = `rgba(255, 45, 75, ${0.55 + pulse * 0.40})`;
       ctx.lineWidth = 2.4;
       ctx.setLineDash([8, 5]);

@@ -1624,7 +1624,7 @@ test('Endgame finale slow line-by-line poem fade, bubble continue button removal
   const { EndgameScene } = await import('../src/ui/EndgameScene.js');
   const { UIManager } = await import('../src/ui/UIManager.js');
   const fs = await import('node:fs');
-  const css = fs.readFileSync('src/style.css', 'utf-8');
+  const css = fs.readFileSync('src/style.css', 'utf-8').replace(/\r\n/g, '\n');
   const endgameJs = fs.readFileSync('src/ui/EndgameScene.js', 'utf-8');
   const uiManagerJs = fs.readFileSync('src/ui/UIManager.js', 'utf-8');
 

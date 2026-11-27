@@ -15,7 +15,8 @@ export class ParticleSystem {
   }
 
   emitBubbles(x, y, count = 3, spread = 8) {
-    for (let i = 0; i < count; i++) {
+    const allowed = Math.min(count, Math.max(0, 150 - this.bubbles.length));
+    for (let i = 0; i < allowed; i++) {
       this.bubbles.push({
         x: x + (Math.random() * 2 - 1) * spread,
         y: y + (Math.random() * 2 - 1) * spread,
@@ -31,7 +32,8 @@ export class ParticleSystem {
   }
 
   emitSplash(x, y, count = 20, intensity = 1.0) {
-    for (let i = 0; i < count; i++) {
+    const allowed = Math.min(count, Math.max(0, 120 - this.splashes.length));
+    for (let i = 0; i < allowed; i++) {
       const angle = -Math.PI / 2 + (Math.random() * 2 - 1) * 1.1;
       const speed = (2.5 + Math.random() * 5.0) * intensity;
       this.splashes.push({
@@ -49,7 +51,8 @@ export class ParticleSystem {
   }
 
   emitSparkles(x, y, count = 12, color = '#fef08a') {
-    for (let i = 0; i < count; i++) {
+    const allowed = Math.min(count, Math.max(0, 150 - this.sparkles.length));
+    for (let i = 0; i < allowed; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 1.0 + Math.random() * 3.0;
       const particleColor = color === 'rainbow' ? `hsl(${Math.floor(Math.random() * 360)}, 100%, 75%)` : color;
@@ -69,6 +72,7 @@ export class ParticleSystem {
   }
 
   addFloatingText(text, x, y, color = '#ffffff', fontSize = 16, glowColor = null) {
+    if (this.floatingTexts.length >= 24) this.floatingTexts.shift();
     this.floatingTexts.push({
       text,
       x,
@@ -190,11 +194,6 @@ export class ParticleSystem {
       ctx.globalAlpha = Math.max(0, sp.alpha);
       ctx.fillStyle = sp.color;
 
-      if (typeof sp.color === 'string' && sp.color.startsWith('hsl')) {
-        ctx.shadowColor = sp.color;
-        ctx.shadowBlur = 5;
-      }
-
       // 4-point sparkle star
       const sz = sp.size;
       ctx.beginPath();
@@ -221,7 +220,6 @@ export class ParticleSystem {
 
       // White glint center
       ctx.fillStyle = '#ffffff';
-      ctx.shadowBlur = 0;
       ctx.beginPath();
       const cSz = sz * 0.32;
       ctx.moveTo(0, -cSz);
@@ -244,10 +242,6 @@ export class ParticleSystem {
       ctx.font = `bold ${ft.fontSize}px 'Outfit', 'Segoe UI', sans-serif`;
       ctx.textAlign = 'center';
 
-      if (ft.glowColor) {
-        ctx.shadowColor = ft.glowColor;
-        ctx.shadowBlur = 10;
-      }
       ctx.lineWidth = 3;
       ctx.strokeStyle = '#000000';
       ctx.strokeText(ft.text, ft.x, drawY);

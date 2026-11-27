@@ -1,0 +1,26 @@
+# Starlight Fishing
+
+> Starlight Fishing is a free, atmospheric browser-based ocean fishing RPG and personal aquarium simulator.
+
+## Overview
+- Website: https://starlightfishing.com/
+- Play Free: https://starlightfishing.com/
+- Creator: Evan Bartkowski
+- Technology: HTML5 Canvas, Web Audio API, JavaScript ES Modules, Firebase
+
+## Seven Enchanted Ocean Realms
+1. **Sunlit Shoals**: Peaceful coastal shallows with coral gardens and vibrant starting species.
+2. **Bioluminescent Trench**: Abyssal midnight depths glowing with bioluminescent fauna and rare jellyfish.
+3. **Astral Shimmerfall**: Starlit celestial waters showered with falling meteorites and prism-fin fish.
+4. **Sunken Atlantis**: Ancient submerged temples, marble columns, and restorable civilization relics.
+5. **Whispering Aether Sea**: Floating cloud islands, aerial currents, and wind-blown mythical catches.
+6. **Magma Caldera Trench**: Subterranean volcanic vents, thermal columns, and obsidian leviathans.
+7. **Eldritch Chrono Void**: Reality-bending cosmic fractures home to mythical world serpents.
+
+## Key Features
+- **290+ Native Species**: Distinct silhouettes, rarities, shiny variants, and record-breaking crown sizes.
+- **Tackle Progression**: Line depth upgrades from 60m to 3,000m, specialized rods, lures, and vessel charters.
+- **Personal Marine Aquarium**: Display catches and relics, feed fish, design scenery and lighting, visit friends' tanks, and collect visitor tips.
+- **Boat Companions**: Unlock Angela the cat, Evan the pelican, Gracie the dolphin, and Sylus the shark.
+- **Cloud & Guest Saves**: Play immediately as a Guest with local browser storage, or register a Captain account for cross-device cloud sync.
+- **World Angler Scoreboard**: Compete for Top 100 rankings in level and coins.

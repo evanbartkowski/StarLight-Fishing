@@ -563,9 +563,10 @@ export class SoundManager {
 
   setWeatherAudio(weather) {
     if (!this.audioCtx || !this.ambientRainGain) return;
-    const now = this.audioCtx.currentTime;
     const targetRainVol = (weather === 'RAIN' && !this.isMuted) ? this.sfxVolume * .28 * 0.14 : 0;
-    this.ambientRainGain.gain.setTargetAtTime(targetRainVol, now, 1.5);
+    if (this._lastRainVol === targetRainVol) return;
+    this._lastRainVol = targetRainVol;
+    this.ambientRainGain.gain.setTargetAtTime(targetRainVol, this.audioCtx.currentTime, 1.5);
   }
 
   // Distinct Two-Tone Celestial Chime (Plays when Rare/Legendary approaches or bites)
@@ -1142,7 +1143,8 @@ export class SoundManager {
     lfo.frequency.setValueAtTime(26, now);
 
     lfoGain.gain.setValueAtTime(this.sfxVolume * .28 * 0.18, now);
-    lfo.connect(gain.gain);
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
 
     gain.gain.setValueAtTime(this.sfxVolume * .28 * 0.22, now);
     gain.gain.linearRampToValueAtTime(this.sfxVolume * .28 * 0.3, now + 0.4);
@@ -1155,6 +1157,14 @@ export class SoundManager {
     osc.start(now);
     lfo.stop(now + 1.25);
     osc.stop(now + 1.25);
+    osc.onended = () => {
+      try {
+        lfo.disconnect();
+        lfoGain.disconnect();
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) {}
+    };
   }
 
   // Coastal Radio Station API

@@ -58,6 +58,12 @@ export class UIManager {
     this.minimapUI = null;
 
     this.activeModal = null;
+    this._activeModalCleanup = null;
+    this._lastHudSlowCheck = 0;
+    this._lastHudGameState = null;
+    this._lastDailyAvailable = null;
+    this._lastQuestReady = null;
+    this._lastBuffsHtml = null;
     this.toastTimer = null;
     this.endgameScene = null;
 
@@ -442,7 +448,7 @@ export class UIManager {
       if (usernameOrGuest === '__not_found__') {
         if (lvlEl) lvlEl.textContent = 'Lv. —';
         if (coinsEl) coinsEl.textContent = '$—';
-        if (speciesEl) speciesEl.textContent = '— / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}';
+        if (speciesEl) speciesEl.textContent = `— / ${FISH_SPECIES.length + LEGENDARY_SPECIES.length}`;
         if (speciesEl) speciesEl.textContent = '— / 66';
         return;
       }
@@ -956,7 +962,18 @@ export class UIManager {
 
     this._setText('coin-amount', `$${this.saveSystem.data.coins.toLocaleString()}`);
     this._setText('gem-amount', this.saveSystem.getGemBalance().toLocaleString());
-    this._setHidden('daily-ready', !this.saveSystem.getDailyLoginStatus().available);
+
+    const hudNow = performance.now();
+    const runSlowHud = !this._lastHudSlowCheck || (hudNow - this._lastHudSlowCheck >= 250) || (this._lastHudGameState !== gameState);
+    if (runSlowHud) {
+      this._lastHudSlowCheck = hudNow;
+      this._lastHudGameState = gameState;
+      const dailyAvailable = !!this.saveSystem.getDailyLoginStatus().available;
+      if (this._lastDailyAvailable !== dailyAvailable) {
+        this._lastDailyAvailable = dailyAvailable;
+        this._setHidden('daily-ready', !dailyAvailable);
+      }
+    }
 
     // Update atmospheric time & weather in HUD
     this._setText('hud-time-text', worldCycle.getTimeLabel());
@@ -1010,32 +1027,38 @@ export class UIManager {
       }
     }
 
-    const questButton = this._getEl('btn-quests');
-    if (questButton) {
-      const ready = !!this.questSystem?.hasUnclaimedRewards();
-      questButton.classList.toggle('quest-ready', ready);
-      const qAria = ready ? 'Quests: reward ready to claim' : 'Quests';
-      if (questButton.getAttribute('aria-label') !== qAria) questButton.setAttribute('aria-label', qAria);
-    }
+    if (runSlowHud) {
+      const questButton = this._getEl('btn-quests');
+      if (questButton) {
+        const ready = !!this.questSystem?.hasUnclaimedRewards();
+        if (this._lastQuestReady !== ready) {
+          this._lastQuestReady = ready;
+          questButton.classList.toggle('quest-ready', ready);
+          const qAria = ready ? 'Quests: reward ready to claim' : 'Quests';
+          if (questButton.getAttribute('aria-label') !== qAria) questButton.setAttribute('aria-label', qAria);
+        }
+      }
 
-    // Update active buffs in HUD
-    const buffsContainer = this._getEl('hud-buffs');
-    if (buffsContainer) {
-      let buffsHtml = '';
-      if (this.saveSystem.hasActiveBuff('sirensGrace')) {
-        const sec = this.saveSystem.getBuffRemainingSeconds('sirensGrace');
-        buffsHtml += `<span class="hud-buff-pill" title="Increased Rare Catch Rate">🌊 Siren's Grace (${sec}s)</span>`;
-      }
-      if (this.saveSystem.hasActiveBuff('starlightClarity')) {
-        const sec = this.saveSystem.getBuffRemainingSeconds('starlightClarity');
-        buffsHtml += `<span class="hud-buff-pill" title="Reveals fish silhouettes">🌟 Starlight Sight (${sec}s)</span>`;
-      }
-      if (this.saveSystem.hasActiveBuff('cartographerMark')) {
-        const sec = this.saveSystem.getBuffRemainingSeconds('cartographerMark');
-        buffsHtml += `<span class="hud-buff-pill" title="Secret Hotspot Active">🗺️ Survey Mark (${sec}s)</span>`;
-      }
-      if (buffsContainer.innerHTML !== buffsHtml) {
-        buffsContainer.innerHTML = buffsHtml;
+      // Update active buffs in HUD
+      const buffsContainer = this._getEl('hud-buffs');
+      if (buffsContainer) {
+        let buffsHtml = '';
+        if (this.saveSystem.hasActiveBuff('sirensGrace')) {
+          const sec = this.saveSystem.getBuffRemainingSeconds('sirensGrace');
+          buffsHtml += `<span class="hud-buff-pill" title="Increased Rare Catch Rate">🌊 Siren's Grace (${sec}s)</span>`;
+        }
+        if (this.saveSystem.hasActiveBuff('starlightClarity')) {
+          const sec = this.saveSystem.getBuffRemainingSeconds('starlightClarity');
+          buffsHtml += `<span class="hud-buff-pill" title="Reveals fish silhouettes">🌟 Starlight Sight (${sec}s)</span>`;
+        }
+        if (this.saveSystem.hasActiveBuff('cartographerMark')) {
+          const sec = this.saveSystem.getBuffRemainingSeconds('cartographerMark');
+          buffsHtml += `<span class="hud-buff-pill" title="Secret Hotspot Active">🗺️ Survey Mark (${sec}s)</span>`;
+        }
+        if (this._lastBuffsHtml !== buffsHtml) {
+          this._lastBuffsHtml = buffsHtml;
+          buffsContainer.innerHTML = buffsHtml;
+        }
       }
     }
 
@@ -1194,6 +1217,11 @@ export class UIManager {
   }
 
   openModal(title, contentHtml) {
+    if (typeof this._activeModalCleanup === 'function') {
+      const cleanup = this._activeModalCleanup;
+      this._activeModalCleanup = null;
+      cleanup(true);
+    }
     soundManager.playButtonClick();
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-content').innerHTML = contentHtml;
@@ -1202,6 +1230,10 @@ export class UIManager {
 
   closeModal() {
     soundManager.playButtonClick();
+    const cleanup = this._activeModalCleanup;
+    this._activeModalCleanup = null;
+    this._lastHudSlowCheck = 0;
+
     const wasCrateModal = this.activeModal === 'crate_opening';
     const crateCtx = this._currentCrateContext;
     this._currentCrateContext = null;
@@ -1212,6 +1244,9 @@ export class UIManager {
 
     document.getElementById('modal-overlay').className = 'modal-overlay-hidden';
     this.activeModal = null;
+    if (typeof cleanup === 'function') {
+      cleanup(false);
+    }
     if (typeof this.onModalClosed === 'function') {
       this.onModalClosed();
     }
@@ -2254,6 +2289,7 @@ export class UIManager {
             }
           }
         }, 16);
+        this._activeModalCleanup = () => clearInterval(spinInterval);
       };
     }
   }
@@ -2332,6 +2368,7 @@ export class UIManager {
     let needleSpeed = 90; // smooth, controllable degrees per second
     let needleDir = 1;
     let isFinished = false;
+    let claimed = false;
     let animId = null;
 
     const modalBody = `
@@ -2505,6 +2542,7 @@ export class UIManager {
               <div style="margin-top: 6px; font-size: 0.85rem; color: #38bdf8;">📜 Ancient Hydro-Logbook Page: <em>"In the depths of the trenches, lightning awakens the aberrations..."</em></div>
             `;
             document.getElementById('btn-claim-safe-loot')?.addEventListener('click', () => {
+              claimed = true;
               this.closeModal();
               if (onDone) onDone();
             });
@@ -2537,6 +2575,12 @@ export class UIManager {
       }
     };
     window.addEventListener('keydown', keyHandler);
+    this._activeModalCleanup = (isReplacing) => {
+      isFinished = true;
+      if (animId) cancelAnimationFrame(animId);
+      if (keyHandler) window.removeEventListener('keydown', keyHandler);
+      if (!isReplacing && !claimed && onDone) onDone();
+    };
   }
 
   // Harbor Noticeboard Quests Modal
@@ -2743,9 +2787,11 @@ export class UIManager {
         soundManager.playTreasure();
         const successEl = document.getElementById('restoration-success');
         if (successEl) successEl.style.display = 'block';
+        let finished = false;
         const finishBtn = document.getElementById('btn-restoration-finish');
         if (finishBtn) {
           finishBtn.addEventListener('click', () => {
+            finished = true;
             if (raf) cancelAnimationFrame(raf);
             this.closeModal();
             if (onDone) onDone();
@@ -2763,13 +2809,23 @@ export class UIManager {
       wipeAt(x, y);
     };
 
+    const onMouseMove = (e) => { if (isCleaning) handlePointer(e); };
+    const onMouseUp = () => { isCleaning = false; };
+
     cvs.addEventListener('mousedown', (e) => { isCleaning = true; handlePointer(e); });
-    window.addEventListener('mousemove', (e) => { if (isCleaning) handlePointer(e); });
-    window.addEventListener('mouseup', () => { isCleaning = false; });
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
 
     cvs.addEventListener('touchstart', (e) => { isCleaning = true; handlePointer(e); }, { passive: true });
     cvs.addEventListener('touchmove', (e) => { if (isCleaning) handlePointer(e); }, { passive: true });
     cvs.addEventListener('touchend', () => { isCleaning = false; });
+
+    this._activeModalCleanup = (isReplacing) => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      if (!isReplacing && !finished && onDone) onDone();
+    };
 
     const drawDesk = () => {
       if (this.activeModal !== 'restoration') return;
@@ -4032,10 +4088,6 @@ export class UIManager {
 
     const aquariumFish = [];
     const aquariumRelics = [];
-    const displayTreasures = new Map(items.map(item => {
-      const config = TREASURE_ITEMS.find(treasure => treasure.id === item.id);
-      return [item.instanceId, config && !config.isCrate ? new Treasure(config, 0, 0) : null];
-    }));
 
     items.forEach((item) => {
       if (item.type === 'fish' || (!item.type && !item.isRelic)) {
@@ -4117,6 +4169,35 @@ export class UIManager {
       });
     }
 
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    let floorColor1 = '#fde047';
+    let floorColor2 = '#eab308';
+
+    if (theme === 'abyss') {
+      bgGrad.addColorStop(0, '#030712');
+      bgGrad.addColorStop(1, '#0f172a');
+      floorColor1 = '#1e293b';
+      floorColor2 = '#334155';
+    } else if (theme === 'atlantis') {
+      bgGrad.addColorStop(0, '#064e3b');
+      bgGrad.addColorStop(1, '#022c22');
+      floorColor1 = '#047857';
+      floorColor2 = '#065f46';
+    } else if (theme === 'nebula') {
+      bgGrad.addColorStop(0, '#3b0764');
+      bgGrad.addColorStop(1, '#1e1b4b');
+      floorColor1 = '#701a75';
+      floorColor2 = '#4a044e';
+    } else {
+      bgGrad.addColorStop(0, '#0284c7');
+      bgGrad.addColorStop(1, '#0c4a6e');
+      floorColor1 = '#fde047';
+      floorColor2 = '#eab308';
+    }
+
+    let lastDecorRef = null;
+    let cachedDecor = normalizeCustomization(AQUARIUM_OPTIONS, this.saveSystem.data.aquarium.decor);
+
     let aqRaf = null;
     let decorTime = 0;
     let previousFrame = performance.now();
@@ -4126,33 +4207,7 @@ export class UIManager {
         return;
       }
 
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      let floorColor1 = '#fde047';
-      let floorColor2 = '#eab308';
-
-      if (theme === 'abyss') {
-        grad.addColorStop(0, '#030712');
-        grad.addColorStop(1, '#0f172a');
-        floorColor1 = '#1e293b';
-        floorColor2 = '#334155';
-      } else if (theme === 'atlantis') {
-        grad.addColorStop(0, '#064e3b');
-        grad.addColorStop(1, '#022c22');
-        floorColor1 = '#047857';
-        floorColor2 = '#065f46';
-      } else if (theme === 'nebula') {
-        grad.addColorStop(0, '#3b0764');
-        grad.addColorStop(1, '#1e1b4b');
-        floorColor1 = '#701a75';
-        floorColor2 = '#4a044e';
-      } else {
-        grad.addColorStop(0, '#0284c7');
-        grad.addColorStop(1, '#0c4a6e');
-        floorColor1 = '#fde047';
-        floorColor2 = '#eab308';
-      }
-
-      ctx.fillStyle = grad;
+      ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Floor Seabed
@@ -4164,12 +4219,19 @@ export class UIManager {
       const now = performance.now();
       const frameMs = Math.min(50, now - previousFrame); previousFrame = now;
       decorTime += frameMs / 1000;
-      const decor = normalizeCustomization(AQUARIUM_OPTIONS, this.saveSystem.data.aquarium.decor);
+      const rawDecor = this.saveSystem.data.aquarium.decor;
+      if (rawDecor !== lastDecorRef) {
+        lastDecorRef = rawDecor;
+        cachedDecor = normalizeCustomization(AQUARIUM_OPTIONS, rawDecor);
+      }
+      const decor = cachedDecor;
       drawAquariumDecor(ctx, canvas.width, canvas.height, decor, decorTime);
 
       // Ambient bubbles
       ctx.fillStyle = theme === 'abyss' ? 'rgba(56, 189, 248, 0.4)' : theme === 'nebula' ? 'rgba(232, 121, 249, 0.4)' : 'rgba(255, 255, 255, 0.3)';
-      bubbles.slice(0, decor.bubbles === 'off' ? 0 : decor.bubbles === 'gentle' ? 7 : 20).forEach((b) => {
+      const bubbleCount = decor.bubbles === 'off' ? 0 : decor.bubbles === 'gentle' ? 7 : 20;
+      for (let bi = 0; bi < bubbleCount; bi++) {
+        const b = bubbles[bi];
         b.y -= b.vy;
         if (b.y < 0) {
           b.y = canvas.height - 40;
@@ -4178,7 +4240,7 @@ export class UIManager {
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
         ctx.fill();
-      });
+      }
 
       // Relics on pedestals
       const relicSpacing = canvas.width / (aquariumRelics.length + 1);

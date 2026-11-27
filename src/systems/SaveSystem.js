@@ -12,6 +12,9 @@ import { accountManager } from './AccountManager.js';
 
 const STORAGE_KEY = 'seven_seas_fishing_save_v2';
 const LEGACY_STORAGE_KEY = 'fishing_game_save_v1';
+const CRATE_TREASURES_BY_ID = new Map(
+  TREASURE_ITEMS.filter(entry => entry.isCrate).map(entry => [entry.id, entry])
+);
 
 export class SaveSystem {
   constructor() {
@@ -102,7 +105,6 @@ export class SaveSystem {
         lastTipCollectedAt: Date.now(),
       },
       unlockedBobbers: ['pelican_bobber'],
-      journal: {}, // speciesId -> { count, maxSize, minSize, maxWeight, shinyCount, goldCrown, silverCrown, firstCaughtAt }
       worldTime: 600,
       currentWeather: 'CLEAR',
       zonePerks: {}, // perkId -> true
@@ -616,13 +618,11 @@ export class SaveSystem {
       entry.count += 1;
       entry.timesCaught = entry.count;
 
-      if (!entry.maxSize || item.size > entry.maxSize) entry.maxSize = item.size;
       if (!entry.maxSize || item.size > entry.maxSize) {
         entry.maxSize = item.size;
         entry.recordLength = item.size;
       }
       if (!entry.minSize || item.size < entry.minSize) entry.minSize = item.size;
-      if (!entry.maxWeight || item.weight > entry.maxWeight) entry.maxWeight = item.weight;
       if (!entry.maxWeight || item.weight > entry.maxWeight) {
         entry.maxWeight = item.weight;
         entry.recordWeight = item.weight;
@@ -816,8 +816,9 @@ export class SaveSystem {
     }
     // Recover crate metadata for catches saved before inventory supported opening.
     for (const item of this.data.inventory) {
-      const definition = TREASURE_ITEMS.find(entry => entry.id === item.id && entry.isCrate);
-      if (definition && item.isCrate === undefined) {
+      if (item.isCrate !== undefined) continue;
+      const definition = CRATE_TREASURES_BY_ID.get(item.id);
+      if (definition) {
         item.isCrate = true;
         item.crateRank = definition.crateRank;
         item.unboxed = item.value === 0;

@@ -33,6 +33,7 @@ let screenHeight = window.innerHeight;
 let oceanWorld = null;
 let uiManager = null;
 let zoneManager = null;
+let canvasRect = null;
 
 function handleResize() {
   dpr = Math.min(window.devicePixelRatio || 1, window.matchMedia('(pointer: coarse)').matches ? 1.5 : 2);
@@ -43,6 +44,7 @@ function handleResize() {
   canvas.height = screenHeight * dpr;
   canvas.style.width = `${screenWidth}px`;
   canvas.style.height = `${screenHeight}px`;
+  canvasRect = canvas.getBoundingClientRect();
 
   if (oceanWorld) {
     oceanWorld.resize(screenWidth, screenHeight);
@@ -296,7 +298,7 @@ oceanWorld.populateWorld(save);
 
 // Input handlers
 function getCanvasCoords(e) {
-  const rect = canvas.getBoundingClientRect();
+  const rect = canvasRect || (canvasRect = canvas.getBoundingClientRect());
   let clientX = 0;
   let clientY = 0;
   if (e.touches && e.touches.length > 0) {
@@ -602,6 +604,7 @@ function startDive() {
 }
 
 let surfaceIdleTimer = 0;
+let aquariumPlaytimeBatch = 0;
 let aquariumAutosaveTimer = 0;
 let hudElapsed = 0;
 let lastHudState = null;
@@ -611,8 +614,12 @@ const update = (dt) => {
   if (uiManager?.premiumBusy || uiManager?.socialBusy) return;
   const deltaSec = dt / 1000;
 
-  // Accumulate aquarium tips strictly while actively playing the game
-  save.updateAquariumPlaytime?.(deltaSec);
+  // Batch aquarium tip playtime every 0.25s instead of allocating/checking every frame
+  aquariumPlaytimeBatch += deltaSec;
+  if (aquariumPlaytimeBatch >= 0.25) {
+    save.updateAquariumPlaytime?.(aquariumPlaytimeBatch);
+    aquariumPlaytimeBatch = 0;
+  }
   aquariumAutosaveTimer += deltaSec;
   if (aquariumAutosaveTimer >= 30) {
     aquariumAutosaveTimer = 0;
@@ -1252,26 +1259,32 @@ const render = () => {
 
 function renderSonarRadarPings() {
   let nearestTarget = null;
-  let minDist = 850;
+  let minDistSq = 850 * 850;
+  const viewTop = cameraY;
+  const viewBottom = cameraY + screenHeight;
 
-  const targets = [
-    ...oceanWorld.entities.treasures,
-    ...(oceanWorld.entities.relics || []),
-    ...oceanWorld.entities.fish.filter(f => f.rarity === 'epic' || f.rarity === 'legendary')
-  ];
-
-  targets.forEach((t) => {
-    const dx = t.x - hook.x;
-    const dy = t.y - hook.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < minDist && (t.y - cameraY < 0 || t.y - cameraY > screenHeight)) {
-      minDist = dist;
-      nearestTarget = t;
+  const checkList = (list, requireHighRarity) => {
+    if (!list) return;
+    for (let i = 0; i < list.length; i++) {
+      const t = list[i];
+      if (requireHighRarity && t.rarity !== 'epic' && t.rarity !== 'legendary') continue;
+      if (t.y >= viewTop && t.y <= viewBottom) continue;
+      const dx = t.x - hook.x;
+      const dy = t.y - hook.y;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < minDistSq) {
+        minDistSq = distSq;
+        nearestTarget = t;
+      }
     }
-  });
+  };
+
+  checkList(oceanWorld.entities.treasures, false);
+  checkList(oceanWorld.entities.relics, false);
+  checkList(oceanWorld.entities.fish, true);
 
   if (nearestTarget) {
-    const angle = Math.atan2((nearestTarget.y - cameraY) - (hook.y - cameraY), nearestTarget.x - hook.x);
+    const angle = Math.atan2(nearestTarget.y - hook.y, nearestTarget.x - hook.x);
     const arrowDist = 72;
     const ax = hook.x + Math.cos(angle) * arrowDist;
     const ay = (hook.y - cameraY) + Math.sin(angle) * arrowDist;
@@ -1279,9 +1292,11 @@ function renderSonarRadarPings() {
     ctx.save();
     ctx.translate(ax, ay);
     ctx.rotate(angle);
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#38bdf8';
-    ctx.shadowColor = '#38bdf8';
-    ctx.shadowBlur = 8;
     ctx.beginPath();
     ctx.moveTo(12, 0);
     ctx.lineTo(-8, -8);

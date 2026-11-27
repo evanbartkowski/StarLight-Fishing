@@ -227,10 +227,14 @@ export class Treasure {
     ctx.save();
     ctx.translate(this.x, drawY);
 
-    // Glowing aura
+    // Glowing aura (translucent halo avoids expensive shadowBlur)
     ctx.save();
-    ctx.shadowColor = this.rarityGlow;
-    ctx.shadowBlur = 16;
+    ctx.fillStyle = this.rarityGlow;
+    ctx.globalAlpha = 0.18;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 1.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
 
     if (this.itemConfig.realmStyle && !this.isCrate) {
       drawRealmArtifact(ctx, this.itemConfig, this.timer);
@@ -263,12 +267,14 @@ export class Treasure {
       // Rank Glow Emblem on top
       if (rank >= 4) {
         ctx.fillStyle = rank === 8 ? '#e879f9' : rank === 7 ? '#2dd4bf' : rank === 6 ? '#f97316' : rank === 5 ? '#67e8f9' : '#c084fc';
-        ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = 10;
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath();
+        ctx.arc(0, -hh - 3, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.arc(0, -hh - 3, 3.5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
       }
     } else if (this.category === 'fossil') {
       // PREHISTORIC FOSSILS

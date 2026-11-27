@@ -29,6 +29,7 @@ export class OceanWorld {
   constructor(canvas, trapSystem = null) {
     this.canvas = canvas;
     this.worldWidth = canvas.clientWidth || canvas.width || 800;
+    this.worldHeight = canvas.clientHeight || canvas.height || 600;
     this.surfaceY = 220; // Y position of ocean surface
     this.pixelsPerMeter = 15;
     this.maxDepthMeters = 3050;
@@ -92,6 +93,9 @@ export class OceanWorld {
 
   resize(width, height) {
     this.worldWidth = Number.isFinite(width) && width > 200 ? width : (this.canvas?.width || 800);
+    if (Number.isFinite(height) && height > 100) {
+      this.worldHeight = height;
+    }
     if (!this.boat) {
       this.boat = { x: this.worldWidth * 0.5, y: this.surfaceY - 14, width: 140, height: 40, angle: 0, bobOffset: 0, vesselLevel: 0 };
     } else {
@@ -1827,7 +1831,7 @@ export class OceanWorld {
 
     // Render interactive surface hotspots
     if (this.hotspotManager) {
-      this.hotspotManager.render(ctx, cameraY, this.worldWidth, this.canvas.height);
+      this.hotspotManager.render(ctx, cameraY, this.worldWidth, this.worldHeight);
     }
   }
 
@@ -2153,9 +2157,11 @@ export class OceanWorld {
       const x = startX + progress * (150 + index * 25);
       const y = startY + progress * (85 + index * 12);
       const alpha = .75 * (1 - progress * .65);
+      ctx.strokeStyle = `rgba(165, 243, 252, ${alpha * 0.25})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(x - 27, y - 17); ctx.lineTo(x, y); ctx.stroke();
       ctx.strokeStyle = `rgba(186, 230, 253, ${alpha * .45})`;
       ctx.lineWidth = 1.5;
-      ctx.shadowColor = '#a5f3fc'; ctx.shadowBlur = 9;
       ctx.beginPath(); ctx.moveTo(x - 27, y - 17); ctx.lineTo(x, y); ctx.stroke();
       ctx.fillStyle = `rgba(240, 253, 250, ${alpha})`;
       ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
@@ -2810,13 +2816,14 @@ export class OceanWorld {
       shard.addColorStop(.45, `rgba(191,219,254,${alpha * .85})`);
       shard.addColorStop(1, `rgba(192,132,252,${alpha * .4})`);
       ctx.fillStyle = shard; ctx.strokeStyle = `rgba(224,231,255,${alpha})`; ctx.lineWidth = 1;
-      ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 12;
       ctx.beginPath(); ctx.moveTo(0, -size * 1.65); ctx.lineTo(size, size * .9); ctx.lineTo(0, size * .45); ctx.lineTo(-size, size * 1.1); ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.restore();
 
       // Glowing star core (world-anchored Y satisfies camera tests)
-      ctx.globalAlpha = alpha; ctx.fillStyle = '#ffffff'; ctx.shadowColor = '#c4b5fd'; ctx.shadowBlur = 8;
-      ctx.beginPath(); ctx.arc(driftX, driftY, 1.4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.globalAlpha = alpha * 0.25; ctx.fillStyle = '#c4b5fd';
+      ctx.beginPath(); ctx.arc(driftX, driftY, 3.6, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = alpha; ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(driftX, driftY, 1.4, 0, Math.PI * 2); ctx.fill();
 
       // Sparkling 4-point star glint for bright stars
       if (i % 2 === 0) {
@@ -3072,9 +3079,11 @@ export class OceanWorld {
     for (let e = 0; e < 16; e++) {
       const ex = this.worldWidth * 0.5 - 80 + ((e * 47 + Math.sin(time + e) * 25) % 160);
       const ey = ventY + 160 - ((e * 28 + time * 35) % 220);
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+      ctx.beginPath();
+      ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = 'rgba(249, 115, 22, 0.75)';
-      ctx.shadowColor = '#ef4444';
-      ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.arc(ex, ey, 2.0, 0, Math.PI * 2);
       ctx.fill();

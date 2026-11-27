@@ -169,29 +169,38 @@ export class ZoneManager {
       ctx.fillStyle = 'rgba(6, 78, 59, 0.16)';
       ctx.fillRect(0, 0, screenWidth, screenHeight);
 
-      // Murky mist fog layers
+      // Murky mist fog layers (cached gradient)
       const mistY = Math.sin(this.ambientAnimTime * 0.8) * 15;
-      const grad = ctx.createLinearGradient(0, 0, 0, screenHeight);
-      grad.addColorStop(0, 'rgba(16, 185, 129, 0.08)');
-      grad.addColorStop(0.5, 'rgba(6, 78, 59, 0.22)');
-      grad.addColorStop(1, 'rgba(2, 44, 34, 0.35)');
-      ctx.fillStyle = grad;
+      if (!this._mangroveGrad || this._mangroveGradH !== screenHeight) {
+        const grad = ctx.createLinearGradient(0, 0, 0, screenHeight);
+        grad.addColorStop(0, 'rgba(16, 185, 129, 0.08)');
+        grad.addColorStop(0.5, 'rgba(6, 78, 59, 0.22)');
+        grad.addColorStop(1, 'rgba(2, 44, 34, 0.35)');
+        this._mangroveGrad = grad;
+        this._mangroveGradH = screenHeight;
+      }
+      ctx.fillStyle = this._mangroveGrad;
       ctx.fillRect(0, mistY, screenWidth, screenHeight);
     }
 
-    // 2. Abyssal Rift: Crushing deep trench dark vignette
+    // 2. Abyssal Rift: Crushing deep trench dark vignette (cached gradient)
     if (this.activeZoneId === 'abyssal_rift') {
-      const radGrad = ctx.createRadialGradient(
-        screenWidth / 2,
-        screenHeight / 2,
-        Math.min(screenWidth, screenHeight) * 0.3,
-        screenWidth / 2,
-        screenHeight / 2,
-        Math.max(screenWidth, screenHeight) * 0.75
-      );
-      radGrad.addColorStop(0, 'rgba(15, 23, 42, 0.05)');
-      radGrad.addColorStop(1, 'rgba(2, 6, 23, 0.65)');
-      ctx.fillStyle = radGrad;
+      if (!this._riftGrad || this._riftGradW !== screenWidth || this._riftGradH !== screenHeight) {
+        const radGrad = ctx.createRadialGradient(
+          screenWidth / 2,
+          screenHeight / 2,
+          Math.min(screenWidth, screenHeight) * 0.3,
+          screenWidth / 2,
+          screenHeight / 2,
+          Math.max(screenWidth, screenHeight) * 0.75
+        );
+        radGrad.addColorStop(0, 'rgba(15, 23, 42, 0.05)');
+        radGrad.addColorStop(1, 'rgba(2, 6, 23, 0.65)');
+        this._riftGrad = radGrad;
+        this._riftGradW = screenWidth;
+        this._riftGradH = screenHeight;
+      }
+      ctx.fillStyle = this._riftGrad;
       ctx.fillRect(0, 0, screenWidth, screenHeight);
     }
 
