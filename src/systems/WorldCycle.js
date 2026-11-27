@@ -75,26 +75,39 @@ export class WorldCycle {
     this.fogBanks = [];
     this.bioPlankton = [];
     this.surfaceRipples = [];
-    this.constellationState = { active: false, clicked: new Set(), solved: false, lastNightKey: -1 };
+    this.constellationState = { active: false, clicked: new Set(), solved: false, lastNightKey: -1, remainingSec: 0, alpha: 1 };
 
     this.initFog();
     this.initPlankton();
   }
 
-  ensureNightConstellation(isNight) {
+  ensureNightConstellation(isNight, deltaSec = 0) {
     const nightKey = Math.floor((this._dayCount || 0));
     if (!isNight) {
-      if (this.constellationState.active && !this.constellationState.solved) {
+      if (this.constellationState.active) {
         this.constellationState.active = false;
+        this.constellationState.remainingSec = 0;
       }
       return;
     }
     if (this.constellationState.lastNightKey !== nightKey) {
       this.constellationState.lastNightKey = nightKey;
-      // Rare starry fish constellation appears on ~14% of nights
-      this.constellationState.active = Math.random() < 0.14;
+      // Rare starry fish constellation appears on ~14% of nights and departs after ~3 minutes
+      const spawn = Math.random() < 0.14;
+      this.constellationState.active = spawn;
       this.constellationState.clicked = new Set();
       this.constellationState.solved = false;
+      this.constellationState.remainingSec = spawn ? Math.min(180, Math.max(1, this.cycleDuration - this.timer - 5)) : 0;
+      this.constellationState.alpha = 1;
+    }
+    if (this.constellationState.active && deltaSec > 0) {
+      this.constellationState.remainingSec = Math.max(0, (this.constellationState.remainingSec || 0) - deltaSec);
+      this.constellationState.alpha = this.constellationState.remainingSec < 15
+        ? Math.max(0, this.constellationState.remainingSec / 15)
+        : 1;
+      if (this.constellationState.remainingSec <= 0) {
+        this.constellationState.active = false;
+      }
     }
   }
 
@@ -129,8 +142,13 @@ export class WorldCycle {
 
   update(dt, worldWidth, surfaceY) {
     const deltaSec = dt / 1000;
-    this.timer = (this.timer + deltaSec) % this.cycleDuration;
+    const nextTime = this.timer + deltaSec;
+    this._dayCount = (this._dayCount || 0) + Math.floor(nextTime / this.cycleDuration);
+    this.timer = nextTime % this.cycleDuration;
     this.weatherTimer += deltaSec;
+    const todNow = this.getTimeOfDay();
+    const isNightNow = todNow === 'NIGHT';
+    this.ensureNightConstellation(isNightNow, deltaSec);
 
     // Weather change routine
     if (this.weatherTimer >= this.weatherDuration) {

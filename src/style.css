@@ -55,6 +55,33 @@ html, body {
   z-index: 1;
 }
 
+/* Restoration workbench: a responsive surface with deliberate, accessible tools. */
+.restoration-workshop { max-width: 650px; margin: auto; }
+.restoration-heading { text-align: center; margin-bottom: 18px; }
+.restoration-heading h3 { color: #f4e1b5; font: 1.45rem Georgia, serif; margin: 6px 0; }
+.restoration-heading p, .restoration-help { color: #a9bdc1; font-size: .82rem; line-height: 1.6; }
+.restoration-stages { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 18px; }
+.restoration-stages li { color: #98a9b2; font-size: .76rem; text-align: center; padding: 9px 4px; border-bottom: 2px solid #334b55; }
+.restoration-stages li span { display: block; font-weight: 800; margin-bottom: 5px; }
+.restoration-stages .is-current { color: #fde68a; border-color: #fbbf24; }
+.restoration-stages .is-complete { color: #5eead4; border-color: #2dd4bf; }
+.restoration-tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.restoration-tools button { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px; padding: 11px 6px; border: 1px solid #40616b; border-radius: 10px; background: #142c38; color: #d8e9eb; cursor: pointer; min-height: 48px; }
+.restoration-tools button[aria-pressed=true] { background: #24444d; border-color: #5eead4; color: #ccfbf1; }
+.restoration-tools button:focus-visible, #restoration-canvas:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+.restoration-tools svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.restoration-tools kbd { opacity: .6; font-size: .7rem; }
+.restoration-instruction { min-height: 1.5em; color: #cde4e3; text-align: center; font-size: .86rem; margin: 12px 0; }
+.restoration-canvas-frame { max-width: 520px; margin: auto; border: 5px solid #4b4940; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px #ad9773, 0 12px 30px #0005; }
+#restoration-canvas { width: 100%; height: auto; display: block; touch-action: none; cursor: crosshair; }
+.restoration-meter { display: flex; align-items: center; gap: 14px; margin: 16px 0 6px; color: #d9f2eb; font-size: .86rem; }
+.restoration-meter progress { width: 100%; height: 12px; accent-color: #2dd4bf; }
+.restoration-meter strong { white-space: nowrap; }
+.restoration-success { text-align: center; border-top: 1px solid #35594f; padding-top: 18px; margin-top: 18px; }
+.restoration-success h4 { font: 1.3rem Georgia, serif; color: #99f6e4; margin-bottom: 10px; }
+.restoration-success p { color: #c1d5d8; line-height: 1.65; margin-bottom: 12px; }
+@media (max-width: 500px) { .restoration-tools button { flex-direction: column; font-size: .72rem; } .restoration-tools kbd { display: none; } .restoration-stages li { font-size: .67rem; } }
+
 /* =========================================
    Loading Screen
    ========================================= */

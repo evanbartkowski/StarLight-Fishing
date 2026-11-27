@@ -1,13 +1,13 @@
 // EasterEggs.js — Whimsical hidden easter eggs across the Seven Seas
 
 export const CONSTELLATION_FISH_STARS = [
-  { id: 'nose', nx: 0.78, ny: 0.24, label: 'Snout Star' },
-  { id: 'dorsal', nx: 0.67, ny: 0.14, label: 'Dorsal Crest' },
-  { id: 'peduncle_top', nx: 0.59, ny: 0.22, label: 'Tail Spine' },
-  { id: 'tail_top', nx: 0.53, ny: 0.13, label: 'Upper Fluke' },
-  { id: 'tail_bot', nx: 0.53, ny: 0.34, label: 'Lower Fluke' },
-  { id: 'belly', nx: 0.66, ny: 0.33, label: 'Belly Fin' },
-  { id: 'chin', nx: 0.73, ny: 0.29, label: 'Gill Star' },
+  { id: 'nose', nx: 0.72, ny: 0.21, label: 'Snout Star' },
+  { id: 'dorsal', nx: 0.66, ny: 0.16, label: 'Dorsal Crest' },
+  { id: 'peduncle_top', nx: 0.61, ny: 0.20, label: 'Tail Spine' },
+  { id: 'tail_top', nx: 0.57, ny: 0.15, label: 'Upper Fluke' },
+  { id: 'tail_bot', nx: 0.57, ny: 0.26, label: 'Lower Fluke' },
+  { id: 'belly', nx: 0.65, ny: 0.26, label: 'Belly Fin' },
+  { id: 'chin', nx: 0.69, ny: 0.24, label: 'Gill Star' },
 ];
 
 // Connection edges forming the celestial fish outline
@@ -21,7 +21,7 @@ export function getConstellationScreenCoords(screenWidth, surfaceY, cameraY) {
   return CONSTELLATION_FISH_STARS.map(s => ({
     ...s,
     x: s.nx * w,
-    y: Math.max(24, Math.min(skyH - 22, s.ny * Math.min(skyH * 2.1, 420))),
+    y: Math.max(22, Math.min(skyH - 20, s.ny * Math.min(skyH * 1.6, 320))),
   }));
 }
 
@@ -30,9 +30,12 @@ export function renderFishConstellation(ctx, state, screenWidth, surfaceY, camer
   const pts = getConstellationScreenCoords(screenWidth, surfaceY, cameraY);
   const clicked = state.clicked instanceof Set ? state.clicked : new Set(state.clicked || []);
   const solved = !!state.solved;
+  const fadeAlpha = Number.isFinite(state.alpha) ? Math.max(0, Math.min(1, state.alpha)) : 1;
+  if (fadeAlpha <= 0.01) return;
 
   ctx.save();
   try {
+    ctx.globalAlpha *= fadeAlpha;
     // Faint guide lines between already-lit adjacent stars (or full silhouette when solved)
     ctx.lineCap = 'round';
     for (const [aIdx, bIdx] of CONSTELLATION_EDGES) {
@@ -42,7 +45,7 @@ export function renderFishConstellation(ctx, state, screenWidth, surfaceY, camer
       ctx.strokeStyle = bothLit
         ? 'rgba(250, 204, 21, 0.88)'
         : 'rgba(148, 163, 184, 0.16)';
-      ctx.lineWidth = bothLit ? 2.2 : 1.0;
+      ctx.lineWidth = bothLit ? 1.8 : 0.9;
       if (!bothLit) ctx.setLineDash([4, 5]);
       else ctx.setLineDash([]);
       ctx.beginPath();
@@ -56,7 +59,7 @@ export function renderFishConstellation(ctx, state, screenWidth, surfaceY, camer
     pts.forEach((star, idx) => {
       const isLit = solved || clicked.has(star.id);
       const pulse = 0.8 + 0.25 * Math.sin(time * 3.2 + idx * 1.1);
-      const radius = (isLit ? 6.5 : 4.6) * pulse;
+      const radius = (isLit ? 5.0 : 3.6) * pulse;
 
       // Halo glow
       ctx.fillStyle = isLit ? 'rgba(250, 204, 21, 0.36)' : 'rgba(56, 189, 248, 0.28)';
@@ -90,14 +93,18 @@ export function handleConstellationClick(state, clickX, clickY, screenWidth, sur
   const pts = getConstellationScreenCoords(screenWidth, surfaceY, cameraY);
   if (!(state.clicked instanceof Set)) state.clicked = new Set(state.clicked || []);
 
-  for (const star of pts) {
-    if (Math.hypot(clickX - star.x, clickY - star.y) <= 26) {
-      const wasNew = !state.clicked.has(star.id);
-      state.clicked.add(star.id);
-      const completed = state.clicked.size >= pts.length;
-      if (completed) state.solved = true;
-      return { hit: true, wasNew, star, completed, clickedCount: state.clicked.size, total: pts.length };
-    }
+  let nearest = null, distance = 26;
+  for (const point of pts) {
+    const d = Math.hypot(clickX - point.x, clickY - point.y);
+    if (d < distance) { nearest = point; distance = d; }
+  }
+  if (nearest) {
+    const star = nearest;
+    const wasNew = !state.clicked.has(star.id);
+    state.clicked.add(star.id);
+    const completed = state.clicked.size >= pts.length;
+    if (completed) state.solved = true;
+    return { hit: true, wasNew, star, completed, clickedCount: state.clicked.size, total: pts.length };
   }
   return { hit: false };
 }

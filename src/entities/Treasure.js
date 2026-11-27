@@ -1,5 +1,6 @@
 import { RARITY_CONFIG } from '../data/FishData.js';
 import { getRandomBottleMessage } from '../data/DriftMessages.js';
+import { withCanvasState } from '../rendering/CanvasState.js';
 
 function drawRealmArtifact(ctx, item, time) {
   const name = (item.name || '').toLowerCase();
@@ -214,6 +215,11 @@ export class Treasure {
   }
 
   render(ctx, cameraY = 0) {
+    if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) return;
+    return withCanvasState(ctx, () => this.renderArtifact(ctx, Number.isFinite(cameraY) ? cameraY : 0));
+  }
+
+  renderArtifact(ctx, cameraY) {
     const drawY = this.y - cameraY;
 
     // Leader wire connecting to hook if hooked
@@ -229,10 +235,12 @@ export class Treasure {
     }
 
     ctx.save();
+    try {
     ctx.translate(this.x, drawY);
 
     // Glowing aura (translucent halo avoids expensive shadowBlur)
     ctx.save();
+    try {
     ctx.fillStyle = this.rarityGlow;
     ctx.globalAlpha = 0.18;
     ctx.beginPath();
@@ -469,8 +477,12 @@ export class Treasure {
       }
     }
 
-    ctx.restore();
-    ctx.restore();
+    } finally {
+      ctx.restore();
+    }
+    } finally {
+      ctx.restore();
+    }
   }
 }
 

@@ -5,7 +5,7 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1000, height: 520 } });
   await page.route(/googleapis\.com|cloudfunctions\.net|identitytoolkit|securetoken/, route => route.abort());
-  await page.goto(process.env.GAME_TEST_URL || 'http://127.0.0.1:5174/');
+  await page.goto(process.env.GAME_TEST_URL || 'http://127.0.0.1:5173/');
   await page.evaluate(async () => {
     const { drawAura } = await import('/src/rendering/AuraRenderer.js');
     const { Fish } = await import('/src/entities/Fish.js');

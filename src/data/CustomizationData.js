@@ -36,6 +36,8 @@ export function drawAngler(ctx, appearance, x = 0, y = 0, options = {}) {
   try {
     ctx.translate(safeX, safeY);
     const look = normalizeCustomization(ANGLER_OPTIONS, appearance);
+    // Boots meet the shared deck/seat anchor instead of leaving the coat floating.
+    ctx.fillStyle = '#292524'; ctx.fillRect(-10, -3, 8, 5); ctx.fillRect(2, -3, 9, 5);
     ctx.fillStyle = look.coat || '#eab308';
     ctx.beginPath(); ctx.moveTo(-9, -26); ctx.lineTo(9, -26); ctx.lineTo(11, -2); ctx.lineTo(-11, -2); ctx.closePath(); ctx.fill();
     ctx.fillStyle = look.skin || '#fde6c8'; ctx.beginPath(); ctx.arc(0, -32, 7, 0, Math.PI * 2); ctx.fill();

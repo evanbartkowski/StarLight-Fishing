@@ -1,4 +1,5 @@
 // Positive, collectible dive abilities with a bright pickup silhouette.
+import { withCanvasState } from '../rendering/CanvasState.js';
 
 export const POWERUP_TYPES = [
   { id: 'overdrive', name: 'Reel Overdrive', hint: '2X REEL · 25 SEC', isPositive: true, color: '#38bdf8', glow: '#0284c7', icon: '⚡', duration: 25, desc: '+100% reeling speed for 25 seconds' },
@@ -38,41 +39,50 @@ export class Powerup {
 
   render(ctx, cameraY = 0) {
     if (this.state !== 'ACTIVE') return;
-    ctx.save();
-    ctx.translate(this.x, this.y - cameraY);
-    const pulse = 1 + Math.sin(this.timer * 2.4) * .08;
-    ctx.scale(pulse, pulse);
-    ctx.save(); ctx.rotate(this.timer * .22);
-    ctx.strokeStyle = this.glow; ctx.globalAlpha = .72; ctx.lineWidth = 2;
-    ctx.setLineDash([5, 7]);
-    ctx.beginPath(); ctx.arc(0, 0, this.radius + 11, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]); ctx.restore();
-    ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const labelWidth = Math.max(78, Math.min(150, ctx.measureText(this.name).width + 18));
-    ctx.fillStyle = 'rgba(5, 22, 35, .94)'; ctx.strokeStyle = this.glow; ctx.lineWidth = 1.3;
-    ctx.beginPath(); ctx.roundRect(-labelWidth / 2, -this.radius - 35, labelWidth, 28, 6); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#f8fafc'; ctx.fillText(this.name.toUpperCase(), 0, -this.radius - 26);
-    ctx.fillStyle = this.color; ctx.font = 'bold 7px sans-serif'; ctx.fillText(this.hint, 0, -this.radius - 16);
-    const grad = ctx.createRadialGradient(-5, -7, 2, 0, 0, this.radius + 8);
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(.2, this.color);
-    grad.addColorStop(.78, this.glow);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath(); ctx.arc(0, 0, this.radius + 9, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#073042';
-    ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 2.5; ctx.shadowColor = this.glow; ctx.shadowBlur = 16;
-    ctx.beginPath();
-    for (let point = 0; point < 8; point++) {
-      const angle = point * Math.PI / 4 - Math.PI / 2;
-      const radius = point % 2 === 0 ? this.radius : this.radius * .76;
-      const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
-      if (point === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.shadowBlur = 0; ctx.font = 'bold 19px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(this.icon, 0, 1);
-    ctx.restore();
+    if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) return;
+    withCanvasState(ctx, () => {
+      ctx.translate(this.x, this.y - (Number.isFinite(cameraY) ? cameraY : 0));
+      const pulse = 1 + Math.sin(this.timer * 2.4) * .08;
+      ctx.scale(pulse, pulse);
+      ctx.save();
+      ctx.rotate(this.timer * .22);
+      ctx.strokeStyle = this.glow; ctx.globalAlpha = .72; ctx.lineWidth = 2;
+      ctx.setLineDash([5, 7]);
+      ctx.beginPath(); ctx.arc(0, 0, this.radius + 11, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+      ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const labelWidth = Math.max(78, Math.min(150, ctx.measureText(this.name).width + 18));
+      ctx.fillStyle = 'rgba(5, 22, 35, .94)'; ctx.strokeStyle = this.glow; ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(-labelWidth / 2, -this.radius - 35, labelWidth, 28, 6);
+      } else {
+        ctx.rect(-labelWidth / 2, -this.radius - 35, labelWidth, 28);
+      }
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f8fafc'; ctx.fillText(this.name.toUpperCase(), 0, -this.radius - 26);
+      ctx.fillStyle = this.color; ctx.font = 'bold 7px sans-serif'; ctx.fillText(this.hint, 0, -this.radius - 16);
+      const grad = ctx.createRadialGradient(-5, -7, 2, 0, 0, this.radius + 8);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(.2, this.color);
+      grad.addColorStop(.78, this.glow);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(0, 0, this.radius + 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#073042';
+      ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 2.5; ctx.shadowColor = this.glow; ctx.shadowBlur = 16;
+      ctx.beginPath();
+      for (let point = 0; point < 8; point++) {
+        const angle = point * Math.PI / 4 - Math.PI / 2;
+        const radius = point % 2 === 0 ? this.radius : this.radius * .76;
+        const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
+        if (point === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.shadowBlur = 0; ctx.font = 'bold 19px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(this.icon, 0, 1);
+    });
   }
 }
 

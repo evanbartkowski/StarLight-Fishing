@@ -1,3 +1,4 @@
+import { openRestorationDesk as openRelicWorkshop } from './RestorationDesk.js';
 import { getRandomBottleMessage } from '../data/DriftMessages.js';
 import { getRealmDepthZone as getDepthSubZone } from '../data/RealmDepths.js';
 import { crateArtwork, crateRewardGallery } from './CratePresentation.js';
@@ -2773,202 +2774,9 @@ export class UIManager {
     });
   }
 
-  // The Restoration Desk: Soothing, relaxed mouse/touch drag to wipe away ocean grime
+  // Shared workshop keeps pointer, keyboard, and saved restoration progress together.
   openRestorationDesk(relicItem, onDone) {
-    this.activeModal = 'restoration';
-    soundManager.playButtonClick();
-
-    const relicType = relicItem.relicType || RELIC_TYPES.find(r => r.id === relicItem.id) || RELIC_TYPES[0];
-
-    this.openModal('🏺 The Restoration Desk', `
-      <div style="text-align:center; padding: 6px 0;">
-        <p style="color:#94a3b8; font-size:13px; margin-bottom:12px;">
-          Gently wipe your mouse or finger across the ocean grime to restore this ${relicType.era} artifact!
-        </p>
-
-        <div style="position:relative; width:340px; height:240px; margin:0 auto; border-radius:12px; overflow:hidden; border:2px solid rgba(251,191,36,0.3); background:#0f172a; cursor:crosshair; touch-action:none;">
-          <canvas id="restoration-canvas" width="340" height="240"></canvas>
-        </div>
-
-        <div style="margin-top:14px; display:flex; align-items:center; justify-content:center; gap:12px;">
-          <div style="width:200px; height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden;">
-            <div id="restoration-progress" style="width:0%; height:100%; background:linear-gradient(90deg, #f59e0b, #38bdf8); transition:width 0.1s ease;"></div>
-          </div>
-          <span id="restoration-pct" style="font-size:13px; font-weight:700; color:#fde68a;">0% Clean</span>
-        </div>
-
-        <div id="restoration-success" style="display:none; margin-top:14px;">
-          <p style="color:#34d399; font-weight:700; font-size:15px; margin-bottom:8px;">✨ Fully Restored to Pristine Condition! (+$${relicType.restoredValue.toLocaleString()})</p>
-          <button class="btn btn-primary" id="btn-restoration-finish">🏛️ Place on Cabin Shelf</button>
-        </div>
-      </div>
-    `);
-
-    const cvs = document.getElementById('restoration-canvas');
-    if (!cvs) return;
-    const ctx = cvs.getContext('2d');
-
-    const cols = 20;
-    const rows = 14;
-    const cellW = cvs.width / cols;
-    const cellH = cvs.height / rows;
-    const grime = [];
-    let remainingCells = 0;
-
-    for (let r = 0; r < rows; r++) {
-      grime[r] = [];
-      for (let c = 0; c < cols; c++) {
-        const cx = (c + 0.5) * cellW - cvs.width * 0.5;
-        const cy = (r + 0.5) * cellH - cvs.height * 0.5;
-        const dist = Math.sqrt(cx * cx + cy * cy);
-        if (dist < 80 + Math.random() * 15) {
-          grime[r][c] = 1.0;
-          remainingCells++;
-        } else {
-          grime[r][c] = 0;
-        }
-      }
-    }
-
-    const totalGrimeCells = Math.max(1, remainingCells);
-    let cleanedCells = 0;
-    let isCleaning = false;
-    let isDone = false;
-    let animTimer = 0;
-    let raf = null;
-
-    const wipeAt = (canvasX, canvasY, radius = 28) => {
-      if (isDone) return;
-      let wipedThisStroke = 0;
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (grime[r][c] > 0) {
-            const gx = (c + 0.5) * cellW;
-            const gy = (r + 0.5) * cellH;
-            const dx = canvasX - gx;
-            const dy = canvasY - gy;
-            if (dx * dx + dy * dy < radius * radius) {
-              grime[r][c] = 0;
-              cleanedCells++;
-              wipedThisStroke++;
-            }
-          }
-        }
-      }
-
-      if (wipedThisStroke > 0 && Math.random() < 0.3) {
-        soundManager.playReelClick(1.8);
-      }
-
-      const pct = Math.min(100, Math.round((cleanedCells / totalGrimeCells) * 100));
-      const progEl = document.getElementById('restoration-progress');
-      const pctEl = document.getElementById('restoration-pct');
-      if (progEl) progEl.style.width = `${pct}%`;
-      if (pctEl) pctEl.textContent = `${pct}% Clean`;
-
-      if (pct >= 82 && !isDone) {
-        isDone = true;
-        relicItem.restored = true;
-        relicItem.value = relicType.restoredValue;
-        if (!this.saveSystem.data.relics) this.saveSystem.data.relics = {};
-        this.saveSystem.data.relics[relicType.id] = { count: 1, restored: true, restoredAt: Date.now() };
-        this.saveSystem.save();
-
-        soundManager.playTreasure();
-        const successEl = document.getElementById('restoration-success');
-        if (successEl) successEl.style.display = 'block';
-        let finished = false;
-        const finishBtn = document.getElementById('btn-restoration-finish');
-        if (finishBtn) {
-          finishBtn.addEventListener('click', () => {
-            finished = true;
-            if (raf) cancelAnimationFrame(raf);
-            this.closeModal();
-            if (onDone) onDone();
-          });
-        }
-      }
-    };
-
-    const handlePointer = (e) => {
-      const rect = cvs.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-      wipeAt(x, y);
-    };
-
-    const onMouseMove = (e) => { if (isCleaning) handlePointer(e); };
-    const onMouseUp = () => { isCleaning = false; };
-
-    cvs.addEventListener('mousedown', (e) => { isCleaning = true; handlePointer(e); });
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-
-    cvs.addEventListener('touchstart', (e) => { isCleaning = true; handlePointer(e); }, { passive: true });
-    cvs.addEventListener('touchmove', (e) => { if (isCleaning) handlePointer(e); }, { passive: true });
-    cvs.addEventListener('touchend', () => { isCleaning = false; });
-
-    this._activeModalCleanup = (isReplacing) => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-      if (!isReplacing && !finished && onDone) onDone();
-    };
-
-    const drawDesk = () => {
-      if (this.activeModal !== 'restoration') return;
-      animTimer += 0.03;
-
-      ctx.clearRect(0, 0, cvs.width, cvs.height);
-
-      // Desk background
-      ctx.fillStyle = '#1c1917';
-      ctx.fillRect(0, 0, cvs.width, cvs.height);
-      ctx.strokeStyle = '#292524';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < cvs.width; x += 35) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, cvs.height); ctx.stroke();
-      }
-
-      // Restored artifact in center
-      ctx.save();
-      ctx.translate(cvs.width * 0.5, cvs.height * 0.5);
-      ctx.scale(2.2, 2.2);
-      if (typeof relicType.drawRestored === 'function') {
-        relicType.drawRestored(ctx, animTimer);
-      } else {
-        ctx.font = '32px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(relicType.icon || '🏺', 0, 0);
-      }
-      ctx.restore();
-
-      // Grime overlay
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (grime[r][c] > 0) {
-            const gx = c * cellW;
-            const gy = r * cellH;
-            ctx.fillStyle = ((r + c) % 2 === 0) ? 'rgba(30, 58, 42, 0.94)' : 'rgba(47, 79, 55, 0.96)';
-            ctx.fillRect(gx - 1, gy - 1, cellW + 2, cellH + 2);
-
-            if ((r * 7 + c * 13) % 5 === 0) {
-              ctx.fillStyle = '#1f2937';
-              ctx.beginPath();
-              ctx.arc(gx + cellW * 0.5, gy + cellH * 0.5, 3.5, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          }
-        }
-      }
-
-      raf = requestAnimationFrame(drawDesk);
-    };
-
-    drawDesk();
+    return openRelicWorkshop(this, relicItem, onDone);
   }
 
   // The Cozy Field Log & Illustrated Antique Journal
@@ -3417,7 +3225,7 @@ export class UIManager {
               <button class="tab-btn ${defaultSubTab === 'scoreboard' ? 'active' : ''}" id="tab-scoreboard" style="border: 1px solid #facc15; color: #facc15; font-weight: 700;"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.scoreboard}</span> Scoreboard</button>
               <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.aquarium}</span> Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
               <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.crew}</span> Vessel Crew (${unlockedPetCount} / ${Object.keys(PET_DEFINITIONS).length})</button>
-              <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.relics}</span> Cabin Shelf (${restoredRelicsCount} / 5)</button>
+              <button class="tab-btn ${defaultSubTab === 'relics' ? 'active' : ''}" id="tab-relics"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.relics}</span> Cabin Shelf (${restoredRelicsCount} / ${RELIC_TYPES.length})</button>
               <button class="tab-btn ${defaultSubTab === 'skeletons' ? 'active' : ''}" id="tab-skeletons"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.fossils}</span> Fossils</button>
               <button class="tab-btn ${defaultSubTab === 'traps' ? 'active' : ''}" id="tab-traps"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.traps}</span> Seabed Traps${activeTrapCount > 0 ? '' : ' (Not Owned)'}</button>
               <button class="tab-btn ${defaultSubTab === 'fossils' ? 'active' : ''}" id="tab-fossils"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.museum}</span> Relic Museum (${fossilCount} / 5)</button>
@@ -5747,7 +5555,7 @@ export class UIManager {
       const previewSkinColor = skinMeta?.color || null;
       drawVesselHull(ctx, vessel, bW, bH, animTimer, { skinColor: previewSkinColor, skinMeta, skinId: selectedSkin, hullStyle: selectedHull, boatColors: draftColors });
 
-      const previewAnglerScale = (layout.anglerScale || 1) * 1.12;
+      const previewAnglerScale = layout.anglerScale || 1;
       ctx.save();
       ctx.translate(layout.anglerPos.x, layout.anglerPos.y);
       ctx.scale(previewAnglerScale, previewAnglerScale);

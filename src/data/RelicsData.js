@@ -1,5 +1,6 @@
 import { REALM_PROFILES } from './RealmContent.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
+import { drawRealmRelic } from '../rendering/RelicArtwork.js';
 // RelicsData.js — Archaeological artifacts dredged from the seafloor
 // Each relic has barnacle grime that the player brushes away at the Restoration Desk
 
@@ -219,10 +220,14 @@ const realmRelicNames = [
   ['Chrononaut Memory Compass', 'Last Epoch Testament'],
 ];
 const relicTemplates = [...RELIC_TYPES];
+const realmRelicKinds = [['compass', 'memorial'], ['lens', 'seal'], ['astrolabe', 'star_map'],
+  ['seal', 'clock_heart'], ['compass', 'harp'], ['dial', 'tablet'], ['compass', 'testament']];
 export const REALM_RELICS = FANTASY_SEAS.flatMap(sea => realmRelicNames[sea.id - 1].map((name, i) => ({
   ...relicTemplates[i % relicTemplates.length],
   id: `realm_${sea.id}_relic_${i}`, name, zone: sea.id,
   era: `${sea.name} antiquity`,
+  artKind: realmRelicKinds[sea.id - 1][i],
+  drawRestored(ctx, time) { drawRealmRelic(ctx, realmRelicKinds[sea.id - 1][i], sea.skyHorizon || '#38bdf8', time); },
   description: `A lost relic from the ${REALM_PROFILES[sea.id].habitat}. Clean away the encrusted sediment to reveal its history.`,
   rawValue: REALM_PROFILES[sea.id].commonValue * (35 + i * 35),
   restoredValue: REALM_PROFILES[sea.id].commonValue * (175 + i * 175),

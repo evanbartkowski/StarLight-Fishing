@@ -40,8 +40,14 @@ Native species occupy shallow nurseries as well as deep habitats, so arriving in
 1. Continue as a guest or select a local Captain account.
 2. Press and hold on the water to aim, then release to cast. Mouse and touch input are supported.
 3. Move the pointer or drag to steer the hook toward catches and away from hazards.
-4. Press **Space** during descent to retrieve early. The hook reels automatically; continue steering on the way up.
+4. Click or tap the water again, or press **Space**, during descent to retrieve early. The hook reels automatically; continue steering on the way up.
 5. Manage catches in your inventory, sell them for upgrades, or display favorites in your aquarium.
+
+## Relic restoration and quiet moments
+
+Underwater relics show the same artifact as the workshop. Restoration uses three tools: brush away sediment, lift barnacles with the detail pick, then polish the surface. Work saves between visits and increases the item's sale value without granting duplicate coins. Drag with a mouse or touch; keys 1-3 select tools, arrows move the tool, and Space cleans.
+
+After five minutes without any pointer movement or button/key input, the captain puts away the rod and silently knits a fish sweater. Any activity ends the animation. Rare fish constellations are smaller, fade out within three minutes, and leave before dawn even after being solved.
 
 ## Make it your own
 
@@ -95,6 +101,8 @@ Open the URL printed by Vite, normally `http://localhost:5173`.
 | --- | --- |
 | `npm run dev` | Start the development server |
 | `npm test` | Run gameplay data and realm regression checks |
+| `npm run typecheck` | Check typed gameplay and server contracts |
+| `npm run test:browser` | Run Edge browser checks against the local dev server (override with `GAME_TEST_URL`) |
 | `npm run build` | Generate the production site in `dist/` |
 | `npm run preview` | Preview the existing production build locally |
 

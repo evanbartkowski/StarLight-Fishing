@@ -17,7 +17,42 @@ export const VESSEL_NAMES = [
  * Shared deck, bow, stern, trinket, and pet layout per vessel tier (0..8)
  * so boats, trinkets, and companions (cat, pelican) align cleanly across all vessels.
  */
+export function getSubmarineCockpit(bW = 140) {
+  const scale = Number.isFinite(bW) && bW > 0 ? bW / 140 : 1;
+  return { x: 26 * scale, y: -18, radius: 29, seatY: -15, anglerScale: .64 };
+}
+
 export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'standard') {
+  const layout = getDeckLayout(vessel, bW, bH, hullStyle);
+  const seats = [[-2, -10], [-5, -11], [-6, -12], [0, -11], [8, -12], [12, -14], [18, -14], [18, -14], [10, -15]];
+  const exoticSeats = { pirate: [6, -16], chinese_junk: [20, -12], viking: [-22, -10], ghost_ship: [18, -14], steampunk: [8, -14] };
+  const seat = hullStyle === 'standard' ? seats[layout.tier] : exoticSeats[hullStyle];
+  if (seat) layout.anglerPos = { x: seat[0] * layout.scale, y: seat[1] };
+  if (hullStyle === 'submarine') {
+    const cockpit = getSubmarineCockpit(bW);
+    layout.anglerPos = { x: cockpit.x, y: cockpit.seatY };
+    layout.anglerScale = cockpit.anglerScale;
+    layout.trinketRight = { x: cockpit.x + cockpit.radius + 12, y: -13 };
+    layout.pelicanPos = { x: cockpit.x + cockpit.radius + 23, y: -13 };
+  }
+  return layout;
+}
+
+export function getVesselRig(vessel = 0, bW = 140, bH = 40, hullStyle = 'standard', aimDirection = 1) {
+  const layout = getVesselLayout(vessel, bW, bH, hullStyle);
+  const dir = aimDirection < 0 ? -1 : 1;
+  const scale = layout.anglerScale || 1;
+  const point = (x, y) => ({ x: layout.anglerPos.x + dir * x * scale, y: layout.anglerPos.y + y * scale });
+  if (hullStyle === 'submarine') {
+    const cockpit = getSubmarineCockpit(bW);
+    const mountX = cockpit.x + dir * (cockpit.radius + 6);
+    return { ...layout, rodStart: { x: mountX, y: -16 }, rodControl: { x: mountX + dir * 8, y: -38 },
+      rodTip: { x: mountX + dir * 18, y: -59 }, rodSpool: { x: mountX, y: -16 } };
+  }
+  return { ...layout, rodStart: point(16, -14), rodControl: point(38, -38), rodTip: point(54, -56), rodSpool: point(14, -12) };
+}
+
+function getDeckLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'standard') {
   const v = Math.max(0, Math.min(8, Math.floor(Number(vessel) || 0)));
   const hw = (bW > 0 ? bW : 140) * 0.5;
   const scale = hw / 70;
@@ -603,6 +638,7 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
       // EXOTIC HULL: ABYSSAL NAUTILUS SUBMERSIBLE
       // ==========================================
       const sw = hw * 1.34;
+      const cockpit = getSubmarineCockpit(bW);
       // Searchlight Flood Beam ahead & below
       try {
         const beamGrad = ctx.createRadialGradient(sw * 0.9, 6, 4, sw * 1.45, 50, 140);
@@ -647,15 +683,15 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
       // Recessed Submarine Pilot Cockpit Chamber & Captain Seat Collar (behind angler)
       ctx.fillStyle = '#090f1d';
       ctx.beginPath();
-      ctx.arc(16, -15, 24, Math.PI, 0);
+      ctx.arc(cockpit.x, cockpit.y, cockpit.radius, Math.PI, 0);
       ctx.fill();
       ctx.fillStyle = '#1e293b';
-      ctx.fillRect(-10, -16, 52, 8);
+      ctx.fillRect(cockpit.x - cockpit.radius - 2, cockpit.y, cockpit.radius * 2 + 4, 8);
       ctx.strokeStyle = pal.trim;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(-9, -15);
-      ctx.lineTo(41, -15);
+      ctx.moveTo(cockpit.x - cockpit.radius - 2, cockpit.y);
+      ctx.lineTo(cockpit.x + cockpit.radius + 2, cockpit.y);
       ctx.stroke();
 
       // Glowing Porthole Windows & Rivet Belt
@@ -1846,11 +1882,12 @@ export function drawVesselForeground(ctx, vessel = 0, bW = 140, bH = 40, time = 
   const v = Math.max(0, Math.min(8, Math.floor(Number(vessel) || 0)));
   const pal = resolvePalette(v, skinColor, customColors);
   if (pal.hullStyle !== 'submarine') return;
+  const { x, y, radius } = getSubmarineCockpit(bW);
 
   ctx.save();
   try {
-    // Panoramic Submarine Glass Dome over the seated captain (center x: 16, base y: -15, r: 24)
-    const domeGrad = ctx.createRadialGradient(10, -30, 3, 16, -22, 26);
+    // The glass and hull recess share the same seated cockpit geometry.
+    const domeGrad = ctx.createRadialGradient(x - 7, y - 20, 3, x, y - 8, radius + 2);
     domeGrad.addColorStop(0, 'rgba(224, 242, 254, 0.42)');
     domeGrad.addColorStop(0.65, 'rgba(56, 189, 248, 0.22)');
     domeGrad.addColorStop(1, 'rgba(14, 165, 233, 0.34)');
@@ -1858,7 +1895,7 @@ export function drawVesselForeground(ctx, vessel = 0, bW = 140, bH = 40, time = 
     ctx.strokeStyle = '#bae6fd';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
-    ctx.arc(16, -15, 24, Math.PI, 0);
+    ctx.arc(x, y, radius, Math.PI, 0);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -1868,15 +1905,15 @@ export function drawVesselForeground(ctx, vessel = 0, bW = 140, bH = 40, time = 
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.arc(16, -15, 19, Math.PI * 1.15, Math.PI * 1.48);
+    ctx.arc(x, y, radius - 5, Math.PI * 1.15, Math.PI * 1.48);
     ctx.stroke();
 
     // Bolted brass hatch collar rim
     ctx.fillStyle = pal.trim;
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 1.2;
-    ctx.fillRect(-10, -16, 52, 5);
-    ctx.strokeRect(-10, -16, 52, 5);
+    ctx.fillRect(x - radius - 2, y - 1, radius * 2 + 4, 7);
+    ctx.strokeRect(x - radius - 2, y - 1, radius * 2 + 4, 7);
   } catch (err) {
     console.warn('drawVesselForeground error:', err);
   } finally {

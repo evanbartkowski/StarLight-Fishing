@@ -67,6 +67,7 @@ export function publicAquarium(snapshot, username) {
   return { username: String(username || 'Captain').slice(0, 40), theme: snapshot.aquarium?.theme || 'reef', decor, items };
 }
 
+/** @param {string} username */
 export function captainEmail(username) {
   return `${Array.from((username || '').trim().toLowerCase()).map(char => char.charCodeAt(0).toString(16).padStart(2, '0')).join('')}@captains.starlight-fishing.invalid`;
 }

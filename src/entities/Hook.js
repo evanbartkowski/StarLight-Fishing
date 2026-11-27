@@ -462,51 +462,89 @@ export class Hook {
     }
   }
 
+  getLinePointAbove(distanceAboveHook = 28, rodTipX = this.rodTip?.x ?? this.x, rodTipY = this.rodTip?.y ?? (this.y - 400)) {
+    const hookX = Number.isFinite(this.x) ? this.x : 0;
+    const hookY = Number.isFinite(this.y) ? this.y : 0;
+    const tipX = Number.isFinite(rodTipX) ? rodTipX : hookX;
+    const tipY = Number.isFinite(rodTipY) ? rodTipY : (hookY - 400);
+    const dx = tipX - hookX;
+    const dy = tipY - hookY;
+    const lineLen = Math.hypot(dx, dy);
+    if (!Number.isFinite(lineLen) || lineLen < 1) {
+      return { x: hookX, y: hookY - Math.max(0, distanceAboveHook) };
+    }
+    const clampedDist = Math.max(0, Math.min(lineLen, distanceAboveHook));
+    const u = clampedDist / lineLen; // 0 = hook, 1 = rod tip
+    const dragOffset = Math.max(-45, Math.min(45, -(this.vx || 0) * 0.035));
+    const microSway = Math.sin((this.lineWaveTimer || 0) * 2.2) * 2.5;
+    const sagX = (tipX + hookX) * 0.5 + dragOffset + microSway;
+    const sagY = (tipY + hookY) * 0.5;
+    // Evaluate quadratic Bezier from hook (u=0) through control point (sagX, sagY) toward rodTip (u=1)
+    const oneMinusU = 1 - u;
+    const px = oneMinusU * oneMinusU * hookX + 2 * oneMinusU * u * sagX + u * u * tipX;
+    const py = oneMinusU * oneMinusU * hookY + 2 * oneMinusU * u * sagY + u * u * tipY;
+    return {
+      x: Number.isFinite(px) ? px : hookX,
+      y: Number.isFinite(py) ? py : (hookY - clampedDist),
+    };
+  }
+
   renderLine(ctx, rodTipX, rodTipY, cameraY = 0) {
-    const drawHookY = this.y - cameraY;
-    const drawRodY = rodTipY - cameraY;
     const hookX = Number.isFinite(this.x) ? this.x : rodTipX;
+    const hookY = Number.isFinite(this.y) ? this.y : rodTipY;
+    const tipX = Number.isFinite(rodTipX) ? rodTipX : hookX;
+    const tipY = Number.isFinite(rodTipY) ? rodTipY : hookY;
+    const camY = Number.isFinite(cameraY) ? cameraY : 0;
+    const drawHookY = hookY - camY;
+    const drawRodY = tipY - camY;
 
     ctx.save();
-    ctx.beginPath();
+    try {
+      ctx.beginPath();
 
-    if (this.state === 'CASTING') {
-      const midX = (rodTipX + hookX) / 2;
-      const midY = Math.min(drawRodY, drawHookY) - 30;
-      ctx.moveTo(rodTipX, drawRodY);
-      ctx.quadraticCurveTo(midX, midY, hookX, drawHookY);
-    } else {
-      // Natural fluid hydrodynamics: curve smoothly against velocity with gentle micro-drift
-      const dragOffset = Math.max(-45, Math.min(45, -(this.vx || 0) * 0.035));
-      const microSway = Math.sin((this.lineWaveTimer || 0) * 2.2) * 2.5;
-
-      // When diving deep (cameraY is large), rodTip is off-screen above the viewport (drawRodY < 0).
-      // If drawRodY is deep negative (<-32768 or <-50), rasterizers overflow 16-bit vertex buffers causing
-      // chaotic line whipping across the screen. We cleanly calculate the entry point at y = 0.
-      if (drawRodY < -20) {
-        const totalDy = (drawHookY - drawRodY) || 1;
-        const t = Math.max(0, Math.min(1, (0 - drawRodY) / totalDy));
-        const entryX = rodTipX + (hookX - rodTipX) * t;
-        const canvasW = (typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : (ctx.canvas ? ctx.canvas.width : 1200);
-        const clampedEntryX = Math.max(-40, Math.min(canvasW + 40, entryX));
-        const sagX = (clampedEntryX + hookX) / 2 + dragOffset + microSway;
-        const sagY = Math.max(0, drawHookY * 0.5);
-
-        ctx.moveTo(clampedEntryX, 0);
-        ctx.quadraticCurveTo(sagX, sagY, hookX, drawHookY);
+      if (this.state === 'CASTING') {
+        const midX = (tipX + hookX) / 2;
+        const midY = Math.min(drawRodY, drawHookY) - 30;
+        ctx.moveTo(tipX, drawRodY);
+        ctx.quadraticCurveTo(midX, midY, hookX, drawHookY);
       } else {
-        const sagX = (rodTipX + hookX) / 2 + dragOffset + microSway;
-        const sagY = (drawRodY + drawHookY) / 2;
-        ctx.moveTo(rodTipX, drawRodY);
-        ctx.quadraticCurveTo(sagX, sagY, hookX, drawHookY);
-      }
-    }
+        // Natural fluid hydrodynamics: curve smoothly against velocity with gentle micro-drift
+        const dragOffset = Math.max(-45, Math.min(45, -(this.vx || 0) * 0.035));
+        const microSway = Math.sin((this.lineWaveTimer || 0) * 2.2) * 2.5;
 
-    // High-visibility braided line with subtle clean sheen
-    ctx.strokeStyle = 'rgba(240, 249, 255, 0.9)';
-    ctx.lineWidth = 1.6;
-    ctx.stroke();
-    ctx.restore();
+        // When diving deep (cameraY is large), rodTip is off-screen above the viewport (drawRodY < 0).
+        // Evaluate the exact Bezier entry point cleanly along the true curve so the line never jumps!
+        if (drawRodY < -20) {
+          const totalDy = (drawHookY - drawRodY) || 1;
+          const t = Math.max(0, Math.min(1, (0 - drawRodY) / totalDy));
+          const sagWorldX = (tipX + hookX) / 2 + dragOffset + microSway;
+          const sagWorldY = (drawRodY + drawHookY) / 2;
+          const oneMinusT = 1 - t;
+          const entryX = oneMinusT * oneMinusT * tipX + 2 * oneMinusT * t * sagWorldX + t * t * hookX;
+          const subCtrlX = (1 - t) * sagWorldX + t * hookX;
+          const subCtrlY = (1 - t) * sagWorldY + t * drawHookY;
+          const canvasW = (typeof window !== 'undefined' && window.innerWidth)
+            ? window.innerWidth
+            : (ctx.canvas ? ctx.canvas.width : 1200);
+          const clampedEntryX = Math.max(-60, Math.min(canvasW + 60, entryX));
+
+          ctx.moveTo(clampedEntryX, 0);
+          ctx.quadraticCurveTo(subCtrlX, Math.max(0, subCtrlY), hookX, drawHookY);
+        } else {
+          const sagX = (tipX + hookX) / 2 + dragOffset + microSway;
+          const sagY = (drawRodY + drawHookY) / 2;
+          ctx.moveTo(tipX, drawRodY);
+          ctx.quadraticCurveTo(sagX, sagY, hookX, drawHookY);
+        }
+      }
+
+      // High-visibility braided line with subtle clean sheen
+      ctx.strokeStyle = 'rgba(240, 249, 255, 0.9)';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    } finally {
+      ctx.restore();
+    }
   }
 
   render(ctx, cameraY = 0) {

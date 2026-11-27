@@ -350,8 +350,7 @@ function handlePointerDown(e) {
   isMouseDown = true;
 
   if (gameState === 'SURFACE_IDLE') {
-    // Reset idle knitting progress on interaction
-    captainKnittingTimer = 0;
+    // Screen activity tracking resets the shared idle clock before this handler.
     if (oceanWorld) oceanWorld.isAnglerKnitting = false;
 
     // 0. Check Constellation Puzzle stars in the night sky
@@ -658,7 +657,7 @@ let hudElapsed = 0;
 let lastHudState = null;
 const afkManager = new AfkManager();
 
-// Track genuine user screen clicks/taps/keys to reset AFK timers cleanly
+// All screen activity counts, including motion without clicking and held inputs.
 const markUserScreenActivity = () => {
   if (!afkManager.isPaused) {
     afkManager.recordInteraction();
@@ -668,6 +667,17 @@ const markUserScreenActivity = () => {
 window.addEventListener('pointerdown', markUserScreenActivity, { capture: true, passive: true });
 window.addEventListener('touchstart', markUserScreenActivity, { capture: true, passive: true });
 window.addEventListener('keydown', markUserScreenActivity, { capture: true, passive: true });
+for (const type of ['pointermove', 'mousemove', 'touchmove', 'wheel', 'keyup', 'pointerup', 'pointercancel']) {
+  window.addEventListener(type, markUserScreenActivity, { capture: true, passive: true });
+}
+window.addEventListener('pointerdown', event => afkManager.setInputHeld(`pointer:${event.pointerId}`, true), { capture: true, passive: true });
+for (const type of ['pointerup', 'pointercancel']) {
+  window.addEventListener(type, event => afkManager.setInputHeld(`pointer:${event.pointerId}`, false), { capture: true, passive: true });
+}
+window.addEventListener('keydown', event => afkManager.setInputHeld(`key:${event.code || event.key}`, true), { capture: true });
+window.addEventListener('keyup', event => afkManager.setInputHeld(`key:${event.code || event.key}`, false), { capture: true });
+window.addEventListener('blur', () => { afkManager.heldInputs.clear(); markUserScreenActivity(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) markUserScreenActivity(); });
 
 // Fixed-step Update Logic (60fps)
 const update = (rawDt) => {
@@ -1433,8 +1443,10 @@ const render = () => {
 
   // 8. Fishing Line, Hook, and Tethered Catches
   try {
-    hook.renderLine(ctx, oceanWorld.rodTip.x, oceanWorld.rodTip.y, cameraY);
-    hook.render(ctx, cameraY);
+    if (!oceanWorld.isAnglerKnitting) {
+      hook.renderLine(ctx, oceanWorld.rodTip.x, oceanWorld.rodTip.y, cameraY);
+      hook.render(ctx, cameraY);
+    }
     hook.caughtItems.forEach((item) => {
       if (item && typeof item.render === 'function') {
         ctx.save();

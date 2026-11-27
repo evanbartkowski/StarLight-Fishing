@@ -5,7 +5,7 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1000, height: 760 } });
   await page.route(/googleapis\.com|cloudfunctions\.net/, route => route.abort());
-  await page.goto(process.env.GAME_TEST_URL || 'http://127.0.0.1:5174/');
+  await page.goto(process.env.GAME_TEST_URL || 'http://127.0.0.1:5173/');
   const result = await page.evaluate(async () => {
     const [{ Fish }, { FISH_SPECIES }, { Treasure }, { TREASURE_ITEMS }, { OceanWorld }, { saveSystem }, { drawEventAtmosphere }] = await Promise.all([
       import('/src/entities/Fish.js'), import('/src/data/FishData.js'), import('/src/entities/Treasure.js'),
@@ -31,7 +31,11 @@ try {
       let different = 0, outerDifferences = 0;
       for (let i = 0; i < normal.length; i += 4) {
         const x = (i / 4) % 180, y = Math.floor(i / 4 / 180);
-        if (normal[i] !== shiny[i] || normal[i + 1] !== shiny[i + 1] || normal[i + 2] !== shiny[i + 2]) {
+        // Compare visible premultiplied color. Unpremultiplying faint transparent
+        // pixels can amplify canvas rounding to 255 RGB without a visible change.
+        const visibleDifference = Math.max(...[0, 1, 2].map(channel =>
+          Math.abs(normal[i + channel] * normal[i + 3] - shiny[i + channel] * shiny[i + 3]) / 255));
+        if (visibleDifference > 3 || normal[i + 3] !== shiny[i + 3]) {
           different++; if (Math.abs(x - 90) > 65 || Math.abs(y - 90) > 45) outerDifferences++;
         }
       }

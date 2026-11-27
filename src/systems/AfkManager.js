@@ -1,6 +1,6 @@
 // AfkManager.js — Tracks screen inactivity for cozy idle knitting (>=5m) and 30m AFK pause prompt
 
-export const AFK_KNITTING_SECONDS = 300; // 5 minutes without screen click
+export const AFK_KNITTING_SECONDS = 300; // 5 minutes without input or pointer movement
 export const AFK_PAUSE_SECONDS = 1800;   // 30 minutes idle -> pause & ask if still there
 
 export class AfkManager {
@@ -12,6 +12,13 @@ export class AfkManager {
     this.pauseSeconds = pauseSeconds;
     this.idleSeconds = 0;
     this.isPaused = false;
+    this.heldInputs = new Set();
+  }
+
+  setInputHeld(input, held) {
+    if (held) this.heldInputs.add(input);
+    else this.heldInputs.delete(input);
+    this.recordInteraction();
   }
 
   recordInteraction({ allowUnpause = false } = {}) {
@@ -27,6 +34,10 @@ export class AfkManager {
     }
     if (this.isPaused) {
       return { paused: true, justPaused: false };
+    }
+    if (this.heldInputs.size) {
+      this.idleSeconds = 0;
+      return { paused: false, justPaused: false };
     }
     this.idleSeconds += deltaSec;
     if (this.idleSeconds >= this.pauseSeconds) {
@@ -52,5 +63,6 @@ export class AfkManager {
   resume() {
     this.isPaused = false;
     this.idleSeconds = 0;
+    this.heldInputs.clear();
   }
 }

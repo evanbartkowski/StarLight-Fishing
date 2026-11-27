@@ -449,7 +449,7 @@ test('Submarine seating & dome overlay, 5m silent AFK knitting, 30m AFK pause, m
 
   // 1. Submarine fits angler inside cockpit dome & foreground dome renders with finite args
   const subLayout = getVesselLayout(8, 140, 40, 'submarine');
-  assert.equal(subLayout.anglerPos.x, 16);
+  assert.equal(subLayout.anglerPos.x, (await import('../src/rendering/VesselRenderer.js')).getSubmarineCockpit(140).x);
   assert.equal(subLayout.anglerScale < 0.9, true);
   assert.ok(subLayout.catPos.y <= -36 && subLayout.pelicanPos.x > 0);
 

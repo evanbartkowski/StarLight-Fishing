@@ -9,7 +9,7 @@ try {
     page.on('console', message => { if (message.type() === 'error' && message.text().includes('GameLoop')) errors.push(message.text()); });
     // External services are tested separately; smoke tests stay offline and read-only.
     await page.route(/googleapis\.com|cloudfunctions\.net|identitytoolkit|securetoken/, route => route.abort());
-    await page.goto(process.env.GAME_TEST_URL || 'http://127.0.0.1:5174/');
+    await page.goto(process.env.GAME_TEST_URL || 'http://127.0.0.1:5173/');
     await page.waitForSelector('#game-hud');
     const hudIds = await page.locator('#game-hud [id]').evaluateAll(nodes => nodes.map(node => node.id));
     assert.equal(new Set(hudIds).size, hudIds.length, 'HUD controls must have unique IDs');
@@ -215,7 +215,7 @@ try {
     assert.ok(crew[1].x > crew[0].x);
     await page.screenshot({ path: `tests/crew-preview-${viewport.width}.png` });
     await page.evaluate(() => { window.smokeUI.questSystem = { getActiveQuests: () => [] }; window.smokeUI.openQuestsModal(); });
-    assert.equal((await page.locator('#modal-title').textContent()).replace(/[^a-z ]/gi, '').trim(), 'Quests');
+    assert.equal((await page.locator('#modal-title').textContent()).trim(), 'Harbor Noticeboard Quests');
     assert.ok((await page.locator('.quests-container h3').textContent()).includes('Harbor Noticeboard'));
     await page.evaluate(() => window.smokeUI.openDailyLogin());
     assert.equal(await page.locator('.daily-reward-day').count(), 30);

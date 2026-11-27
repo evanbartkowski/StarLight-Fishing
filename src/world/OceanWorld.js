@@ -3,7 +3,7 @@ import { drawDepthScenery } from '../rendering/DepthScenery.js';
 import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { drawAngler, drawBoatTrinket, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
-import { drawVesselHull, drawVesselForeground, getVesselLayout } from '../rendering/VesselRenderer.js';
+import { drawVesselHull, drawVesselForeground, getVesselLayout, getVesselRig } from '../rendering/VesselRenderer.js';
 import { renderMoonReflectionAndGhostShip, renderAlienUfoEvent, UNION_SIGNS } from '../systems/EasterEggs.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
@@ -138,8 +138,9 @@ export class OceanWorld {
     const dir = this.aimDirection === -1 ? -1 : 1;
     const angle = Number.isFinite(this.boat?.angle) ? this.boat.angle : 0;
     const hullStyle = this.saveSystem?.getBoatHull?.() || this.saveSystem?.data?.boatHullStyle || 'standard';
-    const localX = dir * (hullStyle === 'submarine' ? 68 : 52);
-    const localY = hullStyle === 'submarine' ? -56 : -68;
+    const rig = getVesselRig(this.saveSystem?.getUpgradeLevel?.('boatVessel') || 0, this.boat.width, this.boat.height, hullStyle, dir);
+    const localX = rig.rodTip.x;
+    const localY = rig.rodTip.y;
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
     this.rodTip = {
@@ -2084,7 +2085,7 @@ export class OceanWorld {
       ctx.save();
       try {
         const aimDir = this.aimDirection === -1 ? -1 : 1;
-        ctx.scale(aimDir, 1);
+        const rig = getVesselRig(vessel, b.width, b.height, hullStyle, aimDir);
 
         const fX = vesselLayout.anglerPos?.x ?? -2;
         const fY = vesselLayout.anglerPos?.y ?? -12;
@@ -2092,7 +2093,7 @@ export class OceanWorld {
 
         ctx.save();
         ctx.translate(fX, fY);
-        if (fScale !== 1) ctx.scale(fScale, fScale);
+        ctx.scale(aimDir * fScale, fScale);
         drawAngler(ctx, this.saveSystem?.data?.appearance, 0, 0, {
           isKnitting: Boolean(this.isAnglerKnitting),
           time: this.waveTimer || 0,
@@ -2103,47 +2104,25 @@ export class OceanWorld {
           drawVesselForeground(ctx, vessel, b.width, b.height, this.waveTimer || 0, { skinColor, skinMeta, skinId: rawSkin || 'default', hullStyle, boatColors });
         }
 
-        if (this.isAnglerKnitting) {
-          ctx.save();
-          ctx.fillStyle = '#fda4af';
-          ctx.font = 'bold 11px Outfit, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('🧶 Knitting fish sweater...', fX * aimDir, fY - 48 * fScale + Math.sin((this.waveTimer || 0) * 3) * 2);
-          ctx.restore();
-        }
-
-        // 3. Fishing Rod (for submarine, mount cleanly on exterior mechanical arm outside the dome!)
-        if (hullStyle === 'submarine') {
-          ctx.strokeStyle = '#94a3b8';
-          ctx.lineWidth = 3.2;
-          ctx.beginPath();
-          ctx.moveTo(40, -14);
-          ctx.lineTo(52, -26);
-          ctx.stroke();
-
+        // The visible rod and world-space line share the same vessel rig.
+        if (!this.isAnglerKnitting) {
+          if (hullStyle === 'submarine') {
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 3.2;
+            ctx.beginPath();
+            ctx.moveTo(rig.rodStart.x - aimDir * 10, rig.rodStart.y + 5);
+            ctx.lineTo(rig.rodStart.x, rig.rodStart.y);
+            ctx.stroke();
+          }
           ctx.strokeStyle = '#38bdf8';
           ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.moveTo(52, -26);
-          ctx.quadraticCurveTo(60, -44, 68, -56);
+          ctx.moveTo(rig.rodStart.x, rig.rodStart.y);
+          ctx.quadraticCurveTo(rig.rodControl.x, rig.rodControl.y, rig.rodTip.x, rig.rodTip.y);
           ctx.stroke();
-
-          ctx.fillStyle = '#f59e0b';
+          ctx.fillStyle = hullStyle === 'submarine' ? '#f59e0b' : '#64748b';
           ctx.beginPath();
-          ctx.arc(52, -26, 4.2, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(fX + 16 * fScale, fY - 14 * fScale);
-          ctx.quadraticCurveTo(fX + 38, fY - 38, fX + 54, fY - 56);
-          ctx.stroke();
-
-          // Rod spool
-          ctx.fillStyle = '#64748b';
-          ctx.beginPath();
-          ctx.arc(fX + 14 * fScale, fY - 12 * fScale, 4, 0, Math.PI * 2);
+          ctx.arc(rig.rodSpool.x, rig.rodSpool.y, hullStyle === 'submarine' ? 4.2 : 4, 0, Math.PI * 2);
           ctx.fill();
         }
       } catch (e) {
