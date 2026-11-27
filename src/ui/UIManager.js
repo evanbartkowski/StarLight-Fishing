@@ -430,7 +430,12 @@ export class UIManager {
     const toast = document.createElement('div');
     toast.id = 'toast-notification';
     toast.className = 'toast-hidden';
-    document.body.appendChild(toast);
+    const notices = document.createElement('aside');
+    notices.id = 'game-notices';
+    notices.setAttribute('aria-live', 'polite');
+    notices.setAttribute('aria-label', 'Game notifications');
+    notices.appendChild(toast);
+    document.body.appendChild(notices);
 
     const modalOverlay = document.createElement('div');
     modalOverlay.id = 'modal-overlay';
@@ -1225,7 +1230,7 @@ export class UIManager {
     if (!popup) {
       popup = document.createElement('div');
       popup.id = 'achievement-popup-toast';
-      document.body.appendChild(popup);
+      (document.getElementById('game-notices') || document.body).appendChild(popup);
     }
     const gems = achievementGems(achievement);
     popup.innerHTML = `

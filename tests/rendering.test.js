@@ -1007,7 +1007,7 @@ test('Deep abyss fishing line stability, Realm 7 creature & treasure icons, and 
   };
   globalThis.document = {
     getElementById: (id) => getOrCreate(id),
-    createElement: () => ({ appendChild: () => {}, querySelector: () => null, addEventListener: () => {} }),
+    createElement: () => ({ appendChild: () => {}, setAttribute: () => {}, querySelector: () => null, addEventListener: () => {} }),
     querySelectorAll: () => [],
     body: { appendChild: () => {} }
   };

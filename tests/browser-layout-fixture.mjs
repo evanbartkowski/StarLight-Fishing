@@ -75,6 +75,13 @@ export async function layoutProblems(page) {
       const reels = [document.getElementById('btn-manual-reel-up'), document.querySelector('#touch-controls button')].filter(visible);
       if (reels.length > 1) problems.push('duplicate reel buttons');
       for (const node of reels) { const r = rect(node); if (r.height < 44 || r.x < 0 || r.right > innerWidth) problems.push('reel button is too small or clipped'); }
+      const notices = ['toast-notification', 'achievement-popup-toast'].map(id => document.getElementById(id))
+        .filter(node => visible(node) && Number(getComputedStyle(node).opacity) > .1);
+      for (const notice of notices) {
+        if (overlap(rect(notice), rect(document.getElementById('game-hud')))) problems.push('notification overlaps HUD');
+        for (const reel of reels) if (overlap(rect(notice), rect(reel))) problems.push('notification overlaps reel control');
+      }
+      if (notices.length === 2 && overlap(rect(notices[0]), rect(notices[1]))) problems.push('notifications overlap each other');
     }
     return [...new Set(problems)];
   });

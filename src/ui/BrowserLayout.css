@@ -126,7 +126,15 @@
 }
 
 /* Notifications no longer cover the status row or dive controls. */
-#toast-notification { position: fixed; top: auto; bottom: max(18px, env(safe-area-inset-bottom)); box-sizing: border-box; width: max-content; max-width: min(480px, calc(100vw - 24px)); padding: 10px 16px; border-radius: 14px; text-align: center; font-size: .84rem; line-height: 1.4; transition-property: opacity, transform; backdrop-filter: none; }
-#toast-notification.toast-hidden { transform: translate(-50%, 12px); }
-body:has(#touch-controls:not([hidden])) #toast-notification { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); }
+#game-notices { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); max-width: 420px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; z-index: 100; }
+#game-notices #toast-notification { position: static; transform: none; box-sizing: border-box; width: 100%; max-width: none; margin: 0; padding: 10px 14px; border-radius: 14px; text-align: center; font-size: .84rem; line-height: 1.4; transition-property: opacity; backdrop-filter: none; }
+#game-notices #toast-notification.toast-hidden { display: none; }
+#game-notices #achievement-popup-toast { position: relative; top: auto; right: auto; transform: none; box-sizing: border-box; width: 100%; gap: 10px; padding: 10px 14px; backdrop-filter: none; transition-property: opacity; }
+#game-notices #achievement-popup-toast:not(.ach-toast-enter):not(.ach-toast-exit) { display: none; }
+#game-notices .ach-toast-icon { flex-shrink: 0; }
+#game-notices .ach-toast-body { min-width: 0; }
+#game-notices .ach-toast-name { overflow-wrap: anywhere; }
+@media (max-width: 1100px), (pointer: coarse) {
+  body:has(#touch-controls:not([hidden])) #game-notices { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); }
+}
 @media (prefers-reduced-motion: reduce) { #toast-notification, .btn-reel-dive, #touch-controls button { transition: none; } }
