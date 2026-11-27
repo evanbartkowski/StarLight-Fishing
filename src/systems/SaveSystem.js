@@ -7,6 +7,7 @@ import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
 import { FISH_SPECIES, getSpeciesIcon } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
+import { normalizeBottleMessage } from '../data/DriftMessages.js';
 import { calculateGradeTier, claimZonePerk } from '../data/almanac.config.js';
 import { accountManager } from './AccountManager.js';
 
@@ -1018,6 +1019,19 @@ export class SaveSystem {
   }
 
   // --- Aquarium Management ---
+  keepBottleMessage(message) {
+    const entry = normalizeBottleMessage(message);
+    const messages = this.getBottleMessages();
+    if (messages.some(saved => entry.id ? saved.id === entry.id : saved.text === entry.text)) return false;
+    this.data.bottleMessages = [entry, ...messages].slice(0, 128);
+    this.save();
+    return true;
+  }
+
+  getBottleMessages() {
+    return Array.isArray(this.data.bottleMessages) ? this.data.bottleMessages : [];
+  }
+
   hasAquarium() {
     return this.getUpgradeLevel('personalAquarium') > 0 || !!this.data.aquarium?.isUnlocked;
   }

@@ -1,3 +1,4 @@
+import { TRENCH_FAUNA, VOID_FAUNA, backgroundFaunaPose, drawBackgroundFauna } from '../rendering/BackgroundFauna.js';
 import { depthWaterColor, getRealmDepthZone } from '../data/RealmDepths.js';
 import { drawDepthScenery } from '../rendering/DepthScenery.js';
 import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
@@ -2603,37 +2604,28 @@ export class OceanWorld {
     const w = this.worldWidth || 1200;
     const h = screenHeight || 800;
 
-    // Trench titan configurations: massive scale, slow ominous swim, wide horizontal cycle so they appear rarely
-    const spanX = w + 16000;
-    const parallaxY = Math.max(0, cameraY - this.surfaceY) * 0.32;
-    const vSpan = 4800;
-
-    const titanConfigs = [
-      // Titan 1: The Abyssal Phantasm Leviathan (Colossal Deep-Trench Gulper with luminous lure and glowing ribcage)
-      { type: 'gulper', dir: 1, speed: 11, scale: 1.45, baseY: 380, phaseOffset: 0 },
-      // Titan 2: The Dread Umbral Shadow Behemoth (Segmented prehistoric leviathan with multi-eye clusters & glowing photophores)
-      { type: 'shadow', dir: -1, speed: 9, scale: 1.35, baseY: 960, phaseOffset: 8600 },
-    ];
+    const titanConfigs = TRENCH_FAUNA;
 
     for (let tIdx = 0; tIdx < titanConfigs.length; tIdx++) {
       const cfg = titanConfigs[tIdx];
-      const phase = (time * cfg.speed + cfg.phaseOffset) % spanX;
-      const tx = cfg.dir === 1 ? (-380 + phase) : ((w + 380) - phase);
-
-      // Vertical positioning in the trench depths with subtle parallax and serpentine wave
-      const scrolledY = (((cfg.baseY - parallaxY) % vSpan) + vSpan) % vSpan - 180;
-      const ty = (this.surfaceY - cameraY) + 720 + scrolledY + Math.sin(time * 0.5 + tIdx * 2.5) * 28;
+      const pose = backgroundFaunaPose(cfg, time, w, this.surfaceY, cameraY, this.pixelsPerMeter);
+      const tx = pose.x, ty = pose.y;
 
       // Cull if completely off screen
       if (ty < -220 || ty > h + 220 || tx < -450 || tx > w + 450) continue;
 
-      const tPitch = Math.cos(time * 0.5 + tIdx * 2.5) * 0.05 * cfg.dir;
+      const tPitch = pose.pitch;
       const tScale = cfg.scale;
 
       ctx.save();
       ctx.translate(tx, ty);
       ctx.rotate(tPitch);
       ctx.scale(cfg.dir * tScale, tScale);
+      if (cfg.type !== 'gulper' && cfg.type !== 'shadow') {
+        drawBackgroundFauna(ctx, cfg.type, time, tIdx);
+        ctx.restore();
+        continue;
+      }
 
       if (cfg.type === 'gulper') {
         // ==========================================
@@ -3291,31 +3283,27 @@ export class OceanWorld {
 
     // 3. Rare, Majestic Background Celestial Space-Whales gracefully gliding forward through the deep cosmos
     const h = screenHeight || 800;
-    // Greatly expanded travel span ensures space-whales appear only rarely as majestic cosmic sights
-    const spanX = w + 5400;
-    const parallaxY = Math.max(0, cameraY - this.surfaceY) * 0.30;
-    const vSpan = 2200;
-    const whaleConfigs = [
-      { dir: 1, speed: 22, scale: 1.38, baseY: 420, phaseOffset: 0 },
-      { dir: -1, speed: 18, scale: 1.12, baseY: 1480, phaseOffset: 2700 },
-    ];
+    const whaleConfigs = VOID_FAUNA;
     for (let wIdx = 0; wIdx < whaleConfigs.length; wIdx++) {
       const cfg = whaleConfigs[wIdx];
-      const wPhase = (time * cfg.speed + cfg.phaseOffset) % spanX;
       // Snout is drawn at +125 (right) and tail flukes at -155 (left).
       // When dir === 1 (entering from left, moving right), scale(+wScale, wScale) so snout leads forward (+X).
       // When dir === -1 (entering from right, moving left), scale(-wScale, wScale) so snout leads forward (-X).
-      const wx = cfg.dir === 1 ? (-320 + wPhase) : ((w + 320) - wPhase);
-      const scrolledY = (((cfg.baseY - parallaxY) % vSpan) + vSpan) % vSpan - 200;
-      const wy = voidY + scrolledY + Math.sin(time * 0.6 + wIdx * 2) * 22;
-      if (wy < -180 || wy > h + 180) continue;
-      const wPitch = Math.cos(time * 0.6 + wIdx * 2) * 0.06 * cfg.dir;
+      const pose = backgroundFaunaPose(cfg, time, w, this.surfaceY, cameraY, this.pixelsPerMeter);
+      const wx = pose.x, wy = pose.y;
+      if (wy < -260 || wy > h + 260 || wx < -450 || wx > w + 450) continue;
+      const wPitch = pose.pitch;
       const wScale = cfg.scale;
 
       ctx.save();
       ctx.translate(wx, wy);
       ctx.rotate(wPitch);
       ctx.scale(cfg.dir * wScale, wScale);
+      if (cfg.type !== 'whale') {
+        drawBackgroundFauna(ctx, cfg.type, time, wIdx);
+        ctx.restore();
+        continue;
+      }
       ctx.globalAlpha = 0.28;
 
       // Whale Body Silhouette (deep cosmic indigo with bioluminescent constellation)

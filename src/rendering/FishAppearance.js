@@ -17,3 +17,15 @@ export function reserveGold(color, legendary) {
   const r = value >> 16, g = value >> 8 & 255, b = value & 255;
   return r > 170 && g > 110 && g < r * 1.06 && b < g * .72 ? '#c084fc' : color;
 }
+
+// Species descriptions are shared and stable; decide once, outside the draw loop.
+const fantasyTrails = new WeakMap();
+export function hasFantasyTrail(species) {
+  if (fantasyTrails.has(species)) return fantasyTrails.get(species);
+  const enabled = Boolean(species.fantasyTrail && (
+    species.isMythic || species.isGodTier || species.isLeviathan || species.rarity === 'legendary' ||
+    (['rare', 'epic'].includes(species.rarity) && /starlight|aurora|prism|comet|luminous|lantern|glow|ember|phoenix|rift|celestial|aether|oracle/i.test(species.name))
+  ));
+  fantasyTrails.set(species, enabled);
+  return enabled;
+}

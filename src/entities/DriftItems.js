@@ -1,5 +1,5 @@
 // DriftItems.js — Floating bottles with messages and craftable driftwood drifting across surface waves
-import { DRIFT_MESSAGES, DRIFTWOOD_BOBBERS } from '../data/DriftMessages.js';
+import { getRandomBottleMessage, DRIFTWOOD_BOBBERS } from '../data/DriftMessages.js';
 
 export class DriftBottle {
   constructor(x, y) {
@@ -12,7 +12,7 @@ export class DriftBottle {
     this.type = 'bottle';
 
     // Pick a random message
-    this.message = DRIFT_MESSAGES[Math.floor(Math.random() * DRIFT_MESSAGES.length)];
+    this.message = getRandomBottleMessage();
 
     // Color variant (sea green or clear aqua glass)
     this.tint = Math.random() < 0.5 ? '#059669' : '#0284c7';

@@ -1,3 +1,4 @@
+import { resolveAquariumVisit } from './aquariumVisits.js';
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -7,7 +8,7 @@ import { checkoutInput, fulfillCheckout } from './checkout.js';
 import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { pruneFleetMessages } from './chatRetention.js';
-import { tipAquarium, publicAquarium, captainEmail } from './aquarium.js';
+import { tipAquarium, publicAquarium } from './aquarium.js';
 import { purchasePremium } from './premium.js';
 
 initializeApp();
@@ -34,91 +35,29 @@ export const aquariumAction = onCall(options, async request => {
   try {
     if (action === 'publish') {
       const [save, profile] = await Promise.all([db.doc(`captainSaves/${uid}`).get(), db.doc(`leaderboard/${uid}`).get()]);
-      if (!save.exists) throw new Error('not-found');
-      const exhibit = publicAquarium(JSON.parse(save.data().snapshot), profile.data()?.username);
+      const username = profile.data()?.username || (await getAuth().getUser(uid)).displayName;
+      const exhibit = publicAquarium(save.exists ? JSON.parse(save.data().snapshot) : {}, username);
       await db.doc(`aquariums/${uid}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() });
       return { host: uid };
     }
-    const cleanHost = String(host || '').trim();
-    if (!/^[\w -]{1,128}$/.test(cleanHost)) throw new Error('invalid-argument');
     if (action === 'visit') {
-      let targetUid = cleanHost;
-      let candidateUsername = cleanHost;
-
-      // 1. Direct doc lookup by cleanHost
-      let [saved, profile, published, daily] = await Promise.all([
-        db.doc(`captainSaves/${cleanHost}`).get(), db.doc(`leaderboard/${cleanHost}`).get(),
-        db.doc(`aquariums/${cleanHost}`).get(),
+      const [resolved, daily] = await Promise.all([
+        resolveAquariumVisit(db, getAuth(), host),
         signedIn ? db.doc(`daily_tips/${uid}_${Math.floor(Date.now() / 86400000)}`).get() : Promise.resolve(null),
       ]);
-
-      if (profile.exists && profile.data()?.username) {
-        candidateUsername = profile.data().username;
-      }
-
-      // 2. If not found directly in saves or aquariums, resolve via Auth / username / leaderboard
-      if (!saved.exists && !published.exists) {
-        try {
-          const authUser = await getAuth().getUserByEmail(captainEmail(candidateUsername));
-          if (authUser?.uid) {
-            targetUid = authUser.uid;
-            [saved, published] = await Promise.all([
-              db.doc(`captainSaves/${targetUid}`).get(),
-              db.doc(`aquariums/${targetUid}`).get(),
-            ]);
-          }
-        } catch (_) {}
-
-        if (!saved.exists && !published.exists) {
-          try {
-            const lbSnap = await db.collection('leaderboard').where('username', '==', candidateUsername).limit(1).get();
-            if (!lbSnap.empty) {
-              targetUid = lbSnap.docs[0].id;
-              [saved, published] = await Promise.all([
-                db.doc(`captainSaves/${targetUid}`).get(),
-                db.doc(`aquariums/${targetUid}`).get(),
-              ]);
-            }
-          } catch (_) {}
-        }
-
-        if (!saved.exists && !published.exists) {
-          try {
-            const aqSnap = await db.collection('aquariums').where('username', '==', candidateUsername).limit(1).get();
-            if (!aqSnap.empty) {
-              published = aqSnap.docs[0];
-              targetUid = published.id;
-            }
-          } catch (_) {}
-        }
-      }
-
-      let exhibit = null;
-      if (saved.exists) {
-        try {
-          exhibit = publicAquarium(JSON.parse(saved.data().snapshot), profile.data()?.username || candidateUsername || saved.data()?.username);
-        } catch (_) {}
-      }
-      if (!exhibit && published.exists) {
-        const pubData = published.data() || {};
-        exhibit = {
-          username: pubData.username || profile.data()?.username || candidateUsername || 'Captain',
-          theme: pubData.theme || 'reef',
-          decor: pubData.decor || {},
-          items: pubData.items || [],
-        };
-      }
-      if (!exhibit) throw new Error('not-found');
-      if (signedIn && targetUid && !published.exists) {
-        await db.doc(`aquariums/${targetUid}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-      }
+      const { targetUid, exhibit, hasPublished } = resolved;
+      if (signedIn && !hasPublished) await db.doc(`aquariums/${targetUid}`).set({ ...exhibit, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
       return { ...exhibit, host: targetUid, remaining: Math.max(0, 3 - (daily?.data()?.count || 0)), canTip: signedIn && targetUid !== uid, isOwn: targetUid === uid, signedIn };
     }
     if (action === 'tip') return await tipAquarium(db, uid, host, requestId, FieldValue);
     throw new Error('invalid-argument');
   } catch (error) {
     const code = ['invalid-argument', 'not-found', 'resource-exhausted', 'failed-precondition'].includes(error.message) ? error.message : 'internal';
-    throw new HttpsError(code, code === 'resource-exhausted' ? 'You have used all three tips today (UTC).' : 'Aquarium action could not be completed.');
+    const message = code === 'resource-exhausted' ? 'You have used all three tips today (UTC).' :
+      code === 'not-found' ? 'Captain account not found. Check the username or aquarium link.' :
+      code === 'invalid-argument' ? 'Enter a captain username or a valid aquarium link.' :
+      'The aquarium could not load. Please try again shortly.';
+    throw new HttpsError(code, message);
   }
 });
 

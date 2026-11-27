@@ -1858,10 +1858,13 @@ test('Bioluminescent Trench fee is 4000, titan spawn rate is lowered, and aquari
   assert.ok(trenchSea, 'Sea 2 must exist');
   assert.equal(trenchSea.gates.unlockFee, 4000, 'Bioluminescent Trench unlock fee must be 4,000 gold');
 
-  // 2. Titan spawn cycle span must be wide to lower spawn frequency
-  const oceanWorldCode = fs.readFileSync('src/world/OceanWorld.js', 'utf-8');
-  assert.ok(oceanWorldCode.includes('spanX = w + 16000'), 'Titan spanX must be at least w + 16000 for rare appearances');
-  assert.ok(oceanWorldCode.includes('vSpan = 4800'), 'Titan vSpan must be expanded to 4800 to prevent vertical looping');
+  // Sparse world habitats keep the giants deep without vertical wrapping.
+  const { TRENCH_FAUNA, VOID_FAUNA } = await import('../src/rendering/BackgroundFauna.js');
+  for (const habitats of [TRENCH_FAUNA, VOID_FAUNA]) {
+    assert.ok(habitats.length <= 6);
+    assert.ok(habitats.every(creature => creature.depth >= 500));
+    assert.ok(habitats.filter(creature => creature.depth >= 1000).length >= 5);
+  }
 
   // 6. extractAquariumHost must support URL-encoded names, spaces, and usernames
   assert.equal(extractAquariumHost('https://starlightfishing.com/?aquarium=Captain%20Jack'), 'Captain Jack');
@@ -1889,8 +1892,8 @@ test('Bioluminescent Trench fee is 4000, titan spawn rate is lowered, and aquari
   assert.equal(exhibit2.items.length, 1);
   assert.equal(exhibit2.items[0].name, 'Nautilus');
 
-  // Throws failed-precondition if captain truly has no aquarium
-  assert.throws(() => publicAquarium({ upgrades: { personalAquarium: 0 }, aquarium: { isUnlocked: false } }, 'Guest'), /failed-precondition/);
+  // Registered captains can be visited before purchasing display capacity.
+  assert.deepEqual(publicAquarium({ upgrades: { personalAquarium: 0 }, aquarium: { isUnlocked: false } }, 'Captain').items, []);
 });
 
 

@@ -15,7 +15,7 @@ export function getFishAnatomy(species) {
   const dimensions = { grouper: [26, 13], sole: [26, 8], discus: [17, 19], tetra: [22, 8], glass: [19, 13],
     crown: [19, 15], reef: [20 + seed % 5, 10 + seed % 5], lantern: [20, 13] };
   const [length, height] = dimensions[kind] || [18, 16];
-  const anatomy = { kind, length, height, seed, pattern: species.pattern || 'spots',
+  const anatomy = { kind, length, height, seed, pattern: species.pattern || 'solid',
     motif: /porcelain|willow/.test(name) ? 'porcelain' : /mosaic|tile/.test(name) ? 'mosaic' :
       /scoria|basalt|obsidian/.test(name) ? 'basalt' : /cloud|cotton/.test(name) ? 'cloud' :
       /solstice|lunar|moon/.test(name) ? 'moon' : /darkmatter|void|paradox/.test(name) ? 'void' : 'scales' };
@@ -124,7 +124,9 @@ export function drawDistinctFish(ctx, anatomy, primary, secondary, finColor, tim
       if (motif === 'mosaic' || kind === 'box') { ctx.moveTo(x, y - 4); ctx.lineTo(x + 4, y); ctx.lineTo(x, y + 4); ctx.lineTo(x - 4, y); ctx.closePath(); ctx.stroke(); }
       else if (motif === 'porcelain') { ctx.arc(x, y, 5, 0, Math.PI * 1.3); ctx.stroke(); }
       else if (anatomy.pattern === 'bands') { ctx.moveTo(x, -h); ctx.quadraticCurveTo(x - 4, 0, x, h); ctx.stroke(); }
-      else { ctx.arc(x, y, 1.3 + seed % 3 * .4, 0, Math.PI * 2); ctx.fill(); }
+      else if (anatomy.pattern === 'stripe') { ctx.moveTo(x, 0); ctx.lineTo(x + 6, 0); ctx.stroke(); }
+      else if (anatomy.pattern === 'diamonds') { ctx.moveTo(x, y - 3); ctx.lineTo(x + 2, y); ctx.lineTo(x, y + 3); ctx.lineTo(x - 2, y); ctx.closePath(); ctx.fill(); }
+      else if (anatomy.pattern === 'spots') { ctx.arc(x, y, 1.3 + seed % 3 * .4, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.restore();
     ctx.strokeStyle = secondary; ctx.lineWidth = .9;

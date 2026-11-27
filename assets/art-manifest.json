@@ -13,6 +13,13 @@
   },
   "assets": [
     {
+      "path": "src/rendering/BackgroundFauna.js",
+      "role": "Glass manta, giant siphonophore, ring ray and chrono nautilus in deep world habitats",
+      "source": { "kind": "original-code", "rights": "Original Canvas artwork authored for this project" },
+      "technical_checks_passed": true,
+      "checks": ["native desktop and phone habitat renders", "fixed world depths and camera motion regression", "bounded habitat count and offscreen culling"]
+    },
+    {
       "path": "public/art/npcs/",
       "role": "Nine distinct illustrated quest encounter portraits",
       "source": {

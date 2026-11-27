@@ -1,5 +1,5 @@
 import { openRestorationDesk as openRelicWorkshop } from './RestorationDesk.js';
-import { getRandomBottleMessage } from '../data/DriftMessages.js';
+import { getRandomBottleMessage, normalizeBottleMessage } from '../data/DriftMessages.js';
 import { getRealmDepthZone as getDepthSubZone } from '../data/RealmDepths.js';
 import { crateArtwork, crateRewardGallery } from './CratePresentation.js';
 import { chestThumbnail, drawChest } from '../rendering/ChestArtwork.js';
@@ -1466,7 +1466,8 @@ export class UIManager {
     });
   }
 
-  showBottleMessage(message) {
+  showBottleMessage(message, returnToMessages = false) {
+    message = normalizeBottleMessage(message);
     this.activeModal = 'bottleMessage';
     soundManager.playBottlePickup();
     if (message?.unlocksFrequency === '7.77') {
@@ -1478,6 +1479,7 @@ export class UIManager {
     }
 
     const categoryMap = {
+      poem: { label: "Sailor's Poem", color: '#a5b4fc', icon: '\uD83E\uDEB6' },
       nostalgic: { label: 'Nostalgic Memory', color: '#f472b6', icon: '🌅' },
       funny: { label: 'Humorous Note', color: '#fbbf24', icon: '😄' },
       dumb: { label: 'Silly Drift Note', color: '#a3e635', icon: '🤪' },
@@ -1489,8 +1491,10 @@ export class UIManager {
 
     const catKey = message?.category || message?.type;
     const catInfo = categoryMap[catKey] || { label: 'Message from the Sea', color: '#fbbf24', icon: '✉️' };
-    const title = message?.title || catInfo.label;
-    const formattedText = (message?.text || '').replace(/\n/g, '<br>');
+    const escape = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+    const title = escape(message.title || catInfo.label);
+    const formattedText = escape(message.text).replace(/\n/g, '<br>');
+    this.saveSystem.keepBottleMessage(message);
 
     this.openModal('📜 Message from the Sea', `
       <div style="text-align:center; padding:15px 10px;">
@@ -1499,19 +1503,20 @@ export class UIManager {
           ${catInfo.icon} ${title}
         </div>
         <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:12px;">
-          Category: ${catInfo.label}
+          ${catInfo.label}${message.author ? ` &middot; ${escape(message.author)}` : ''}
         </div>
-        <div style="font-family:serif; font-size:1.15rem; font-style:italic; line-height:1.7; color:#fef3c7; background:rgba(0,0,0,0.3); padding:16px 20px; border-radius:10px; border:1px solid rgba(251,191,36,0.25); margin-bottom:18px;">
+        <div id="bottle-message-text" style="font-family:serif; font-size:1.15rem; font-style:italic; line-height:1.7; color:#fef3c7; background:rgba(0,0,0,0.3); padding:16px 20px; border-radius:10px; border:1px solid rgba(251,191,36,0.25); margin-bottom:18px; overflow-wrap:anywhere;">
           ${formattedText}
         </div>
-        <button class="btn btn-primary" id="btn-bottle-close">Keep In Journal & Close</button>
+        <button class="btn btn-primary" id="btn-bottle-close">${returnToMessages ? 'Back to Bottle Letters' : 'Keep In Journal & Close'}</button>
       </div>
     `);
 
     const closeBtn = document.getElementById('btn-bottle-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
-        this.closeModal();
+        if (returnToMessages) this.openJournalLogbook('journal', 'messages');
+        else this.closeModal();
       });
     }
   }
@@ -3226,6 +3231,7 @@ export class UIManager {
           <div class="journal-wrapper">
             <div class="journal-tabs">
               <button class="tab-btn ${defaultSubTab === 'fieldlog' ? 'active' : ''}" id="tab-fieldlog"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.almanac}</span> Angler's Almanac (${caughtSpeciesCount} / ${allSpecies.length})</button>
+              <button class="tab-btn ${defaultSubTab === 'messages' ? 'active' : ''}" id="tab-messages"><span class="journal-tab-icon-svg">${MISC_ART.fieldJournalBook}</span> Bottle Letters (${save.getBottleMessages().length})</button>
               <button class="tab-btn ${defaultSubTab === 'scoreboard' ? 'active' : ''}" id="tab-scoreboard" style="border: 1px solid #facc15; color: #facc15; font-weight: 700;"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.scoreboard}</span> Scoreboard</button>
               <button class="tab-btn ${defaultSubTab === 'aquarium' ? 'active' : ''}" id="tab-aquarium" style="border: 1px solid #38bdf8; color: #38bdf8; font-weight: 700;"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.aquarium}</span> Aquarium ${save.hasAquarium() ? `(${save.getAquariumItems().length}/${save.getAquariumCapacity()})` : '(Unlock in Shop)'}</button>
               <button class="tab-btn ${defaultSubTab === 'crew' ? 'active' : ''}" id="tab-crew"><span class="journal-tab-icon-svg">${JOURNAL_TAB_ART.crew}</span> Vessel Crew (${unlockedPetCount} / ${Object.keys(PET_DEFINITIONS).length})</button>
@@ -3346,6 +3352,11 @@ export class UIManager {
         bindAlmanacEvents();
       });
 
+      document.getElementById('tab-messages')?.addEventListener('click', () => {
+        activateTab('tab-messages');
+        this.renderBottleLetters();
+      });
+
       document.getElementById('tab-scoreboard')?.addEventListener('click', () => {
         soundManager.playButtonClick();
         activateTab('tab-scoreboard');
@@ -3397,7 +3408,9 @@ export class UIManager {
     setupTabListeners();
 
     if (primaryMenu === 'journal') {
-      if (defaultSubTab === 'relics') {
+      if (defaultSubTab === 'messages') {
+        this.renderBottleLetters();
+      } else if (defaultSubTab === 'relics') {
         this.renderCabinShelfTab();
       } else if (defaultSubTab === 'fossils') {
         this.renderFossilMuseumTab();
@@ -3410,6 +3423,22 @@ export class UIManager {
       } else if (defaultSubTab === 'fieldlog') {
         bindAlmanacEvents();
       }
+    }
+  }
+
+  renderBottleLetters() {
+    const container = document.getElementById('journal-tab-content');
+    if (!container) return;
+    container.innerHTML = '<h3>Bottle Letters</h3><p>Poems and notes you have read at sea.</p><div class="bottle-letter-list"></div>';
+    const list = container.querySelector('.bottle-letter-list');
+    const messages = this.saveSystem.getBottleMessages();
+    if (!messages.length) list.textContent = 'Find a floating bottle or dredge one up to begin your collection.';
+    for (const message of messages) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'btn btn-secondary';
+      button.textContent = `${message.title} - ${message.type === 'haiku' ? 'Haiku' : message.type === 'lore' ? 'Sea note' : 'Poem'}`;
+      button.addEventListener('click', () => this.showBottleMessage(message, true));
+      list.appendChild(button);
     }
   }
 
@@ -3852,6 +3881,14 @@ export class UIManager {
     }));
   }
 
+  openAquariumVisit() {
+    this.openModal('Visit Aquarium', '<form id="visit-aquarium-form"><label for="visit-host">Captain username or aquarium link</label><input id="visit-host" autocomplete="off" maxlength="300" required style="width:100%;margin:10px 0"><button type="submit" class="btn btn-primary" id="visit-go">Visit</button></form>');
+    document.getElementById('visit-aquarium-form')?.addEventListener('submit', event => {
+      event.preventDefault();
+      visitAquarium(this, document.getElementById('visit-host').value);
+    });
+  }
+
   openAquariumModal() {
     this.openJournalLogbook('journal', 'aquarium');
   }
@@ -3881,6 +3918,11 @@ export class UIManager {
           </button>
         </div>
       `;
+      const visitButton = document.createElement('button');
+      visitButton.id = 'visit-aquarium'; visitButton.type = 'button'; visitButton.className = 'btn btn-secondary';
+      visitButton.textContent = "Visit a captain's aquarium";
+      visitButton.addEventListener('click', () => this.openAquariumVisit());
+      container.querySelector('.aquarium-locked-container').appendChild(visitButton);
       document.getElementById('btn-unlock-aquarium-shop')?.addEventListener('click', () => {
         this.openShop();
       });
@@ -3985,12 +4027,7 @@ export class UIManager {
 
     document.getElementById('share-aquarium')?.addEventListener('click', () => shareAquarium(this));
     document.getElementById('visit-aquarium')?.addEventListener('click', () => {
-      this.openModal('Visit Aquarium', '<input id="visit-host" placeholder="Paste aquarium link or captain ID" style="width:100%"><button class="btn btn-primary" id="visit-go">Visit</button>');
-      document.getElementById('visit-go').onclick = () => {
-        let host = document.getElementById('visit-host').value.trim();
-        try { host = new URL(host).searchParams.get('aquarium') || host; } catch {}
-        visitAquarium(this, host);
-      };
+      this.openAquariumVisit();
     });
     this.startAquariumCanvas(items, theme);
     const styleShop = container.querySelector('.aquarium-style-shop');

@@ -44,18 +44,12 @@ export async function tipAquarium(db, uid, host, requestId, fieldValue, now = Da
  * @param {import('./economy-types.js').AquariumSnapshot} snapshot
  * @param {string} username
  */
-export function publicAquarium(snapshot, username) {
-  const hasAquarium = !!(
-    snapshot?.aquarium?.isUnlocked ||
-    (Number(snapshot?.upgrades?.personalAquarium) > 0) ||
-    (Number(snapshot?.aquarium?.tier) > 0) ||
-    (Number(snapshot?.aquarium?.maxCapacity) > 0) ||
-    (Array.isArray(snapshot?.aquarium?.slottedItemIds) && snapshot.aquarium.slottedItemIds.length > 0)
-  );
-  if (!hasAquarium) throw new Error('failed-precondition');
-  const slots = new Set((snapshot.aquarium?.slottedItemIds || []).map(String));
+export function publicAquarium(snapshot = {}, username) {
+  // Account existence is checked by the resolver. An unupgraded captain still
+  // has an empty public tank; unselected inventory always remains private.
+  const slots = new Set((Array.isArray(snapshot.aquarium?.slottedItemIds) ? snapshot.aquarium.slottedItemIds : []).map(String));
   const fields = ['instanceId', 'id', 'speciesId', 'name', 'rarity', 'size', 'weight', 'weightClass', 'mutation', 'scaleFactor', 'isShiny', 'crown', 'type', 'category', 'isRelic'];
-  const items = (snapshot.inventory || []).filter(item => slots.has(String(item.instanceId)) && !item.isCrate && (!item.type || ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type))).slice(0, 50)
+  const items = (Array.isArray(snapshot.inventory) ? snapshot.inventory : []).filter(item => item && slots.has(String(item.instanceId)) && !item.isCrate && (!item.type || ['fish', 'relic', 'trinket', 'treasure', 'fossil'].includes(item.type))).slice(0, 50)
     .map(item => {
       const obj = Object.fromEntries(fields.filter(key => item[key] !== undefined).map(key => [key, item[key]]));
       if (!obj.type) obj.type = obj.isRelic ? 'relic' : 'fish';
@@ -64,7 +58,8 @@ export function publicAquarium(snapshot, username) {
   const decor = Object.fromEntries(['substrate', 'decoration', 'lighting', 'bubbles']
     .filter(key => typeof snapshot.aquarium?.decor?.[key] === 'string')
     .map(key => [key, String(snapshot.aquarium?.decor?.[key]).slice(0, 24)]));
-  return { username: String(username || 'Captain').slice(0, 40), theme: snapshot.aquarium?.theme || 'reef', decor, items };
+  const theme = ['reef', 'abyss', 'atlantis', 'nebula'].includes(snapshot.aquarium?.theme || '') ? snapshot.aquarium?.theme : 'reef';
+  return { username: String(username || 'Captain').slice(0, 40), theme, decor, items };
 }
 
 /** @param {string} username */

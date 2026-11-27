@@ -170,10 +170,64 @@ export const DRIFTWOOD_BOBBERS = [
   { id: 'lantern_bobber', name: 'Brass Beacon Bobber', color: '#d97706', accent: '#fde047', description: 'Warm amber oil lamp float visible even in squalls.' },
 ];
 
+// The same normalization is used for surface bottles, dredged bottles and old saves.
+export function normalizeBottleMessage(message) {
+  const input = typeof message === 'string' ? { text: message } : (message || {});
+  const canonical = DRIFT_MESSAGES.find(entry => entry.id === input.id);
+  const merged = { ...canonical, ...input };
+  const rawLines = Array.isArray(merged.lines) && merged.lines.length ? merged.lines :
+    merged.text ? String(merged.text).split('\n') : (canonical?.lines || []);
+  const lines = rawLines.filter(line => typeof line === 'string')
+    .flatMap(line => line.replace(/\\r\\n|\\n|\r\n?/g, '\n').split('\n')).map(line => line.trim()).filter(Boolean);
+  if (!lines.length) return normalizeBottleMessage(DRIFT_MESSAGES.find(entry => entry.type === 'poem'));
+  return { ...merged, title: merged.title || 'A Letter from the Sea', type: merged.type || 'poem', lines, text: lines.join('\n') };
+}
+
+const POEM_ADDITIONS = [
+  ['poem_mended_sail', 'The Mended Sail', 'A Sailmaker of the Eastern Pier', [
+    'I patched the place the storm tore through', 'With thread the color of the sky.',
+    'The wind came back; the canvas drew', 'A crooked wing against the high',
+    'And open morning. Every seam', 'Held fast enough to carry home',
+    'A little salt, a little dream,', 'And pockets full of ocean foam.',
+  ]],
+  ['poem_glass_gardens', 'Gardens Without Sun', 'Nell, Between Survey Stations', [
+    'Beneath the reach of summer rain,', 'Where no green window faces day,',
+    'The patient corals bloom again', 'And small blue lanterns light the way.',
+    'I lowered down a lamp of mine', 'And watched the dark return its gleam:',
+    'A thousand answers, line by line,', 'In gardens older than a dream.',
+  ]],
+  ['poem_second_cup', 'A Second Cup', 'Mara of the Dockside Kitchen', [
+    'I leave a second cup to warm', 'Beside the kettle on the stove.',
+    'It waits through every passing storm', 'For someone coming from the cove.',
+    'No great reward, no polished chest,', 'No map to where the rubies sleep;',
+    'Just room enough for you to rest', 'And something ordinary to keep.',
+  ]],
+  ['poem_clockless_whale', 'The Whale Without a Clock', 'Recovered Beyond the Seventh Sea', [
+    'A whale went swimming through the hours', 'And left no wake for time to trace.',
+    'The stars leaned down like little flowers', 'Around the quiet of its face.',
+    'I asked how far it had to go.', 'It turned beneath the silver foam;',
+    'Its slow reply was all I know:', 'The way is wide, and still is home.',
+  ]],
+  ['poem_small_catch', 'The Smallest Catch', 'An Angler at the Last Mooring', [
+    'Today I caught no crown of gold,', 'No beast to make the harbor stare.',
+    'I watched a silver fin unfold', 'And set it free in evening air.',
+    'The empty basket met my knee.', 'The water closed, the light grew thin.',
+    'I took the long way home from sea', 'And counted that a kind of win.',
+  ]],
+  ['poem_lantern_window', 'One Light in the Window', 'Jun of the Evening Watch', [
+    'When fog has folded up the land', 'And every buoy forgets its name,',
+    'I keep a lantern near at hand', 'And tend its small, untroubled flame.',
+    'It cannot still the rolling deep', 'Or tell the turning tide to cease;',
+    'It only promises to keep', 'One square of darkness full of peace.',
+  ]],
+];
+DRIFT_MESSAGES.push(...POEM_ADDITIONS.map(([id, title, author, lines]) => ({ id, title, author, lines, type: 'poem' })));
+const bottlePools = Object.fromEntries(['poem', 'haiku', 'lore'].map(type => [type, DRIFT_MESSAGES.filter(message => message.type === type)]));
+
 export function getRandomBottleMessage() {
-  const msg = DRIFT_MESSAGES[Math.floor(Math.random() * DRIFT_MESSAGES.length)];
-  return {
-    ...msg,
-    text: Array.isArray(msg.lines) ? msg.lines.join('\n') : (msg.text || ''),
-  };
+  const roll = Math.random();
+  const type = roll < .8 ? 'poem' : roll < .95 ? 'haiku' : 'lore';
+  const fraction = type === 'poem' ? roll / .8 : type === 'haiku' ? (roll - .8) / .15 : (roll - .95) / .05;
+  const pool = bottlePools[type];
+  return normalizeBottleMessage(pool[Math.min(pool.length - 1, Math.floor(fraction * pool.length))]);
 }

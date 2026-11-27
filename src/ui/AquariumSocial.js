@@ -46,17 +46,18 @@ function addAquariumReaction(hostKey, reactionId) {
 export function extractAquariumHost(input) {
   if (!input) return '';
   const str = String(input).trim();
+  const decode = value => { try { return decodeURIComponent(value).trim(); } catch { return ''; } };
   const queryMatch = str.match(/[?&]aquarium=([^&]+)/i);
-  if (queryMatch) return decodeURIComponent(queryMatch[1].trim());
+  if (queryMatch) return decode(queryMatch[1]);
   const pathMatch = str.match(/\/aquarium\/([^/?#]+)/i);
-  if (pathMatch) return decodeURIComponent(pathMatch[1].trim());
+  if (pathMatch) return decode(pathMatch[1]);
   try {
     const url = new URL(str.includes('://') ? str : `https://${str}`);
     const q = url.searchParams.get('aquarium');
-    if (q) return decodeURIComponent(q.trim());
+    if (q) return q.trim();
     const parts = url.pathname.split('/').filter(Boolean);
     if (parts.length > 0 && /^[\w -]{1,128}$/.test(parts[parts.length - 1])) {
-      return decodeURIComponent(parts[parts.length - 1].trim());
+      return decode(parts[parts.length - 1]);
     }
   } catch {}
   return str.replace(/[^a-zA-Z0-9_\- ]/g, '').trim();
@@ -179,7 +180,7 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
         if (!exhibit) throw firstErr;
       }
     }
-    if (request !== ui._aquariumVisitRequest) return;
+    if (request !== ui._aquariumVisitRequest || ui.activeModal !== 'aquarium-visit' || !document.getElementById('visitor-tank')) return;
     
     document.getElementById('aquarium-host').textContent = exhibit.username || 'Captain';
     const canvas = document.getElementById('visitor-tank');
@@ -221,6 +222,12 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
     });
     const decor = normalizeCustomization(AQUARIUM_OPTIONS, exhibit.decor);
     const rawItems = Array.isArray(exhibit?.items) ? exhibit.items : [];
+    if (!rawItems.length) {
+      const empty = document.createElement('p');
+      empty.id = 'visitor-empty-state';
+      empty.textContent = 'This captain has not put any specimens on display yet.';
+      document.getElementById('visitor-tank-wrapper')?.appendChild(empty);
+    }
     const fish = rawItems.filter(item => item.type === 'fish' || (!item.type && !item.isRelic)).map((item, index) => {
       const posX = 80 + (index * 71) % 520;
       const posY = 70 + (index * 47) % 200;
@@ -243,8 +250,9 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
     }).filter(Boolean);
 
     let previous = performance.now();
+    let animationFrame = 0;
     const frame = now => {
-      if (!canvas.isConnected) return;
+      if (!canvas.isConnected || ui.activeModal !== 'aquarium-visit' || request !== ui._aquariumVisitRequest) return;
       const dt = Math.min(50, now - previous); previous = now;
       ctx.fillStyle = background; ctx.fillRect(0, 0, 700, 340);
       ctx.fillStyle = '#c8b997'; ctx.fillRect(0, 315, 700, 25);
@@ -297,9 +305,10 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
         ctx.textAlign = 'center';
         ctx.fillText('No specimens on display yet in this tank.', 350, 165);
       }
-      requestAnimationFrame(frame);
+      animationFrame = requestAnimationFrame(frame);
     };
-    requestAnimationFrame(frame);
+    animationFrame = requestAnimationFrame(frame);
+    ui._activeModalCleanup = () => cancelAnimationFrame(animationFrame);
     const pendingKey = `${ui.saveSystem.getActiveStorageKey()}_aquarium_tip`;
     const tipButton = document.getElementById('tip-host');
     canvas.addEventListener('click', event => {
@@ -349,18 +358,9 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
       finally { ui.socialBusy = false; }
     };
   } catch (error) {
-    if (request !== ui._aquariumVisitRequest) return;
+    if (request !== ui._aquariumVisitRequest || ui.activeModal !== 'aquarium-visit') return;
     const errCode = String(error?.code || '').toLowerCase();
-    const errMsg = String(error?.message || '').toLowerCase();
-    const isNotAvailable = errCode.includes('not-found')
-      || errCode.includes('failed-precondition')
-      || errCode.includes('unavailable')
-      || errMsg.includes('404')
-      || errMsg.includes('not found')
-      || errMsg.includes('cannot be completed')
-      || errMsg.includes('not synced')
-      || errMsg.includes('not unlocked')
-      || errMsg.includes('invalid argument');
+    const isNotAvailable = errCode.includes('not-found');
 
     if (isNotAvailable) {
       ui.openModal('Aquarium Not Available', `
@@ -368,7 +368,7 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
           <div style="font-size: 2.4rem; margin-bottom: 8px;">🏛️</div>
           <h3 style="color: #f8fafc; margin-bottom: 8px; font-size: 1.15rem;">Aquarium Not Available</h3>
           <p style="color: #94a3b8; font-size: 0.9rem; max-width: 360px; margin: 0 auto 18px auto; line-height: 1.45;">
-            This captain does not currently have an aquarium on display.
+            Captain account not found. Check the username or aquarium link.
           </p>
           <button class="btn btn-secondary" id="btn-close-visitor-aquarium">Return</button>
         </div>
@@ -377,13 +377,18 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
         ui.closeModal();
       });
       ui.showToast('Aquarium not available.');
-    } else if (errCode.includes('unauthenticated')) {
+    } else if (errCode.includes('invalid-argument')) {
       const loading = document.getElementById('aquarium-loading');
-      if (loading) loading.textContent = 'Sign in to a captain account to visit aquariums.';
-      ui.showToast('Sign in to a captain account to visit aquariums.');
+      if (loading) loading.textContent = 'Enter a captain username or a valid aquarium link.';
     } else {
       const loading = document.getElementById('aquarium-loading');
-      if (loading) loading.textContent = 'The aquarium could not load. Please try again.';
+      if (loading) {
+        loading.textContent = 'The aquarium could not load. Please try again.';
+        const retry = document.createElement('button');
+        retry.type = 'button'; retry.className = 'btn btn-secondary'; retry.id = 'retry-visitor-tank';
+        retry.textContent = 'Try again'; retry.addEventListener('click', () => visitAquarium(ui, targetHost, fallback));
+        loading.after(retry);
+      }
       ui.showToast('The aquarium could not load. Please try again.');
     }
   }

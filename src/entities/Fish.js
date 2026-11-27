@@ -1,5 +1,5 @@
 import { drawAura } from '../rendering/AuraRenderer.js';
-import { shinyPalette, reserveGold } from '../rendering/FishAppearance.js';
+import { shinyPalette, reserveGold, hasFantasyTrail } from '../rendering/FishAppearance.js';
 import { RARITY_CONFIG } from '../data/FishData.js';
 import { calculateCrown, getCrownMultiplier } from '../data/legendaries.js';
 import { soundManager } from '../audio/SoundManager.js';
@@ -951,7 +951,7 @@ export class Fish {
     }
 
     // Fantasy species particle trail & aura
-    if (s.fantasyTrail) {
+    if (!isHooked && hasFantasyTrail(s)) {
       ctx.save();
       const trail = s.fantasyTrail;
       const t = this.wiggleTimer;
