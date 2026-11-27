@@ -1374,7 +1374,7 @@ export class Hazard {
           const dir = Math.abs(this.smoothFacing) < 0.18 ? (this.facing || 1) * 0.18 : (this.smoothFacing || this.facing || 1);
           ctx.scale(dir, 1);
         }
-        drawNaturalHazard(ctx, this.naturalKind, this.radius / this.sizeScale, this.timer);
+        drawNaturalHazard(ctx, this.naturalKind, this.radius / this.sizeScale, this.timer, this.subVariant ?? this.variant ?? 0);
         ctx.restore();
       } else if (this.realmStyle) {
         this.renderRealmHazard(ctx);

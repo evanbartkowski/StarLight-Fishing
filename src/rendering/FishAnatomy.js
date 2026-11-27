@@ -17,6 +17,7 @@ export function getFishAnatomy(species) {
     crown: [19, 15], reef: [20 + seed % 5, 10 + seed % 5], lantern: [20, 13] };
   const [length, height] = dimensions[kind] || [18, 16];
   const anatomy = { kind, length, height, seed, pattern: species.pattern || 'solid',
+    isCloudRealm: species.zone === 5 || /cloud|cotton|nimbus|cirrus|aether/i.test(name),
     motif: /porcelain|willow/.test(name) ? 'porcelain' : /mosaic|tile/.test(name) ? 'mosaic' :
       /scoria|basalt|obsidian/.test(name) ? 'basalt' : /cloud|cotton/.test(name) ? 'cloud' :
       /solstice|lunar|moon/.test(name) ? 'moon' : /darkmatter|void|paradox/.test(name) ? 'void' : 'scales' };
@@ -177,6 +178,16 @@ export function drawDistinctFish(ctx, anatomy, primary, secondary, finColor, tim
     }
     bodyPath(ctx, l, h, kind); ctx.fill(); ctx.strokeStyle = secondary; ctx.stroke();
     ctx.save(); bodyPath(ctx, l, h, kind); ctx.clip();
+    if (anatomy.isCloudRealm) {
+      // Pillowy soft cloud-puff scallops along belly & cumulus curl sheen across Zone 5 fish
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.36)';
+      for (const [px, py, pr] of [[-l * 0.45, h * 0.55, 8], [-l * 0.08, h * 0.62, 9], [l * 0.28, h * 0.54, 7.5], [-l * 0.2, -h * 0.5, 8.5]]) {
+        ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(243, 232, 255, 0.65)';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.arc(-2, -1, Math.min(l, h) * 0.52, Math.PI * 1.05, Math.PI * 1.85); ctx.stroke();
+    }
     ctx.strokeStyle = secondary; ctx.fillStyle = secondary; ctx.lineWidth = 1.2;
     for (let n = 0; n < 3 + seed % 4; n++) {
       const x = -l * .65 + n * 5, y = Math.sin(n + seed) * h * .35;

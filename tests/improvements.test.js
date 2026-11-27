@@ -841,7 +841,7 @@ test('bespoke species art, Wormhole slow spin, Aether & realm scale boosts, bead
 
   const tang = FISH_SPECIES.find(s => s.id === 'realm_1_shoals_blue_tang');
   const reefFish = new Fish(tang, 200, 300);
-  assert.equal(reefFish.realmVisualBoost, 1.15, 'Other non-leviathan realms receive moderate 1.15x visual boost');
+  assert.equal(reefFish.realmVisualBoost, 1.28, 'Non-Aether, non-Caldera realms receive 1.28x visual boost');
 
   // Wormhole Sturgeon vortex rotation slowed down
   const chronoSrc = fs.readFileSync(new URL('../src/rendering/ChronoVoidArtwork.js', import.meta.url), 'utf8');
@@ -920,4 +920,56 @@ test('first realm subtle background scenery, reef flora, and redesigned plant ta
 
   const kelpPatch = new InteractiveFlora(FLORA_TYPES[1], 320, 600);
   kelpPatch.render(ctx, 200);
+});
+
+test('Sapphire Tang, California Sea Lion, Mosaic Tilefish, Imperial Signet, submarine varieties, profound poems, global/Aether spawn & size tuning', async () => {
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { TREASURE_ITEMS } = await import('../src/data/TreasureData.js');
+  const { REALM_ECOLOGY } = await import('../src/data/RealmEcology.js');
+  const { DRIFT_MESSAGES } = await import('../src/data/DriftMessages.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { drawNaturalHazard } = await import('../src/entities/NaturalHazardArt.js');
+  const { BESPOKE_SPECIES_IDS } = await import('../src/rendering/BespokeSpeciesArtwork.js');
+  const { SHOALS_FISH_DESIGNS } = await import('../src/rendering/ShoalsFishArtwork.js');
+  const { treasureSvg } = await import('../src/rendering/TreasureArtwork.js');
+
+  const { ctx, calls } = finiteMockCtx();
+
+  // 1-3. Sapphire Tang, California Sea Lion, Mosaic Tilefish render cleanly
+  assert.equal(SHOALS_FISH_DESIGNS.blue_tang, 'sapphire_tang');
+  assert.ok(BESPOKE_SPECIES_IDS.has('realm_4_mosaic_tilefish'));
+  for (const id of ['blue_tang', 'realm_1_california_sea_lion', 'realm_4_mosaic_tilefish']) {
+    const sp = FISH_SPECIES.find(s => s.id === id);
+    assert.ok(sp, `Missing species ${id}`);
+    const f = new Fish(sp, 250, 350);
+    f.render(ctx, 1.1);
+  }
+
+  // 4. Imperial Signet uses sculpted 3D ring shank rather than bare circular wire hoop
+  const signet = TREASURE_ITEMS.find(t => /imperial signet/i.test(t.name));
+  assert.ok(signet, 'Imperial Signet exists');
+  const signetSvg = treasureSvg(signet);
+  assert.ok(signetSvg.includes('#8a5d1c') && signetSvg.includes('#0f766e'), 'Imperial Signet uses sculpted inner-shank shadow and emerald seal');
+
+  // 5. All 4 submarine enemy varieties render cleanly with finite coords
+  for (let v = 0; v < 4; v++) {
+    drawNaturalHazard(ctx, 'submarine', 100, 1.4, v);
+  }
+  assert.ok(calls.count > 40);
+
+  // 6. Profound bottle poems present while keeping canonical IDs & secret 7.77 clue
+  const poem = DRIFT_MESSAGES.find(m => m.id === 'poem_starlight_mariner');
+  assert.ok(poem && poem.title === 'What the Horizon Refuses');
+  assert.ok(DRIFT_MESSAGES.some(m => m.unlocksFrequency === '7.77'));
+
+  // 7-9. Overall size boost applies outside Aether (5) and Magma Trench (6); Aether density lowered & cloud visuals active
+  const goby = FISH_SPECIES.find(s => s.id === 'realm_6_sulfur_goby');
+  const magmaFish = new Fish(goby, 200, 300);
+  assert.equal(magmaFish.realmVisualBoost, 1.15, 'Magma Trench visual boost remains 1.15x');
+
+  const dew = FISH_SPECIES.find(s => s.id === 'realm_5_dewdrop_glassfish');
+  const aetherFish = new Fish(dew, 200, 300);
+  assert.equal(aetherFish.realmVisualBoost, 1.34, 'Aether fish visual boost unchanged');
+  aetherFish.render(ctx, 1.2);
+  assert.equal(REALM_ECOLOGY[5].fish, 0.33, 'Aether Sea fish spawn density reduced');
 });

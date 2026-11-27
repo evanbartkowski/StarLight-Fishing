@@ -48,10 +48,21 @@ function design(item) {
   } else if (/comb/.test(n)) {
     a = [p('M-22-7Q0-22 22-7V-1H-22Z', '#f6dcc1', gold), ...Array.from({length:9}, (_,i) => p(`M${-20+i*5}-1v19h2v-19Z`, '#f9e6d0', '#b89477', .7)),
       ...[-12,0,12].map(x => ellipse(x, -8-(x===0?3:0), 3, 3, '#fff7ef'))];
-  } else if (/cameo|signet/.test(n)) {
-    a = [/signet/.test(n) ? ellipse(0, 10, 14, 13, 'none', gold, 5) : lines('M-8-19Q0-28 8-19', gold, 2),
-      ellipse(0, -3, 17, 19, gold), ellipse(0, -3, 13, 15, /cameo/.test(n)?'#e994ac':'#378783'),
-      /cameo/.test(n) ? p('M-4-13Q6-17 8-8L12-3L7-1V4L2 6L4 11H-10Q-12 4-4 3Z', '#ffe3cf', 'none') : p('M-8 2L-7-9L-2-5L2-12L5-5L10-9L8 2Z', gold), lines('M-9 11H9', light, 1)];
+  } else if (/signet/.test(n)) {
+    // Three-quarter sculpted Imperial Signet ring: tapered solid gold shank with recessed bore, fluted shoulders, & emerald crown seal
+    a = [
+      p('M-13 -4C-20 4 -17 20 0 22C17 20 20 4 13 -4L9 0C14 6 12 16 0 17C-12 16 -14 6 -9 0Z', gold, ink, 1.4),
+      p('M-11 8C-9 17 9 17 11 8C7 13 -7 13 -11 8Z', '#8a5d1c', 'none'),
+      lines('M-14 6Q-11 19 0 20Q11 19 14 6', light, 1.1),
+      p('M-16 -9L-9 -19L9 -19L16 -9L12 1L-12 1Z', gold, ink, 1.5),
+      p('M-12 -9L-7 -16L7 -16L12 -9L8 -2L-8 -2Z', '#0f766e', '#fde047', 1.2),
+      p('M-6 -6L-5 -12L-2 -9L0 -14L2 -9L5 -12L6 -6Z', gold, ink, 0.8),
+      lines('M-9 -13L-4 -14', light, 1.0),
+    ];
+  } else if (/cameo/.test(n)) {
+    a = [lines('M-8-19Q0-28 8-19', gold, 2),
+      ellipse(0, -3, 17, 19, gold), ellipse(0, -3, 13, 15, '#e994ac'),
+      p('M-4-13Q6-17 8-8L12-3L7-1V4L2 6L4 11H-10Q-12 4-4 3Z', '#ffe3cf', 'none'), lines('M-9 11H9', light, 1)];
   } else if (/crown|diadem|tiara/.test(n)) {
     const high = /quantum/.test(n) ? -23 : -19;
     a = [p(`M-23 9L-20-12L-10-3L0 ${high}L10-3L20-12L23 9L19 18H-19Z`, c, gold, 2), p('M-20 9H20L18 15H-18Z', gold),

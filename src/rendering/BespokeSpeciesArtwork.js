@@ -38,6 +38,7 @@ export const BESPOKE_SPECIES_IDS = new Set([
   'realm_3_moonring_discus',    // Moonring Discus
   'realm_3_sundial_seahorse',   // Sundial Seahorse
   'realm_1_visitor_1',          // Sunbeam Whale
+  'realm_4_mosaic_tilefish',    // Mosaic Tilefish
 ]);
 
 export function isBespokeSpecies(species) {
@@ -458,6 +459,99 @@ export function drawBespokeSpecies(ctx, species, primary, secondary, finColor, t
       ctx.stroke();
 
       drawEye(ctx, 24, -2, 2.4, '#0284c7');
+      return true;
+    }
+
+    // 7. Mosaic Tilefish (Sleek blunt-crowned tilefish with Atlantean inlaid stained-glass tesserae scales & swallowtail)
+    if (id === 'realm_4_mosaic_tilefish') {
+      // Forked swallowtail fin
+      ctx.fillStyle = '#0d9488';
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(-21, -2);
+      ctx.lineTo(-34, -13 + wave * 0.6);
+      ctx.quadraticCurveTo(-27, wave * 0.2, -34, 13 + wave * 0.6);
+      ctx.lineTo(-21, 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Long scalloped golden-emerald dorsal ridge crest & anal ribbon
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.moveTo(-16, -9);
+      ctx.quadraticCurveTo(-2, -21, 14, -14);
+      ctx.quadraticCurveTo(18, -10, 12, -8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#14b8a6';
+      ctx.beginPath();
+      ctx.moveTo(-15, 7);
+      ctx.quadraticCurveTo(-4, 15, 5, 8);
+      ctx.closePath();
+      ctx.fill();
+
+      // Characteristic squared-off tilefish cephalic brow & streamlined torpedo flank
+      let tileBodyG = '#10b981';
+      try {
+        tileBodyG = ctx.createLinearGradient(-22, -13, 24, 12);
+        tileBodyG.addColorStop(0, '#0f766e');
+        tileBodyG.addColorStop(0.45, '#14b8a6');
+        tileBodyG.addColorStop(0.85, '#2563eb');
+        tileBodyG.addColorStop(1, '#fef3c7');
+      } catch { /* fallback */ }
+      ctx.fillStyle = tileBodyG;
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-23, 0);
+      ctx.bezierCurveTo(-15, -12, 4, -14, 17, -11);
+      ctx.bezierCurveTo(23, -8, 25, -1, 22, 4);
+      ctx.quadraticCurveTo(16, 10.5, 4, 10.5);
+      ctx.bezierCurveTo(-8, 10.5, -18, 6, -23, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Crisp Atlantean beveled stained-glass tesserae tiles clipped inside torso
+      ctx.save();
+      ctx.clip();
+      const tilePalette = ['#2dd4bf', '#3b82f6', '#fbbf24', '#fef3c7', '#10b981'];
+      for (let row = -1; row <= 1; row++) {
+        for (let col = -3; col <= 1; col++) {
+          const tx = col * 7.2 + (row % 2 ? 3.5 : 0);
+          const ty = row * 5.2;
+          ctx.fillStyle = tilePalette[Math.abs(row * 5 + col) % tilePalette.length];
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 0.85;
+          ctx.beginPath();
+          ctx.moveTo(tx, ty - 2.6);
+          ctx.lineTo(tx + 3.4, ty);
+          ctx.lineTo(tx, ty + 2.6);
+          ctx.lineTo(tx - 3.4, ty);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      // Golden gill curve, sculpted pectoral fin & jewel-amber eye
+      ctx.fillStyle = '#fde047';
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(6, 2);
+      ctx.quadraticCurveTo(-2, 7 + wave * 0.25, -4, 13 + wave * 0.25);
+      ctx.quadraticCurveTo(2, 9, 8, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      drawEye(ctx, 16.5, -3.5, 2.5, '#fbbf24', true);
       return true;
     }
   } finally {

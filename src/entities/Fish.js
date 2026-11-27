@@ -153,16 +153,18 @@ export class Fish {
     this.size = Math.round(this.size * realmSize * 10) / 10;
     this.weight = Math.round(this.weight * realmSize ** 2.2 * 100) / 100;
 
-    // Visual scale based on species base scale + individual fish size (noticeably larger in Whispering Aether, especially smaller fish; mild boost in all realms)
+    // Visual scale based on species base scale + individual fish size (noticeably larger across realms, keeping Aether & Magma Trench unchanged)
     const baseScale = species.scaleFactor || 1.0;
     const isAetherRealm = this.zone === 5 || species.zone === 5 || species.realmId === 5 || (species.id && species.id.startsWith('realm_5_'));
     const realmVisualBoost = species.isLeviathan
       ? 1.0
       : isAetherRealm
       ? (baseScale <= 0.85 ? 1.78 : baseScale <= 1.2 ? 1.56 : 1.34)
-      : 1.15;
+      : isCaldera
+      ? 1.15
+      : 1.28;
     this.realmVisualBoost = realmVisualBoost;
-    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 4.8;
+    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 5.2;
     this.scale = Math.min(maxScaleCap, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55) * realmSize * realmVisualBoost));
 
     // Special species classifications & behaviors
@@ -1118,6 +1120,26 @@ export class Fish {
         ctx.lineTo(-12, -8);
         ctx.quadraticCurveTo(-7, 0, -14, 8);
         ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Whispering Aether Sea fish carry soft pillowy cumulus cloud wisps around & behind them
+    const isAetherCloudFish = (this.zone === 5 || s.zone === 5 || s.realmId === 5 || (s.id && s.id.startsWith('realm_5_'))) && !s.isLeviathan;
+    if (isAetherCloudFish) {
+      ctx.save();
+      const ct = this.wiggleTimer * 0.8;
+      ctx.fillStyle = 'rgba(248, 250, 252, 0.24)';
+      for (const [cx, cy, rx, ry] of [
+        [-14, -4 + Math.sin(ct) * 1.4, 11, 7.5],
+        [-3, -8 + Math.cos(ct + 1) * 1.2, 12, 8],
+        [8, -5 + Math.sin(ct + 2) * 1.2, 10, 7],
+        [-18, 4 + Math.cos(ct) * 1.3, 9, 6],
+        [-26, 1 + Math.sin(ct * 1.3) * 1.8, 6.5, 4.5],
+      ]) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();

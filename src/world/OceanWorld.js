@@ -449,12 +449,24 @@ export class OceanWorld {
     const fishPool = FISH_SPECIES.filter(species => !species.secretEncounter && belongsToRealm(species, this.currentSeaId)
       && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
     const earlyRealmSpawnMult = this.currentSeaId <= 3 ? 0.8 : 1.0;
-    populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 1.15 * ecology.fish * earlyRealmSpawnMult,
+    // Overall ~15% reduction across all realms; Realm 5 further thinned in REALM_ECOLOGY
+    populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 0.98 * ecology.fish * earlyRealmSpawnMult,
       (species, depth) => (rarityWeight[species.rarity] || 0.01)
         * ({ common: 1 / (1 + depth / 350), uncommon: 1 / (1 + depth / 700), rare: 1 + depth / 300, epic: 1 + depth / 180, legendary: 1 + depth / 120 }[species.rarity] || 1)
         * (['rare', 'epic', 'legendary'].includes(species.rarity) ? rareBoost * 1.5 * ecology.rarity : 1)
         * (species.zone === this.currentSeaId ? 1 : 0.03),
       (species, x, y) => this.entities.fish.push(new Fish(species, x, y, fishOptions)));
+
+    // Sparse realms still need one reachable resident in deep bands if random rolls leave a >=160m gap
+    for (let checkDepth = 600; checkDepth <= Math.min(activeMaxDepth - 40, 2900); checkDepth += 200) {
+      const hasResident = this.entities.fish.some(f => f.zone === this.currentSeaId && Math.abs((f.y - this.surfaceY) / this.pixelsPerMeter - checkDepth) < 82);
+      if (hasResident) continue;
+      const bandPool = fishPool.filter(s => s.zone === this.currentSeaId && s.minDepth <= checkDepth + 50 && s.maxDepth >= checkDepth - 50);
+      if (bandPool.length) {
+        const sp = bandPool[Math.floor(Math.random() * bandPool.length)];
+        this.entities.fish.push(new Fish(sp, 70 + Math.random() * (this.worldWidth - 140), this.surfaceY + (checkDepth + (Math.random() - 0.5) * 60) * this.pixelsPerMeter, fishOptions));
+      }
+    }
 
     // Sparse realms still need one reachable resident in the first 30m. Random
     // band selection can otherwise choose only species whose habitat starts deeper.
@@ -700,16 +712,22 @@ export class OceanWorld {
 
     // Realm 1 has natural coastal hazards only (no human swimmers).
 
-    // Deep-Sea Survey Submarine Hazard (Abyssal Depths Only: minDepth >= 1350m)
-    // Never spawns in shallow or mid waters; colossal imposing deep-ocean research vessel
-    if ([1, 2, 3, 4, 7].includes(this.currentSeaId) && activeMaxDepth >= 1400 && Math.random() < 0.016) {
+    // Deep-Sea Submarine Hazards (Abyssal Depths Only: minDepth >= 1350m, 4 distinct hull varieties)
+    if ([1, 2, 3, 4, 7].includes(this.currentSeaId) && activeMaxDepth >= 1400 && Math.random() < 0.045) {
+      const subVarieties = [
+        { subVariant: 0, name: 'Deep Abyssal Research Submarine', color: '#334155', glow: '#38bdf8', moveSpeed: 16 },
+        { subVariant: 1, name: 'Golden Abyss Bathyscaphe', color: '#ca8a04', glow: '#fde047', moveSpeed: 13 },
+        { subVariant: 2, name: 'Obsidian Trench Interceptor', color: '#0f172a', glow: '#ef4444', moveSpeed: 22 },
+        { subVariant: 3, name: 'Clockwork Nautilus Submersible', color: '#b45309', glow: '#2dd4bf', moveSpeed: 18 },
+      ];
+      const chosen = subVarieties[Math.floor(Math.random() * subVarieties.length)];
       const minSub = 1350;
       const subDepth = minSub + Math.random() * (activeMaxDepth - minSub);
       const subY = this.surfaceY + subDepth * this.pixelsPerMeter;
       const subHazard = new Hazard({
         ...EXPEDITION_HAZARDS[1],
+        ...chosen,
         id: 'deep_submarine',
-        name: 'Deep Abyssal Research Submarine',
         seas: [1, 2, 3, 4, 7],
         minDepth: 1350,
         maxDepth: 3500,
@@ -718,10 +736,8 @@ export class OceanWorld {
         radius: 240,
         sizeScale: 2.4,
         isColossal: true,
-        color: '#1e293b',
-        glow: '#38bdf8',
-        moveSpeed: 16,
-      }, this.worldWidth * 0.35, subY);
+      }, this.worldWidth * (0.25 + Math.random() * 0.5), subY);
+      subHazard.subVariant = chosen.subVariant;
       subHazard.homeY = subY;
       subHazard.facing = Math.random() < 0.5 ? 1 : -1;
       this.entities.hazards.push(subHazard);
@@ -2746,23 +2762,24 @@ export class OceanWorld {
     ctx.restore();
   }
 
-  // Sea 1: Subtle Atmospheric Sunlit Shoals Kelp Ribbons, Coral Shelves & Seagrass Outcrops
+  // Sea 1: Subtle Atmospheric Sunlit Shoals Kelp Ribbons, Coral Shelves & Seagrass Outcrops (fewer & slightly bigger)
   renderSunlitReefFlora(ctx, cameraY, screenHeight) {
     ctx.save();
     const time = this.causticTimer || 0;
     const w = this.worldWidth;
 
-    const clusterCount = 7;
+    const clusterCount = 4;
     for (let c = 0; c < clusterCount; c++) {
-      const worldX = ((c * 310 + 95) % Math.max(200, w - 120)) + 60;
-      const worldY = this.surfaceY + 620 + (c * 210) % 1050;
+      const worldX = ((c * 390 + 135) % Math.max(220, w - 160)) + 80;
+      const worldY = this.surfaceY + 540 + c * 290;
       const screenY = worldY - cameraY;
-      if (screenY < -140 || screenY > screenHeight + 140) continue;
+      if (screenY < -170 || screenY > screenHeight + 170) continue;
 
       ctx.save();
       ctx.translate(worldX, screenY);
+      ctx.scale(1.28, 1.28);
       // Soft underwater depth fade so background flora integrates cleanly behind fish & tackle
-      ctx.globalAlpha = 0.16 + (c % 3) * 0.035;
+      ctx.globalAlpha = 0.16 + (c % 2) * 0.04;
 
       // Bottom-fading limestone outcrop base (no harsh floating rock cutout)
       try {

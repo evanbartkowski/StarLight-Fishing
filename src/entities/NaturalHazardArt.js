@@ -1,5 +1,5 @@
 // Canvas-native coastal obstacles, sized to their existing collision bounds.
-export function drawNaturalHazard(ctx, kind, r, time) {
+export function drawNaturalHazard(ctx, kind, r, time, variant = 0) {
   ctx.save();
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.shadowBlur = 0;
@@ -335,31 +335,84 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.fillStyle = '#f59e0b';
     ctx.fillRect(r * 0.45, -r * 0.08, r * 0.2, r * 0.14);
   } else if (kind === 'submarine') {
+    const subStyle = Math.abs(Math.round(variant || 0)) % 4;
+    const beamCol = subStyle === 2 ? '#fca5a5' : subStyle === 3 ? '#5eead4' : '#fef08a';
     const light = ctx.createLinearGradient(r * .5, 0, r * 4.5, 0);
-    light.addColorStop(0, '#fef08a99'); light.addColorStop(1, '#fef08a00');
-    ctx.fillStyle = light; ctx.beginPath(); ctx.moveTo(r * .5, 0); ctx.lineTo(r * 4.5, -r * 1.2); ctx.lineTo(r * 4.5, r * 1.2); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#334155';
-    ctx.beginPath(); ctx.ellipse(0, 0, r, r * .48, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(r * .6, 0, r * .22, 0, Math.PI * 2); ctx.fill();
-    // Conning tower & periscope
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(-r * .3, -r * .7, r * .5, r * .35);
-    ctx.fillRect(-r * .1, -r * .98, r * .06, r * .4);
-    ctx.fillRect(-r * .1, -r * .98, r * .24, r * .06);
-    ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.ellipse(0, 0, r, r * .48, 0, 0, Math.PI * 2); ctx.stroke();
-    for (let i = -2; i <= 2; i++) {
-      ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .085, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .055, 0, Math.PI * 2); ctx.fill();
+    light.addColorStop(0, `${beamCol}99`); light.addColorStop(1, `${beamCol}00`);
+    ctx.fillStyle = light; ctx.beginPath(); ctx.moveTo(r * .5, 0); ctx.lineTo(r * 4.5, -r * 1.15); ctx.lineTo(r * 4.5, r * 1.15); ctx.closePath(); ctx.fill();
+
+    const hullFill = ['#334155', '#ca8a04', '#0f172a', '#9a3412'][subStyle];
+    const hullStroke = ['#64748b', '#fef08a', '#dc2626', '#fbbf24'][subStyle];
+    const trimFill = ['#1e293b', '#854d0e', '#7f1d1d', '#0f766e'][subStyle];
+    const glowFill = ['#38bdf8', '#fef08a', '#ef4444', '#2dd4bf'][subStyle];
+
+    if (subStyle === 1) {
+      // Variety 1: Golden Bathyscaphe Explorer (compact pressurized sphere-capsule + ballast skids + guard cage)
+      ctx.fillStyle = hullFill; ctx.strokeStyle = hullStroke; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.ellipse(0, -r * 0.05, r * 0.84, r * 0.54, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = trimFill;
+      ctx.fillRect(-r * 0.56, r * 0.42, r * 1.12, r * 0.14);
+      ctx.fillRect(-r * 0.25, -r * 0.72, r * 0.42, r * 0.22);
+      ctx.fillStyle = '#fef9c3';
+      ctx.beginPath(); ctx.arc(r * 0.45, -r * 0.05, r * 0.28, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.4; ctx.stroke();
+    } else if (subStyle === 2) {
+      // Variety 2: Obsidian Trench Interceptor (angular stealth prow + crimson stripes + torpedo vents)
+      ctx.fillStyle = hullFill; ctx.strokeStyle = hullStroke; ctx.lineWidth = 2.1;
+      ctx.beginPath();
+      ctx.moveTo(r * 1.08, 0);
+      ctx.lineTo(r * 0.55, -r * 0.42);
+      ctx.lineTo(-r * 0.85, -r * 0.36);
+      ctx.lineTo(-r * 1.02, 0);
+      ctx.lineTo(-r * 0.85, r * 0.36);
+      ctx.lineTo(r * 0.55, r * 0.42);
+      ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#991b1b';
+      ctx.beginPath(); ctx.moveTo(-r * 0.25, -r * 0.38); ctx.lineTo(-r * 0.05, -r * 0.82); ctx.lineTo(r * 0.25, -r * 0.38); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(-r * 0.65, -r * 0.05, r * 1.25, r * 0.09);
+      ctx.fillStyle = '#fca5a5';
+      ctx.beginPath(); ctx.ellipse(r * 0.72, 0, r * 0.16, r * 0.11, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (subStyle === 3) {
+      // Variety 3: Clockwork Nautilus Submersible (brass/copper riveted pressure vessel, sawtooth bow & jade canopy)
+      ctx.fillStyle = hullFill; ctx.strokeStyle = hullStroke; ctx.lineWidth = 2.3;
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 0.96, r * 0.46, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = trimFill;
+      ctx.beginPath(); ctx.moveTo(-r * 0.45, -r * 0.36); ctx.lineTo(-r * 0.15, -r * 0.72); ctx.lineTo(r * 0.25, -r * 0.38); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath(); ctx.moveTo(r * 0.9, -r * 0.12); ctx.lineTo(r * 1.2, 0); ctx.lineTo(r * 0.9, r * 0.12); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#2dd4bf';
+      ctx.beginPath(); ctx.arc(r * 0.52, -r * 0.02, r * 0.2, 0, Math.PI * 2); ctx.fill();
+      for (let i = -2; i <= 1; i++) {
+        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(i * r * 0.26, r * 0.02, r * 0.08, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#5eead4'; ctx.beginPath(); ctx.arc(i * r * 0.26, r * 0.02, r * 0.05, 0, Math.PI * 2); ctx.fill();
+      }
+    } else {
+      // Variety 0: Abyssal Survey Submarine (slate hull + twin sonar domes + blue viewports)
+      ctx.fillStyle = hullFill;
+      ctx.beginPath(); ctx.ellipse(0, 0, r, r * .48, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#7dd3fc'; ctx.beginPath(); ctx.arc(r * .6, 0, r * .22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = trimFill;
+      ctx.fillRect(-r * .3, -r * .7, r * .5, r * .35);
+      ctx.fillRect(-r * .1, -r * .98, r * .06, r * .4);
+      ctx.fillRect(-r * .1, -r * .98, r * .24, r * .06);
+      ctx.strokeStyle = hullStroke; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.ellipse(0, 0, r, r * .48, 0, 0, Math.PI * 2); ctx.stroke();
+      for (let i = -2; i <= 2; i++) {
+        ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .085, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = glowFill; ctx.beginPath(); ctx.arc(i * r * .25, 0, r * .055, 0, Math.PI * 2); ctx.fill();
+      }
     }
-    // Rear propulsion thruster
+
+    // Rear propulsion thruster & spinning propeller
     ctx.fillStyle = '#0f172a';
-    ctx.beginPath(); ctx.moveTo(-r * .8, 0); ctx.lineTo(-r * 1.15, -r * .5); ctx.lineTo(-r * 1.15, r * .5); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-r * .8, 0); ctx.lineTo(-r * 1.15, -r * .48); ctx.lineTo(-r * 1.15, r * .48); ctx.closePath(); ctx.fill();
     const propAngle = time * 8;
-    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3;
+    ctx.strokeStyle = subStyle === 3 ? '#fbbf24' : '#94a3b8'; ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(-r * 1.15, -Math.sin(propAngle) * r * 0.4);
-    ctx.lineTo(-r * 1.15, Math.sin(propAngle) * r * 0.4);
+    ctx.moveTo(-r * 1.15, -Math.sin(propAngle) * r * 0.38);
+    ctx.lineTo(-r * 1.15, Math.sin(propAngle) * r * 0.38);
     ctx.stroke();
   } else if (kind === 'plant') {
     // Rugged Razor-Kelp Tangle anchored to a sculpted reef stone with thorny tendrils & sea urchins

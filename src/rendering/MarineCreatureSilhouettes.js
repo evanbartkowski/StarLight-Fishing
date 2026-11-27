@@ -248,44 +248,98 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_lion': {
-      // Flexible muscular neck, prominent external ear flaps, large foreflippers
-      ctx.beginPath();
-      ctx.moveTo(-20, 0);
-      ctx.quadraticCurveTo(-10, -11, 8, -9);
-      ctx.lineTo(18, -4);
-      ctx.quadraticCurveTo(24, 0, 18, 5);
-      ctx.lineTo(8, 10);
-      ctx.quadraticCurveTo(-10, 12, -20, 0);
-      ctx.closePath();
-      ctx.fill();
+      // California Sea Lion: sleek hydrodynamic pinniped arch, tapered whiskered muzzle, external ear pinna,
+      // sweeping wing-like pectoral foreflippers & twin paddling hind flippers
+      const strokeSwim = Math.sin(t * 2.8);
+      const hindWave = Math.sin(t * 3.1) * 3.2;
 
-      // Large wing-like pectoral foreflipper
-      const flapAngle = Math.sin(t * 3.2) * 0.18;
+      // Far shaded pectoral foreflipper (depth layer)
       ctx.save();
-      ctx.translate(6, 6);
-      ctx.rotate(flapAngle);
-      ctx.fillStyle = finColor;
+      ctx.translate(4, 7);
+      ctx.rotate(0.28 + strokeSwim * 0.2);
+      ctx.fillStyle = '#3f2e24';
       ctx.beginPath();
-      ctx.ellipse(0, 8, 4.5, 12, 0.35, 0, Math.PI * 2);
+      ctx.moveTo(-3, 0);
+      ctx.quadraticCurveTo(3, 7, 1, 16);
+      ctx.quadraticCurveTo(-5, 11, -3, 0);
+      ctx.closePath();
       ctx.fill();
       ctx.restore();
 
-      // Tail flippers
-      const slFluke = Math.sin(t * 3) * 3;
-      ctx.fillStyle = finColor;
+      // Twin splayed hind flippers
+      ctx.fillStyle = finColor || '#4a372b';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(-19, side * 1.5);
+        ctx.quadraticCurveTo(-28, side * 5 + hindWave, -34, side * 8 + hindWave * 1.15);
+        ctx.quadraticCurveTo(-29, side * 3.5 + hindWave, -26, hindWave * 0.5);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Sleek arched torso & raised neck silhouette with warm chestnut->tawny shading
+      const coatGrad = ctx.createLinearGradient(0, -14, 0, 12);
+      coatGrad.addColorStop(0, primary || '#5c4033');
+      coatGrad.addColorStop(0.58, secondary || '#8b634b');
+      coatGrad.addColorStop(1, '#c8a88d');
+      ctx.fillStyle = coatGrad;
+      ctx.strokeStyle = '#38251a';
+      ctx.lineWidth = 1.15;
       ctx.beginPath();
-      ctx.moveTo(-20, 0);
-      ctx.lineTo(-29, -5 + slFluke);
-      ctx.lineTo(-26, slFluke);
-      ctx.lineTo(-29, 5 + slFluke);
+      ctx.moveTo(-21, 0.5);
+      ctx.bezierCurveTo(-15, -7.5, -2, -11, 8, -11.5);   // Arching dorsal spine -> muscular neck
+      ctx.quadraticCurveTo(14, -14.5, 20, -11.5);         // Crown of forehead
+      ctx.quadraticCurveTo(25.5, -9.5, 27, -6.2);         // Tapered muzzle bridge
+      ctx.quadraticCurveTo(26, -3.5, 21.5, -3.2);         // Under-chin & throat
+      ctx.bezierCurveTo(16, 4.5, 5, 10.5, -7, 9);         // Chest & sleek tapering belly
+      ctx.quadraticCurveTo(-16, 7.5, -21, 0.5);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
 
-      // Head, pinna ear & eye
+      // Near wing-like pectoral foreflipper (swept streamlined blade)
+      ctx.save();
+      ctx.translate(6, 4.5);
+      ctx.rotate(-0.18 + strokeSwim * 0.24);
+      ctx.fillStyle = primary || '#4f372b';
+      ctx.strokeStyle = '#2d1e15';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.moveTo(-2, -1);
+      ctx.bezierCurveTo(5, 3, 6, 13, -1, 18.5);
+      ctx.bezierCurveTo(-6, 13, -6.5, 5, -2, -1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // External ear flap (pinna), glossy nose pad, crisp ivory whiskers & bright eye
+      ctx.fillStyle = '#38251a';
+      ctx.beginPath();
+      ctx.ellipse(15.5, -10.5, 1.3, 2.5, -0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#1c1917';
+      ctx.beginPath();
+      ctx.arc(26.2, -6.6, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255, 250, 240, 0.72)';
+      ctx.lineWidth = 0.75;
+      for (const wy of [-5.2, -4.1]) {
+        ctx.beginPath();
+        ctx.moveTo(24.5, wy);
+        ctx.quadraticCurveTo(28, wy + 0.6, 30.5, wy + 2.2);
+        ctx.stroke();
+      }
+
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(17, -3, 1.4, 0, Math.PI * 2);
-      ctx.arc(12, -7, 1.2, 0, Math.PI * 2);
+      ctx.arc(19.5, -8.8, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(20.0, -9.3, 0.6, 0, Math.PI * 2);
       ctx.fill();
       return true;
     }

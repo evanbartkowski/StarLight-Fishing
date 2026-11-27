@@ -236,16 +236,20 @@ function drawDeepLandmark(ctx, realm, color, time = 0) {
 export function drawDepthScenery(ctx, realm, cameraY, surfaceY, width, height, time = 0) {
   const zones = getRealmDepthZones(realm);
   const softRealm = realm === 1;
-  // Shallow zone rock ledges, coral & kelp shelves blended subtly into water depth
+  // Shallow zone rock ledges, coral & kelp shelves blended subtly into water depth (fewer, larger in Realm 1)
   const shallow = zones[0];
   if (shallow) {
-    for (const [frac, side, sc] of [[0.35, 0.24, 0.72], [0.72, 0.76, 0.85]]) {
+    const shallowConfigs = softRealm
+      ? [[0.52, 0.28, 1.05]]
+      : [[0.35, 0.24, 0.72], [0.72, 0.76, 0.85]];
+    for (const [frac, side, sc] of shallowConfigs) {
       const sy = surfaceY + (shallow.minDepth + (shallow.maxDepth - shallow.minDepth) * frac) * 15 - cameraY;
-      if (sy >= -150 && sy <= height + 150) {
+      if (sy >= -180 && sy <= height + 180) {
         ctx.save();
         ctx.translate(width * side, sy);
         ctx.globalAlpha *= softRealm ? 0.14 : 0.22;
         drawRocks(ctx, shallow.color || '#38bdf8', sc, softRealm);
+        if (softRealm) ctx.scale(1.18, 1.18);
         drawCoralCluster(ctx, shallow.color || '#38bdf8', time + frac * 5, softRealm);
         ctx.restore();
       }

@@ -1,6 +1,6 @@
 // Original side-view anatomy for the first realm. IDs also work in saved previews.
 export const SHOALS_FISH_DESIGNS = {
-  minnow:'minnow', sardine:'sardine', clownfish:'clown', blue_tang:'tang',
+  minnow:'minnow', sardine:'sardine', clownfish:'clown', blue_tang:'sapphire_tang',
   coral_butterfly:'butterfly', sand_flounder:'flounder', rainbow_parrotfish:'parrot', golden_seahorse:'seahorse',
   realm_1_honeycomb_boxfish:'box', realm_1_sunlit_damselfish:'damsel',
   realm_1_shoals_mandarinfish:'mandarin', realm_1_shoals_blue_tang:'tang',
@@ -54,9 +54,25 @@ export function drawShoalsFish(ctx,species,primary,secondary,finColor,time){
    path(ctx,c=>{c.moveTo(33,0);c.quadraticCurveTo(13,-9,-4,-22);c.quadraticCurveTo(-12,-17,-18,-7);c.lineTo(-39,-3+wave);c.lineTo(-43,-11+wave);c.lineTo(-49,-4+wave);c.lineTo(-39,4+wave);c.lineTo(-17,8);c.quadraticCurveTo(-8,22,-4,22);c.quadraticCurveTo(15,8,33,0);},shade,'#405d5b');
    ctx.strokeStyle=secondary;ctx.beginPath();ctx.moveTo(26,0);ctx.lineTo(-27,0);ctx.stroke();for(let i=0;i<9;i++)oval(ctx,-9+i%3*9,-9+Math.floor(i/3)*8,1,.7,'#81745f');eye(ctx,11,-5,1.6);eye(ctx,11,5,1.6);return true;
   }
+  if(kind==='sapphire_tang'){
+   // Sleek oval-teardrop surgeonfish silhouette, swept royal-blue dorsal/anal fins, glowing canary tail & palette marking
+   path(ctx,c=>{c.moveTo(-22,-3);c.lineTo(-35,-12+wave);c.quadraticCurveTo(-29,wave,-35,12+wave);c.lineTo(-22,3);},'#facc15','#1e3a8a',1.1);
+   path(ctx,c=>{c.moveTo(-14,-10);c.quadraticCurveTo(-2,-20,11,-12);c.quadraticCurveTo(0,-7,-12,-8);},'#1d4ed8','#172554',.9);
+   path(ctx,c=>{c.moveTo(-14,9);c.quadraticCurveTo(-2,18,10,11);c.quadraticCurveTo(-1,7,-12,7);},'#1d4ed8','#172554',.9);
+   const tangGrad=ctx.createLinearGradient(0,-14,0,14);tangGrad.addColorStop(0,'#2563eb');tangGrad.addColorStop(.55,'#1d4ed8');tangGrad.addColorStop(1,'#38bdf8');
+   path(ctx,c=>{c.moveTo(-23,0);c.bezierCurveTo(-18,-13,-4,-15,12,-10.5);c.quadraticCurveTo(23,-6,25,1);c.quadraticCurveTo(22,7,11,11);c.bezierCurveTo(-4,15,-18,12,-23,0);},tangGrad,'#172554',1.15);
+   ctx.save();ctx.beginPath();ctx.moveTo(-23,0);ctx.bezierCurveTo(-18,-13,-4,-15,12,-10.5);ctx.quadraticCurveTo(23,-6,25,1);ctx.quadraticCurveTo(22,7,11,11);ctx.bezierCurveTo(-4,15,-18,12,-23,0);ctx.clip();
+   path(ctx,c=>{c.moveTo(-23,-4);c.bezierCurveTo(-8,-13,8,-11,16,-4);c.quadraticCurveTo(5,1,-7,0);c.bezierCurveTo(-12,1,-16,5,-23,4);},'#0f172a',null);
+   oval(ctx,-1,-4.5,7.5,3.8,'#38bdf8');
+   ctx.restore();
+   fan(ctx,6,4,8,7+wave,'#facc15');
+   path(ctx,c=>{c.moveTo(-19,0);c.lineTo(-14,-1.5);c.lineTo(-14,1.5);},'#fef08a',null);
+   eye(ctx,16.5,-2.2,2.4);return true;
+  }
   let l=23,h=12;
-  if(kind==='minnow'||kind==='sardine'){l=26;h=7;}if(kind==='butterfly'||kind==='tang'){l=22;h=19;}if(kind==='flounder'){l=27;h=12;}if(kind==='box'){l=20;h=16;}if(kind==='parrot'){l=29;h=17;}if(kind==='pip'){l=19;h=11;}
-  tail(ctx,l,h,finColor,wave);
+  if(kind==='minnow'||kind==='sardine'){l=26;h=7;}if(kind==='butterfly'||kind==='tang'){l=22;h=15;}if(kind==='flounder'){l=27;h=12;}if(kind==='box'){l=20;h=16;}if(kind==='parrot'){l=29;h=17;}if(kind==='pip'){l=19;h=11;}
+  if(kind==='tang'){path(ctx,c=>{c.moveTo(-l+2,-3);c.lineTo(-l-13,-10+wave);c.quadraticCurveTo(-l-8,wave,-l-13,10+wave);c.lineTo(-l+2,3);},'#facc15','#173f4c',1);}
+  else tail(ctx,l,h,finColor,wave);
   fan(ctx,-4,-h*.65,15,-(kind==='butterfly'?12:8)+wave,finColor);fan(ctx,-2,h*.7,10,7+wave,finColor);
   if(kind==='box'){
    path(ctx,c=>{c.moveTo(-18,-3);c.bezierCurveTo(-18,-15,-6,-16,6,-14);c.bezierCurveTo(19,-12,23,-3,21,4);c.bezierCurveTo(20,13,6,16,-8,14);c.bezierCurveTo(-18,12,-18,4,-18,-3);},shade,'#7c5c26',1.2);
