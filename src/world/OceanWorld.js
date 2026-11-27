@@ -2746,13 +2746,12 @@ export class OceanWorld {
     ctx.restore();
   }
 
-  // Sea 1: Sunlit Shoals Kelp Forests, Coral Gardens & Seagrass Meadows
+  // Sea 1: Subtle Atmospheric Sunlit Shoals Kelp Ribbons, Coral Shelves & Seagrass Outcrops
   renderSunlitReefFlora(ctx, cameraY, screenHeight) {
     ctx.save();
     const time = this.causticTimer || 0;
     const w = this.worldWidth;
 
-    // Richer reef & rock clusters distributed through upper-mid shoals (40m+)
     const clusterCount = 7;
     for (let c = 0; c < clusterCount; c++) {
       const worldX = ((c * 310 + 95) % Math.max(200, w - 120)) + 60;
@@ -2762,96 +2761,92 @@ export class OceanWorld {
 
       ctx.save();
       ctx.translate(worldX, screenY);
-      ctx.globalAlpha = 0.34 + (c % 3) * 0.14;
+      // Soft underwater depth fade so background flora integrates cleanly behind fish & tackle
+      ctx.globalAlpha = 0.16 + (c % 3) * 0.035;
 
-      // Grounding rocky reef mound beneath every cluster
-      ctx.fillStyle = '#1e3a44';
+      // Bottom-fading limestone outcrop base (no harsh floating rock cutout)
+      try {
+        const rockGrad = ctx.createLinearGradient(0, -10, 0, 20);
+        rockGrad.addColorStop(0, '#0f4454');
+        rockGrad.addColorStop(0.65, '#0b3542');
+        rockGrad.addColorStop(1, 'rgba(11, 53, 66, 0)');
+        ctx.fillStyle = rockGrad;
+      } catch {
+        ctx.fillStyle = '#0f4454';
+      }
       ctx.beginPath();
-      ctx.moveTo(-36, 12);
-      ctx.quadraticCurveTo(-18, -6, 0, -2);
-      ctx.quadraticCurveTo(22, -8, 38, 12);
+      ctx.moveTo(-44, 18);
+      ctx.quadraticCurveTo(-28, -4, -10, -2);
+      ctx.quadraticCurveTo(6, -10, 22, -2);
+      ctx.quadraticCurveTo(38, 2, 44, 18);
       ctx.closePath();
       ctx.fill();
 
       const clusterType = c % 4;
       if (clusterType === 0) {
-        // Swaying Giant Ribbon Kelp Strand with Pneumatocysts
-        ctx.strokeStyle = '#059669';
-        ctx.lineWidth = 5;
-        ctx.lineCap = 'round';
-        const kelpHeight = 85 + (c % 3) * 25;
-        const sway = Math.sin(time * 1.8 + c) * 16;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(sway * 0.4, -kelpHeight * 0.4, -sway * 0.6, -kelpHeight * 0.7, sway, -kelpHeight);
-        ctx.stroke();
-
-        // Blades & golden gas bladders (pneumatocysts)
-        ctx.fillStyle = '#10b981';
-        for (let b = 1; b <= 4; b++) {
-          const tBlade = b / 5;
-          const bx = sway * tBlade;
-          const by = -kelpHeight * tBlade;
-          const bladeSway = Math.sin(time * 2.2 + c + b) * 8;
+        // 3 Staggered Tapered Giant Kelp Ribbons with gentle S-curve wave
+        for (const [kx, kh, kw, col] of [[-12, 66, 5.5, '#0d6e66'], [0, 88, 7, '#0f766e'], [14, 58, 5, '#115e59']]) {
+          const sway = Math.sin(time * 1.4 + c + kx * 0.08) * 12;
+          ctx.fillStyle = col;
           ctx.beginPath();
-          ctx.ellipse(bx + (b % 2 ? 14 : -14), by + bladeSway, 12, 4, (b % 2 ? 0.3 : -0.3), 0, Math.PI * 2);
+          ctx.moveTo(kx - kw * 0.5, 2);
+          ctx.bezierCurveTo(kx - kw * 0.9 + sway * 0.35, -kh * 0.42, kx - kw * 0.3 - sway * 0.35, -kh * 0.72, kx + sway, -kh);
+          ctx.bezierCurveTo(kx + kw * 0.45 - sway * 0.35, -kh * 0.68, kx + kw * 0.85 + sway * 0.35, -kh * 0.38, kx + kw * 0.5, 2);
+          ctx.closePath();
           ctx.fill();
-
-          // Pneumatocyst golden bulb
-          ctx.fillStyle = '#fbbf24';
-          ctx.beginPath();
-          ctx.arc(bx + (b % 2 ? 4 : -4), by, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#10b981';
         }
       } else if (clusterType === 1) {
-        // Vivid Rose & Turquoise Branching Staghorn Coral Grove
-        const coralColor = ['#fb7185', '#2dd4bf', '#fb923c', '#f43f5e'][c % 4];
-        ctx.strokeStyle = coralColor;
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
-        for (let branch = -2; branch <= 2; branch++) {
-          const bx = branch * 11;
-          const bHeight = 35 + Math.abs(branch) * 6;
+        // Soft Dusty Coral Plate Shelves & Smooth Rounded Staghorn Silhouettes
+        const shelfCol = c % 2 ? '#1e6e78' : '#7c4d63';
+        ctx.fillStyle = shelfCol;
+        for (const [sx, sy, sw, sh] of [[-16, -6, 18, 5], [10, -14, 22, 6], [-2, -26, 15, 4.5]]) {
           ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.quadraticCurveTo(bx * 0.5, -bHeight * 0.6, bx, -bHeight);
-          ctx.stroke();
-          // Coral tips
-          ctx.fillStyle = '#fef08a';
-          ctx.beginPath();
-          ctx.arc(bx, -bHeight, 2.2, 0, Math.PI * 2);
+          ctx.ellipse(sx, sy, sw, sh, 0, 0, Math.PI * 2);
           ctx.fill();
         }
-      } else if (clusterType === 2) {
-        // Emerald & Seafoam Seagrass Cluster with undulating blades
-        ctx.strokeStyle = '#14b8a6';
-        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = c % 2 ? '#2b8a94' : '#966179';
+        ctx.lineWidth = 3.2;
         ctx.lineCap = 'round';
-        for (let blade = -3; blade <= 3; blade++) {
-          const bladeSway = Math.sin(time * 2 + c + blade * 0.4) * 12;
+        for (let branch = -1; branch <= 1; branch++) {
+          const bx = branch * 14;
+          const bH = 34 + (1 - Math.abs(branch)) * 10;
           ctx.beginPath();
-          ctx.moveTo(blade * 5, 0);
-          ctx.quadraticCurveTo(blade * 6 + bladeSway * 0.5, -28, blade * 4 + bladeSway, -52);
+          ctx.moveTo(bx * 0.4, -2);
+          ctx.quadraticCurveTo(bx * 0.7, -bH * 0.55, bx * 1.1, -bH);
+          ctx.moveTo(bx * 0.65, -bH * 0.5);
+          ctx.quadraticCurveTo(bx * 0.95 + (branch >= 0 ? 6 : -6), -bH * 0.7, bx + (branch >= 0 ? 9 : -9), -bH * 0.82);
           ctx.stroke();
         }
-      } else {
-        // Living Coral Shelf with Waving Sea Anemone Tentacles
-        ctx.fillStyle = '#c084fc';
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Anemone tentacles waving atop the shelf
-        ctx.strokeStyle = '#f472b6';
-        ctx.lineWidth = 1.6;
-        for (let tent = -4; tent <= 4; tent++) {
-          const tx = tent * 4;
-          const tSway = Math.sin(time * 3 + c + tent) * 7;
+      } else if (clusterType === 2) {
+        // Undulating Tapered Turtle-Grass Meadow
+        for (let blade = -4; blade <= 4; blade++) {
+          const bx = blade * 6.5;
+          const bh = 32 + (4 - Math.abs(blade)) * 5.5 + (blade % 2) * 4;
+          const bSway = Math.sin(time * 1.7 + c + blade * 0.5) * 9;
+          ctx.fillStyle = blade % 2 === 0 ? '#0f766e' : '#134e4a';
           ctx.beginPath();
-          ctx.moveTo(tx, -4);
-          ctx.quadraticCurveTo(tx + tSway * 0.6, -14, tx + tSway, -22);
-          ctx.stroke();
+          ctx.moveTo(bx - 1.8, 2);
+          ctx.quadraticCurveTo(bx + bSway * 0.45, -bh * 0.55, bx + bSway, -bh);
+          ctx.quadraticCurveTo(bx + 2.2 + bSway * 0.45, -bh * 0.5, bx + 1.8, 2);
+          ctx.closePath();
+          ctx.fill();
+        }
+      } else {
+        // Sunken Limestone Barrel Sponges & Soft Delicate Sea Fan
+        ctx.fillStyle = '#185b66';
+        for (const [vx, vh, vw] of [[-12, 26, 7.5], [2, 34, 9], [16, 20, 6.5]]) {
+          ctx.beginPath();
+          ctx.moveTo(vx - vw, 2);
+          ctx.quadraticCurveTo(vx - vw * 0.85, -vh * 0.6, vx - vw * 0.65, -vh);
+          ctx.lineTo(vx + vw * 0.65, -vh);
+          ctx.quadraticCurveTo(vx + vw * 0.85, -vh * 0.6, vx + vw, 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#092d36';
+          ctx.beginPath();
+          ctx.ellipse(vx, -vh, vw * 0.62, 2.2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#185b66';
         }
       }
 

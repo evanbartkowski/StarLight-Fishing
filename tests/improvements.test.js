@@ -869,3 +869,55 @@ test('bespoke species art, Wormhole slow spin, Aether & realm scale boosts, bead
   assert.ok(!uiSrc.includes('btn-tune-freq'), 'btn-tune-freq removed from UIManager');
   assert.ok(uiSrc.includes('secret_777'), 'Station 7.77 remains in Coastal Radio');
 });
+
+test('first realm subtle background scenery, reef flora, and redesigned plant tangle render cleanly', async () => {
+  const { drawDepthScenery } = await import('../src/rendering/DepthScenery.js');
+  const { drawNaturalHazard } = await import('../src/entities/NaturalHazardArt.js');
+  const { InteractiveFlora, FLORA_TYPES } = await import('../src/entities/InteractiveFlora.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+
+  const recordedAlphas = [];
+  const grad = { addColorStop() {} };
+  let calls = 0;
+  const ctx = new Proxy({
+    globalAlpha: 1,
+    createLinearGradient: () => grad,
+    createRadialGradient: () => grad,
+    save() {},
+    restore() {},
+  }, {
+    get(target, key) {
+      if (key in target) return target[key];
+      return (...args) => {
+        calls++;
+        for (const a of args) {
+          if (typeof a === 'number') assert.ok(Number.isFinite(a), `Non-finite ${String(key)} arg: ${a}`);
+        }
+      };
+    },
+    set(target, key, val) {
+      if (key === 'globalAlpha') recordedAlphas.push(val);
+      target[key] = val;
+      return true;
+    },
+  });
+
+  // Soft depth scenery in Realm 1
+  drawDepthScenery(ctx, 1, 900, 220, 1280, 720, 1.5);
+  assert.ok(calls > 20, 'Realm 1 depth scenery renders');
+
+  // Realm 1 subtle reef flora renders without foreground saturation
+  recordedAlphas.length = 0;
+  const world = new OceanWorld(1280, 720);
+  world.currentSeaId = 1;
+  world.renderSunlitReefFlora(ctx, 500, 720);
+  assert.ok(recordedAlphas.length > 0 && recordedAlphas.every(a => a <= 0.25), 'Realm 1 background flora uses subtle low alpha');
+
+  // Redesigned plant obstacle & interactive kelp render cleanly
+  calls = 0;
+  drawNaturalHazard(ctx, 'plant', 32, 1.5);
+  assert.ok(calls > 25, 'Redesigned plant obstacle draws multi-frond razor kelp tangle');
+
+  const kelpPatch = new InteractiveFlora(FLORA_TYPES[1], 320, 600);
+  kelpPatch.render(ctx, 200);
+});

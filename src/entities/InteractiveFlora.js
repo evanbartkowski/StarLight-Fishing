@@ -179,15 +179,25 @@ export class InteractiveFlora {
         ctx.fillStyle = this.tipColor; ctx.beginPath(); ctx.arc(i * 18 + sway, -r, 4, 0, Math.PI * 2); ctx.fill();
       }
     } else if (this.kind === 'kelp') {
-      ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(0, r); ctx.quadraticCurveTo(sway * 0.5, 0, sway, -r); ctx.stroke();
-      ctx.fillStyle = this.color;
-      for (let i = 0; i < 5; i++) {
-        const t = i / 4, side = i % 2 ? -1 : 1;
-        ctx.beginPath(); ctx.ellipse(sway * t + side * 14, r - t * r * 2, 14, 6, side * 0.4 + sway * 0.02, 0, Math.PI * 2); ctx.fill();
+      // Multi-frond tapering undulating kelp patch (crisp & cohesive without bright polka dots)
+      for (const [bx, h, w] of [[-r * 0.28, r * 0.85, 6], [0, r * 1.05, 8], [r * 0.26, r * 0.78, 5.5]]) {
+        const tipX = bx + sway * (0.75 + Math.abs(bx) * 0.01);
+        const tipY = -h;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(bx - w * 0.45, r * 0.85);
+        ctx.bezierCurveTo(bx - w + sway * 0.35, r * 0.2, bx - w * 0.35 - sway * 0.25, -h * 0.45, tipX, tipY);
+        ctx.bezierCurveTo(bx + w * 0.4 - sway * 0.25, -h * 0.42, bx + w + sway * 0.35, r * 0.22, bx + w * 0.45, r * 0.85);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = this.stalkColor;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
       }
-      ctx.fillStyle = this.tipColor; ctx.shadowColor = this.tipColor; ctx.shadowBlur = 8;
-      ctx.beginPath(); ctx.arc(sway, -r, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = this.tipColor;
+      ctx.beginPath();
+      ctx.arc(sway * 0.78, -r * 0.85, 3, 0, Math.PI * 2);
+      ctx.fill();
     } else {
       ctx.lineWidth = 3;
       ctx.beginPath();

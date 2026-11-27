@@ -362,63 +362,88 @@ export function drawNaturalHazard(ctx, kind, r, time) {
     ctx.lineTo(-r * 1.15, Math.sin(propAngle) * r * 0.4);
     ctx.stroke();
   } else if (kind === 'plant') {
-    // Swaying Kelp Bed & Sunlit Seaweed Meadow with undulating fronds, air bladders, and sea spores
-    const swayBase = Math.sin(time * 1.6) * r * 0.18;
-    ctx.fillStyle = '#1e3a2b';
+    // Rugged Razor-Kelp Tangle anchored to a sculpted reef stone with thorny tendrils & sea urchins
+    const baseGrad = ctx.createLinearGradient(0, r * 0.35, 0, r * 0.92);
+    baseGrad.addColorStop(0, '#334155');
+    baseGrad.addColorStop(0.65, '#1e293b');
+    baseGrad.addColorStop(1, '#0f172a');
+    ctx.fillStyle = baseGrad;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.ellipse(0, r * 0.72, r * 0.8, r * 0.24, 0, 0, Math.PI * 2);
+    ctx.moveTo(-r * 0.78, r * 0.78);
+    ctx.lineTo(-r * 0.58, r * 0.44);
+    ctx.lineTo(-r * 0.14, r * 0.36);
+    ctx.lineTo(r * 0.36, r * 0.42);
+    ctx.lineTo(r * 0.76, r * 0.68);
+    ctx.lineTo(r * 0.56, r * 0.88);
+    ctx.lineTo(-r * 0.48, r * 0.88);
+    ctx.closePath();
     ctx.fill();
+    ctx.stroke();
 
-    // 7 Distinct Layered Kelp Fronds with varying phase, color gradients & pneumatocysts (air bladders)
-    for (let i = -3; i <= 3; i++) {
-      const frondX = i * r * 0.22;
-      const sway = Math.sin(time * 1.8 + i * 0.85) * r * (0.22 + Math.abs(i) * 0.04);
-      const tipY = -r * (0.85 + 0.15 * (3 - Math.abs(i)));
-      const midY = -r * 0.35;
+    // Sweeping tapered ruffled kelp blades (5 distinct asymmetrical fronds)
+    const blades = [
+      { bx: -r * 0.42, tilt: -0.34, h: r * 1.12, w: r * 0.22, dark: '#064e3b', light: '#059669' },
+      { bx: r * 0.38, tilt: 0.32, h: r * 1.06, w: r * 0.20, dark: '#065f46', light: '#10b981' },
+      { bx: -r * 0.18, tilt: -0.14, h: r * 1.38, w: r * 0.24, dark: '#065f46', light: '#10b981' },
+      { bx: r * 0.16, tilt: 0.16, h: r * 1.32, w: r * 0.23, dark: '#047857', light: '#34d399' },
+      { bx: 0, tilt: 0.02, h: r * 1.48, w: r * 0.26, dark: '#065f46', light: '#34d399' },
+    ];
+    blades.forEach((b, idx) => {
+      const sway = Math.sin(time * 1.7 + idx * 1.1) * r * 0.16;
+      const tipX = b.bx + b.tilt * b.h + sway;
+      const tipY = r * 0.52 - b.h;
+      const ctrl1X = b.bx + b.tilt * b.h * 0.3 + sway * 0.35;
+      const ctrl1Y = r * 0.52 - b.h * 0.4;
+      const ctrl2X = b.bx + b.tilt * b.h * 0.7 - sway * 0.2;
+      const ctrl2Y = r * 0.52 - b.h * 0.72;
 
-      // Stem
-      ctx.strokeStyle = i % 2 === 0 ? '#166534' : '#15803d';
-      ctx.lineWidth = r * 0.1;
+      const bladeGrad = ctx.createLinearGradient(b.bx, r * 0.52, tipX, tipY);
+      bladeGrad.addColorStop(0, b.dark);
+      bladeGrad.addColorStop(0.55, b.light);
+      bladeGrad.addColorStop(1, '#6ee7b7');
+      ctx.fillStyle = bladeGrad;
+      ctx.strokeStyle = '#022c22';
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.moveTo(frondX, r * 0.65);
-      ctx.quadraticCurveTo(frondX + sway * 0.4, midY, frondX + sway, tipY);
+      ctx.moveTo(b.bx - b.w * 0.35, r * 0.54);
+      ctx.bezierCurveTo(ctrl1X - b.w * 0.9, ctrl1Y, ctrl2X - b.w * 0.45, ctrl2Y, tipX, tipY);
+      ctx.bezierCurveTo(ctrl2X + b.w * 0.45, ctrl2Y, ctrl1X + b.w * 0.9, ctrl1Y, b.bx + b.w * 0.35, r * 0.54);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
 
-      // Golden-green kelp leaves with ruffled wave edges
-      for (let j = 0; j < 4; j++) {
-        const leafY = r * 0.45 - j * r * 0.32;
-        const side = (i + j) % 2 === 0 ? 1 : -1;
-        const leafSway = Math.sin(time * 2.2 + j + i) * r * 0.1;
-
-        ctx.fillStyle = j % 2 === 0 ? '#22c55e' : '#4ade80';
-        ctx.beginPath();
-        ctx.moveTo(frondX, leafY);
-        ctx.bezierCurveTo(
-          frondX + side * r * 0.35, leafY - r * 0.28,
-          frondX + side * r * 0.55 + leafSway, leafY - r * 0.08,
-          frondX + side * r * 0.2, leafY + r * 0.12
-        );
-        ctx.closePath();
-        ctx.fill();
-
-        // Pneumatocyst (golden glowing buoyant bubble bead)
-        if (j > 0 && (i + j) % 2 === 0) {
-          ctx.fillStyle = '#fde047';
-          ctx.beginPath();
-          ctx.arc(frondX + side * r * 0.15, leafY - r * 0.06, r * 0.055, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-
-    // Gentle micro-bubbles drifting up through the kelp
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-    for (let b = 0; b < 4; b++) {
-      const bubbleTime = (time * 1.5 + b * 1.2) % 3;
-      const bY = r * 0.6 - bubbleTime * r * 0.5;
-      const bX = Math.sin(time * 2 + b * 2) * r * 0.45;
+      // Subtle central midrib vein
+      ctx.strokeStyle = 'rgba(167, 243, 208, 0.45)';
+      ctx.lineWidth = 1.1;
       ctx.beginPath();
-      ctx.arc(bX, bY, 1.6 + (b % 2), 0, Math.PI * 2);
+      ctx.moveTo(b.bx, r * 0.52);
+      ctx.bezierCurveTo(ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, tipX, tipY + r * 0.08);
+      ctx.stroke();
+    });
+
+    // Intertwined thorny bramble vines & coastal purple sea urchins on rock crest
+    ctx.strokeStyle = '#134e4a';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.52, r * 0.42);
+    ctx.bezierCurveTo(-r * 0.15, -r * 0.05, r * 0.25, r * 0.12, r * 0.48, -r * 0.28);
+    ctx.stroke();
+
+    for (const [ux, uy, ur] of [[-r * 0.38, r * 0.48, r * 0.13], [r * 0.32, r * 0.54, r * 0.11]]) {
+      ctx.strokeStyle = '#c084fc';
+      ctx.lineWidth = 1.3;
+      for (let s = 0; s < 9; s++) {
+        const ang = -Math.PI + (s / 8) * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(ux, uy);
+        ctx.lineTo(ux + Math.cos(ang) * ur * 1.9, uy + Math.sin(ang) * ur * 1.9);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#581c87';
+      ctx.beginPath();
+      ctx.arc(ux, uy, ur, 0, Math.PI * 2);
       ctx.fill();
     }
   } else if (kind === 'boulder') {

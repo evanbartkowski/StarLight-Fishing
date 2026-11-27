@@ -1301,12 +1301,15 @@ export class Hazard {
     // Danger aura: prominent red danger aura for Realm 7 obstacles so players clearly know to avoid them
     const pulse = 0.5 + 0.5 * Math.sin(this.timer * 2.5);
     const isLava = this.realmStyle === 'lava' || this.zone === 6;
+    const isReef = this.realmStyle === 'reef';
     const isVoid = this.realmStyle === 'void' || this.zone === 7 || this.behavior?.zone === 7 || (this.type && String(this.type).includes('_7_')) || (this.name && /void|chrono|singularity|entropy|temporal|world-eater|riftfang|event horizon/i.test(this.name));
     const auraRadius = isVoid
       ? (this.radius * (1.30 + pulse * 0.16) + 12)
       : (this.radius * (1.10 + pulse * 0.08) + 4);
     const auraStrength = isVoid
       ? ((this.isColossal ? 0.88 : this.marineKind ? 0.80 : 0.72) * (0.85 + pulse * 0.30))
+      : isReef
+      ? 0.14
       : (this.isColossal ? 0.48 : this.marineKind ? 0.40 : 0.35);
 
     const auraGrad = ctx.createRadialGradient(0, 0, this.radius * (isVoid ? 0.55 : 0.80), 0, 0, auraRadius);
@@ -1321,6 +1324,10 @@ export class Hazard {
       auraGrad.addColorStop(0.35, `rgba(239, 68, 68, ${auraStrength * 0.80})`);
       auraGrad.addColorStop(0.70, `rgba(220, 38, 38, ${auraStrength * 0.45})`);
       auraGrad.addColorStop(1, 'rgba(185, 28, 28, 0)');
+    } else if (isReef) {
+      auraGrad.addColorStop(0, `rgba(251, 146, 60, ${auraStrength * (0.75 + pulse * 0.25)})`);
+      auraGrad.addColorStop(0.65, `rgba(251, 191, 36, ${auraStrength * 0.32})`);
+      auraGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
     } else {
       auraGrad.addColorStop(0, `rgba(244, 63, 94, ${auraStrength * (0.85 + pulse * 0.15)})`);
       auraGrad.addColorStop(0.45, `rgba(239, 68, 68, ${auraStrength * 0.55})`);

@@ -1,76 +1,114 @@
 import { getRealmDepthZones } from '../data/RealmDepths.js';
 
-function drawRocks(ctx, color, scale = 1) {
+function drawRocks(ctx, color, scale = 1, softRealm = false) {
   ctx.save();
   ctx.scale(scale, scale);
-  ctx.fillStyle = '#152831';
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
+  // Bottom-fading gradient so rock ridges dissolve naturally into deep water
+  try {
+    const rockGrad = ctx.createLinearGradient(0, -24, 0, 60);
+    if (softRealm) {
+      rockGrad.addColorStop(0, '#0f3947');
+      rockGrad.addColorStop(0.65, '#0c2e3b');
+      rockGrad.addColorStop(1, 'rgba(12, 46, 59, 0.12)');
+    } else {
+      rockGrad.addColorStop(0, '#162d38');
+      rockGrad.addColorStop(0.75, '#12242d');
+      rockGrad.addColorStop(1, 'rgba(18, 36, 45, 0.2)');
+    }
+    ctx.fillStyle = rockGrad;
+  } catch {
+    ctx.fillStyle = softRealm ? '#0f3947' : '#152831';
+  }
+
   ctx.beginPath();
-  ctx.moveTo(-140, 56);
-  ctx.lineTo(-112, 14);
-  ctx.lineTo(-74, -4);
-  ctx.lineTo(-35, 18);
-  ctx.lineTo(-8, -16);
-  ctx.lineTo(36, 10);
-  ctx.lineTo(78, -6);
-  ctx.lineTo(118, 22);
-  ctx.lineTo(142, 56);
+  ctx.moveTo(-148, 58);
+  ctx.quadraticCurveTo(-128, 22, -104, 14);
+  ctx.quadraticCurveTo(-82, -10, -56, 6);
+  ctx.quadraticCurveTo(-24, -22, 4, -8);
+  ctx.quadraticCurveTo(38, 12, 68, -4);
+  ctx.quadraticCurveTo(104, 4, 128, 24);
+  ctx.lineTo(146, 58);
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
 
-  // Rock strata crevices
-  ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
-  ctx.lineWidth = 1.4;
+  if (softRealm) {
+    // Gentle sunlit upper crest rim (no harsh neon border)
+    ctx.strokeStyle = 'rgba(153, 246, 228, 0.22)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(-104, 14);
+    ctx.quadraticCurveTo(-82, -10, -56, 6);
+    ctx.quadraticCurveTo(-24, -22, 4, -8);
+    ctx.quadraticCurveTo(38, 12, 68, -4);
+    ctx.stroke();
+  } else {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+  }
+
+  // Subtle internal ridge depth fold
+  ctx.fillStyle = softRealm ? 'rgba(6, 28, 38, 0.35)' : 'rgba(15, 23, 42, 0.35)';
   ctx.beginPath();
-  ctx.moveTo(-98, 26); ctx.lineTo(-64, 18); ctx.lineTo(-42, 34);
-  ctx.moveTo(4, 10); ctx.lineTo(28, 26); ctx.lineTo(66, 18);
-  ctx.stroke();
+  ctx.moveTo(-62, 54);
+  ctx.quadraticCurveTo(-28, 18, 8, 28);
+  ctx.quadraticCurveTo(46, 16, 76, 54);
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 }
 
-function drawCoralCluster(ctx, color, time = 0) {
+function drawCoralCluster(ctx, color, time = 0, softRealm = false) {
   ctx.save();
-  // Base boulder mound
-  ctx.fillStyle = '#19313a';
+  // Smooth rounded limestone coral mound (soft fade at bottom)
+  ctx.fillStyle = softRealm ? '#0d3b49' : '#19313a';
   ctx.beginPath();
-  ctx.ellipse(0, 48, 64, 18, 0, Math.PI, Math.PI * 2);
+  ctx.ellipse(0, 46, 62, 16, 0, Math.PI, Math.PI * 2);
   ctx.fill();
 
-  // Sea fan & staghorn coral silhouettes
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3.5;
-  ctx.lineCap = 'round';
-  for (let b = -3; b <= 3; b++) {
-    const bx = b * 15;
-    const bh = 38 + (3 - Math.abs(b)) * 14;
-    const sway = Math.sin(time * 1.4 + b) * 4;
+  // Layered smooth plate & brain coral domes
+  ctx.fillStyle = softRealm ? 'rgba(20, 120, 118, 0.55)' : color;
+  ctx.globalAlpha *= softRealm ? 0.85 : 0.72;
+  for (const [cx, cy, rx, ry] of [[-26, 36, 20, 9], [18, 34, 24, 10], [-4, 24, 15, 7]]) {
     ctx.beginPath();
-    ctx.moveTo(bx * 0.4, 42);
-    ctx.quadraticCurveTo(bx * 0.8, 42 - bh * 0.5, bx + sway, 42 - bh);
-    ctx.moveTo(bx * 0.72, 42 - bh * 0.48);
-    ctx.lineTo(bx + (b >= 0 ? 11 : -11) + sway, 42 - bh * 0.78);
-    ctx.stroke();
+    ctx.ellipse(cx, cy, rx, ry, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
   }
 
-  // Softly swaying kelp blades behind coral
-  ctx.strokeStyle = '#0f766e';
-  ctx.lineWidth = 4;
-  for (const kx of [-52, 46]) {
-    const kSway = Math.sin(time * 1.2 + kx) * 10;
+  // Tapered soft swaying kelp ribbons (filled tapering silhouettes instead of uniform thick pipes)
+  ctx.fillStyle = softRealm ? 'rgba(13, 106, 98, 0.72)' : '#0f766e';
+  for (const [kx, kh, w] of [[-48, 72, 6.5], [-16, 58, 5], [22, 64, 5.5], [46, 76, 6.5]]) {
+    const kSway = Math.sin(time * 1.15 + kx * 0.1) * 9;
     ctx.beginPath();
-    ctx.moveTo(kx, 48);
-    ctx.bezierCurveTo(kx + kSway * 0.5, 10, kx - kSway * 0.6, -24, kx + kSway, -66);
+    ctx.moveTo(kx - w * 0.5, 46);
+    ctx.quadraticCurveTo(kx - w * 0.8 + kSway * 0.45, 46 - kh * 0.52, kx + kSway, 46 - kh);
+    ctx.quadraticCurveTo(kx + w * 0.8 + kSway * 0.45, 46 - kh * 0.48, kx + w * 0.5, 46);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Organic rounded branching sea fan silhouette
+  ctx.strokeStyle = softRealm ? 'rgba(94, 234, 212, 0.35)' : color;
+  ctx.lineCap = 'round';
+  for (let b = -2; b <= 2; b++) {
+    const bx = b * 14;
+    const bh = 30 + (2 - Math.abs(b)) * 10;
+    const sway = Math.sin(time * 1.3 + b) * 3.5;
+    ctx.lineWidth = 3.2 - Math.abs(b) * 0.4;
+    ctx.beginPath();
+    ctx.moveTo(bx * 0.35, 38);
+    ctx.quadraticCurveTo(bx * 0.75, 38 - bh * 0.5, bx + sway, 38 - bh);
+    ctx.moveTo(bx * 0.65, 38 - bh * 0.48);
+    ctx.quadraticCurveTo(bx * 0.8 + (b >= 0 ? 7 : -7), 38 - bh * 0.68, bx + (b >= 0 ? 11 : -11) + sway, 38 - bh * 0.78);
     ctx.stroke();
   }
   ctx.restore();
 }
 
-function drawWreck(ctx, color, time = 0) {
-  drawRocks(ctx, color, 0.92);
-  // Broken bowsprit & hull planking
-  ctx.fillStyle = '#1c343d';
+function drawWreck(ctx, color, time = 0, softRealm = false) {
+  drawRocks(ctx, color, 0.92, softRealm);
+  // Broken bowsprit & shaded sunken hull
+  ctx.fillStyle = softRealm ? '#0e3341' : '#1c343d';
   ctx.beginPath();
   ctx.moveTo(-132, 8);
   ctx.lineTo(-90, -8);
@@ -80,90 +118,80 @@ function drawWreck(ctx, color, time = 0) {
   ctx.lineTo(-92, 54);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2.8;
+  ctx.strokeStyle = softRealm ? 'rgba(125, 211, 252, 0.22)' : color;
+  ctx.lineWidth = softRealm ? 1.5 : 2.4;
   ctx.stroke();
 
   // Masts & yardarms
-  ctx.fillStyle = '#233e46';
-  ctx.fillRect(-6, -112, 8, 120);
-  ctx.fillRect(52, -72, 6, 80);
-  ctx.strokeStyle = '#476872';
-  ctx.lineWidth = 3;
+  ctx.fillStyle = softRealm ? '#133e4c' : '#233e46';
+  ctx.fillRect(-5, -108, 7, 116);
+  ctx.fillRect(52, -70, 5.5, 78);
+  ctx.strokeStyle = softRealm ? 'rgba(94, 155, 168, 0.45)' : '#476872';
+  ctx.lineWidth = 2.6;
   ctx.beginPath();
-  ctx.moveTo(-42, -78); ctx.lineTo(36, -68);
-  ctx.moveTo(30, -48); ctx.lineTo(76, -54);
+  ctx.moveTo(-40, -76); ctx.lineTo(34, -66);
+  ctx.moveTo(30, -48); ctx.lineTo(74, -54);
   ctx.stroke();
 
   // Tattered billowing sails
   const billow = Math.sin(time * 1.1) * 4;
-  ctx.fillStyle = 'rgba(148, 163, 184, 0.25)';
+  ctx.fillStyle = softRealm ? 'rgba(186, 230, 253, 0.16)' : 'rgba(148, 163, 184, 0.22)';
   ctx.beginPath();
-  ctx.moveTo(2, -104);
-  ctx.quadraticCurveTo(38 + billow, -76, 48, -40);
+  ctx.moveTo(2, -102);
+  ctx.quadraticCurveTo(36 + billow, -76, 46, -40);
   ctx.lineTo(4, -38);
   ctx.closePath();
   ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(-2, -76);
-  ctx.quadraticCurveTo(-34 - billow, -50, -44, -22);
+  ctx.moveTo(-2, -74);
+  ctx.quadraticCurveTo(-32 - billow, -50, -42, -22);
   ctx.lineTo(-2, -22);
   ctx.closePath();
   ctx.fill();
 
-  // Exposed hull ribs & brass portholes
-  ctx.strokeStyle = '#54727a';
-  ctx.lineWidth = 2;
+  // Exposed hull ribs & dim portholes
+  ctx.strokeStyle = softRealm ? 'rgba(71, 118, 130, 0.45)' : '#54727a';
+  ctx.lineWidth = 1.6;
   for (let rib = -3; rib <= 3; rib++) {
     ctx.beginPath();
     ctx.moveTo(rib * 27, 12);
     ctx.lineTo(rib * 23, 48);
     ctx.stroke();
   }
-  ctx.fillStyle = 'rgba(251, 191, 36, 0.45)';
+  ctx.fillStyle = softRealm ? 'rgba(186, 230, 253, 0.22)' : 'rgba(251, 191, 36, 0.38)';
   for (const px of [-54, -22, 16, 48]) {
     ctx.beginPath();
-    ctx.arc(px, 24, 5.2, 0, Math.PI * 2);
+    ctx.arc(px, 24, 4.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.stroke();
   }
 
-  // Trailing sunken anchor & chain
-  ctx.strokeStyle = '#64748b';
-  ctx.lineWidth = 1.6;
-  ctx.setLineDash([4, 3]);
-  ctx.beginPath();
-  ctx.moveTo(98, 14);
-  ctx.quadraticCurveTo(124, 38, 118, 68);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Kelp & coral growing over wreck hull
-  drawCoralCluster(ctx, color, time);
+  // Kelp & coral growing gently over wreck hull
+  drawCoralCluster(ctx, color, time, softRealm);
 }
 
-function drawRuins(ctx, color, time = 0) {
-  drawRocks(ctx, color, 0.95);
-  ctx.fillStyle = '#203a43';
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3.5;
+function drawRuins(ctx, color, time = 0, softRealm = false) {
+  drawRocks(ctx, color, 0.95, softRealm);
+  ctx.fillStyle = softRealm ? '#113a47' : '#203a43';
+  ctx.strokeStyle = softRealm ? 'rgba(153, 246, 228, 0.24)' : color;
+  ctx.lineWidth = softRealm ? 1.5 : 2.8;
   for (let column = -2; column <= 2; column++) {
     const x = column * 48;
-    const height = 52 + (Math.abs(column) % 2) * 26;
-    ctx.fillRect(x - 11, -height, 22, height + 36);
-    ctx.strokeRect(x - 11, -height, 22, height + 36);
-    ctx.fillRect(x - 17, -height - 7, 34, 8);
+    const height = 50 + (Math.abs(column) % 2) * 24;
+    ctx.fillRect(x - 10, -height, 20, height + 36);
+    ctx.strokeRect(x - 10, -height, 20, height + 36);
+    ctx.fillRect(x - 15, -height - 6, 30, 7);
   }
   // Broken archway pediment & draped kelp vines
   ctx.beginPath();
-  ctx.moveTo(-132, -45);
-  ctx.quadraticCurveTo(0, -134, 132, -45);
+  ctx.moveTo(-128, -45);
+  ctx.quadraticCurveTo(0, -130, 128, -45);
   ctx.stroke();
-  drawCoralCluster(ctx, color, time);
+  drawCoralCluster(ctx, color, time, softRealm);
 }
 
 function drawDeepLandmark(ctx, realm, color, time = 0) {
-  drawRocks(ctx, color, 0.9);
+  const softRealm = realm === 1;
+  drawRocks(ctx, color, 0.9, softRealm);
   if (realm === 6) {
     ctx.fillStyle = '#263640';
     ctx.strokeStyle = color;
@@ -189,8 +217,8 @@ function drawDeepLandmark(ctx, realm, color, time = 0) {
     return;
   }
   // Ancient abyssal ribcage / coral arch + swaying deep kelp
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 6.5;
+  ctx.strokeStyle = softRealm ? 'rgba(94, 234, 212, 0.28)' : color;
+  ctx.lineWidth = softRealm ? 4.5 : 6.5;
   ctx.lineCap = 'round';
   for (let rib = -2; rib <= 2; rib++) {
     ctx.beginPath();
@@ -202,12 +230,13 @@ function drawDeepLandmark(ctx, realm, color, time = 0) {
   ctx.moveTo(-105, 52);
   ctx.lineTo(105, 52);
   ctx.stroke();
-  drawCoralCluster(ctx, color, time);
+  drawCoralCluster(ctx, color, time, softRealm);
 }
 
 export function drawDepthScenery(ctx, realm, cameraY, surfaceY, width, height, time = 0) {
   const zones = getRealmDepthZones(realm);
-  // Shallow zone (zone 0, 45m+) rock ledges, coral & kelp shelves so upper dives never feel empty
+  const softRealm = realm === 1;
+  // Shallow zone rock ledges, coral & kelp shelves blended subtly into water depth
   const shallow = zones[0];
   if (shallow) {
     for (const [frac, side, sc] of [[0.35, 0.24, 0.72], [0.72, 0.76, 0.85]]) {
@@ -215,9 +244,9 @@ export function drawDepthScenery(ctx, realm, cameraY, surfaceY, width, height, t
       if (sy >= -150 && sy <= height + 150) {
         ctx.save();
         ctx.translate(width * side, sy);
-        ctx.globalAlpha *= 0.22;
-        drawRocks(ctx, shallow.color || '#38bdf8', sc);
-        drawCoralCluster(ctx, shallow.color || '#38bdf8', time + frac * 5);
+        ctx.globalAlpha *= softRealm ? 0.14 : 0.22;
+        drawRocks(ctx, shallow.color || '#38bdf8', sc, softRealm);
+        drawCoralCluster(ctx, shallow.color || '#38bdf8', time + frac * 5, softRealm);
         ctx.restore();
       }
     }
@@ -230,9 +259,9 @@ export function drawDepthScenery(ctx, realm, cameraY, surfaceY, width, height, t
       const side = zone.index % 2 ? 0.3 : 0.7;
       ctx.save();
       ctx.translate(width * side, y);
-      ctx.globalAlpha *= 0.28;
-      if (zone.index === 1) drawWreck(ctx, zone.color, time);
-      else if (zone.index === 2) drawRuins(ctx, zone.color, time);
+      ctx.globalAlpha *= softRealm ? 0.18 : 0.28;
+      if (zone.index === 1) drawWreck(ctx, zone.color, time, softRealm);
+      else if (zone.index === 2) drawRuins(ctx, zone.color, time, softRealm);
       else drawDeepLandmark(ctx, realm, zone.color, time);
       ctx.restore();
     }
@@ -244,9 +273,9 @@ export function drawDepthScenery(ctx, realm, cameraY, surfaceY, width, height, t
       const oppSide = zone.index % 2 ? 0.78 : 0.22;
       ctx.save();
       ctx.translate(width * oppSide, my);
-      ctx.globalAlpha *= 0.2;
-      drawRocks(ctx, zone.color, 0.75);
-      drawCoralCluster(ctx, zone.color, time + zone.index);
+      ctx.globalAlpha *= softRealm ? 0.13 : 0.2;
+      drawRocks(ctx, zone.color, 0.75, softRealm);
+      drawCoralCluster(ctx, zone.color, time + zone.index, softRealm);
       ctx.restore();
     }
   }
