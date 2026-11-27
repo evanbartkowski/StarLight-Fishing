@@ -71,19 +71,19 @@ export class ShipsCat {
   }
 
   // Coords relative to boat center
-  hitTest(localX, localY, vessel) {
-    const pos = this.getDeckPosition(vessel);
+  hitTest(localX, localY, vessel, hullStyle = 'standard') {
+    const pos = this.getDeckPosition(vessel, hullStyle);
     const dx = localX - pos.x;
     const dy = localY - pos.y;
     return (dx * dx + dy * dy) < 22 * 22;
   }
 
-  getDeckPosition(vessel) {
-    return getVesselLayout(vessel).catPos;
+  getDeckPosition(vessel, hullStyle = 'standard') {
+    return getVesselLayout(vessel, 140, 40, hullStyle).catPos;
   }
 
-  render(ctx, vessel) {
-    const pos = this.getDeckPosition(vessel);
+  render(ctx, vessel, hullStyle = 'standard') {
+    const pos = this.getDeckPosition(vessel, hullStyle);
 
     ctx.save();
     try {
@@ -261,19 +261,19 @@ export class PerchingPelican {
     this.flapTimer = 5.0;
   }
 
-  hitTest(localX, localY, vessel) {
-    const pos = this.getBowspritPosition(vessel);
+  hitTest(localX, localY, vessel, hullStyle = 'standard') {
+    const pos = this.getBowspritPosition(vessel, hullStyle);
     const dx = localX - pos.x;
     const dy = localY - pos.y;
     return (dx * dx + dy * dy) < 26 * 26;
   }
 
-  getBowspritPosition(vessel) {
-    return getVesselLayout(vessel).pelicanPos;
+  getBowspritPosition(vessel, hullStyle = 'standard') {
+    return getVesselLayout(vessel, 140, 40, hullStyle).pelicanPos;
   }
 
-  render(ctx, vessel) {
-    const pos = this.getBowspritPosition(vessel);
+  render(ctx, vessel, hullStyle = 'standard') {
+    const pos = this.getBowspritPosition(vessel, hullStyle);
 
     ctx.save();
     try {

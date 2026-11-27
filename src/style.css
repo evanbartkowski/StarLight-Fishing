@@ -3664,6 +3664,61 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .gacha-card-icon {
   font-size: 2.2rem;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gacha-card-art svg {
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45));
+}
+
+.gacha-winner-art {
+  width: 72px;
+  height: 72px;
+  margin: 8px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55));
+}
+
+.gacha-winner-art svg {
+  width: 68px;
+  height: 68px;
+}
+
+.gacha-placeholder-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crate-reward-art {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+}
+
+.crate-reward-art svg {
+  width: 32px;
+  height: 32px;
+}
+
+.hud-buff-gold {
+  border-color: rgba(250, 204, 21, 0.65) !important;
+  color: #fef08a !important;
+  background: rgba(161, 98, 7, 0.35) !important;
+}
+
+.hud-buff-xp {
+  border-color: rgba(56, 189, 248, 0.65) !important;
+  color: #bae6fd !important;
+  background: rgba(3, 105, 161, 0.35) !important;
 }
 
 .gacha-card-name {
@@ -4896,12 +4951,219 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   border: none;
   color: #94a3b8;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 7px 11px;
   border-radius: 8px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: all 0.2s ease;
+}
+
+.boat-tab-icon,
+.inline-svg-sm,
+.inline-svg-xs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.boat-tab-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.inline-svg-sm svg {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.inline-svg-xs svg {
+  width: 13px;
+  height: 13px;
+}
+
+.boat-svg-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.boat-svg-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.boat-finish-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #fbbf24;
+  display: inline-block;
+}
+
+.boat-badge-locked {
+  background: rgba(100, 116, 139, 0.22);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.boat-badge-coin {
+  background: rgba(234, 179, 8, 0.16);
+  color: #fde047;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.boat-hull-notice {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.boat-hull-notice.is-maxed {
+  background: rgba(6, 78, 59, 0.35);
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #d1fae5;
+}
+
+.boat-reserve-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Settings Modal Elevated Card Spacing */
+.settings-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  gap: 20px !important;
+  padding: 6px 4px;
+}
+
+.settings-card-elevated,
+.career-section,
+.settings-danger-card,
+.settings-epilogue-card {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-section-wide {
+  grid-column: 1 / -1;
+}
+
+.settings-subcopy,
+.settings-cloud-status {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.settings-btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-slider-row {
+  flex-direction: column;
+  align-items: stretch !important;
+  gap: 8px;
+  margin-bottom: 4px;
+  background: rgba(30, 41, 59, 0.45);
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.settings-slider-row label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #e2e8f0;
+}
+
+.settings-slider-row input[type="range"] {
+  width: 100% !important;
+}
+
+.setting-val-pill {
+  font-size: 0.78rem;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.14);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.setting-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(30, 41, 59, 0.45);
+}
+
+.setting-toggle-row label {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.setting-toggle-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings-danger-card {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(69, 10, 10, 0.25);
+}
+
+.settings-danger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.settings-danger-row .settings-danger-warning {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+}
+
+.settings-epilogue-card {
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  background: radial-gradient(circle at top left, rgba(88, 28, 135, 0.35), rgba(15, 23, 42, 0.75));
 }
 
 .boat-tab-btn:hover {

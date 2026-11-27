@@ -1,6 +1,6 @@
 import { DAILY_GEMS, DAILY_REWARDS, DAILY_MYSTERY_POOL, APPEARANCE_PRICES, achievementGems, utcDay } from '../data/GemEconomy.js';
 import { CRATE_RANKS } from '../data/CrateData.js';
-import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization, normalizeBoatColors, BOAT_TRINKETS, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, AQUARIUM_PRICES, normalizeCustomization, normalizeBoatColors, BOAT_TRINKETS, BOAT_SKIN_OPTIONS, EXOTIC_BOAT_HULLS } from '../data/CustomizationData.js';
 import { FANTASY_SEAS, canUnlockSea } from '../entities/SeasData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
@@ -40,6 +40,8 @@ export class SaveSystem {
       boatSkin: 'default',
       boatColors: { hull: 'default', trim: 'default', sails: 'default' },
       ownedBoatSkins: ['default'],
+      boatHullStyle: 'standard',
+      ownedBoatHulls: ['standard'],
       boatTrinket: 'none',
       ownedBoatTrinkets: ['none'],
       xp: 0,
@@ -134,7 +136,8 @@ export class SaveSystem {
 
   addXp(amount) {
     if (!Number.isFinite(amount) || amount <= 0) return;
-    this.data.xp += Math.round(amount);
+    const xpMult = this.hasActiveBuff('xpSurge') ? 2 : 1;
+    this.data.xp += Math.round(amount * xpMult);
 
     let xpReq = this.getXpRequired(this.data.level);
     let leveledUp = false;
@@ -293,6 +296,8 @@ export class SaveSystem {
         boatSkin: parsed.boatSkin || 'default',
         boatColors: normalizeBoatColors(parsed.boatColors),
         ownedBoatSkins: Array.isArray(parsed.ownedBoatSkins) ? parsed.ownedBoatSkins : ['default'],
+        boatHullStyle: parsed.boatHullStyle || 'standard',
+        ownedBoatHulls: Array.isArray(parsed.ownedBoatHulls) ? parsed.ownedBoatHulls : ['standard'],
         boatTrinket: parsed.boatTrinket || 'none',
         ownedBoatTrinkets: Array.isArray(parsed.ownedBoatTrinkets) ? parsed.ownedBoatTrinkets : ['none'],
         xp: Math.max(0, parsed.xp || 0),
@@ -795,9 +800,18 @@ export class SaveSystem {
     this.data.stats.perfectReelsInARow = 0;
   }
 
+  getCoinBonusMultiplier() {
+    return this.hasActiveBuff('goldSurge') ? 2 : 1;
+  }
+
+  getXpBonusMultiplier() {
+    return this.hasActiveBuff('xpSurge') ? 2 : 1;
+  }
+
   addBuff(buffId, durationMs) {
     if (!this.data.buffs) this.data.buffs = {};
-    this.data.buffs[buffId] = Date.now() + durationMs;
+    const existing = this.hasActiveBuff(buffId) ? this.data.buffs[buffId] : Date.now();
+    this.data.buffs[buffId] = Math.max(Date.now(), existing) + durationMs;
     this.save();
   }
 
@@ -938,7 +952,8 @@ export class SaveSystem {
     if (item.isLocked) return null;
     if (this.isItemInAquarium(instanceId)) return null;
 
-    const gold = item.value > 0 ? Math.max(1, Math.round(item.value * multiplier)) : 0;
+    const totalMult = multiplier * this.getCoinBonusMultiplier();
+    const gold = item.value > 0 ? Math.max(1, Math.round(item.value * totalMult)) : 0;
     this.removeItemFromInventory(instanceId);
     if (gold > 0) this.addCoins(gold);
     return { item, gold };
@@ -956,9 +971,10 @@ export class SaveSystem {
 
     let totalGold = 0;
     const sellIds = new Set(itemsToSell.map((f) => f.instanceId));
+    const totalMult = multiplier * this.getCoinBonusMultiplier();
 
     itemsToSell.forEach((f) => {
-      totalGold += Math.max(1, Math.round(f.value * multiplier));
+      totalGold += Math.max(1, Math.round(f.value * totalMult));
     });
 
     this.data.inventory = inv.filter((i) => !sellIds.has(i.instanceId));
@@ -1208,6 +1224,58 @@ export class SaveSystem {
     this.data.boatColors = normalizeBoatColors(colors);
     this.save();
     return this.data.boatColors;
+  }
+
+  isMaxVessel() {
+    const maxTier = (UPGRADE_DEFINITIONS.boatVessel?.tiers?.length || 9) - 1;
+    return this.getUpgradeLevel('boatVessel') >= maxTier;
+  }
+
+  hasBoatHull(hullId) {
+    if (!hullId || hullId === 'standard') return true;
+    return (this.data.ownedBoatHulls || ['standard']).includes(hullId);
+  }
+
+  getBoatHull() {
+    return this.data.boatHullStyle || 'standard';
+  }
+
+  getBoatHullCost(hullId) {
+    if (!EXOTIC_BOAT_HULLS[hullId]) return null;
+    if (hullId === 'standard' || this.hasBoatHull(hullId)) return 0;
+    return EXOTIC_BOAT_HULLS[hullId].cost;
+  }
+
+  purchaseBoatHull(hullId) {
+    const hull = EXOTIC_BOAT_HULLS[hullId];
+    if (!hull) return { success: false, reason: 'Unknown hull design.' };
+    if (hullId === 'standard') {
+      this.data.boatHullStyle = 'standard';
+      this.save();
+      return { success: true };
+    }
+    if (this.hasBoatHull(hullId)) {
+      this.data.boatHullStyle = hullId;
+      this.save();
+      return { success: true };
+    }
+    if (!this.isMaxVessel()) {
+      return { success: false, reason: 'Max out your Angler Vessel (Poseidon Sovereign Galleon) first!' };
+    }
+    if (!this.spendCoins(hull.cost)) {
+      return { success: false, reason: `Need $${hull.cost.toLocaleString()} coins to commission ${hull.label}.` };
+    }
+    this.data.ownedBoatHulls ||= ['standard'];
+    if (!this.data.ownedBoatHulls.includes(hullId)) {
+      this.data.ownedBoatHulls.push(hullId);
+    }
+    this.data.boatHullStyle = hullId;
+    this.save();
+    return { success: true };
+  }
+
+  setBoatHull(hullId) {
+    return this.purchaseBoatHull(hullId);
   }
 
   setAquariumDecoration(key, value) {

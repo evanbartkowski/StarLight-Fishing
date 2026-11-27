@@ -378,12 +378,17 @@ export class Fish {
           case 'sine_wave': {
             // Eel / serpent / sea snake undulating oceanic wave
             const isSeaSnake = this.species.shape === 'sea_snake' || this.name.includes('Sea Snake');
-            const speedFactor = isSeaSnake ? 24 : 50;
-            const waveFreq = isSeaSnake ? 0.75 : 1.2;
-            const waveAmp = isSeaSnake ? 16 : 38;
-            vx = this.direction * (this.speed * speedFactor) * deltaSec;
-            vy = Math.cos(this.wiggleTimer * waveFreq) * waveAmp * deltaSec;
-            this.swimAngle = Math.cos(this.wiggleTimer * waveFreq) * (isSeaSnake ? 0.12 : 0.25);
+            if (isSeaSnake) {
+              // Fluid forward slither matching body undulation phase (keeps speed <= 0.45 while avoiding twitchy bobbing)
+              const glidePhase = this.wiggleTimer * 1.45;
+              vx = this.direction * (this.speed * 54) * deltaSec;
+              vy = Math.cos(glidePhase) * 9.5 * deltaSec;
+              this.swimAngle = Math.cos(glidePhase) * 0.14;
+            } else {
+              vx = this.direction * (this.speed * 50) * deltaSec;
+              vy = Math.cos(this.wiggleTimer * 1.2) * 38 * deltaSec;
+              this.swimAngle = Math.cos(this.wiggleTimer * 1.2) * 0.25;
+            }
             break;
           }
 

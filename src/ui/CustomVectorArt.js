@@ -1459,4 +1459,88 @@ export function getTreasureArt(item) {
   return DREDGED_TREASURE_ART.generic_treasure;
 }
 
+/**
+ * 7. BOAT YARD STUDIO ART (Zero Emojis: Custom SVG icons for tabs, trinkets, finishes & exotic hulls)
+ */
+export const BOAT_UI_ART = {
+  tabColors: svgWrap(`<circle cx="20" cy="24" r="14" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/><circle cx="15" cy="18" r="3" fill="#fb7185"/><circle cx="24" cy="16" r="3" fill="#fbbf24"/><circle cx="28" cy="24" r="3" fill="#34d399"/><circle cx="18" cy="29" r="3" fill="#818cf8"/><path d="M32 34l9-9 3 3-9 9-4 1 1-4z" fill="#f59e0b" stroke="#78350f" stroke-width="1.2"/>`),
+  tabHulls: svgWrap(`<path d="M6 30h36l-4 9H10l-4-9z" fill="#78350f" stroke="#fbbf24" stroke-width="1.8"/><path d="M24 8v22" stroke="#f8fafc" stroke-width="2.2"/><path d="M24 9l15 16H24V9z" fill="#ef4444" stroke="#f8fafc" stroke-width="1.2"/><path d="M12 13l12 12H14L12 13z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>`),
+  tabTrinkets: svgWrap(`<path d="M24 8l3 9h9l-7 5 3 9-8-5-8 5 3-9-7-5h9l3-9z" fill="#fbbf24" stroke="#b45309" stroke-width="1.5"/><circle cx="24" cy="24" r="4" fill="#fef08a"/>`),
+  tabSkins: svgWrap(`<path d="M10 30c6-12 14-16 28-14-3 10-12 18-24 20l-4-6z" fill="#c084fc" stroke="#e9d5ff" stroke-width="1.6"/><path d="M35 8l1.8 4.2L41 14l-4.2 1.8L35 20l-1.8-4.2L29 14l4.2-1.8L35 8z" fill="#fde047"/><circle cx="14" cy="14" r="2.2" fill="#38bdf8"/>`),
+  gemIcon: svgWrap(`<polygon points="24,6 38,16 32,40 16,40 10,16" fill="#38bdf8" stroke="#bae6fd" stroke-width="2"/><polygon points="24,6 31,16 24,40 17,16" fill="#7dd3fc" fill-opacity="0.5"/><line x1="10" y1="16" x2="38" y2="16" stroke="#e0f2fe" stroke-width="1.5"/>`),
+  coinIcon: svgWrap(`<circle cx="24" cy="24" r="16" fill="#facc15" stroke="#b45309" stroke-width="2.5"/><circle cx="24" cy="24" r="11" fill="none" stroke="#fef08a" stroke-width="1.5"/><text x="24" y="29" text-anchor="middle" font-size="14" font-weight="900" fill="#78350f">$</text>`),
+  anglerIcon: svgWrap(`<circle cx="24" cy="17" r="7" fill="#fed7aa" stroke="#78350f" stroke-width="1.5"/><path d="M13 15c3-5 19-5 22 0H13z" fill="#eab308" stroke="#78350f" stroke-width="1.4"/><path d="M12 40c1-9 23-9 24 0H12z" fill="#0284c7" stroke="#bae6fd" stroke-width="1.5"/>`),
+};
+
+export const TRINKET_ART = {
+  none: svgWrap(`<path d="M8 29h32l-4 8H12l-4-8z" fill="#64748b" stroke="#94a3b8" stroke-width="1.6"/><path d="M24 10v19M24 11l11 14H24" stroke="#cbd5e1" stroke-width="2" fill="#334155"/>`),
+  lucky_cat: svgWrap(`<rect x="10" y="34" width="28" height="6" rx="2" fill="#dc2626"/><ellipse cx="24" cy="26" rx="10" ry="9" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/><circle cx="24" cy="15" r="7.5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/><polygon points="17,10 19,4 22,9" fill="#f8fafc"/><polygon points="31,10 29,4 26,9" fill="#f8fafc"/><rect x="18" y="20" width="12" height="3" fill="#ef4444"/><ellipse cx="24" cy="27" rx="4" ry="5" fill="#facc15"/><circle cx="21" cy="14" r="1.2" fill="#0f172a"/><circle cx="27" cy="14" r="1.2" fill="#0f172a"/>`),
+  rubber_duck: svgWrap(`<ellipse cx="22" cy="29" rx="12" ry="8" fill="#facc15" stroke="#ca8a04" stroke-width="1.4"/><circle cx="29" cy="17" r="7" fill="#facc15" stroke="#ca8a04" stroke-width="1.4"/><polygon points="35,17 43,19 35,21" fill="#ea580c"/><path d="M21 11l16 0-3-6h-10l-3 6z" fill="#1e3a8a"/><circle cx="31" cy="15" r="1.4" fill="#0f172a"/>`),
+  wind_chime: svgWrap(`<line x1="12" y1="10" x2="36" y2="10" stroke="#b45309" stroke-width="3" stroke-linecap="round"/><line x1="16" y1="10" x2="15" y2="25" stroke="#e2e8f0" stroke-width="1.4"/><ellipse cx="15" cy="29" rx="3.5" ry="5" fill="#fbcfe8" stroke="#f472b6"/><line x1="24" y1="10" x2="25" y2="29" stroke="#e2e8f0" stroke-width="1.4"/><ellipse cx="25" cy="34" rx="4" ry="5.5" fill="#c7d2fe" stroke="#818cf8"/><line x1="32" y1="10" x2="33" y2="24" stroke="#e2e8f0" stroke-width="1.4"/><ellipse cx="33" cy="28" rx="3.5" ry="5" fill="#fed7aa" stroke="#fb923c"/>`),
+  ship_bell: svgWrap(`<path d="M12 12h10v6" stroke="#b45309" stroke-width="2.5" fill="none"/><path d="M21 15h6l6 17H15l6-17z" fill="#facc15" stroke="#b45309" stroke-width="1.5"/><ellipse cx="24" cy="32" rx="9" ry="2.5" fill="#ca8a04"/><circle cx="24" cy="36" r="2.2" fill="#451a03"/>`),
+  pirate_parrot: svgWrap(`<rect x="14" y="34" width="20" height="4" rx="1.5" fill="#78350f"/><ellipse cx="24" cy="25" rx="7" ry="10" fill="#dc2626"/><ellipse cx="21" cy="25" rx="4" ry="7" fill="#2563eb"/><circle cx="25" cy="14" r="5.5" fill="#dc2626"/><polygon points="29,12 36,15 30,17" fill="#f1f5f9"/><circle cx="26" cy="13" r="1.4" fill="#0f172a"/>`),
+  crystal_orb: svgWrap(`<polygon points="17,40 31,40 27,31 21,31" fill="#d97706" stroke="#78350f" stroke-width="1.2"/><circle cx="24" cy="20" r="11" fill="#38bdf8" stroke="#bae6fd" stroke-width="1.8"/><circle cx="20" cy="16" r="3" fill="#ffffff" fill-opacity="0.75"/><circle cx="24" cy="20" r="14" stroke="#818cf8" stroke-opacity="0.4" stroke-width="2"/>`),
+};
+
+export const HULL_ART = {
+  standard: svgWrap(`<path d="M7 29h34l-4 9H11l-4-9z" fill="#78350f" stroke="#fbbf24" stroke-width="1.8"/><path d="M24 9v20" stroke="#451a03" stroke-width="2.4"/><path d="M24 10l14 14H24V10z" fill="#fef3c7" stroke="#fbbf24"/>`),
+  pirate: svgWrap(`<path d="M6 29h36l-4 9H10l-4-9z" fill="#18181b" stroke="#ef4444" stroke-width="1.8"/><path d="M24 8v21" stroke="#09090b" stroke-width="2.6"/><path d="M17 11h17l-2 15H17V11z" fill="#1e293b" stroke="#ef4444"/><circle cx="25" cy="18" r="3.2" fill="#f8fafc"/><circle cx="24" cy="18" r=".8" fill="#0f172a"/><circle cx="26" cy="18" r=".8" fill="#0f172a"/>`),
+  submarine: svgWrap(`<ellipse cx="24" cy="27" rx="17" ry="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1.8"/><rect x="17" y="14" width="12" height="7" fill="#0f172a" stroke="#38bdf8" stroke-width="1.4"/><path d="M21 14V8h5" stroke="#fbbf24" stroke-width="2.2"/><circle cx="17" cy="27" r="2.2" fill="#fde047"/><circle cx="24" cy="27" r="2.2" fill="#fde047"/><circle cx="31" cy="27" r="2.2" fill="#fde047"/>`),
+  chinese_junk: svgWrap(`<path d="M5 24c6 12 32 12 38 0l-5 11H10L5 24z" fill="#7c2d12" stroke="#f59e0b" stroke-width="1.6"/><path d="M22 9l15 4-2 16H21V9z" fill="#b91c1c" stroke="#fde047" stroke-width="1.4"/><line x1="21" y1="15" x2="36" y2="15" stroke="#fde047" stroke-width="1.2"/><line x1="21" y1="21" x2="35" y2="21" stroke="#fde047" stroke-width="1.2"/>`),
+  viking: svgWrap(`<path d="M6 25c4 11 32 11 36 0" fill="#78350f" stroke="#fbbf24" stroke-width="2"/><path d="M40 24c4-6 3-11-1-12" stroke="#fbbf24" stroke-width="2.5" fill="none"/><path d="M16 10h16v14H16z" fill="#f8fafc" stroke="#dc2626" stroke-width="1.6"/><line x1="24" y1="10" x2="24" y2="24" stroke="#dc2626" stroke-width="4"/><circle cx="18" cy="28" r="2.5" fill="#ef4444" stroke="#e2e8f0"/><circle cx="24" cy="29" r="2.5" fill="#2563eb" stroke="#e2e8f0"/><circle cx="30" cy="28" r="2.5" fill="#ef4444" stroke="#e2e8f0"/>`),
+  ghost_ship: svgWrap(`<path d="M7 29h34l-4 9H11l-4-9z" fill="#0f292e" stroke="#2dd4bf" stroke-width="1.8"/><path d="M23 9l15 12-4 7-5-3-6 4V9z" fill="#5eead4" fill-opacity="0.4" stroke="#2dd4bf" stroke-width="1.4"/><circle cx="13" cy="22" r="2.5" fill="#99f6e4"/>`),
+  steampunk: svgWrap(`<path d="M6 28h35l4 5-6 5H10l-4-10z" fill="#431407" stroke="#fb923c" stroke-width="1.8"/><rect x="13" y="11" width="5" height="14" fill="#78350f" stroke="#fbbf24"/><rect x="21" y="14" width="5" height="11" fill="#78350f" stroke="#fbbf24"/><circle cx="26" cy="31" r="6" fill="none" stroke="#f59e0b" stroke-width="2"/><circle cx="12" cy="8" r="2.5" fill="#e2e8f0" fill-opacity="0.6"/>`),
+};
+
+/**
+ * 8. CRATE REWARD ITEM ARTWORK (renders crisp illustrations of actual crate items instead of emojis)
+ */
+export function getCrateLootArt(item, grade = 'fair') {
+  if (!item) return DREDGED_TREASURE_ART.generic_treasure;
+  const id = String(item.id || '').toLowerCase();
+  const type = String(item.type || '').toLowerCase();
+
+  if (item.bonusBuff) {
+    const buffId = item.bonusBuff.id;
+    const isGold = buffId === 'goldSurge';
+    const isXp = buffId === 'xpSurge';
+    const liquid = isGold ? '#facc15' : isXp ? '#38bdf8' : '#c084fc';
+    const glow = isGold ? '#fde047' : isXp ? '#7dd3fc' : '#e879f9';
+    return svgWrap(`
+      <rect x="20" y="7" width="8" height="5" rx="1.5" fill="#b45309"/>
+      <path d="M20 12v6l-9 14c-1.5 2.5 0 6 3 6h20c3 0 4.5-3.5 3-6l-9-14v-6H20z" fill="#0f172a" stroke="${glow}" stroke-width="2"/>
+      <path d="M13 31c3-2 7-2 11 0s8 2 11 0l2 3c1 2 0 4-3 4H14c-3 0-4-2-3-4l2-3z" fill="${liquid}"/>
+      <circle cx="21" cy="29" r="1.6" fill="#ffffff"/>
+      <circle cx="27" cy="33" r="1.3" fill="#ffffff"/>
+    `);
+  }
+  if (item.bonusBobber) return SHOP_ART.lureLuck;
+  if (item.bonusSkeleton || item.bonusFossil || type.includes('fossil')) {
+    return svgWrap(`
+      <ellipse cx="24" cy="24" rx="15" ry="11" fill="#475569" stroke="#cbd5e1" stroke-width="1.6"/>
+      <path d="M24 24m-7 0a7 7 0 1 0 14 0a5 5 0 1 0 -10 0a3 3 0 1 0 6 0" stroke="#fef08a" stroke-width="2" fill="none"/>
+    `);
+  }
+  if (id.includes('boot')) {
+    return svgWrap(`<path d="M16 11h11v16l10 3v8H14V11h2z" fill="#78350f" stroke="#451a03" stroke-width="1.6"/><path d="M14 35h23" stroke="#1c1917" stroke-width="3"/>`);
+  }
+  if (id.includes('crab') || id.includes('urchin') || id.includes('cuttlefish') || type === 'hazard') {
+    return svgWrap(`<ellipse cx="24" cy="27" rx="11" ry="8" fill="#ef4444" stroke="#991b1b" stroke-width="1.6"/><path d="M14 23l-5-7 5-2 3 6M34 23l5-7-5-2-3 6" fill="#f87171" stroke="#991b1b" stroke-width="1.4"/><circle cx="20" cy="21" r="1.8" fill="#ffffff"/><circle cx="28" cy="21" r="1.8" fill="#ffffff"/><circle cx="20" cy="21" r="0.8" fill="#0f172a"/><circle cx="28" cy="21" r="0.8" fill="#0f172a"/>`);
+  }
+  if (id.includes('kelp')) {
+    return svgWrap(`<path d="M18 39c-2-10 6-14 2-25M25 40c3-11-5-16 1-27M31 38c4-9-2-14 2-22" stroke="#15803d" stroke-width="3.2" stroke-linecap="round"/><circle cx="20" cy="18" r="2.2" fill="#4ade80"/><circle cx="28" cy="22" r="2" fill="#4ade80"/>`);
+  }
+  if (id.includes('bottle') || id.includes('rum') || id.includes('demijohn')) return DREDGED_TREASURE_ART.bottle;
+  if (id.includes('hook') || id.includes('anchor') || id.includes('lock')) return DREDGED_TREASURE_ART.anchor;
+  if (id.includes('pearl') || id.includes('shell')) return DREDGED_TREASURE_ART.giant_pearl;
+  if (id.includes('compass') || id.includes('sextant')) return SHOP_ART.nauticalAstrolabe;
+  if (id.includes('porcelain') || id.includes('ledger') || id.includes('prank')) return DREDGED_TREASURE_ART.amphora;
+  if (id.includes('coin') || id.includes('silver') || id.includes('gold') || id.includes('ingot') || type === 'jackpot') return DREDGED_TREASURE_ART.coin_bag;
+  if (id.includes('gem') || id.includes('diamond') || id.includes('glass') || id.includes('crystal') || id.includes('void') || id.includes('cosmic')) return DREDGED_TREASURE_ART.ocean_heart;
+  if (grade === 'super_good') return DREDGED_TREASURE_ART.royal_artifact;
+  if (grade === 'super_bad') return DREDGED_TREASURE_ART.rusty_can;
+  return DREDGED_TREASURE_ART.generic_treasure;
+}
+
+
 

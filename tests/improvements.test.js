@@ -147,3 +147,108 @@ test('WeeklyDerby rotates cleanly, records best weekly score, and ranks players'
   assert.equal(standings[1].username, 'DerbyAce');
   assert.equal(standings[1].isCurrent, true);
 });
+
+test('Exotic Boat Hulls require max boat tier, persist after coin purchase, and render cleanly with all Ship Finishes', async () => {
+  const { EXOTIC_BOAT_HULLS, BOAT_SKIN_OPTIONS } = await import('../src/data/CustomizationData.js');
+  const { drawVesselHull, getVesselLayout } = await import('../src/rendering/VesselRenderer.js');
+
+  storage.clear();
+  accountManager.activeUser = null;
+  const save = new SaveSystem();
+  save.addCoins(1000000);
+
+  // Blocked prior to maxing boatVessel (tier 8)
+  save.setUpgradeLevel('boatVessel', 4);
+  assert.equal(save.isMaxVessel(), false);
+  const blocked = save.purchaseBoatHull('pirate');
+  assert.equal(blocked.success, false);
+
+  // Unlocked once maxed
+  save.setUpgradeLevel('boatVessel', 8);
+  assert.equal(save.isMaxVessel(), true);
+  const bought = save.purchaseBoatHull('submarine');
+  assert.equal(bought.success, true);
+  assert.equal(save.getBoatHull(), 'submarine');
+  assert.equal(save.hasBoatHull('submarine'), true);
+
+  const reloaded = new SaveSystem();
+  reloaded.load();
+  assert.equal(reloaded.getBoatHull(), 'submarine');
+  assert.equal(reloaded.hasBoatHull('submarine'), true);
+
+  // Render every exotic hull + every finish FX with finite canvas coordinates
+  let draws = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key.includes('Gradient')) return () => ({ addColorStop() {} });
+      return (...args) => {
+        draws++;
+        for (const v of args) {
+          if (typeof v === 'number') assert.ok(Number.isFinite(v), `Non-finite number passed to ${String(key)}`);
+        }
+      };
+    },
+    set: () => true,
+  });
+
+  for (const hullId of Object.keys(EXOTIC_BOAT_HULLS)) {
+    const layout = getVesselLayout(8, 140, 40, hullId);
+    assert.ok(Number.isFinite(layout.anglerPos.x) && Number.isFinite(layout.catPos.x) && Number.isFinite(layout.pelicanPos.x));
+    for (const skin of Object.values(BOAT_SKIN_OPTIONS)) {
+      drawVesselHull(mockCtx, 8, 140, 40, 1.25, { skinColor: skin.color, skinMeta: skin, skinId: skin.id, hullStyle: hullId });
+    }
+  }
+  assert.ok(draws > 500, 'Exotic hulls and ship finishes issued drawing commands');
+});
+
+test('Crate timed multipliers buff Coin sales & XP, crate SVG art renders, and Stripped Sea Snake glides smoothly', async () => {
+  const { CRATE_LOOT_TABLES, rollCrateLoot } = await import('../src/data/CrateData.js');
+  const { getCrateLootArt, BOAT_UI_ART, TRINKET_ART, HULL_ART } = await import('../src/ui/CustomVectorArt.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { DRIFT_MESSAGES } = await import('../src/data/DriftMessages.js');
+
+  storage.clear();
+  const save = new SaveSystem();
+
+  // Verify SVG icons contain <svg elements (no raw emoji placeholders in Boat Yard / Crates art)
+  assert.ok(BOAT_UI_ART.tabHulls.includes('<svg') && TRINKET_ART.lucky_cat.includes('<svg') && HULL_ART.chinese_junk.includes('<svg'));
+  const goldTonic = CRATE_LOOT_TABLES[1].fair.find(i => i.bonusBuff?.id === 'goldSurge');
+  assert.ok(goldTonic, 'Rank 1 crate table includes 2x Gold Rush timed boost');
+  assert.ok(getCrateLootArt(goldTonic, 'fair').includes('<svg'));
+
+  // Timed buff multipliers
+  const itemA = save.addItemToInventory({ id: 'cod', name: 'Cod', type: 'fish', value: 100 });
+  const itemB = save.addItemToInventory({ id: 'cod2', name: 'Cod', type: 'fish', value: 100 });
+  const normalSale = save.sellInventoryItem(itemA.instanceId, 1);
+  assert.equal(normalSale.gold, 100);
+
+  save.addBuff('goldSurge', 120000);
+  assert.equal(save.getCoinBonusMultiplier(), 2);
+  const surgeSale = save.sellInventoryItem(itemB.instanceId, 1);
+  assert.equal(surgeSale.gold, 200);
+
+  const xpBefore = save.data.xp;
+  assert.equal(save.data.level, 0);
+  save.addBuff('xpSurge', 120000);
+  save.addXp(50);
+  // 50 * 2 = 100 XP at Level 0 (req 60) -> Level 1 with 40 XP remaining
+  assert.equal(save.data.level, 1);
+  assert.equal(save.data.xp, xpBefore + 40);
+
+  // Crate rolls remain bounded & include 2% gem rule
+  const sample = rollCrateLoot(3, save);
+  assert.ok(sample && typeof sample.coins === 'number' && typeof sample.xp === 'number');
+
+  // Sea Snake moves horizontally more smoothly than vertical jitter
+  const snakeSpecies = FISH_SPECIES.find(f => f.name === 'Striped Sea Snake') || { name: 'Striped Sea Snake', shape: 'sea_snake', swimSpeed: 0.35, wiggleSpeed: 1.2 };
+  const snake = new Fish(snakeSpecies, 400, 320);
+  snake.direction = 1;
+  const startX = snake.x;
+  const startY = snake.y;
+  snake.update(1000, 1200, null);
+  assert.ok(snake.x - startX > Math.abs(snake.y - startY), 'Striped Sea Snake travels horizontally faster than vertical oscillation');
+
+  // Bottle poems present
+  assert.ok(DRIFT_MESSAGES.length >= 10 && DRIFT_MESSAGES.every(m => m.lines.length >= 3));
+});

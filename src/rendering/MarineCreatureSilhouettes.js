@@ -501,64 +501,150 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'sea_snake': {
-      // Elongated sinusoidal undulating body with flattened paddle tail - high visibility with contrast contour
-      // 1. Dark backing contour outline for crisp visibility against all waters
-      ctx.lineWidth = 9.2;
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
-      ctx.beginPath();
-      ctx.moveTo(25, 0);
-      for (let s = 1; s <= 6; s++) {
-        const sx = 25 - s * 8.5;
-        const sy = Math.sin(t * 1.35 - s * 0.7) * 6.5;
-        ctx.lineTo(sx, sy);
+      // Smooth tapered multi-segment sea snake with tangent-aligned stripes, dorsal crest & paddle tail
+      const pts = [];
+      const segs = 18;
+      const snakePhase = t * 1.45;
+      for (let s = 0; s <= segs; s++) {
+        const u = s / segs;
+        const sx = 24 - u * 56;
+        // Traveling wave amplitude gently increases toward the tail for lifelike slithering
+        const amp = 1.6 + u * 6.8;
+        const sy = Math.sin(snakePhase - u * 4.4) * amp;
+        pts.push({ x: sx, y: sy, u });
       }
-      ctx.stroke();
 
-      // 2. Main bright snake body stroke
-      ctx.lineWidth = 7.0;
-      ctx.strokeStyle = primary;
-      ctx.beginPath();
-      ctx.moveTo(25, 0);
-      for (let s = 1; s <= 6; s++) {
-        const sx = 25 - s * 8.5;
-        const sy = Math.sin(t * 1.35 - s * 0.7) * 6.5;
-        ctx.lineTo(sx, sy);
+      // Build left/right contour normals for tapered serpentine body
+      const upper = [];
+      const lower = [];
+      for (let i = 0; i < pts.length; i++) {
+        const prev = pts[Math.max(0, i - 1)];
+        const next = pts[Math.min(pts.length - 1, i + 1)];
+        const dx = next.x - prev.x;
+        const dy = next.y - prev.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const u = pts[i].u;
+        const halfThick = i === 0 ? 4.4 : Math.max(1.8, 5.2 * (1 - u * 0.58));
+        upper.push({ x: pts[i].x + nx * halfThick, y: pts[i].y + ny * halfThick, nx, ny, halfThick });
+        lower.push({ x: pts[i].x - nx * halfThick, y: pts[i].y - ny * halfThick });
       }
-      ctx.stroke();
 
-      // 3. High-contrast banded pattern rings (alternating striped markings)
-      ctx.strokeStyle = secondary;
-      ctx.lineWidth = 6.8;
-      ctx.beginPath();
-      for (let b = 1; b <= 5; b += 2) {
-        const bx = 25 - b * 8.5;
-        const by = Math.sin(t * 1.35 - b * 0.7) * 6.5;
-        ctx.moveTo(bx - 3.2, by);
-        ctx.lineTo(bx + 3.2, by);
-      }
-      ctx.stroke();
+      // Trace smooth serpentine silhouette path helper
+      const traceSnakeBody = () => {
+        ctx.beginPath();
+        ctx.moveTo(upper[0].x, upper[0].y);
+        for (let i = 1; i < upper.length; i++) ctx.lineTo(upper[i].x, upper[i].y);
+        for (let i = lower.length - 1; i >= 0; i--) ctx.lineTo(lower[i].x, lower[i].y);
+        ctx.closePath();
+      };
 
-      // 4. Flattened paddle tail fin (distinct high-visibility paddle)
-      const tailX = 25 - 6 * 8.5;
-      const tailY = Math.sin(t * 1.35 - 6 * 0.7) * 6.5;
+      // Aqua dorsal crest fin along neck & mid-body
       ctx.fillStyle = finColor || '#38bdf8';
-      ctx.strokeStyle = 'rgba(15, 23, 42, 0.75)';
+      ctx.globalAlpha = 0.78;
+      ctx.beginPath();
+      ctx.moveTo(pts[2].x, pts[2].y);
+      for (let i = 3; i <= 14; i++) {
+        const crestH = Math.sin(((i - 2) / 12) * Math.PI) * 5.2;
+        ctx.lineTo(pts[i].x + upper[i].nx * (upper[i].halfThick + crestH), pts[i].y + upper[i].ny * (upper[i].halfThick + crestH));
+      }
+      ctx.lineTo(pts[14].x, pts[14].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Flattened venomous sea snake paddle tail fin
+      const tailPt = pts[pts.length - 1];
+      const tailPrev = pts[pts.length - 3];
+      const tailAngle = Math.atan2(tailPt.y - tailPrev.y, tailPt.x - tailPrev.x);
+      ctx.save();
+      ctx.translate(tailPt.x, tailPt.y);
+      ctx.rotate(tailAngle);
+      ctx.fillStyle = finColor || '#38bdf8';
+      ctx.strokeStyle = secondary;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.ellipse(tailX - 4, tailY, 8, 5.5, Math.sin(t * 1.35) * 0.25, 0, Math.PI * 2);
+      ctx.ellipse(5, 0, 8.5, 4.6, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+      ctx.restore();
 
-      // 5. Slender snake head & bright eye
+      // Main primary body fill + crisp outline
+      traceSnakeBody();
       ctx.fillStyle = primary;
-      ctx.beginPath();
-      ctx.arc(26, 0, 4.2, 0, Math.PI * 2);
       ctx.fill();
+
+      // Belly sheen
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(pts[1].x, pts[1].y);
+      for (let i = 2; i < pts.length - 2; i++) {
+        ctx.lineTo(pts[i].x - upper[i].nx * (upper[i].halfThick * 0.45), pts[i].y - upper[i].ny * (upper[i].halfThick * 0.45));
+      }
+      ctx.stroke();
+
+      // Clean perpendicular striped rings wrapped strictly inside body width
+      ctx.strokeStyle = secondary;
+      ctx.lineCap = 'butt';
+      for (let b = 2; b < pts.length - 1; b += 2) {
+        const p = pts[b];
+        const n = upper[b];
+        ctx.lineWidth = Math.max(2.6, 4.2 * (1 - p.u * 0.45));
+        ctx.beginPath();
+        ctx.moveTo(p.x + n.nx * (n.halfThick - 0.3), p.y + n.ny * (n.halfThick - 0.3));
+        ctx.lineTo(p.x - n.nx * (n.halfThick - 0.3), p.y - n.ny * (n.halfThick - 0.3));
+        ctx.stroke();
+      }
+
+      // Outer ink silhouette stroke for sharp contrast in bright & dark waters
+      traceSnakeBody();
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
+      // Sculpted head + snout + bright eye & tiny flicking forked tongue
+      const headPt = pts[0];
+      const neckPt = pts[1];
+      const headAngle = Math.atan2(headPt.y - neckPt.y, headPt.x - neckPt.x);
+      ctx.save();
+      ctx.translate(headPt.x + 2, headPt.y);
+      ctx.rotate(headAngle);
+      // Tongue flick animation
+      if (Math.sin(t * 2.2) > 0.35) {
+        ctx.strokeStyle = '#fb7185';
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.moveTo(6, 0.5);
+        ctx.lineTo(11, 0.5);
+        ctx.lineTo(13.5, -1.3);
+        ctx.moveTo(11, 0.5);
+        ctx.lineTo(13.5, 2.2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = primary;
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.ellipse(1, 0, 6.2, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Dark crown cap
+      ctx.fillStyle = secondary;
+      ctx.beginPath();
+      ctx.ellipse(-0.5, -1.6, 3.8, 1.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Keen eye
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(27.5, -1.2, 1.3, 0, Math.PI * 2);
+      ctx.arc(2.8, -1.2, 1.4, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(3.2, -1.6, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
       return true;
     }
 

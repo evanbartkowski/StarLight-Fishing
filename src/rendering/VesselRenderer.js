@@ -17,10 +17,78 @@ export const VESSEL_NAMES = [
  * Shared deck, bow, stern, trinket, and pet layout per vessel tier (0..8)
  * so boats, trinkets, and companions (cat, pelican) align cleanly across all vessels.
  */
-export function getVesselLayout(vessel = 0, bW = 140, bH = 40) {
+export function getVesselLayout(vessel = 0, bW = 140, bH = 40, hullStyle = 'standard') {
   const v = Math.max(0, Math.min(8, Math.floor(Number(vessel) || 0)));
   const hw = (bW > 0 ? bW : 140) * 0.5;
   const scale = hw / 70;
+  const style = hullStyle || 'standard';
+
+  if (style === 'pirate') {
+    return {
+      tier: v, hullStyle: style, scale, halfWidth: hw * 1.38,
+      catPos: { x: -50 * scale, y: -44 },
+      pelicanPos: { x: 108 * scale, y: -26 },
+      trinketLeft: { x: -72 * scale, y: -16 },
+      trinketRight: { x: 60 * scale, y: -16 },
+      anglerPos: { x: -4, y: -14 },
+      previewScale: 0.67, previewOffsetY: 18,
+    };
+  }
+  if (style === 'submarine') {
+    return {
+      tier: v, hullStyle: style, scale, halfWidth: hw * 1.34,
+      catPos: { x: -44 * scale, y: -22 },
+      pelicanPos: { x: 82 * scale, y: -22 },
+      trinketLeft: { x: -64 * scale, y: -18 },
+      trinketRight: { x: 46 * scale, y: -22 },
+      anglerPos: { x: 2, y: -24 },
+      previewScale: 0.72, previewOffsetY: 12,
+    };
+  }
+  if (style === 'chinese_junk') {
+    return {
+      tier: v, hullStyle: style, scale, halfWidth: hw * 1.38,
+      catPos: { x: -52 * scale, y: -42 },
+      pelicanPos: { x: 100 * scale, y: -26 },
+      trinketLeft: { x: -70 * scale, y: -16 },
+      trinketRight: { x: 56 * scale, y: -16 },
+      anglerPos: { x: -4, y: -14 },
+      previewScale: 0.68, previewOffsetY: 16,
+    };
+  }
+  if (style === 'viking') {
+    return {
+      tier: v, hullStyle: style, scale, halfWidth: hw * 1.35,
+      catPos: { x: -52 * scale, y: -18 },
+      pelicanPos: { x: 96 * scale, y: -34 },
+      trinketLeft: { x: -68 * scale, y: -16 },
+      trinketRight: { x: 54 * scale, y: -15 },
+      anglerPos: { x: -4, y: -12 },
+      previewScale: 0.70, previewOffsetY: 14,
+    };
+  }
+  if (style === 'ghost_ship') {
+    return {
+      tier: v, hullStyle: style, scale, halfWidth: hw * 1.36,
+      catPos: { x: -48 * scale, y: -44 },
+      pelicanPos: { x: 102 * scale, y: -26 },
+      trinketLeft: { x: -70 * scale, y: -16 },
+      trinketRight: { x: 58 * scale, y: -16 },
+      anglerPos: { x: -4, y: -14 },
+      previewScale: 0.68, previewOffsetY: 18,
+    };
+  }
+  if (style === 'steampunk') {
+    return {
+      tier: v, hullStyle: style, scale, halfWidth: hw * 1.36,
+      catPos: { x: -50 * scale, y: -38 },
+      pelicanPos: { x: 96 * scale, y: -22 },
+      trinketLeft: { x: -68 * scale, y: -16 },
+      trinketRight: { x: 56 * scale, y: -16 },
+      anglerPos: { x: -6, y: -14 },
+      previewScale: 0.69, previewOffsetY: 16,
+    };
+  }
 
   switch (v) {
     case 0:
@@ -131,6 +199,8 @@ function resolvePalette(v, skinOrOpts, customColors) {
 
   let skinColor = null;
   let skinMeta = null;
+  let skinId = 'default';
+  let hullStyle = 'standard';
   let partColors = customColors || null;
 
   if (typeof skinOrOpts === 'string') {
@@ -138,6 +208,8 @@ function resolvePalette(v, skinOrOpts, customColors) {
   } else if (skinOrOpts && typeof skinOrOpts === 'object') {
     skinColor = skinOrOpts.skinColor || skinOrOpts.color || null;
     skinMeta = skinOrOpts.skinMeta || null;
+    skinId = skinOrOpts.skinId || skinMeta?.id || 'default';
+    hullStyle = skinOrOpts.hullStyle || 'standard';
     if (!partColors && skinOrOpts.boatColors) partColors = skinOrOpts.boatColors;
   }
 
@@ -153,7 +225,247 @@ function resolvePalette(v, skinOrOpts, customColors) {
     cabin: hullCustom ? defaults.cabin : defaults.cabin,
     glow: trimCustom || skinMeta?.glow || skinColor || defaults.glow,
     hasCustomAccent: Boolean(skinColor || trimCustom || hullCustom),
+    skinId,
+    skinEffect: skinMeta?.effect || 'classic',
+    hullStyle,
   };
+}
+
+function applyShipFinishOverlay(ctx, pal, wScale, h, time) {
+  const effect = pal.skinEffect;
+  if (!effect || effect === 'classic') return;
+  const span = wScale;
+  ctx.save();
+  try {
+    switch (effect) {
+      case 'celestial_stars': {
+        // Shimmering nebula wash & pulsing twinkling constellation dots across hull
+        ctx.strokeStyle = '#c084fc';
+        ctx.globalAlpha = 0.45 + 0.25 * Math.sin(time * 2.4);
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.9, -4);
+        ctx.quadraticCurveTo(0, 8, span * 0.92, -4);
+        ctx.stroke();
+
+        // Constellation connecting lines
+        ctx.strokeStyle = 'rgba(224, 231, 255, 0.55)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.62, 6);
+        ctx.lineTo(-span * 0.3, -2);
+        ctx.lineTo(0, 7);
+        ctx.lineTo(span * 0.35, -1);
+        ctx.lineTo(span * 0.65, 6);
+        ctx.stroke();
+
+        // Sparkling 4-point stars
+        const stars = [-0.62, -0.3, 0, 0.35, 0.65];
+        stars.forEach((sx, idx) => {
+          const px = span * sx;
+          const py = idx % 2 === 0 ? 6 : -1;
+          const pulse = 2.6 + Math.sin(time * 4 + idx * 1.4) * 1.1;
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.moveTo(px, py - pulse);
+          ctx.lineTo(px + pulse * 0.35, py - pulse * 0.35);
+          ctx.lineTo(px + pulse, py);
+          ctx.lineTo(px + pulse * 0.35, py + pulse * 0.35);
+          ctx.lineTo(px, py + pulse);
+          ctx.lineTo(px - pulse * 0.35, py + pulse * 0.35);
+          ctx.lineTo(px - pulse, py);
+          ctx.lineTo(px - pulse * 0.35, py - pulse * 0.35);
+          ctx.closePath();
+          ctx.fill();
+        });
+        break;
+      }
+      case 'magma_cracks': {
+        // Jagged glowing lava fissure veins + rising embers
+        const glowPulse = 0.7 + 0.3 * Math.sin(time * 3.8);
+        ctx.strokeStyle = '#f97316';
+        ctx.globalAlpha = glowPulse * 0.55;
+        ctx.lineWidth = 4.5;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.72, 2);
+        ctx.lineTo(-span * 0.48, 12);
+        ctx.lineTo(-span * 0.28, 3);
+        ctx.lineTo(-span * 0.05, 14);
+        ctx.lineTo(span * 0.22, 2);
+        ctx.lineTo(span * 0.48, 13);
+        ctx.lineTo(span * 0.72, 1);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#fde047';
+        ctx.globalAlpha = glowPulse;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        for (let e = 0; e < 5; e++) {
+          const cycle = (time * 0.9 + e * 0.23) % 1;
+          const ex = (-0.55 + e * 0.28) * span + Math.sin(time * 3 + e) * 4;
+          const ey = 6 - cycle * 32;
+          ctx.fillStyle = cycle < 0.5 ? '#fde047' : '#f97316';
+          ctx.globalAlpha = Math.max(0, 1 - cycle);
+          ctx.beginPath();
+          ctx.arc(ex, ey, 2.2 * (1 - cycle * 0.5), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'gold_plate': {
+        // Heavy gilded hull bands, rivets, and moving glint
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.92, -3);
+        ctx.quadraticCurveTo(0, 8, span * 0.95, -3);
+        ctx.stroke();
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.85, 8);
+        ctx.quadraticCurveTo(0, 18, span * 0.88, 8);
+        ctx.stroke();
+        for (let r = -3; r <= 3; r++) {
+          ctx.fillStyle = '#fef9c3';
+          ctx.beginPath();
+          ctx.arc(r * span * 0.24, 3 + Math.abs(r) * 1.2, 2.1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        const glintX = Math.sin(time * 1.6) * span * 0.7;
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        ctx.arc(glintX, 4, 3, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case 'pearl_prism': {
+        const shift = (Math.sin(time * 1.8) + 1) * 0.5;
+        const pGrad = ctx.createLinearGradient(-span, -6, span, 14);
+        pGrad.addColorStop(0, 'rgba(56, 189, 248, 0.55)');
+        pGrad.addColorStop(0.25 + shift * 0.25, 'rgba(244, 114, 182, 0.6)');
+        pGrad.addColorStop(0.65, 'rgba(167, 243, 208, 0.55)');
+        pGrad.addColorStop(1, 'rgba(199, 210, 254, 0.6)');
+        ctx.strokeStyle = pGrad;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.92, 0);
+        ctx.quadraticCurveTo(0, 12, span * 0.94, 0);
+        ctx.stroke();
+        break;
+      }
+      case 'neon_circuit': {
+        const pulse = 0.65 + 0.35 * Math.sin(time * 5);
+        ctx.strokeStyle = '#22d3ee';
+        ctx.globalAlpha = pulse;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.85, 0);
+        ctx.lineTo(-span * 0.45, 0);
+        ctx.lineTo(-span * 0.32, 9);
+        ctx.lineTo(span * 0.25, 9);
+        ctx.lineTo(span * 0.38, -1);
+        ctx.lineTo(span * 0.86, -1);
+        ctx.stroke();
+        for (const nx of [-0.45, -0.32, 0.25, 0.38]) {
+          ctx.fillStyle = '#cffafe';
+          ctx.beginPath();
+          ctx.arc(span * nx, (nx === -0.32 || nx === 0.25) ? 9 : 0, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'crimson_runes': {
+        const throb = 0.6 + 0.4 * Math.sin(time * 3);
+        ctx.strokeStyle = '#fb7185';
+        ctx.globalAlpha = throb;
+        ctx.lineWidth = 2;
+        for (let k = -2; k <= 2; k++) {
+          const rx = k * span * 0.3;
+          ctx.beginPath();
+          ctx.moveTo(rx - 5, 1);
+          ctx.lineTo(rx, 8);
+          ctx.lineTo(rx + 5, 1);
+          ctx.lineTo(rx, -4);
+          ctx.closePath();
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'amethyst_facets': {
+        ctx.fillStyle = '#d8b4fe';
+        ctx.strokeStyle = '#6b21a8';
+        ctx.lineWidth = 1.2;
+        for (let c = -2; c <= 2; c++) {
+          const cx = c * span * 0.28;
+          ctx.beginPath();
+          ctx.moveTo(cx, -5);
+          ctx.lineTo(cx + 5, 3);
+          ctx.lineTo(cx, 11);
+          ctx.lineTo(cx - 5, 3);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'emerald_bio': {
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        for (let sx = -span * 0.85; sx <= span * 0.85; sx += 14) {
+          const sy = 5 + Math.sin(sx * 0.08 + time * 2.5) * 4;
+          if (sx === -span * 0.85) ctx.moveTo(sx, sy);
+          else ctx.lineTo(sx, sy);
+        }
+        ctx.stroke();
+        break;
+      }
+      case 'indigo_vortex': {
+        ctx.strokeStyle = '#a5b4fc';
+        ctx.lineWidth = 2.6;
+        for (let i = -2; i <= 2; i++) {
+          const ix = i * span * 0.28;
+          ctx.beginPath();
+          ctx.moveTo(ix - 8, 8);
+          ctx.lineTo(ix, -1);
+          ctx.lineTo(ix + 8, 8);
+          ctx.stroke();
+        }
+        break;
+      }
+      case 'coral_bloom': {
+        for (let i = -3; i <= 3; i++) {
+          const bx = i * span * 0.24;
+          ctx.fillStyle = i % 2 === 0 ? '#fda4af' : '#fef08a';
+          ctx.beginPath();
+          ctx.arc(bx, 3 + Math.abs(i) * 1.1, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'rose_sheen': {
+        const rg = ctx.createLinearGradient(-span, -6, span, 14);
+        rg.addColorStop(0, '#fb7185');
+        rg.addColorStop(0.5, '#fef08a');
+        rg.addColorStop(1, '#fda4af');
+        ctx.strokeStyle = rg;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(-span * 0.9, 1);
+        ctx.quadraticCurveTo(0, 12, span * 0.9, 1);
+        ctx.stroke();
+        break;
+      }
+      default:
+        break;
+    }
+  } finally {
+    ctx.restore();
+  }
 }
 
 function drawGlowDot(ctx, x, y, r, color) {
@@ -185,10 +497,432 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
   const hw = (bW > 0 ? bW : 140) * 0.5;
   const h = (bH > 0 ? bH : 40);
   const pal = resolvePalette(v, skinColor, customColors);
+  const effectiveSpan = pal.hullStyle && pal.hullStyle !== 'standard' ? hw * 1.35 : (hw * [0.92, 0.96, 1, 1.04, 1.08, 1.15, 1.2, 1.25, 1.35][v]);
 
   ctx.save();
   try {
-    if (v >= 8) {
+    if (pal.hullStyle === 'pirate') {
+      // ==========================================
+      // EXOTIC HULL: BLACKBEARD'S DREAD GALLEON
+      // ==========================================
+      const gw = hw * 1.38;
+      // Dread crimson/black lower hull
+      ctx.fillStyle = pal.hull === '#1c1917' ? '#18181b' : pal.hull;
+      ctx.beginPath();
+      ctx.moveTo(-gw, -16);
+      ctx.lineTo(-gw * 0.88, h * 0.74);
+      ctx.quadraticCurveTo(0, h * 1.0, gw * 0.92, h * 0.64);
+      ctx.lineTo(gw * 1.04, -16);
+      ctx.closePath();
+      ctx.fill();
+
+      // Blood crimson waterline stripe
+      ctx.fillStyle = '#7f1d1d';
+      ctx.beginPath();
+      ctx.moveTo(-gw * 0.93, 2);
+      ctx.lineTo(-gw * 0.88, h * 0.74);
+      ctx.quadraticCurveTo(0, h * 1.0, gw * 0.92, h * 0.64);
+      ctx.lineTo(gw * 0.98, 2);
+      ctx.quadraticCurveTo(0, 17, -gw * 0.93, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Gunwale & Broadside protruding brass cannons
+      ctx.strokeStyle = pal.trim;
+      ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.moveTo(-gw, -16); ctx.lineTo(gw * 1.04, -16); ctx.stroke();
+
+      for (let c = 0; c < 5; c++) {
+        const cx = -gw * 0.56 + c * (gw * 0.28);
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(cx - 5, 4, 10, 8);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(cx - 3, 6, 8, 4);
+      }
+
+      // High Stern Castle & Burning Braziers
+      ctx.fillStyle = '#18181b';
+      ctx.fillRect(-gw * 0.74, -44, gw * 0.45, 30);
+      ctx.fillStyle = '#b91c1c';
+      ctx.fillRect(-gw * 0.74, -46, gw * 0.45, 4);
+      drawGlowDot(ctx, -gw * 0.72, -50, 5.5, '#f97316');
+
+      // Spiked Pirate Bowsprit & Bone Skull Figurehead
+      ctx.strokeStyle = '#292524';
+      ctx.lineWidth = 5.5;
+      ctx.beginPath(); ctx.moveTo(gw * 0.88, -14); ctx.lineTo(gw + 46, -34); ctx.stroke();
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath(); ctx.arc(gw * 1.03 + 7, -14, 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath(); ctx.arc(gw * 1.03 + 5, -15, 1.8, 0, Math.PI * 2); ctx.arc(gw * 1.03 + 10, -15, 1.8, 0, Math.PI * 2); ctx.fill();
+
+      // Twin Masts & Tattered Dark Jolly Roger Sails
+      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(-gw * 0.36, -18); ctx.lineTo(-gw * 0.38, -125); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gw * 0.25, -18); ctx.lineTo(gw * 0.24, -142); ctx.stroke();
+
+      const pBillow = Math.sin(time * 1.1) * 14;
+      const sailShade = pal.sail === 'rgba(255, 251, 235, 0.97)' ? '#1e293b' : pal.sail;
+      ctx.fillStyle = sailShade;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.6;
+      // Aft Sail
+      ctx.beginPath();
+      ctx.moveTo(-gw * 0.38, -120); ctx.lineTo(-gw * 0.04, -114);
+      ctx.quadraticCurveTo(-gw * 0.12 + pBillow, -68, -gw * 0.06, -26);
+      ctx.lineTo(-gw * 0.38, -28); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // Main Sail with Skull & Crossbones Emblem
+      ctx.beginPath();
+      ctx.moveTo(gw * 0.24, -138); ctx.lineTo(gw * 0.72, -128);
+      ctx.quadraticCurveTo(gw * 0.56 + pBillow, -76, gw * 0.66, -26);
+      ctx.lineTo(gw * 0.24, -28); ctx.closePath(); ctx.fill(); ctx.stroke();
+      // Skull Icon on Sail
+      const skX = gw * 0.48, skY = -82;
+      ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(skX - 11, skY - 9); ctx.lineTo(skX + 11, skY + 9); ctx.moveTo(skX + 11, skY - 9); ctx.lineTo(skX - 11, skY + 9); ctx.stroke();
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath(); ctx.arc(skX, skY - 2, 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath(); ctx.arc(skX - 3, skY - 3, 1.8, 0, Math.PI * 2); ctx.arc(skX + 3, skY - 3, 1.8, 0, Math.PI * 2); ctx.fill();
+      // Jolly Roger Masthead Flag
+      const flap = Math.sin(time * 4.5) * 4;
+      ctx.fillStyle = '#09090b';
+      ctx.beginPath();
+      ctx.moveTo(gw * 0.24, -152); ctx.quadraticCurveTo(gw * 0.06, -158 + flap, -gw * 0.08, -150 - flap * 0.5);
+      ctx.lineTo(gw * 0.24, -142); ctx.closePath(); ctx.fill();
+
+    } else if (pal.hullStyle === 'submarine') {
+      // ==========================================
+      // EXOTIC HULL: ABYSSAL NAUTILUS SUBMERSIBLE
+      // ==========================================
+      const sw = hw * 1.34;
+      // Searchlight Flood Beam ahead & below
+      try {
+        const beamGrad = ctx.createRadialGradient(sw * 0.9, 6, 4, sw * 1.45, 50, 140);
+        beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.52)');
+        beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(sw * 0.9, 2); ctx.lineTo(sw + 145, -18); ctx.lineTo(sw + 145, 110); ctx.closePath(); ctx.fill();
+      } catch (e) {}
+
+      // Aft Spinning Bronze Propeller blades
+      const bladeScale = Math.cos(time * 12);
+      ctx.fillStyle = pal.trim;
+      ctx.beginPath(); ctx.ellipse(-sw * 1.03, 4, 5, 16 * Math.abs(bladeScale) + 3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(-sw * 0.98, -10, 10, 28);
+
+      // Pressurized Riveted Cylindrical Hull
+      ctx.fillStyle = pal.hull === '#1c1917' ? '#1e293b' : pal.hull;
+      ctx.strokeStyle = pal.trim;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(0, 2, sw * 0.98, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Conning Tower / Sail Fin + Brass Periscope
+      ctx.fillStyle = pal.hull === '#1c1917' ? '#0f172a' : pal.hull;
+      ctx.fillRect(-sw * 0.35, -36, sw * 0.42, 22);
+      ctx.strokeStyle = pal.trim;
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(-sw * 0.35, -36, sw * 0.42, 22);
+
+      // Periscope Pipe
+      ctx.strokeStyle = pal.trim;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-sw * 0.18, -36); ctx.lineTo(-sw * 0.18, -58); ctx.lineTo(-sw * 0.08, -58);
+      ctx.stroke();
+      drawGlowDot(ctx, -sw * 0.07, -58, 3, '#38bdf8');
+
+      // Glass Dome Cockpit over Angler Seat
+      ctx.fillStyle = 'rgba(125, 211, 252, 0.32)';
+      ctx.strokeStyle = '#bae6fd';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(4, -18, 20, Math.PI, 0);
+      ctx.fill();
+      ctx.stroke();
+
+      // Glowing Porthole Windows & Rivet Belt
+      for (let p = -2; p <= 2; p++) {
+        const px = p * sw * 0.32;
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath(); ctx.arc(px, 3, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fde047';
+        ctx.beginPath(); ctx.arc(px, 3, 4.5, 0, Math.PI * 2); ctx.fill();
+      }
+      // Nose searchlight housing
+      drawGlowDot(ctx, sw * 0.96, 2, 5.5, '#fef08a');
+
+    } else if (pal.hullStyle === 'chinese_junk') {
+      // ==========================================
+      // EXOTIC HULL: IMPERIAL DRAGON JUNK
+      // ==========================================
+      const jw = hw * 1.38;
+      // Swept Crescent Eastern Hull
+      ctx.fillStyle = pal.hull === '#1c1917' ? '#7c2d12' : pal.hull;
+      ctx.beginPath();
+      ctx.moveTo(-jw * 1.04, -28);
+      ctx.quadraticCurveTo(-jw * 0.85, h * 0.85, 0, h * 0.92);
+      ctx.quadraticCurveTo(jw * 0.82, h * 0.82, jw * 1.06, -24);
+      ctx.quadraticCurveTo(jw * 0.5, -10, 0, -12);
+      ctx.quadraticCurveTo(-jw * 0.6, -12, -jw * 1.04, -28);
+      ctx.closePath();
+      ctx.fill();
+
+      // Gilded Dragon Scales Rail
+      ctx.strokeStyle = pal.trim;
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(-jw * 1.04, -28);
+      ctx.quadraticCurveTo(-jw * 0.5, -11, jw * 1.06, -24);
+      ctx.stroke();
+
+      // Pagoda Aft Cabin
+      ctx.fillStyle = '#7f1d1d';
+      ctx.fillRect(-jw * 0.72, -46, jw * 0.42, 24);
+      // Curved Pagoda Roof Eaves
+      ctx.fillStyle = pal.trim;
+      ctx.beginPath();
+      ctx.moveTo(-jw * 0.8, -46);
+      ctx.quadraticCurveTo(-jw * 0.51, -58, -jw * 0.22, -46);
+      ctx.lineTo(-jw * 0.28, -43);
+      ctx.lineTo(-jw * 0.74, -43);
+      ctx.closePath();
+      ctx.fill();
+
+      // Golden/Jade Imperial Dragon Prow Head
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.moveTo(jw * 0.98, -22);
+      ctx.quadraticCurveTo(jw + 22, -40, jw + 32, -30);
+      ctx.quadraticCurveTo(jw + 28, -16, jw + 14, -14);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = pal.trim;
+      ctx.beginPath(); ctx.arc(jw + 24, -29, 2.5, 0, Math.PI * 2); ctx.fill();
+
+      // Battened Ribbed Fan Sails (signature horizontal bamboo battens!)
+      const jSails = [
+        { mx: -jw * 0.16, hTop: -124, wSail: 44, sway: Math.sin(time * 1.1) * 5 },
+        { mx: jw * 0.34, hTop: -140, wSail: 54, sway: Math.sin(time * 0.95 + 1) * 7 },
+      ];
+      for (const s of jSails) {
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 4.5;
+        ctx.beginPath(); ctx.moveTo(s.mx, -16); ctx.lineTo(s.mx, s.hTop); ctx.stroke();
+
+        const sailTone = pal.sail === 'rgba(255, 251, 235, 0.97)' ? '#b91c1c' : pal.sail;
+        ctx.fillStyle = sailTone;
+        ctx.strokeStyle = pal.trim;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(s.mx - 6, s.hTop + 6);
+        ctx.quadraticCurveTo(s.mx + s.wSail + s.sway, s.hTop + 18, s.mx + s.wSail * 0.92 + s.sway, -26);
+        ctx.lineTo(s.mx - 8, -26);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Bamboo Battens across fan sail
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 1.5;
+        for (let b = 0; b < 5; b++) {
+          const by = s.hTop + 20 + b * 17;
+          ctx.beginPath();
+          ctx.moveTo(s.mx - 7, by);
+          ctx.lineTo(s.mx + s.wSail * 0.88 + s.sway * 0.6, by - 4);
+          ctx.stroke();
+        }
+      }
+
+      // Hanging Glowing Red Silk Paper Lanterns
+      const swayL = Math.sin(time * 2.5) * 2.5;
+      for (const lx of [-jw * 0.82, jw * 0.86]) {
+        ctx.strokeStyle = pal.trim; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(lx, -34); ctx.lineTo(lx + swayL, -22); ctx.stroke();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath(); ctx.ellipse(lx + swayL, -16, 6, 8, 0, 0, Math.PI * 2); ctx.fill();
+        drawGlowDot(ctx, lx + swayL, -16, 3.5, '#fde047');
+      }
+
+    } else if (pal.hullStyle === 'viking') {
+      // ==========================================
+      // EXOTIC HULL: FROSTFANG NORSE LONGSHIP
+      // ==========================================
+      const vw = hw * 1.35;
+      // Sleek Sweeping Clinker-Built Longship Hull
+      ctx.fillStyle = pal.hull === '#1c1917' ? '#78350f' : pal.hull;
+      ctx.beginPath();
+      ctx.moveTo(-vw * 0.96, -24);
+      ctx.quadraticCurveTo(-vw * 0.72, h * 0.78, 0, h * 0.84);
+      ctx.quadraticCurveTo(vw * 0.72, h * 0.78, vw * 0.98, -26);
+      ctx.quadraticCurveTo(0, -4, -vw * 0.96, -24);
+      ctx.closePath();
+      ctx.fill();
+
+      // Clinker plank strake lines
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-vw * 0.88, -8); ctx.quadraticCurveTo(0, 12, vw * 0.88, -8);
+      ctx.moveTo(-vw * 0.82, 2); ctx.quadraticCurveTo(0, 22, vw * 0.82, 2);
+      ctx.stroke();
+
+      // Stern Dragon-Tail Spiral & Snarling Norse Dragon-Head Stempost
+      ctx.strokeStyle = pal.trim;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(-vw * 0.94, -22); ctx.quadraticCurveTo(-vw * 1.08, -46, -vw * 0.92, -52); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(vw * 0.94, -22); ctx.quadraticCurveTo(vw * 1.12, -54, vw * 0.95, -58); ctx.stroke();
+      // Carved Dragon Head
+      ctx.fillStyle = pal.trim;
+      ctx.beginPath();
+      ctx.moveTo(vw * 0.92, -62); ctx.lineTo(vw + 24, -56); ctx.lineTo(vw + 14, -46); ctx.lineTo(vw * 0.92, -52); ctx.closePath(); ctx.fill();
+      drawGlowDot(ctx, vw + 14, -55, 2.5, '#38bdf8');
+
+      // Row of Painted Norse Round Shields along the gunwale
+      for (let s = 0; s < 6; s++) {
+        const sx = -vw * 0.62 + s * (vw * 0.25);
+        const sy = -6 + Math.abs(s - 2.5) * 0.6;
+        ctx.fillStyle = s % 2 === 0 ? '#dc2626' : '#2563eb';
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.arc(sx, sy, 9.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Single Grand Central Mast & Wide Striped Norse Square Sail
+      ctx.strokeStyle = '#451a03'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(4, -14); ctx.lineTo(4, -135); ctx.stroke();
+      const vBillow = Math.sin(time * 1.2) * 14;
+      const sailLeft = -52, sailRight = 60, sailTop = -126, sailBot = -32;
+      ctx.fillStyle = pal.sail === 'rgba(255, 251, 235, 0.97)' ? '#f8fafc' : pal.sail;
+      ctx.strokeStyle = pal.trim; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(sailLeft, sailTop); ctx.lineTo(sailRight, sailTop);
+      ctx.quadraticCurveTo(sailRight + vBillow, -78, sailRight - 6, sailBot);
+      ctx.quadraticCurveTo(4 + vBillow, sailBot - 8, sailLeft + 6, sailBot);
+      ctx.quadraticCurveTo(sailLeft + vBillow * 0.7, -78, sailLeft, sailTop);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+
+      // Crimson Nordic vertical stripes on square sail
+      ctx.fillStyle = 'rgba(220, 38, 38, 0.82)';
+      for (let k = -1; k <= 1; k += 2) {
+        const sx = 4 + k * 24;
+        ctx.fillRect(sx - 6, sailTop + 5, 12, sailBot - sailTop - 14);
+      }
+
+    } else if (pal.hullStyle === 'ghost_ship') {
+      // ==========================================
+      // EXOTIC HULL: FLYING DUTCHMAN SPECTER
+      // ==========================================
+      const dw = hw * 1.36;
+      ctx.save();
+      ctx.globalAlpha = 0.86;
+      // Ectoplasm Aura Halo
+      try {
+        const gGrad = ctx.createRadialGradient(0, -10, 15, 0, -10, dw * 1.2);
+        gGrad.addColorStop(0, 'rgba(45, 212, 191, 0.25)');
+        gGrad.addColorStop(1, 'rgba(45, 212, 191, 0)');
+        ctx.fillStyle = gGrad;
+        ctx.fillRect(-dw * 1.3, -150, dw * 2.6, 220);
+      } catch (e) {}
+
+      // Spectral Hull + Glowing Rib Cage Strakes
+      ctx.fillStyle = '#0f292e';
+      ctx.strokeStyle = '#2dd4bf';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(-dw, -16); ctx.lineTo(-dw * 0.88, h * 0.72);
+      ctx.quadraticCurveTo(0, h * 0.96, dw * 0.92, h * 0.6);
+      ctx.lineTo(dw * 1.04, -16); ctx.closePath(); ctx.fill(); ctx.stroke();
+
+      for (let r = -3; r <= 3; r++) {
+        ctx.strokeStyle = 'rgba(94, 234, 212, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(r * dw * 0.25, -14); ctx.quadraticCurveTo(r * dw * 0.22, 12, r * dw * 0.2, h * 0.65); ctx.stroke();
+      }
+      // Spectral Stern Lantern & Wisp Flames
+      drawGlowDot(ctx, -dw * 0.7, -46, 5.5, '#5eead4');
+      drawGlowDot(ctx, dw * 1.04, -22, 4.5, '#5eead4');
+
+      // Masts & Tattered Spectral Sails
+      ctx.strokeStyle = '#134e4a'; ctx.lineWidth = 4.5;
+      ctx.beginPath(); ctx.moveTo(-dw * 0.34, -18); ctx.lineTo(-dw * 0.36, -120); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(dw * 0.24, -18); ctx.lineTo(dw * 0.22, -138); ctx.stroke();
+
+      const gBillow = Math.sin(time * 1.4) * 15;
+      ctx.fillStyle = 'rgba(153, 246, 228, 0.36)';
+      ctx.strokeStyle = '#2dd4bf'; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(dw * 0.22, -134); ctx.lineTo(dw * 0.72, -124);
+      ctx.quadraticCurveTo(dw * 0.56 + gBillow, -74, dw * 0.62, -30);
+      ctx.lineTo(dw * 0.46, -24); ctx.lineTo(dw * 0.34, -36); ctx.lineTo(dw * 0.22, -26);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+
+    } else if (pal.hullStyle === 'steampunk') {
+      // ==========================================
+      // EXOTIC HULL: AETHER CHRONOS IRONCLAD
+      // ==========================================
+      const aw = hw * 1.36;
+      // Copper & Riveted Ironclad Hull + Ramming Prow
+      ctx.fillStyle = pal.hull === '#1c1917' ? '#431407' : pal.hull;
+      ctx.strokeStyle = '#fb923c';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-aw * 0.96, -16);
+      ctx.lineTo(-aw * 0.88, h * 0.72);
+      ctx.quadraticCurveTo(0, h * 0.96, aw * 0.94, h * 0.58);
+      ctx.lineTo(aw * 1.18, 2);
+      ctx.lineTo(aw * 0.98, -16);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+
+      // Aft Brass Cabin + Rotating Paddlewheel
+      ctx.fillStyle = '#292524';
+      ctx.fillRect(-aw * 0.72, -38, aw * 0.44, 24);
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+      ctx.strokeRect(-aw * 0.72, -38, aw * 0.44, 24);
+
+      // Animated Spinning Paddlewheel
+      const wheelX = -aw * 0.02, wheelY = 6;
+      ctx.save();
+      ctx.translate(wheelX, wheelY);
+      ctx.rotate(time * 2.6);
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, 17, 0, Math.PI * 2); ctx.stroke();
+      for (let sp = 0; sp < 8; sp++) {
+        const ang = (sp / 8) * Math.PI * 2;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(ang) * 19, Math.sin(ang) * 19); ctx.stroke();
+      }
+      ctx.restore();
+
+      // Twin Brass Smokestacks + Animated Steam Puffs
+      for (let st = 0; st < 2; st++) {
+        const sx = -aw * 0.56 + st * 22;
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(sx - 5, -72, 10, 36);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(sx - 7, -75, 14, 5);
+        for (let p = 0; p < 3; p++) {
+          const cycle = (time * 0.85 + st * 0.4 + p * 0.33) % 1;
+          ctx.fillStyle = `rgba(226, 232, 240, ${(1 - cycle) * 0.55})`;
+          ctx.beginPath();
+          ctx.arc(sx - cycle * 26, -80 - cycle * 32, 5 + cycle * 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Forward Tesla Coil Beacon Mast
+      ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(aw * 0.52, -16); ctx.lineTo(aw * 0.52, -88); ctx.stroke();
+      drawGlowDot(ctx, aw * 0.52, -92, 5.5, '#38bdf8');
+
+    } else if (v >= 8) {
       // ==========================================
       // TIER 8: POSEIDON SOVEREIGN GALLEON
       // ==========================================
@@ -1066,8 +1800,11 @@ export function drawVesselHull(ctx, vessel = 0, bW = 140, bH = 40, time = 0, ski
       ctx.fillRect(ow * 0.25, -10, 4, 3);
     }
 
+    // Apply dramatic Ship Finish overlay FX across any tier or exotic hull
+    applyShipFinishOverlay(ctx, pal, effectiveSpan, h, time);
+
     // Lantern for tiers 0 through 4
-    if (v < 5) {
+    if (pal.hullStyle === 'standard' && v < 5) {
       const lanternX = v >= 3 ? 16 : 0;
       const lanternY = v >= 3 ? -24 : -24;
       drawGlowDot(ctx, lanternX, lanternY, 3.8, pal.glow);

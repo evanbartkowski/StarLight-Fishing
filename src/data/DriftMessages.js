@@ -1,115 +1,163 @@
-// DriftMessages.js — Messages in bottles and driftwood bobbers found adrift
+// DriftMessages.js — Driftwood Bobbers & Handwritten Message-in-a-Bottle Poems
 
 export const DRIFT_MESSAGES = [
-  // Haikus
   {
+    id: 'haiku_lantern_tide',
+    title: 'Silver Lanterns on the Swell',
+    author: 'Anonymous Deckhand, Harbor III',
     type: 'haiku',
-    text: `Salt upon the deck,\nWhite gulls wheel against the sky,\nLine sinks in the blue.`,
+    lines: [
+      'Salt mist on the oar,',
+      'Lantern light wakes sleeping tides,',
+      'Gold scales pierce the dark.',
+    ],
   },
   {
+    id: 'haiku_deep_hook',
+    title: 'Thread Into the Blue',
+    author: 'The Bell-Ringer of Pier 9',
     type: 'haiku',
-    text: `Gentle rocking boat,\nLantern casts an amber ring,\nDeep beneath the swell.`,
+    lines: [
+      'Thin thread sinks through glass,',
+      'Quiet giants circle close,',
+      'Wait for one sharp tug.',
+    ],
   },
   {
+    id: 'haiku_star_compass',
+    title: 'Starlight Bearing',
+    author: 'Navigator Linnea, 1984',
     type: 'haiku',
-    text: `Morning brings the fog,\nQuiet ripples greet the dawn,\nTime to cast once more.`,
+    lines: [
+      'North star in the swell,',
+      'Wooden hull rocks soft and slow,',
+      'Home waits past the fog.',
+    ],
   },
   {
+    id: 'haiku_trench_ember',
+    title: 'Embers Beneath Ice',
+    author: 'Bathysphere Log #14',
     type: 'haiku',
-    text: `Silver scales below,\nShadows passing in the deep,\nPatience is the reel.`,
+    lines: [
+      'Cold black water sleeps,',
+      'Red vents bloom like sunken stars,',
+      'Strange fins brush the bow.',
+    ],
   },
   {
+    id: 'haiku_dawn_net',
+    title: 'First Amber Catch',
+    author: 'Old Salt Barnaby',
     type: 'haiku',
-    text: `Night ocean glows blue,\nTiny plankton dance like stars,\nSleep upon the sea.`,
+    lines: [
+      'Dawn spills honey gold,',
+      'Pelican wakes on the prow,',
+      'Sea bream leap like sparks.',
+    ],
   },
   {
+    id: 'haiku_moon_jelly',
+    title: 'Drifting Bell',
+    author: 'Midnight Watch, Schooner Iris',
     type: 'haiku',
-    text: `Winds of seven seas,\nCarry home the weary boat,\nFull of ancient tales.`,
+    lines: [
+      'Pale moon wears a crown,',
+      'Glass-winged jellies climb the dark,',
+      'Ghosts that learned to glow.',
+    ],
   },
   {
-    type: 'haiku',
-    text: `Rain falls on the hat,\nDroplets scatter on the pond,\nPeaceful quiet calm.`,
+    id: 'poem_sunken_bell',
+    title: 'The Sunken Harbor Bell',
+    author: 'Found Sealed in Green Sea-Glass',
+    type: 'poem',
+    lines: [
+      'Where tall kelp sways like cathedral silk,',
+      'An iron bell rests on silver silt;',
+      'No hand has pulled its hemp-bound rope,',
+      'Since clipper ships outran the cape.',
+      'Yet when the midnight moon runs thin,',
+      'Soft bronze tolls rise above the fin—',
+      'Not calling sailors to the shore,',
+      'But guiding wonders from the floor.',
+    ],
   },
-
-  // Sea Legend Lore Hints
   {
+    id: 'poem_starlight_mariner',
+    title: 'Chart of the Seven Seas',
+    author: 'First Mate K. Sato',
+    type: 'poem',
+    lines: [
+      'First came the sun-warmed emerald bay,',
+      'Then bioluminescent twilight blue;',
+      'Beyond the broken marble arches lay',
+      'The cloud-sea where the wind-whales flew.',
+      'Lower we dropped past ember-smoking stone',
+      'Till stars swam underneath our keel,',
+      'And learned the ocean keeps its own',
+      'Strange poetry beneath the wheel.',
+    ],
+  },
+  {
+    id: 'poem_cats_watch',
+    title: "The Ship Cat's Vigil",
+    author: 'Scribbled in Charcoal on Sailcloth',
+    type: 'poem',
+    lines: [
+      'All hands are sleeping in the bunk,',
+      'The harbor fog rolls thick and gray,',
+      'A ginger cat sits on the trunk,',
+      'And counts the minnows in the bay.',
+      'She guards the twine, she guards the bell,',
+      'She purrs when silver wakes the crest—',
+      'Whoever sails with whiskers well',
+      'Shall bring home treasures of the best.',
+    ],
+  },
+  {
+    id: 'lore_atlantis_gate',
+    title: 'Torn Logbook of the Meridian',
+    author: 'Cartographer Helena Vance',
     type: 'lore',
-    hint: true,
-    text: `Old Old Mossback:\n"At dawn twilight when thick sea fog hugs the surface, look closely for what appears to be a floating patch of green moss and coral."`,
+    lines: [
+      'Day 44 — Our depth sounder struck flat stone four hundred fathoms down.',
+      'The marble columns were still draped in living emerald ribbons,',
+      'and golden coins settled unbroken along the threshold Steps.',
+      'Wait for the slack tide at dusk; the current itself whispers where to cast.',
+    ],
   },
   {
+    id: 'lore_midnight_jelly',
+    title: 'Glass Vial Note',
+    author: 'Dr. Aris Thorne, Pelagic Survey',
     type: 'lore',
-    hint: true,
-    text: `The Abyssal Star-Weaver:\n"Only on clear, cloudless nights does the ribbon eel weave its constellation between depths of 240m and 550m."`,
+    lines: [
+      'Three hundred fathoms below sunfall, darkness is never truly dark.',
+      'Comb jellies pulse like falling constellations beside the cable.',
+      'Hold steady when the abyss gleams cyan—something rare is investigating your lure.',
+    ],
   },
   {
+    id: 'lore_golden_carp',
+    title: 'Tattered Lucky Charm',
+    author: 'Harbor Elder Mei',
     type: 'lore',
-    hint: true,
-    text: `The Aurora Sailfin:\n"When twilight paints the horizon neon cyan and green, the Sailfin leaps through the thermocline into the twilight current."`,
-  },
-  {
-    type: 'lore',
-    hint: true,
-    text: `The Golden Coelacanth:\n"Near the abyssal magma rift trenches, dredging deep hooks into the volcanic silt can hook a living prehistoric armor of solid pyrite."`,
-  },
-  {
-    type: 'lore',
-    hint: true,
-    text: `The Whispering Siren Ray:\n"On calm evenings at dusk, listen closely against the hull. The royal ray produces a harmonic hum that vibrates the ship's timbers."`,
-  },
-  {
-    type: 'lore',
-    hint: true,
-    text: `The Clockwork Nautilus:\n"An automaton from a lost epoch. Its gears still click in steady tempo in the deep mid-waters around 300 meters."`,
-  },
-  {
-    type: 'lore',
-    hint: true,
-    text: `The Eclipse Moon-Jelly:\n"When night sky mirrors the darkest cosmos, the celestial jellyfish ignites a corona of pure violet-gold light."`,
-  },
-
-  // Sailor's Notes
-  {
-    type: 'general',
-    text: `"Day 42 at sea. The cat fell asleep on the radio console again. The weather is calm and the pelican caught a drifting sprig of cedar."`,
-  },
-  {
-    type: 'general',
-    text: `"To whoever finds this bottle: never rush your retrieve. When the rhythm wave swells, let the tension ease, then reel fast in the lull."`,
-  },
-  {
-    type: 'general',
-    text: `"Old salt proverb: A fisherman with a warm coat, a sleeping cat, and a cup of tea is richer than any king in the harbor."`,
-  },
-  {
-    type: 'general',
-    text: `"Found an ancient brass compass in the coral beds today. A little rubbing with salt and wool restored the brass to a golden mirror."`,
-  },
-  {
-    type: 'general',
-    text: `"Dolphins breached off the starboard bow at noon. Clear skies ahead. The Seven Seas welcome all who drift quietly."`,
-  },
-  {
-    type: 'general',
-    text: `"Seabed pots left soaking overnight always reward the patient angler. Don't forget to harvest your crab traps every few casts."`,
-  },
-  {
-    type: 'general',
-    text: `"They say the Grand Schooner's underwater floodlights can reveal the ancient shipwrecks resting in Sea 4."`,
+    lines: [
+      'My grandmother swore a coin-bright koi sleeps beneath the jade steps,',
+      'shimmering only for captains patient enough to mend their own line.',
+      'Keep your cat well-petted and your lantern trimmed before deep dives.',
+    ],
   },
 ];
 
 export const DRIFTWOOD_BOBBERS = [
-  { id: 'pelican_bobber', name: 'Carved Pelican Bobber', icon: '🪶', bonus: 'Pleasant visual flair' },
-  { id: 'lighthouse_bobber', name: 'Mini Lighthouse Bobber', icon: '🗼', bonus: 'Warm beacon light' },
-  { id: 'pinecone_bobber', name: 'Cedar Pinecone Bobber', icon: '🌲', bonus: 'Natural cedar wood' },
-  { id: 'nautilus_bobber', name: 'Nautilus Spiral Bobber', icon: '🐚', bonus: 'Ocean spiral carve' },
-  { id: 'bobber_corsair_skull', name: 'Corsair Skull Bobber', icon: '☠️', bonus: 'Carved ivory with glowing ruby eyes' },
-  { id: 'bobber_celestial_comet', name: 'Celestial Comet Bobber', icon: '☄️', bonus: 'Pulsing starlight tail' },
+  { id: 'driftwood_float', name: 'Carved Oak Driftwood Bobber', color: '#a16207', accent: '#fef08a', description: 'Hand-whittled from bleached driftwood with a brass swivel.' },
+  { id: 'sea_glass_bobber', name: 'Teal Sea Glass Sphere', color: '#0d9488', accent: '#99f6e4', description: 'Smooth emerald bottle glass tumbled smooth for a century.' },
+  { id: 'barnacle_cork', name: 'Barnacle-Crusted Bottle Cork', color: '#78350f', accent: '#cbd5e1', description: 'Bound in braided tarred hemp that rides even heavy chop.' },
+  { id: 'lantern_bobber', name: 'Brass Beacon Bobber', color: '#d97706', accent: '#fde047', description: 'Warm amber oil lamp float visible even in squalls.' },
 ];
 
 export function getRandomBottleMessage() {
-  const roll = Math.floor(Math.random() * DRIFT_MESSAGES.length);
-  return DRIFT_MESSAGES[roll] || DRIFT_MESSAGES[0];
+  return DRIFT_MESSAGES[Math.floor(Math.random() * DRIFT_MESSAGES.length)];
 }
-

@@ -9,7 +9,7 @@ import { DAILY_REWARDS, achievementGems } from '../data/GemEconomy.js';
 import { Fish } from '../entities/Fish.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
 import { Treasure } from '../entities/Treasure.js';
-import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization, normalizeBoatColors, BOAT_PART_PALETTES, drawAngler, drawAquariumDecor, BOAT_TRINKETS, BOAT_SKIN_OPTIONS, drawBoatTrinket } from '../data/CustomizationData.js';
+import { ANGLER_OPTIONS, AQUARIUM_OPTIONS, normalizeCustomization, normalizeBoatColors, BOAT_PART_PALETTES, drawAngler, drawAquariumDecor, BOAT_TRINKETS, BOAT_SKIN_OPTIONS, EXOTIC_BOAT_HULLS, drawBoatTrinket } from '../data/CustomizationData.js';
 import { ShipsCat, PerchingPelican, BackgroundDolphin, BoatShark } from '../entities/BoatCompanions.js';
 import { getCurrentDerby, getLocalDerbyStandings } from '../systems/WeeklyDerby.js';
 import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
@@ -26,7 +26,7 @@ import { ZONE_ALMANAC_DATA, getZoneProgress, claimZonePerk } from '../data/alman
 import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
-import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt } from './CustomVectorArt.js';
+import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 import { drawVesselHull, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
 
@@ -1045,6 +1045,14 @@ export class UIManager {
       const buffsContainer = this._getEl('hud-buffs');
       if (buffsContainer) {
         let buffsHtml = '';
+        if (this.saveSystem.hasActiveBuff('goldSurge')) {
+          const sec = this.saveSystem.getBuffRemainingSeconds('goldSurge');
+          buffsHtml += `<span class="hud-buff-pill hud-buff-gold" title="2x Gold from catch sales & haul bonuses">🪙 2x Gold (${sec}s)</span>`;
+        }
+        if (this.saveSystem.hasActiveBuff('xpSurge')) {
+          const sec = this.saveSystem.getBuffRemainingSeconds('xpSurge');
+          buffsHtml += `<span class="hud-buff-pill hud-buff-xp" title="2x Captain Experience gained">✨ 2x XP (${sec}s)</span>`;
+        }
         if (this.saveSystem.hasActiveBuff('sirensGrace')) {
           const sec = this.saveSystem.getBuffRemainingSeconds('sirensGrace');
           buffsHtml += `<span class="hud-buff-pill" title="Increased Rare Catch Rate">🌊 Siren's Grace (${sec}s)</span>`;
@@ -1244,6 +1252,12 @@ export class UIManager {
     const catchContinue = this._onCatchSummaryContinue;
     this._onCatchSummaryContinue = null;
 
+    const wasInventory = this.activeModal === 'inventory';
+    const returnToSummary = wasInventory ? this._returnToCatchSummary : null;
+    if (wasInventory || wasCatchSummary) {
+      this._returnToCatchSummary = null;
+    }
+
     document.getElementById('modal-overlay').className = 'modal-overlay-hidden';
     this.activeModal = null;
     if (typeof cleanup === 'function') {
@@ -1255,6 +1269,8 @@ export class UIManager {
     if (wasCrateModal && crateCtx) {
       if (crateCtx.hook) this.openCatchSummary(crateCtx.hook, crateCtx.onContinue);
       else this.openInventory();
+    } else if (wasInventory && typeof returnToSummary === 'function') {
+      returnToSummary();
     } else if (wasCatchSummary && catchContinue) {
       catchContinue();
     }
@@ -1605,10 +1621,13 @@ export class UIManager {
   openCatchSummary(hook, onContinue, storageOverflow = false) {
     this.activeModal = 'catchSummary';
     this._onCatchSummaryContinue = onContinue;
+    this._returnToCatchSummary = null;
     soundManager.playCoin();
 
     const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[this.saveSystem.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
     const sellMultiplier = 1 + rodTier.sellBonus;
+    const coinBonusMult = this.saveSystem.getCoinBonusMultiplier ? this.saveSystem.getCoinBonusMultiplier() : 1;
+    const displayMultiplier = sellMultiplier * coinBonusMult;
 
     let subtotal = 0;
     let listHtml = '<div class="catch-summary-list">';
@@ -1629,8 +1648,8 @@ export class UIManager {
         const isCrate = !!item.isCrate || item.category === 'crate';
         const baseVal = Number.isFinite(item.value) ? item.value : (item.loot && Number.isFinite(item.loot.coins) ? item.loot.coins : 350);
         const itemVal = isCrate
-          ? (item.unboxed ? (item.loot && Number.isFinite(item.loot.coins) ? Math.max(0, item.loot.coins) : 0) : Math.max(1, Math.round(baseVal * sellMultiplier)))
-          : Math.max(1, Math.round(baseVal * sellMultiplier));
+          ? (item.unboxed ? (item.loot && Number.isFinite(item.loot.coins) ? Math.max(0, item.loot.coins) : 0) : Math.max(1, Math.round(baseVal * displayMultiplier)))
+          : Math.max(1, Math.round(baseVal * displayMultiplier));
         subtotal += itemVal;
 
         const isSafe = !!item.isSunkenSafe || item.category === 'safe' || item.id === 'sunken_safe';
@@ -2019,10 +2038,11 @@ export class UIManager {
       }
     });
 
-    // View Inventory
+    // View Inventory (remember return callback so X inside Inventory brings player back to Dive Completed)
     document.getElementById('btn-summary-inventory')?.addEventListener('click', () => {
       this._onCatchSummaryContinue = null;
       this.closeModal();
+      this._returnToCatchSummary = () => this.openCatchSummary(hook, onContinue, ranOutOfStorage);
       this.openInventory();
     });
   }
@@ -2071,7 +2091,7 @@ export class UIManager {
           <div class="gacha-reel-strip" id="gacha-reel-track">
             <!-- Populated dynamically on spin -->
             <div class="gacha-reel-placeholder">
-              <span style="font-size: 3.8rem; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">${rankInfo.icon}</span>
+              <div class="gacha-placeholder-art">${crateArtwork(rank)}</div>
             </div>
           </div>
         </div>
@@ -2124,9 +2144,12 @@ export class UIManager {
 
             this.saveSystem.data.gems = (this.saveSystem.data.gems || 0) + (loot.gems || 0);
             if (loot.gems) this.showToast(`Rare crate find: +${loot.gems} gem!`);
-            // Apply coins and XP
+            // Apply coins, XP, and timed boost consumables
             this.saveSystem.adjustCoins(loot.coins);
             this.saveSystem.addXp(loot.xp);
+            if (loot.bonusBuff && typeof this.saveSystem.addBuff === 'function') {
+              this.saveSystem.addBuff(loot.bonusBuff.id, loot.bonusBuff.durationMs || 240000);
+            }
 
             // Unlock cosmetics if rolled
             if (loot.bonusBobber) {
@@ -2176,15 +2199,15 @@ export class UIManager {
           }
         }
 
-        // Render carousel cards in track
+        // Render carousel cards in track using bespoke item SVG artwork
         if (track) {
           track.innerHTML = stripItems.map((item, idx) => {
             const grade = item.grade || (item.coins > 300 ? 'super_good' : item.coins < 0 ? 'super_bad' : 'fair');
             const borderColor = grade === 'super_good' ? '#c084fc' : grade === 'super_bad' ? '#ef4444' : '#38bdf8';
             return `
               <div class="gacha-reel-card" ${idx === winningIndex ? 'data-winning="true"' : ''} style="border-bottom: 4px solid ${borderColor};">
-                <span class="gacha-card-icon">${item.icon || '🎁'}</span>
-                <span class="gacha-card-name">${(item.name || 'Loot').substring(0, 16)}</span>
+                <span class="gacha-card-icon gacha-card-art">${getCrateLootArt(item, grade)}</span>
+                <span class="gacha-card-name">${(item.name || 'Loot').substring(0, 18)}</span>
               </div>
             `;
           }).join('');
@@ -2255,7 +2278,7 @@ export class UIManager {
             resultEl.innerHTML = `
               <div style="border: 2px solid ${borderColor}; background: ${bgGlow}; border-radius: 12px; padding: 18px; margin-top: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); animation: gachaWinnerPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
                 <div style="margin-bottom: 8px;">${gradeTag}</div>
-                <div style="font-size: 3.2rem; margin: 8px 0; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));">${loot.icon}</div>
+                <div class="gacha-winner-art">${getCrateLootArt(loot, loot.grade)}</div>
                 <h4 style="margin: 0 0 6px 0; font-size: 1.3rem; color: #f8fafc;">${loot.name}</h4>
                 <p style="margin: 0 0 10px 0; font-size: 0.95rem; font-weight: 600; color: ${isBad ? '#fca5a5' : '#fef08a'};">${loot.headline}</p>
                 <p style="margin: 0 0 14px 0; font-size: 0.88rem; color: #94a3b8; font-style: italic; line-height: 1.4;">"${loot.flavor}"</p>
@@ -2266,6 +2289,7 @@ export class UIManager {
                   <span style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 12px; border-radius: 999px;">
                     +${loot.xp} XP
                   </span>
+                  ${loot.bonusBuff ? `<span style="background: rgba(250, 204, 21, 0.18); border: 1px solid #fde047; color: #fef08a; padding: 4px 12px; border-radius: 999px;">⏱️ ${loot.bonusBuff.label} Activated!</span>` : ''}
                   ${loot.bonusBobber ? `<span style="background: rgba(234, 179, 8, 0.15); border: 1px solid #facc15; color: #fde047; padding: 4px 12px; border-radius: 999px;">🎣 Unlocked ${loot.bonusBobber.name}!</span>` : ''}
                   ${loot.bonusFossil ? `<span style="background: rgba(168, 85, 247, 0.15); border: 1px solid #c084fc; color: #e9d5ff; padding: 4px 12px; border-radius: 999px;">🏛️ Museum: ${loot.bonusFossil.name}!</span>` : ''}
                   ${loot.bonusSkeleton ? `<span style="background: rgba(249, 115, 22, 0.15); border: 1px solid #fb923c; color: #fed7aa; padding: 4px 12px; border-radius: 999px;">🦴 +1 ${loot.bonusSkeleton.name}!</span>` : ''}
@@ -4494,6 +4518,8 @@ export class UIManager {
     const save = this.saveSystem;
     const rodTier = UPGRADE_DEFINITIONS.fishingRod.tiers[save.getUpgradeLevel('fishingRod')] || UPGRADE_DEFINITIONS.fishingRod.tiers[0];
     const sellMultiplier = 1 + rodTier.sellBonus;
+    const coinMult = save.getCoinBonusMultiplier ? save.getCoinBonusMultiplier() : 1;
+    const displaySellMultiplier = sellMultiplier * coinMult;
 
     const fishCount = inv.filter(i => i.type === 'fish').length;
     const crateCount = inv.filter(i => (i.isCrate || i.category === 'crate') && !i.unboxed).length;
@@ -4503,7 +4529,7 @@ export class UIManager {
     const lockedCount = inv.filter(i => i.isLocked).length;
 
     const sellableItems = inv.filter(i => !i.isLocked && !(i.isCrate && !i.unboxed) && !save.isItemInAquarium(i.instanceId));
-    const totalSellableValue = sellableItems.reduce((acc, f) => acc + Math.max(1, Math.round(f.value * sellMultiplier)), 0);
+    const totalSellableValue = sellableItems.reduce((acc, f) => acc + Math.max(1, Math.round(f.value * displaySellMultiplier)), 0);
 
     let filteredItems = inv;
     if (filter === 'fish') {
@@ -4540,7 +4566,7 @@ export class UIManager {
         const isFossil = item.type === 'fossil' || item.category === 'fossil';
         const inTank = save.isItemInAquarium(item.instanceId);
         const isLocked = !!item.isLocked;
-        const itemVal = Math.max(1, Math.round(item.value * sellMultiplier));
+        const itemVal = Math.max(1, Math.round(item.value * displaySellMultiplier));
 
         const shinyTag = item.isShiny ? `<span class="shiny-tag">✨ SHINY</span>` : '';
         const mythicTag = item.isMythic ? `<span class="mythic-tag">🌟 MYTHIC</span>` : '';
@@ -5288,11 +5314,14 @@ export class UIManager {
     this.activeModal = 'boat_customization';
     const save = this.saveSystem;
     const vessel = Math.max(0, parseInt(save.getUpgradeLevel('boatVessel') || 0, 10));
+    const maxTier = (UPGRADE_DEFINITIONS.boatVessel?.tiers?.length || 9) - 1;
+    const isMaxedVessel = save.isMaxVessel ? save.isMaxVessel() : vessel >= maxTier;
     const vesselName = VESSEL_NAMES[vessel] || 'Weathered Dinghy';
     let selectedTrinket = save.data.boatTrinket || 'none';
     let selectedSkin = save.data.boatSkin || 'default';
+    let selectedHull = save.getBoatHull ? save.getBoatHull() : (save.data.boatHullStyle || 'standard');
     let draftColors = normalizeBoatColors(save.getBoatColors?.() || save.data.boatColors);
-    let activeTab = ['colors', 'trinkets', 'skins'].includes(initialTab) ? initialTab : 'colors';
+    let activeTab = ['colors', 'hulls', 'trinkets', 'skins'].includes(initialTab) ? initialTab : 'colors';
     let animTimer = 0;
     let animFrame = null;
 
@@ -5321,19 +5350,46 @@ export class UIManager {
       `;
     }).join('');
 
+    const hullCards = Object.values(EXOTIC_BOAT_HULLS).map(h => {
+      const equippedHull = save.getBoatHull ? save.getBoatHull() : (save.data.boatHullStyle || 'standard');
+      const isEquipped = equippedHull === h.id;
+      const isOwned = save.hasBoatHull ? save.hasBoatHull(h.id) : h.id === 'standard';
+      const isSelected = selectedHull === h.id;
+      const hullArt = HULL_ART[h.id] || HULL_ART.standard;
+      let badge = '';
+      if (isEquipped) badge = '<span class="boat-badge boat-badge-equipped">Equipped</span>';
+      else if (isOwned) badge = '<span class="boat-badge boat-badge-owned">Owned</span>';
+      else if (!isMaxedVessel) badge = '<span class="boat-badge boat-badge-locked">Requires Max Boat</span>';
+      else badge = `<span class="boat-badge boat-badge-coin"><span class="inline-svg-xs">${BOAT_UI_ART.coinIcon}</span> $${h.cost.toLocaleString()}</span>`;
+
+      return `
+        <div class="boat-custom-card ${isSelected ? 'selected' : ''}" data-boat-type="hull" data-boat-id="${h.id}" tabindex="0" role="button">
+          <div class="boat-card-header">
+            <span class="boat-card-icon boat-svg-icon" style="border-color:${h.accent}44;">${hullArt}</span>
+            <div class="boat-card-info">
+              <strong class="boat-card-title">${h.label}</strong>
+              ${badge}
+            </div>
+          </div>
+          <p class="boat-card-desc">${h.desc}</p>
+        </div>
+      `;
+    }).join('');
+
     const trinketCards = Object.values(BOAT_TRINKETS).map(t => {
       const isEquipped = (save.data.boatTrinket || 'none') === t.id;
       const isOwned = save.hasBoatTrinket(t.id);
       const isSelected = selectedTrinket === t.id;
+      const tArt = TRINKET_ART[t.id] || TRINKET_ART.none;
       let badge = '';
       if (isEquipped) badge = '<span class="boat-badge boat-badge-equipped">Equipped</span>';
       else if (isOwned) badge = '<span class="boat-badge boat-badge-owned">Owned</span>';
-      else badge = `<span class="boat-badge boat-badge-price">💎 ${t.cost}</span>`;
+      else badge = `<span class="boat-badge boat-badge-price"><span class="inline-svg-xs">${BOAT_UI_ART.gemIcon}</span> ${t.cost}</span>`;
 
       return `
         <div class="boat-custom-card ${isSelected ? 'selected' : ''}" data-boat-type="trinket" data-boat-id="${t.id}" tabindex="0" role="button">
           <div class="boat-card-header">
-            <span class="boat-card-icon">${t.icon}</span>
+            <span class="boat-card-icon boat-svg-icon">${tArt}</span>
             <div class="boat-card-info">
               <strong class="boat-card-title">${t.label}</strong>
               ${badge}
@@ -5351,16 +5407,17 @@ export class UIManager {
       let badge = '';
       if (isEquipped) badge = '<span class="boat-badge boat-badge-equipped">Equipped</span>';
       else if (isOwned) badge = '<span class="boat-badge boat-badge-owned">Owned</span>';
-      else badge = `<span class="boat-badge boat-badge-price">💎 ${s.cost}</span>`;
+      else badge = `<span class="boat-badge boat-badge-price"><span class="inline-svg-xs">${BOAT_UI_ART.gemIcon}</span> ${s.cost}</span>`;
 
-      const swatchHtml = s.color
-        ? `<span class="boat-color-dot" style="background:${s.color};"></span>`
-        : `<span class="boat-color-dot" style="background:#854d0e;"></span>`;
+      const bgCol = s.hullTint || '#78350f';
+      const accentCol = s.color || '#fbbf24';
+      const glowCol = s.glow || accentCol;
+      const swatchHtml = `<span class="boat-finish-badge" style="background:radial-gradient(circle at 30% 30%, ${accentCol}, ${bgCol}); box-shadow:0 0 12px ${glowCol}66; border-color:${accentCol};"></span>`;
 
       return `
         <div class="boat-custom-card ${isSelected ? 'selected' : ''}" data-boat-type="skin" data-boat-id="${s.id}" tabindex="0" role="button">
           <div class="boat-card-header">
-            <span class="boat-card-icon">${swatchHtml}</span>
+            <span class="boat-card-icon boat-svg-icon">${swatchHtml}</span>
             <div class="boat-card-info">
               <strong class="boat-card-title">${s.label}</strong>
               ${badge}
@@ -5380,29 +5437,44 @@ export class UIManager {
           <div class="boat-preview-summary">
             <div class="boat-stat-chip">
               <span class="stat-label">Vessel Rank</span>
-              <strong class="stat-val">Tier ${vessel + 1} · ${vesselName}</strong>
+              <strong class="stat-val">Tier ${vessel + 1} · ${EXOTIC_BOAT_HULLS[selectedHull]?.label || vesselName}</strong>
             </div>
             <div class="boat-stat-chip">
-              <span class="stat-label">Gem Reserve</span>
-              <strong class="stat-val">💎 <span id="boat-gem-val">${save.getGemBalance()}</span></strong>
+              <span class="stat-label">Treasury</span>
+              <strong class="stat-val boat-reserve-row">
+                <span class="inline-svg-sm">${BOAT_UI_ART.coinIcon}</span> $<span id="boat-coin-val">${(save.data.coins || 0).toLocaleString()}</span>
+                <span class="inline-svg-sm" style="margin-left:8px;">${BOAT_UI_ART.gemIcon}</span> <span id="boat-gem-val">${save.getGemBalance()}</span>
+              </strong>
             </div>
           </div>
-          <p id="boat-studio-status" class="boat-studio-status">Paint your hull, trim, &amp; sails for free or preview deck trinkets with your crew!</p>
+          <p id="boat-studio-status" class="boat-studio-status">Paint your hull, trim &amp; sails or commission legendary vessels &amp; deck trinkets!</p>
         </div>
 
         <div class="boat-selector-pane">
           <div class="boat-tabs-bar">
-            <button type="button" class="boat-tab-btn ${activeTab === 'colors' ? 'active' : ''}" data-boat-tab="colors">🎨 Paint Colors</button>
-            <button type="button" class="boat-tab-btn ${activeTab === 'trinkets' ? 'active' : ''}" data-boat-tab="trinkets">🦜 Deck Trinkets</button>
-            <button type="button" class="boat-tab-btn ${activeTab === 'skins' ? 'active' : ''}" data-boat-tab="skins">✨ Ship Finishes</button>
+            <button type="button" class="boat-tab-btn ${activeTab === 'colors' ? 'active' : ''}" data-boat-tab="colors"><span class="boat-tab-icon">${BOAT_UI_ART.tabColors}</span><span>Paint Colors</span></button>
+            <button type="button" class="boat-tab-btn ${activeTab === 'hulls' ? 'active' : ''}" data-boat-tab="hulls"><span class="boat-tab-icon">${BOAT_UI_ART.tabHulls}</span><span>Special Hulls</span></button>
+            <button type="button" class="boat-tab-btn ${activeTab === 'trinkets' ? 'active' : ''}" data-boat-tab="trinkets"><span class="boat-tab-icon">${BOAT_UI_ART.tabTrinkets}</span><span>Deck Trinkets</span></button>
+            <button type="button" class="boat-tab-btn ${activeTab === 'skins' ? 'active' : ''}" data-boat-tab="skins"><span class="boat-tab-icon">${BOAT_UI_ART.tabSkins}</span><span>Ship Finishes</span></button>
           </div>
 
           <div id="boat-tab-colors" class="boat-tab-content ${activeTab === 'colors' ? 'active' : ''}">
             <div class="boat-colors-stack">
               ${colorSectionsHtml}
               <div style="display:flex;justify-content:flex-end;margin-top:4px;">
-                <button type="button" class="btn btn-secondary btn-sm" id="btn-boat-reset-colors">↺ Reset to Vessel Classic</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-boat-reset-colors">Reset to Vessel Classic</button>
               </div>
+            </div>
+          </div>
+
+          <div id="boat-tab-hulls" class="boat-tab-content ${activeTab === 'hulls' ? 'active' : ''}">
+            <div class="boat-hull-notice ${isMaxedVessel ? 'is-maxed' : ''}">
+              ${isMaxedVessel
+                ? '<strong>Max Vessel Tier Reached!</strong> Legendary hulls can now be commissioned permanently using Coins.'
+                : `<strong>Preview Mode:</strong> Upgrade your Angler Vessel to Tier ${maxTier + 1} (Poseidon Sovereign Galleon) in the Tackle Shop to unlock Coin purchases.`}
+            </div>
+            <div class="boat-cards-grid">
+              ${hullCards}
             </div>
           </div>
 
@@ -5423,7 +5495,7 @@ export class UIManager {
               <span id="boat-cost-indicator" class="boat-cost-indicator">Free multi-part paint customization</span>
             </div>
             <div class="boat-footer-actions">
-              <button class="btn btn-secondary" id="btn-boat-goto-angler">👤 Angler Look</button>
+              <button class="btn btn-secondary" id="btn-boat-goto-angler"><span class="inline-svg-sm">${BOAT_UI_ART.anglerIcon}</span> Angler Look</button>
               <button class="btn btn-primary" id="btn-boat-apply">Save Boat Paint</button>
               <button class="btn btn-outline" id="btn-boat-done">Done</button>
             </div>
@@ -5432,13 +5504,16 @@ export class UIManager {
       </div>
     `;
 
-    this.openModal('Custom Boat Yard ⛵', modalBody);
+    this.openModal('Custom Boat Yard', modalBody);
 
     const canvas = document.getElementById('boat-studio-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
     const updateControls = () => {
+      document.querySelectorAll('[data-boat-type="hull"]').forEach(card => {
+        card.classList.toggle('selected', card.getAttribute('data-boat-id') === selectedHull);
+      });
       document.querySelectorAll('[data-boat-type="trinket"]').forEach(card => {
         card.classList.toggle('selected', card.getAttribute('data-boat-id') === selectedTrinket);
       });
@@ -5453,6 +5528,8 @@ export class UIManager {
 
       const gemEl = document.getElementById('boat-gem-val');
       if (gemEl) gemEl.textContent = save.getGemBalance();
+      const coinEl = document.getElementById('boat-coin-val');
+      if (coinEl) coinEl.textContent = (save.data.coins || 0).toLocaleString();
 
       const applyBtn = document.getElementById('btn-boat-apply');
       const costEl = document.getElementById('boat-cost-indicator');
@@ -5461,10 +5538,33 @@ export class UIManager {
         const savedColors = normalizeBoatColors(save.getBoatColors?.() || save.data.boatColors);
         const unchanged = savedColors.hull === draftColors.hull && savedColors.trim === draftColors.trim && savedColors.sails === draftColors.sails;
         if (applyBtn) {
-          applyBtn.textContent = unchanged ? 'Colors Active ✓' : 'Apply Boat Colors';
+          applyBtn.textContent = unchanged ? 'Colors Active' : 'Apply Boat Colors';
           applyBtn.disabled = unchanged;
         }
-        if (costEl) costEl.textContent = '✨ Custom hull, trim & sail colors (Free)';
+        if (costEl) costEl.textContent = 'Custom hull, trim & sail colors (Free)';
+      } else if (activeTab === 'hulls') {
+        const equippedHull = save.getBoatHull ? save.getBoatHull() : (save.data.boatHullStyle || 'standard');
+        const isEquipped = equippedHull === selectedHull;
+        const isOwned = save.hasBoatHull ? save.hasBoatHull(selectedHull) : selectedHull === 'standard';
+        const cost = EXOTIC_BOAT_HULLS[selectedHull]?.cost || 0;
+        const canAfford = (save.data.coins || 0) >= cost;
+
+        if (isEquipped) {
+          if (applyBtn) { applyBtn.textContent = 'Already Active'; applyBtn.disabled = true; }
+          if (costEl) costEl.textContent = 'Currently sailing with this hull design';
+        } else if (isOwned) {
+          if (applyBtn) { applyBtn.textContent = 'Equip Vessel Hull'; applyBtn.disabled = false; }
+          if (costEl) costEl.textContent = 'Owned vessel chassis · Free to swap';
+        } else if (!isMaxedVessel) {
+          if (applyBtn) { applyBtn.textContent = `Requires Tier ${maxTier + 1} Boat`; applyBtn.disabled = true; }
+          if (costEl) costEl.textContent = `Max out Angler Vessel in Tackle Shop first (Tier ${vessel + 1}/${maxTier + 1})`;
+        } else {
+          if (applyBtn) {
+            applyBtn.textContent = `Buy Vessel · $${cost.toLocaleString()}`;
+            applyBtn.disabled = !canAfford;
+          }
+          if (costEl) costEl.textContent = canAfford ? `Cost: $${cost.toLocaleString()} coins` : `Need $${(cost - (save.data.coins || 0)).toLocaleString()} more coins`;
+        }
       } else if (activeTab === 'trinkets') {
         const isEquipped = (save.data.boatTrinket || 'none') === selectedTrinket;
         const isOwned = save.hasBoatTrinket(selectedTrinket);
@@ -5473,16 +5573,16 @@ export class UIManager {
 
         if (isEquipped) {
           if (applyBtn) { applyBtn.textContent = 'Already Equipped'; applyBtn.disabled = true; }
-          if (costEl) costEl.textContent = '✨ Currently mounted on your ship';
+          if (costEl) costEl.textContent = 'Currently mounted on your ship';
         } else if (isOwned) {
           if (applyBtn) { applyBtn.textContent = 'Equip Trinket'; applyBtn.disabled = false; }
           if (costEl) costEl.textContent = 'Owned item · Free to mount';
         } else {
           if (applyBtn) {
-            applyBtn.textContent = `Unlock & Mount · 💎 ${cost}`;
+            applyBtn.textContent = `Unlock & Mount (${cost} Gems)`;
             applyBtn.disabled = !canAfford;
           }
-          if (costEl) costEl.textContent = canAfford ? `Cost: 💎 ${cost} gems` : `Requires 💎 ${cost} gems (Need ${cost - save.getGemBalance()} more)`;
+          if (costEl) costEl.textContent = canAfford ? `Cost: ${cost} gems` : `Requires ${cost} gems (Need ${cost - save.getGemBalance()} more)`;
         }
       } else {
         const isEquipped = (save.data.boatSkin || 'default') === selectedSkin;
@@ -5492,16 +5592,16 @@ export class UIManager {
 
         if (isEquipped) {
           if (applyBtn) { applyBtn.textContent = 'Already Applied'; applyBtn.disabled = true; }
-          if (costEl) costEl.textContent = '✨ Active finish theme';
+          if (costEl) costEl.textContent = 'Active ship finish aura';
         } else if (isOwned) {
           if (applyBtn) { applyBtn.textContent = 'Apply Finish'; applyBtn.disabled = false; }
           if (costEl) costEl.textContent = 'Owned finish · Free to apply';
         } else {
           if (applyBtn) {
-            applyBtn.textContent = `Unlock & Paint · 💎 ${cost}`;
+            applyBtn.textContent = `Unlock Finish (${cost} Gems)`;
             applyBtn.disabled = !canAfford;
           }
-          if (costEl) costEl.textContent = canAfford ? `Cost: 💎 ${cost} gems` : `Requires 💎 ${cost} gems (Need ${cost - save.getGemBalance()} more)`;
+          if (costEl) costEl.textContent = canAfford ? `Cost: ${cost} gems` : `Requires ${cost} gems (Need ${cost - save.getGemBalance()} more)`;
         }
       }
     };
@@ -5534,7 +5634,6 @@ export class UIManager {
         ctx.fillRect((s * 39 + 15) % w, (s * 19 + 12) % (h * 0.45), 1.5, 1.5);
       }
 
-      // Moon with soft halo (no shadowBlur)
       ctx.fillStyle = 'rgba(254, 240, 138, 0.2)';
       ctx.beginPath();
       ctx.arc(w - 60, 48, 28, 0, Math.PI * 2);
@@ -5556,7 +5655,6 @@ export class UIManager {
       ctx.closePath();
       ctx.fill();
 
-      // Update swimming marine companions in preview water
       if (previewShark) {
         previewShark.update(16, { x: w * 0.5 }, waterY - 22);
         previewShark.render(ctx, 0);
@@ -5568,7 +5666,7 @@ export class UIManager {
 
       const bW = 140;
       const bH = 40;
-      const layout = getVesselLayout(vessel, bW, bH);
+      const layout = getVesselLayout(vessel, bW, bH, selectedHull);
       const boatX = w * 0.50;
       const bobY = waterY - 14 + (layout.previewOffsetY || 0) + Math.sin(animTimer * 2) * 3.5;
       const boatAngle = Math.sin(animTimer * 1.5) * 0.035;
@@ -5580,33 +5678,29 @@ export class UIManager {
 
       const skinMeta = BOAT_SKIN_OPTIONS[selectedSkin] || null;
       const previewSkinColor = skinMeta?.color || null;
-      drawVesselHull(ctx, vessel, bW, bH, animTimer, { skinColor: previewSkinColor, skinMeta, boatColors: draftColors });
+      drawVesselHull(ctx, vessel, bW, bH, animTimer, { skinColor: previewSkinColor, skinMeta, skinId: selectedSkin, hullStyle: selectedHull, boatColors: draftColors });
 
-      // Angler seated cleanly
       ctx.save();
       ctx.translate(layout.anglerPos.x, layout.anglerPos.y);
       ctx.scale(1.12, 1.12);
       drawAngler(ctx, save.data?.appearance || {});
       ctx.restore();
 
-      // Selected Deck Trinket aligned to vessel geometry
       if (selectedTrinket && selectedTrinket !== 'none') {
-        drawBoatTrinket(ctx, selectedTrinket, vessel, animTimer, bW, bH);
+        drawBoatTrinket(ctx, selectedTrinket, vessel, animTimer, bW, bH, selectedHull);
       }
 
-      // Equipped Boat Pets aligned cleanly on deck & bow
       if (previewCat) {
         previewCat.update(16);
-        previewCat.render(ctx, vessel);
+        previewCat.render(ctx, vessel, selectedHull);
       }
       if (previewPelican) {
         previewPelican.update(16);
-        previewPelican.render(ctx, vessel);
+        previewPelican.render(ctx, vessel, selectedHull);
       }
 
       ctx.restore();
 
-      // Front wave layer
       ctx.fillStyle = 'rgba(2, 132, 199, 0.7)';
       ctx.beginPath();
       ctx.moveTo(0, waterY + 6);
@@ -5628,7 +5722,6 @@ export class UIManager {
       if (animFrame) cancelAnimationFrame(animFrame);
     };
 
-    // Tab switching
     document.querySelectorAll('.boat-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.boat-tab-btn').forEach(b => b.classList.remove('active'));
@@ -5641,7 +5734,6 @@ export class UIManager {
       });
     });
 
-    // Color swatches & custom pickers
     document.querySelectorAll('.boat-swatch-btn').forEach(sw => {
       sw.addEventListener('click', () => {
         const pk = sw.getAttribute('data-part-key');
@@ -5664,11 +5756,20 @@ export class UIManager {
     document.getElementById('btn-boat-reset-colors')?.addEventListener('click', () => {
       draftColors = { hull: 'default', trim: 'default', sails: 'default' };
       save.setBoatColors(draftColors);
-      this.showToast('↺ Restored classic vessel colors.');
+      this.showToast('Restored classic vessel colors.');
       this.openBoatCustomization('colors');
     });
 
-    // Selecting Trinkets
+    document.querySelectorAll('[data-boat-type="hull"]').forEach(card => {
+      card.addEventListener('click', () => {
+        selectedHull = card.getAttribute('data-boat-id');
+        const status = document.getElementById('boat-studio-status');
+        const h = EXOTIC_BOAT_HULLS[selectedHull];
+        if (status && h) status.textContent = `Previewing ${h.label}: ${h.desc}`;
+        updateControls();
+      });
+    });
+
     document.querySelectorAll('[data-boat-type="trinket"]').forEach(card => {
       card.addEventListener('click', () => {
         selectedTrinket = card.getAttribute('data-boat-id');
@@ -5679,7 +5780,6 @@ export class UIManager {
       });
     });
 
-    // Selecting Skins
     document.querySelectorAll('[data-boat-type="skin"]').forEach(card => {
       card.addEventListener('click', () => {
         selectedSkin = card.getAttribute('data-boat-id');
@@ -5690,41 +5790,51 @@ export class UIManager {
       });
     });
 
-    // Apply Button
     const applyBtn = document.getElementById('btn-boat-apply');
     if (applyBtn) {
       applyBtn.addEventListener('click', async () => {
         if (activeTab === 'colors') {
           save.setBoatColors(draftColors);
-          this.showToast('🎨 Saved custom boat colors across your vessel!');
+          this.showToast('Saved custom boat colors across your vessel!');
           this.openBoatCustomization('colors');
+          return;
+        }
+        if (activeTab === 'hulls') {
+          const res = save.purchaseBoatHull ? save.purchaseBoatHull(selectedHull) : { success: false, reason: 'Unavailable' };
+          if (!res.success) {
+            this.showToast(res.reason || 'Could not equip vessel hull.');
+            return;
+          }
+          soundManager.playUpgrade?.();
+          this.showToast(`Equipped ${EXOTIC_BOAT_HULLS[selectedHull]?.label || 'Vessel Hull'}!`);
+          this.openBoatCustomization('hulls');
           return;
         }
         if (activeTab === 'trinkets') {
           const isOwned = save.hasBoatTrinket(selectedTrinket);
           if (isOwned) {
             save.setBoatTrinket(selectedTrinket);
-            this.showToast(`Mounted ${BOAT_TRINKETS[selectedTrinket].label} on deck! ⛵`);
+            this.showToast(`Mounted ${BOAT_TRINKETS[selectedTrinket].label} on deck!`);
           } else {
             const success = await (save.gemShop ? save.gemShop.purchase('boatTrinket', selectedTrinket, () => save.purchaseBoatTrinket(selectedTrinket)) : save.purchaseBoatTrinket(selectedTrinket));
             if (!success) {
               this.showToast('Not enough gems to unlock trinket!');
               return;
             }
-            this.showToast(`Unlocked & mounted ${BOAT_TRINKETS[selectedTrinket].label}! 💎`);
+            this.showToast(`Unlocked & mounted ${BOAT_TRINKETS[selectedTrinket].label}!`);
           }
         } else {
           const isOwned = save.hasBoatSkin(selectedSkin);
           if (isOwned) {
             save.setBoatSkin(selectedSkin);
-            this.showToast(`Applied ${BOAT_SKIN_OPTIONS[selectedSkin].label} finish! ✨`);
+            this.showToast(`Applied ${BOAT_SKIN_OPTIONS[selectedSkin].label} finish!`);
           } else {
             const success = await (save.gemShop ? save.gemShop.purchase('boatSkin', selectedSkin, () => save.purchaseBoatSkin(selectedSkin)) : save.purchaseBoatSkin(selectedSkin));
             if (!success) {
               this.showToast('Not enough gems to unlock ship finish!');
               return;
             }
-            this.showToast(`Unlocked & applied ${BOAT_SKIN_OPTIONS[selectedSkin].label}! 💎`);
+            this.showToast(`Unlocked & applied ${BOAT_SKIN_OPTIONS[selectedSkin].label}!`);
           }
         }
         if (this.activeModal === 'boat_customization') {
@@ -5751,35 +5861,57 @@ export class UIManager {
 
     const modalBody = `
       <div class="settings-wrapper">
-        <div class="settings-section">
-          <h3><span class="settings-sec-icon">${SETTINGS_ART.cloudSave}</span> Captain Save</h3>
-          <p id="cloud-save-status">${escapeScoreboardText(accountManager.isGuest() ? 'Guest progress is saved on this browser.' : accountManager.cloudStatus)}</p>
-          <button class="btn btn-secondary" id="btn-cloud-save" ${accountManager.cloudSession ? '' : 'disabled'}>Save to cloud now</button>
-          <p class="customize-note">For an older local account, sign in once on the original laptop to migrate your progress.</p>
-        </div>
-
-        ${this.saveSystem.hasSeenEndgame() ? `
-        <div class="settings-section" style="border: 1px solid rgba(168, 85, 247, 0.45); background: radial-gradient(circle at top left, rgba(88, 28, 135, 0.35), rgba(15, 23, 42, 0.7)); box-shadow: 0 0 20px rgba(168, 85, 247, 0.18);">
-          <h3><span class="settings-sec-icon">🌌</span> Abyss Epilogue & End Credits</h3>
-          <p style="color: #cbd5e1; font-size: 0.92rem; margin-bottom: 12px; line-height: 1.5;">
-            You reached the bottom of the Seven Seas. Relive the journey into the cosmic abyss and the quote inscribed beneath the stars.
-          </p>
-          <button class="btn btn-primary" id="btn-rewatch-endgame" style="background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899); border: 1px solid #c084fc; box-shadow: 0 0 16px rgba(168, 85, 247, 0.5); font-weight: 700; padding: 10px 22px;">
-            ✨ Rewatch End Credits
-          </button>
-        </div>
-        ` : ''}
-
-        <div class="settings-section">
-          <h3><span class="settings-sec-icon">${SETTINGS_ART.angler}</span> Vessel & Angler Customization</h3>
-          <p>Customize your boat hull accents & deck trinkets, or change your angler colors, coat style, and headwear.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-            <button class="btn btn-primary" id="btn-customize-boat">⛵ Customize Boat & Trinkets</button>
-            <button class="btn btn-secondary" id="btn-customize-angler">👤 Customize Angler</button>
+        <div class="settings-section settings-card-elevated">
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.audio}</span> Audio Controls</h3>
+          <div class="setting-item setting-slider-row">
+            <label for="music-vol">Music Volume <span class="setting-val-pill" id="music-vol-val">${Math.round((settings.musicVolume ?? 0.5) * 100)}%</span></label>
+            <input type="range" id="music-vol" min="0" max="1" step="0.05" value="${settings.musicVolume}">
+          </div>
+          <div class="setting-item setting-slider-row">
+            <label for="sfx-vol">Sound Effects <span class="setting-val-pill" id="sfx-vol-val">${Math.round((settings.sfxVolume ?? 0.7) * 100)}%</span></label>
+            <input type="range" id="sfx-vol" min="0" max="1" step="0.05" value="${settings.sfxVolume}">
           </div>
         </div>
 
-        <div class="settings-section career-section">
+        <div class="settings-section settings-card-elevated">
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.preferences}</span> Fishing Preferences</h3>
+          <div class="setting-toggle-row">
+            <label for="setting-always-ask">Always ask on catch (Keep / Sell modal)</label>
+            <input type="checkbox" id="setting-always-ask" ${settings.alwaysAskOnCatch ? 'checked' : ''}>
+          </div>
+          <div class="setting-toggle-row">
+            <label for="setting-hide-traps">Hide Seabed Traps &amp; Buoys on Water</label>
+            <input type="checkbox" id="setting-hide-traps" ${settings.hideSeabedTraps ? 'checked' : ''}>
+          </div>
+        </div>
+
+        <div class="settings-section settings-card-elevated">
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.angler}</span> Vessel &amp; Angler Customization</h3>
+          <p class="settings-subcopy">Customize boat paint, exotic max-level ship hulls, deck trinkets, and your captain look.</p>
+          <div class="settings-btn-row">
+            <button class="btn btn-primary" id="btn-customize-boat"><span class="inline-svg-sm">${BOAT_UI_ART.tabHulls}</span> Customize Boat &amp; Hulls</button>
+            <button class="btn btn-secondary" id="btn-customize-angler"><span class="inline-svg-sm">${BOAT_UI_ART.anglerIcon}</span> Customize Angler</button>
+          </div>
+        </div>
+
+        <div class="settings-section settings-card-elevated">
+          <h3><span class="settings-sec-icon">${SETTINGS_ART.cloudSave}</span> Captain Save &amp; Sync</h3>
+          <p id="cloud-save-status" class="settings-cloud-status">${escapeScoreboardText(accountManager.isGuest() ? 'Guest progress is saved locally in this browser.' : accountManager.cloudStatus)}</p>
+          <div class="settings-btn-row">
+            <button class="btn btn-secondary" id="btn-cloud-save" ${accountManager.cloudSession ? '' : 'disabled'}>Save to Cloud Now</button>
+          </div>
+          <p class="customize-note">Sign in with your Captain account to sync catches and vessels across devices.</p>
+        </div>
+
+        ${this.saveSystem.hasSeenEndgame() ? `
+        <div class="settings-section settings-section-wide settings-epilogue-card">
+          <h3><span class="settings-sec-icon">${BOAT_UI_ART.tabSkins}</span> Abyss Epilogue &amp; End Credits</h3>
+          <p class="settings-subcopy">You reached the bottom of the Seven Seas. Relive the cosmic abyss journey and closing inscription.</p>
+          <button class="btn btn-primary" id="btn-rewatch-endgame">Rewatch End Credits</button>
+        </div>
+        ` : ''}
+
+        <div class="settings-section settings-section-wide career-section">
           <h3><span class="settings-sec-icon">${SETTINGS_ART.trophyRecords}</span> Career Records</h3>
           <div class="career-grid">
             ${[
@@ -5803,43 +5935,26 @@ export class UIManager {
           </div>
         </div>
 
-        <div class="settings-section">
-          <h3><span class="settings-sec-icon">${SETTINGS_ART.preferences}</span> Fishing Preferences</h3>
-          <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0;">
-            <label for="setting-always-ask" style="font-size: 0.95rem; color: #cbd5e1; cursor: pointer;">
-              Always ask on catch (show Keep / Sell modal):
-            </label>
-            <input type="checkbox" id="setting-always-ask" ${settings.alwaysAskOnCatch ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
-          </div>
-          <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 4px;">
-            <label for="setting-hide-traps" style="font-size: 0.95rem; color: #cbd5e1; cursor: pointer;">
-              Hide Seabed Traps & Buoys View on Water:
-            </label>
-            <input type="checkbox" id="setting-hide-traps" ${settings.hideSeabedTraps ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3><span class="settings-sec-icon">${SETTINGS_ART.audio}</span> Audio Controls</h3>
-          <div class="setting-item">
-            <label for="music-vol">Music Volume:</label>
-            <input type="range" id="music-vol" min="0" max="1" step="0.05" value="${settings.musicVolume}">
-          </div>
-          <div class="setting-item">
-            <label for="sfx-vol">Sound Effects Volume:</label>
-            <input type="range" id="sfx-vol" min="0" max="1" step="0.05" value="${settings.sfxVolume}">
-          </div>
-        </div>
-
-        <div class="settings-section">
+        <div class="settings-section settings-section-wide settings-danger-card">
           <h3><span class="settings-sec-icon">${SETTINGS_ART.danger}</span> Save Data Management</h3>
-          <p class="settings-danger-warning">Resetting progress will permanently erase your currency, level, upgrades, journal, fossils, and achievements.</p>
-          <button class="btn btn-danger" id="btn-trigger-reset">Reset All Game Progress</button>
+          <div class="settings-danger-row">
+            <p class="settings-danger-warning">Resetting progress permanently erases your coins, level, upgrades, journal, fossils, and achievements.</p>
+            <button class="btn btn-danger" id="btn-trigger-reset">Reset All Game Progress</button>
+          </div>
         </div>
       </div>
     `;
 
     this.openModal('Settings & Career Records', modalBody);
+
+    document.getElementById('music-vol')?.addEventListener('input', (e) => {
+      const badge = document.getElementById('music-vol-val');
+      if (badge) badge.textContent = `${Math.round(Number(e.target.value) * 100)}%`;
+    });
+    document.getElementById('sfx-vol')?.addEventListener('input', (e) => {
+      const badge = document.getElementById('sfx-vol-val');
+      if (badge) badge.textContent = `${Math.round(Number(e.target.value) * 100)}%`;
+    });
 
     document.getElementById('btn-customize-boat')?.addEventListener('click', () => this.openBoatCustomization());
     document.getElementById('btn-customize-angler')?.addEventListener('click', () => this.openAppearance());

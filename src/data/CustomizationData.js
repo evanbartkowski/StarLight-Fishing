@@ -363,19 +363,85 @@ export function normalizeBoatColors(values = {}) {
   );
 }
 
+export const EXOTIC_BOAT_HULLS = {
+  standard: {
+    id: 'standard',
+    label: 'Sovereign Standard Hull',
+    subtitle: 'Upgraded Fleet Chassis',
+    desc: 'Your classic tiered seafaring vessel geometry forged through shipyard upgrades.',
+    cost: 0,
+    requiresMax: false,
+    accent: '#fbbf24',
+  },
+  pirate: {
+    id: 'pirate',
+    label: "Blackbeard's Dread Galleon",
+    subtitle: 'Legendary Corsair Warship',
+    desc: 'Broadside cannon ports, grim skull-and-crossbones mainsail, spiked figurehead, and burning deck braziers.',
+    cost: 120000,
+    requiresMax: true,
+    accent: '#ef4444',
+  },
+  submarine: {
+    id: 'submarine',
+    label: 'Abyssal Nautilus Submersible',
+    subtitle: 'Pressurized Bathyscaphe',
+    desc: 'Riveted pressure hull, glowing observatory glass dome, rotating brass periscope, and turbine screw.',
+    cost: 165000,
+    requiresMax: true,
+    accent: '#38bdf8',
+  },
+  chinese_junk: {
+    id: 'chinese_junk',
+    label: 'Imperial Dragon Junk',
+    subtitle: 'Ancient Eastern Treasure Fleet',
+    desc: 'Swept high teak stern, battened vermilion fan sails, hanging silk lanterns, and gilded jade dragon prow.',
+    cost: 190000,
+    requiresMax: true,
+    accent: '#f59e0b',
+  },
+  viking: {
+    id: 'viking',
+    label: 'Frostfang Norse Longship',
+    subtitle: 'Dragon-Prow Drakkar',
+    desc: 'Clinker-planked shallow hull lined with painted shieldwall bosses, fierce dragon-head stem, and striped wool sail.',
+    cost: 145000,
+    requiresMax: true,
+    accent: '#60a5fa',
+  },
+  ghost_ship: {
+    id: 'ghost_ship',
+    label: 'Flying Dutchman Specter',
+    subtitle: 'Spectral Phantom Vessel',
+    desc: 'Ectoplasmic luminous ribs, tattered spirit sails, ghostly sea-fire lanterns, and drifting spectral mist.',
+    cost: 225000,
+    requiresMax: true,
+    accent: '#2dd4bf',
+  },
+  steampunk: {
+    id: 'steampunk',
+    label: 'Aether Chronos Ironclad',
+    subtitle: 'Clockwork Steam Dreadnought',
+    desc: 'Copper-plated armored prow, spinning brass paddlewheel, puffing twin smokestacks, and arcane lightning spire.',
+    cost: 260000,
+    requiresMax: true,
+    accent: '#fb923c',
+  },
+};
+
 export const BOAT_SKIN_OPTIONS = {
-  default: { id: 'default', label: 'Classic Oak', desc: 'Timeless varnished oak gunwale finish.', cost: 0, color: null },
-  coral: { id: 'coral', label: 'Coral Blossom', desc: 'Vibrant salmon-coral waterline stripe.', cost: 15, color: '#fb7185', hullTint: '#881337' },
-  indigo: { id: 'indigo', label: 'Deep Indigo', desc: 'Abyssal royal indigo racing stripe.', cost: 20, color: '#818cf8', hullTint: '#1e1b4b' },
-  emerald: { id: 'emerald', label: 'Sea Emerald', desc: 'Luminescent seafoam emerald accent line.', cost: 25, color: '#34d399', hullTint: '#064e3b' },
-  gold: { id: 'gold', label: 'Gilded Gilt', desc: 'Opulent sunken galleon gold trim.', cost: 40, color: '#fbbf24', hullTint: '#451a03', sailTint: '#fef3c7' },
-  celestial: { id: 'celestial', label: 'Celestial Starlight', desc: 'Iridescent starfall violet & stellar cosmic glow.', cost: 45, color: '#c084fc', secondaryColor: '#e0e7ff', glow: '#a855f7', hullTint: '#2e1065', sailTint: '#e9d5ff' },
-  obsidian: { id: 'obsidian', label: 'Molten Obsidian', desc: 'Volcanic black basalt with glowing magma vein accents.', cost: 40, color: '#ea580c', secondaryColor: '#1c1917', glow: '#f97316', hullTint: '#1c1917', sailTint: '#fed7aa' },
-  pearl: { id: 'pearl', label: 'Iridescent Pearl', desc: 'Shimmering lustrous moonlit nacre luster.', cost: 35, color: '#38bdf8', secondaryColor: '#bae6fd', glow: '#38bdf8', hullTint: '#475569', sailTint: '#f8fafc' },
-  crimson: { id: 'crimson', label: 'Crimson Phantom', desc: 'Ghostly blood ruby and deep shadow scarlet trim.', cost: 30, color: '#f43f5e', secondaryColor: '#881337', glow: '#fb7185', hullTint: '#4c0519', sailTint: '#ffe4e6' },
-  amethyst: { id: 'amethyst', label: 'Royal Amethyst', desc: 'Imperial deep royal purple and gilded crystal hue.', cost: 35, color: '#9333ea', secondaryColor: '#581c87', glow: '#c084fc', hullTint: '#3b0764', sailTint: '#f3e8ff' },
-  midnight: { id: 'midnight', label: 'Midnight Abyss', desc: 'Stealth dark abyssal slate with electric cyan piping.', cost: 25, color: '#06b6d4', secondaryColor: '#0f172a', glow: '#22d3ee', hullTint: '#0f172a', sailTint: '#cbd5e1' },
-  rose_gold: { id: 'rose_gold', label: 'Rose Gold Sunset', desc: 'Warm metallic sunset copper and blush rose gold trim.', cost: 30, color: '#fb7185', secondaryColor: '#fbcfe8', glow: '#fda4af', hullTint: '#500724', sailTint: '#fce7f3' },
+  default: { id: 'default', label: 'Classic Oak', desc: 'Clean heritage maritime varnish & brushed brass seams.', cost: 0, color: null, effect: 'classic' },
+  coral: { id: 'coral', label: 'Living Reef Coral', desc: 'Sculpted coral blossoms, pearl waterline studs & sunlit rose wash.', cost: 15, color: '#fb7185', hullTint: '#881337', secondaryColor: '#fda4af', glow: '#fb7185', effect: 'coral_bloom' },
+  indigo: { id: 'indigo', label: 'Vortex Tide Indigo', desc: 'Twin crashing storm-wave chevron stripes & luminous sapphire compass sigil.', cost: 20, color: '#818cf8', hullTint: '#1e1b4b', secondaryColor: '#38bdf8', glow: '#818cf8', effect: 'indigo_vortex' },
+  emerald: { id: 'emerald', label: 'Bioluminescent Jade', desc: 'Glowing seafoam filigree patterns & enchanted emerald spirit lanterns.', cost: 25, color: '#34d399', hullTint: '#064e3b', secondaryColor: '#a7f3d0', glow: '#10b981', effect: 'emerald_bio' },
+  gold: { id: 'gold', label: 'Imperial Bullion Gold', desc: 'Mirror-hammered gold-leaf armor plates, filigree flourishes & radiant sparkle glints.', cost: 40, color: '#fbbf24', hullTint: '#451a03', secondaryColor: '#fef08a', sailTint: '#fef3c7', glow: '#facc15', effect: 'gold_plate' },
+  celestial: { id: 'celestial', label: 'Celestial Starlight', desc: 'Shimmering animated constellation stars & cosmic nebula aurora sheen across hull & sails.', cost: 45, color: '#c084fc', secondaryColor: '#e0e7ff', glow: '#a855f7', hullTint: '#2e1065', sailTint: '#e9d5ff', effect: 'celestial_stars' },
+  obsidian: { id: 'obsidian', label: 'Molten Caldera Magma', desc: 'Charred volcanic basalt armor cracked open with glowing pulsing lava veins & rising sparks.', cost: 40, color: '#ea580c', secondaryColor: '#fde047', glow: '#f97316', hullTint: '#1c1917', sailTint: '#fed7aa', effect: 'magma_cracks' },
+  pearl: { id: 'pearl', label: 'Prismatic Mother-of-Pearl', desc: 'Shifting rainbow iridescent nacre shimmer sweeping smoothly along every plank and sail.', cost: 35, color: '#38bdf8', secondaryColor: '#f5d0fe', glow: '#7dd3fc', hullTint: '#475569', sailTint: '#f8fafc', effect: 'pearl_prism' },
+  crimson: { id: 'crimson', label: 'Bloodmoon Specter', desc: 'Wraithlike obsidian hulls etched with glowing crimson rune bands and ember drift.', cost: 30, color: '#f43f5e', secondaryColor: '#fda4af', glow: '#e11d48', hullTint: '#4c0519', sailTint: '#ffe4e6', effect: 'crimson_runes' },
+  amethyst: { id: 'amethyst', label: 'Crystal Geode Amethyst', desc: 'Faceted royal quartz clusters & luminous violet crystal prism highlights.', cost: 35, color: '#9333ea', secondaryColor: '#f3e8ff', glow: '#c084fc', hullTint: '#3b0764', sailTint: '#f3e8ff', effect: 'amethyst_facets' },
+  midnight: { id: 'midnight', label: 'Abyssal Cyber Neon', desc: 'Matte tactical carbon planking traced by pulsing electric cyan circuit strips.', cost: 25, color: '#22d3ee', secondaryColor: '#06b6d4', glow: '#22d3ee', hullTint: '#090d16', sailTint: '#cbd5e1', effect: 'neon_circuit' },
+  rose_gold: { id: 'rose_gold', label: 'Champagne Rose Sunset', desc: 'Brushed copper-rose metallic gradient banded with warm sunset shimmer beams.', cost: 30, color: '#fda4af', secondaryColor: '#fed7aa', glow: '#fb7185', hullTint: '#500724', sailTint: '#fce7f3', effect: 'rose_sheen' },
 };
 
 export const BOAT_TRINKETS = {
@@ -388,9 +454,9 @@ export const BOAT_TRINKETS = {
   crystal_orb: { id: 'crystal_orb', label: 'Arcane Divining Sphere', desc: 'A glowing sapphire orb hovering inside a brass cage.', cost: 45, icon: '🔮' },
 };
 
-export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, bH = 34) {
+export function drawBoatTrinket(ctx, trinketId, vessel = 0, time = 0, bW = 120, bH = 34, hullStyle = 'standard') {
   if (!trinketId || trinketId === 'none') return;
-  const layout = getVesselLayout(vessel, bW, bH);
+  const layout = getVesselLayout(vessel, bW, bH, hullStyle);
   ctx.save();
   try {
     if (trinketId === 'lucky_cat') {

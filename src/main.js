@@ -320,6 +320,9 @@ function getCanvasCoords(e) {
   };
 }
 
+let pointerDownCoords = { x: 0, y: 0 };
+let pointerDownState = null;
+
 function handlePointerDown(e) {
   if (gameState === 'ENDGAME_SCENE') return;
   // If user clicks while modal is actively visible, ignore
@@ -340,6 +343,8 @@ function handlePointerDown(e) {
   const coords = getCanvasCoords(e);
   mousePos.x = coords.x;
   mousePos.y = coords.y;
+  pointerDownCoords = { x: coords.x, y: coords.y };
+  pointerDownState = gameState;
   isMouseDown = true;
 
   if (gameState === 'SURFACE_IDLE') {
@@ -482,7 +487,13 @@ function handlePointerUp(e) {
   }
   if (gameState === 'AIMING') {
     triggerCast();
+  } else if (gameState === 'DESCENDING' && pointerDownState === 'DESCENDING') {
+    const dragDist = Math.hypot(mousePos.x - pointerDownCoords.x, mousePos.y - pointerDownCoords.y);
+    if (dragDist < 22) {
+      hook.startReel();
+    }
   }
+  pointerDownState = null;
   isMouseDown = false;
 }
 
@@ -856,7 +867,7 @@ const update = (dt) => {
 
       const rodLvl = save.getUpgradeLevel('fishingRod') || 0;
       const rodTier = UPGRADE_DEFINITIONS.fishingRod?.tiers?.[rodLvl] || { sellBonus: 0 };
-      const sellMult = 1 + (rodTier.sellBonus || 0);
+      const sellMult = (1 + (rodTier.sellBonus || 0)) * (save.getCoinBonusMultiplier?.() || 1);
       const rawHaulGold = hook.caughtItems.reduce((sum, item) => {
         if (item.isCrate || item.category === 'crate') return sum;
         const val = Number.isFinite(item.value) ? item.value : 0;

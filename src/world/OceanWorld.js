@@ -3,7 +3,7 @@ import { drawDepthScenery } from '../rendering/DepthScenery.js';
 import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { drawAngler, drawBoatTrinket, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
-import { drawVesselHull } from '../rendering/VesselRenderer.js';
+import { drawVesselHull, getVesselLayout } from '../rendering/VesselRenderer.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
 import { belongsToRealm, REALM_PROFILES } from '../data/RealmContent.js';
@@ -1892,9 +1892,11 @@ export class OceanWorld {
         ? (skinMeta?.color || { coral: '#fb7185', indigo: '#818cf8', gold: '#fbbf24', emerald: '#34d399' }[rawSkin] || null)
         : null;
       const boatColors = this.saveSystem?.getBoatColors?.() || this.saveSystem?.data?.boatColors || null;
+      const hullStyle = this.saveSystem?.getBoatHull?.() || this.saveSystem?.data?.boatHullStyle || 'standard';
+      const vesselLayout = getVesselLayout(vessel, b.width, b.height, hullStyle);
 
       try {
-        drawVesselHull(ctx, vessel, b.width, b.height, this.waveTimer || 0, { skinColor, skinMeta, boatColors });
+        drawVesselHull(ctx, vessel, b.width, b.height, this.waveTimer || 0, { skinColor, skinMeta, skinId: rawSkin || 'default', hullStyle, boatColors });
       } catch (hullErr) {
         console.error('Error drawing vessel hull:', hullErr);
         ctx.fillStyle = '#78350f';
@@ -1911,16 +1913,16 @@ export class OceanWorld {
       try {
         const equippedTrinket = this.saveSystem?.data?.boatTrinket || 'none';
         if (equippedTrinket && equippedTrinket !== 'none') {
-          drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height);
+          drawBoatTrinket(ctx, equippedTrinket, vessel, this.waveTimer || 0, b.width, b.height, hullStyle);
         }
       } catch (e) { console.warn('Boat trinket render error:', e); }
 
       // Companions (rendered relative to boat transform - only if unlocked)
       try {
         if (this.shipsCat && this.saveSystem?.isPetEquipped('cat')) {
-          this.shipsCat.render(ctx, vessel);
+          this.shipsCat.render(ctx, vessel, hullStyle);
           if (this.hoveredCompanion === 'angela') {
-            const catPos = this.shipsCat.getDeckPosition(vessel);
+            const catPos = this.shipsCat.getDeckPosition(vessel, hullStyle);
             ctx.save();
             try {
               ctx.translate(catPos.x - 55, catPos.y - 30);
@@ -1953,9 +1955,9 @@ export class OceanWorld {
 
       try {
         if (this.pelican && this.saveSystem?.isPetEquipped('pelican')) {
-          this.pelican.render(ctx, vessel);
+          this.pelican.render(ctx, vessel, hullStyle);
           if (this.hoveredCompanion === 'evan') {
-            const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel) : { x: 50, y: -20 };
+            const birdPos = this.pelican.getBowspritPosition ? this.pelican.getBowspritPosition(vessel, hullStyle) : { x: 50, y: -20 };
             ctx.save();
             try {
               ctx.translate(birdPos.x + 55, birdPos.y - 32);
@@ -1992,8 +1994,8 @@ export class OceanWorld {
         const aimDir = this.aimDirection === -1 ? -1 : 1;
         ctx.scale(aimDir, 1);
 
-        const fX = -2;
-        const fY = -12;
+        const fX = vesselLayout.anglerPos?.x ?? -2;
+        const fY = vesselLayout.anglerPos?.y ?? -12;
 
         drawAngler(ctx, this.saveSystem?.data?.appearance, fX, fY);
 
