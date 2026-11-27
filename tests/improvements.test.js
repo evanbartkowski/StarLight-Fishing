@@ -344,10 +344,11 @@ test('All 11 Easter Eggs trigger, persist unlocks, and render with finite canvas
 
   renderFishEasterEggOverlay(mockCtx, fWithRod, { x: 0, y: 0 }, 0);
   renderFishEasterEggOverlay(mockCtx, unionFish, { x: 0, y: 0 }, 0);
-  renderFishEasterEggOverlay(mockCtx, miniMonster, { x: 0, y: 0 }, 0);
+  const { drawPipProjection } = await import('../src/rendering/LanternPipArtwork.js');
+  drawPipProjection(mockCtx, miniMonster, { x: 0, y: 0 });
   assert.equal(miniMonster._revealedSmall, false);
   // Hook gets close -> reveals small lantern minnow
-  renderFishEasterEggOverlay(mockCtx, miniMonster, { x: 495, y: 495 }, 0);
+  drawPipProjection(mockCtx, miniMonster, { x: 495, y: 495 });
   assert.equal(miniMonster._revealedSmall, true);
   assert.ok(drawCalls > 100);
 });

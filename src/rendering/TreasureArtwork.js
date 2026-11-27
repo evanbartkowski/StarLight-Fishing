@@ -3,7 +3,10 @@ import { TREASURE_ITEMS } from '../data/TreasureData.js';
 // Original vector drawings. One definition drives the ocean, haul, inventory and
 // specimen view. Resolve by catalog ID so existing saves need no art migration.
 const catalog = new Map(TREASURE_ITEMS.filter(item => !item.isCrate).map(item => [item.id, item]));
-const drawings = new Map(), svgCache = new Map(), paths = new WeakMap();
+catalog.set('sunken_safe',{id:'sunken_safe',name:'Sunken Iron Safe',color:'#657c83',glow:'#c7d9d5'});
+const artworkId = item => catalog.has(item?.id) ? item.id : catalog.has(item?.speciesId) ? item.speciesId :
+  (item?.isSunkenSafe || String(item?.id || '').startsWith('sunken_safe_')) ? 'sunken_safe' : null;
+const drawings = new Map(), svgCache = new Map(), paths = new WeakMap(), sprites = new Map();
 const gold = '#e9bc68', ink = '#493b57', light = '#fff0c2';
 const p = (d, fill = 'none', stroke = ink, width = 1.5, opacity = 1) => ({ d, fill, stroke, width, opacity });
 const ellipse = (x, y, rx, ry, fill, stroke = ink, width = 1.5) => p(`M${x-rx} ${y}a${rx} ${ry} 0 1 0 ${rx*2} 0a${rx} ${ry} 0 1 0 ${-rx*2} 0`, fill, stroke, width);
@@ -13,7 +16,14 @@ const lines = (d, stroke = gold, width = 1.5) => p(d, 'none', stroke, width);
 function design(item) {
   const n = item.name.toLowerCase(), c = item.color || '#6dc5d0', g = item.glow || light;
   let a;
-  if (/hourglass/.test(n)) {
+  if (/\bsafe\b/.test(n)) {
+    a=[p('M-25-23H19L26-17V25H-25Z','#526871','#293e4d',2),p('M-21-18H20V19H-21Z','#233d4a','#a8bfc1',1.3),
+      p('M-17-15H17V16H-17Z','#758b8b','#394e5c',1.6),p('M-25-23H19L26-17H-18Z','#9bb1ad','#40545c'),
+      ellipse(1,0,9,9,'#3d5664',gold),ellipse(1,0,3,3,gold,'#e7d5a0'),lines('M1-7V7M-6 0H8M-4-5L6 5M-4 5L6-5','#d5c191',2),
+      p('M-23-10H-17V-3H-23ZM-23 7H-17V14H-23Z','#bd9b6a','#455866'),ellipse(13,10,1.8,2.4,'#263c4a',gold,.7),
+      lines('M-19 21H21M-13-11H12','#cad9d2',.7),...[-19,19].map(x=>ellipse(x,21,2,2,'#ac8d65','#eadbb4',.7)),
+      p('M-25 12L-20 14L-22 22L-25 21ZM17-22L22-20L21-16L16-18Z','#9b7354','none')];
+  } else if (/hourglass/.test(n)) {
     a = [p('M-13-18H13C13-7 5-6 3 0C5 6 13 7 13 18H-13C-13 7-5 6-3 0C-5-6-13-7-13-18Z', '#86cfe04d', '#b9e7f4'),
       p('M-11-13H11L2-2H-2ZM-11 16L-2 6H2L11 16Z', '#d7b9ff', '#aa79dd', 1),
       lines('M0-1V4M-18-19V19M18-19V19', gold, 2.5),
@@ -143,35 +153,67 @@ function design(item) {
     if (/tear/.test(n)) a = [p('M0-27C-2-15-25 4-18 17C-10 30 16 27 20 11C23 1 5-15 0-27Z',c,gold,2),lines('M-5-9Q-19 12-7 18',light,2)];
     if (/lantern opal/.test(n)) a.push(lines('M-10-23Q0-34 10-23M-14 17H14',gold,2));
   }
+  // Engraving, hardware and glass highlights belong to the artifact itself.
+  if (/cameo/.test(n)) a.push(ellipse(0,-3,15,17,'none','#fff0c2',.55), ...[-11,0,11].map(x=>ellipse(x,12-Math.abs(x)*.1,1,1,'#f9e3a7','none')),
+    lines('M-9-17Q-18-9-10 0M9-17Q18-9 10 0','#b2676a',.7));
+  if (/music box/.test(n)) a.push(p('M-17 2L14 2L18 7L-17 7Z','#c4cbd0',gold,.7), ...[-11,-6,-1,4,9].map(x=>lines(`M${x} 3v3`,'#5d7481',.7)),
+    ellipse(9,12,3,3,'#e6bc78'), lines('M-17-14Q-7-22 8-16M-17 12V17H-10','#e3cfab',.7));
+  if (/comb/.test(n)) a.push(lines('M-20-6Q0-18 20-6M-18-3Q0-12 18-3','#c89b67',.7), ...[-15,-5,5,15].map(x=>ellipse(x,-6-Math.cos(x/18)*3,1.2,1.4,'#fff6dc','#a98465',.5)));
+  if (/hourglass/.test(n)) a.push(p('M-10-16L-6-16Q-8-9-3-5L-4-2Q-12-9-10-16Z','#e5f8ff88','none'), lines('M-10 15Q0 10 10 15','#f6e4bd',.7), ...[-18,18].flatMap(x=>[ellipse(x,-19,2,2,gold),ellipse(x,19,2,2,gold)]));
+  if (/amber/.test(n)) a.push(p('M-17-17L-3-21L-12-6L-20 1Z','#fff1b755','none'), ellipse(10,9,3,4,'#f4d27366','#fff0bb88',.7), ellipse(-8,12,1.3,2,'#f5de9c88','none'));
+  if (/crown|diadem|tiara/.test(n)) a.push(...[-13,13].map(x=>ellipse(x,5,2.5,3,'#7cded2','#fff0bd',.7)),lines('M-17 15H17M-9 11H-3M3 11H9','#947744',.7));
+  if (/fossil coral fan/.test(n)) {
+    a.unshift(p('M-29 12L-27-17L-9-28L17-25L29-4L24 24L-4 29L-24 23Z','#a9a58b','#7b8577',1.5));
+    for(const s of a.slice(1)){if(s.stroke===c){s.stroke='#e9dfba';s.width=3;}if(s.stroke===g)s.stroke='#8c917b';}
+    a.push(lines('M-25-11L-18-7M17-19L13-13M19 16L14 21M-16 19L-12 23','#6e7e72',.8));
+  }
   return a;
 }
 
 function artwork(item) {
-  const config = catalog.get(item?.id);
+  const config = catalog.get(artworkId(item));
   if (!config) return null;
   if (!drawings.has(config.id)) drawings.set(config.id, design(config));
   return drawings.get(config.id);
 }
 
 export function treasureSvg(item) {
+  const id = artworkId(item);
   const art = artwork(item);
   if (!art) return null;
-  if (!svgCache.has(item.id)) svgCache.set(item.id, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-34 -34 68 68" width="64" height="64" data-treasure="${item.id}" aria-hidden="true"><g stroke-linecap="round" stroke-linejoin="round">${art.map(s => `<path d="${s.d}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="${s.width}" opacity="${s.opacity}"/>`).join('')}</g></svg>`);
-  return svgCache.get(item.id);
+  if (!svgCache.has(id)) {
+    const colors=[...new Set(art.map(s=>s.fill).filter(color=>/^#[\da-f]{6}$/i.test(color)))];
+    const defs=colors.map(color=>`<linearGradient id="${id}-${color.slice(1)}" x1="-18" y1="-25" x2="16" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="${tone(color,1.18,18)}"/><stop offset=".42" stop-color="${color}"/><stop offset="1" stop-color="${tone(color,.55)}"/></linearGradient>`).join('');
+    svgCache.set(id, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-34 -34 68 68" width="64" height="64" data-treasure="${id}" aria-hidden="true"><defs>${defs}</defs><g stroke-linecap="round" stroke-linejoin="round">${art.map(s => `<path d="${s.d}" fill="${colors.includes(s.fill)?`url(#${id}-${s.fill.slice(1)})`:s.fill}" stroke="${s.stroke}" stroke-width="${s.width}" opacity="${s.opacity}"/>`).join('')}</g></svg>`);
+  }
+  return svgCache.get(id);
 }
 
+function tone(color,factor,add=0){return '#'+color.slice(1).match(/../g).map(channel=>Math.min(255,Math.round(parseInt(channel,16)*factor+add)).toString(16).padStart(2,'0')).join('');}
+
 export function drawTreasureArtwork(ctx, item, scale = 1) {
+  const id = artworkId(item);
   const art = artwork(item);
   if (!art || typeof Path2D === 'undefined') return false;
-  ctx.save();
-  ctx.scale(scale, scale); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  for (const shape of art) {
-    if (!paths.has(shape)) paths.set(shape, new Path2D(shape.d));
-    const path = paths.get(shape);
-    ctx.fillStyle = shape.fill; ctx.strokeStyle = shape.stroke; ctx.lineWidth = shape.width;
-    if (shape.fill !== 'none') ctx.fill(path);
-    if (shape.stroke !== 'none') ctx.stroke(path);
+  // Rasterize once at double resolution. World rendering is then one cheap blit,
+  // rather than rebuilding material gradients and dozens of paths each frame.
+  if (!sprites.has(id)) {
+    const canvas = document.createElement('canvas'); canvas.width=136;canvas.height=136;
+    const paint=canvas.getContext('2d');paint.scale(2,2);paint.translate(34,34);paint.lineCap='round';paint.lineJoin='round';
+    const materials=new Map();
+    for(const shape of art){
+      if(!paths.has(shape))paths.set(shape,new Path2D(shape.d));
+      let fill=shape.fill;
+      if(/^#[\da-f]{6}$/i.test(fill)){
+        if(!materials.has(fill)){const material=paint.createLinearGradient(-18,-25,16,28);material.addColorStop(0,tone(fill,1.18,18));material.addColorStop(.42,fill);material.addColorStop(1,tone(fill,.55));materials.set(fill,material);}
+        fill=materials.get(fill);
+      }
+      paint.fillStyle=fill;paint.strokeStyle=shape.stroke;paint.lineWidth=shape.width;paint.globalAlpha=shape.opacity;
+      if(shape.fill!=='none')paint.fill(paths.get(shape));
+      if(shape.stroke!=='none')paint.stroke(paths.get(shape));
+    }
+    sprites.set(id,canvas);
   }
-  ctx.restore();
+  ctx.drawImage(sprites.get(id),-34*scale,-34*scale,68*scale,68*scale);
   return true;
 }

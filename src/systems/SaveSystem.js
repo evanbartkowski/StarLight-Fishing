@@ -314,6 +314,9 @@ export class SaveSystem {
         discoveredFrequency777: Boolean(parsed.discoveredFrequency777),
         easterEggsFound: Array.isArray(parsed.easterEggsFound) ? parsed.easterEggsFound : [],
         inventory: (Array.isArray(parsed.inventory) ? parsed.inventory : []).map(item => {
+          if (item.isSunkenSafe || item.speciesId === 'sunken_safe' || String(item.id || '').startsWith('sunken_safe')) {
+            item.type = 'trinket'; item.isSunkenSafe = true; item.category = 'treasure';
+          }
           if (item.isBottle || item.id === 'bottle' || item.category === 'bottle') {
             item.type = 'bottle'; item.isBottle = true;
             item.bottleMessage = normalizeBottleMessage(item.bottleMessage || getRandomBottleMessage());
@@ -895,17 +898,19 @@ export class SaveSystem {
     const isRelic = !!item.isRelic;
     const isFossil = item.category === 'fossil';
     const isBottle = !!item.isBottle || item.id === 'bottle' || item.category === 'bottle';
+    const isSunkenSafe = !!item.isSunkenSafe || item.speciesId === 'sunken_safe' || String(item.id || '').startsWith('sunken_safe');
     const isTreasure = (item.isTreasure || item.category === 'treasure') && !isCrate && !isBottle;
 
     let type = 'fish';
     if (isRelic) type = 'relic';
     else if (isBottle) type = 'bottle';
-    else if (isFossil || isTreasure || isCrate) type = 'trinket';
+    else if (isFossil || isTreasure || isCrate || isSunkenSafe) type = 'trinket';
 
     return {
       instanceId,
       isCrate,
       isBottle,
+      isSunkenSafe,
       bottleMessage: item.bottleMessage || null,
       category: item.category,
       crateRank: item.crateRank || 1,

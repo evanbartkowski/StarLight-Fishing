@@ -82,10 +82,17 @@ try {
     assert.ok(portraitStatus.every(([w, h]) => w === 320 && h === 320), 'all NPC art must decode without a network connection');
     await page.click('#btn-guest-start');
     await page.waitForFunction(() => document.getElementById('welcome-popup').style.display === 'none');
-    if (width < 500) await page.touchscreen.tap(40, 500); else await page.mouse.click(40, 500);
+    // Keep this offline-control check away from the moon's ghost-captain trigger.
+    const castX = Math.round(width * .75);
+    if (width < 500) await page.touchscreen.tap(castX, 500); else await page.mouse.click(castX, 500);
     await page.waitForFunction(() => parseFloat(document.getElementById('hud-depth').textContent) > 2);
-    if (width < 500) await page.touchscreen.tap(40, 500); else await page.mouse.click(40, 500);
-    await page.waitForSelector('#btn-keep-all-catches', { timeout: 20000 });
+    if (width < 500) await page.touchscreen.tap(castX, 500); else await page.mouse.click(castX, 500);
+    await page.waitForSelector('#btn-keep-all-catches', { timeout: 20000 }).catch(async error => {
+      console.log(await page.evaluate(() => ({depth:document.getElementById('hud-depth').textContent,
+        title:document.getElementById('modal-title').textContent,modal:document.getElementById('modal-overlay').className,
+        controls:document.getElementById('touch-controls').hidden,body:document.getElementById('modal-content').innerText.slice(0,500)})));
+      await page.screenshot({path:`.qa/offline-failure-${width}.png`});throw error;
+    });
     await page.click('#btn-keep-all-catches');
     assert.deepEqual(errors, []);
     await context.setOffline(false);

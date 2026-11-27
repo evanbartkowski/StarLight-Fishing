@@ -198,9 +198,9 @@ test('endgame realms 5, 6, and 7 maintain balanced enemy populations with user r
 test('every realm has 42 real native fish, distinct content, and complete journal coverage', () => {
   const all = [...FISH_SPECIES, ...LEGENDARY_SPECIES];
   assert.equal(new Set(all.map(f => f.id)).size, all.length);
-  assert.equal(FISH_SPECIES.length, 294);
+  assert.equal(FISH_SPECIES.filter(f => !f.secretEncounter).length, 294);
   for (const sea of FANTASY_SEAS) {
-    const natives = FISH_SPECIES.filter(f => f.zone === sea.id);
+    const natives = FISH_SPECIES.filter(f => f.zone === sea.id && !f.secretEncounter);
     assert.equal(natives.length, 42);
     assert.ok(new Set(natives.map(f => f.shape)).size >= 6);
     assert.ok(new Set(natives.map(f => f.movementType).filter(Boolean)).size >= 4);
@@ -223,7 +223,7 @@ test('charter prices and common rewards rise together; gates charge the authorit
   for (let i = 1; i < FANTASY_SEAS.length; i++) {
     const sea = FANTASY_SEAS[i], previous = FANTASY_SEAS[i-1];
     assert.equal(sea.gates.unlockFee, REALM_PROFILES[sea.id].fee);
-    const meanValue = zone => FISH_SPECIES.filter(f => f.zone === zone && !f.isGodTier).reduce((sum, f) => sum + f.baseValue, 0) / 38;
+    const meanValue = zone => FISH_SPECIES.filter(f => f.zone === zone && !f.isGodTier && !f.secretEncounter).reduce((sum, f) => sum + f.baseValue, 0) / 38;
     assert.ok(meanValue(sea.id) > meanValue(previous.id) * 1.5);
     assert.ok(REALM_RELICS.find(r => r.zone === sea.id).restoredValue > REALM_RELICS.find(r => r.zone === previous.id).restoredValue * 1.5);
     assert.ok(REALM_PROFILES[sea.id].commonValue > REALM_PROFILES[previous.id].commonValue * 1.5);

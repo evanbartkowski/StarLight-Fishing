@@ -1,5 +1,6 @@
 import { buildRealmFish, isSalvageSpecies } from './RealmContent.js';
 import { FANTASY_SEAS } from '../entities/SeasData.js';
+import { LANTERN_PIP } from './SecretFishData.js';
 
 export const RARITY_CONFIG = {
   common: { name: 'Common', color: '#94a3b8', glow: '#cbd5e1', weight: 55 },
@@ -1403,6 +1404,29 @@ const ORIGINAL_SPECIES = [
 
 export const LEGACY_SALVAGE_SPECIES = ORIGINAL_SPECIES.filter(isSalvageSpecies);
 export const FISH_SPECIES = buildRealmFish(ORIGINAL_SPECIES);
+FISH_SPECIES.push(LANTERN_PIP);
+
+// Native palettes and a varied, readable size hierarchy in the starting sea.
+const shoalsVisuals = {
+  minnow: [.8,'#91bfc8','#f0f2dc','#588694'], sardine: [1,'#6ba4b8','#e7eee1','#3a687c'],
+  clownfish: [1,'#f8942d','#ffd58b','#ef6e28'], blue_tang: [1.15,'#337cd3','#68b9eb','#efcf54'],
+  coral_butterfly: [1.15,'#e3bf40','#fff2ba','#b79032'], sand_flounder: [1.12,'#a59d76','#ddd2a4','#6c806b'],
+  rainbow_parrotfish: [1.55,'#3fa7a8','#a8e3b3','#828bc7'], golden_seahorse: [.95,'#dbab4f','#ffe0a0','#a97332'],
+  realm_1_honeycomb_boxfish: [1.15,'#e1bd65','#f5dfa1','#a38048'],
+  realm_1_sunlit_damselfish: [1.13,'#4aaad3','#b6e8de','#d9c458'],
+  realm_1_shoals_mandarinfish: [1.61,'#d88a44','#edc27a','#4d9e99'],
+  realm_1_shoals_blue_tang: [1.1,'#3276c8','#75c1df','#f1cd52'],
+  realm_1_reef_octopus: [1.2,'#b47a58','#e5b893','#875b49'],
+  realm_1_coral_sea_turtle: [1.6,'#658c57','#b1ce86','#497f70'],
+  realm_1_chambered_nautilus: [1.35,'#d8be91','#fff0c8','#a7734e'],
+  realm_1_reef_moon_jellyfish: [.95,'#8bc5ce','#e0deef','#8c9fd0'],
+  realm_1_sandbar_guitar_ray: [1.2,'#aaaf91','#e2dfb8','#6a8b8b'],
+  realm_1_sunlit_humpback_whale: [2,'#526b82','#cad9db','#263c58'],
+};
+for (const fish of FISH_SPECIES) {
+  const visual = shoalsVisuals[fish.id];
+  if (visual) [fish.scaleFactor, fish.primaryColor, fish.secondaryColor, fish.finColor] = visual;
+}
 
 // Save-compatible additions to the native roster use existing specimen IDs.
 for (const fish of FISH_SPECIES) {

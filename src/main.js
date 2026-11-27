@@ -10,6 +10,8 @@ import { saveSystem } from './systems/SaveSystem.js';
 import { ParticleSystem } from './systems/ParticleSystem.js';
 import { Hook } from './entities/Hook.js';
 import { positionLineAttachment } from './entities/LineAttachment.js';
+import { PIP_PROJECTION_EXTENT } from './rendering/LanternPipArtwork.js';
+import { drawTreasureArtwork } from './rendering/TreasureArtwork.js';
 import { OceanWorld } from './world/OceanWorld.js';
 import { UIManager } from './ui/UIManager.js';
 import { UPGRADE_DEFINITIONS } from './data/UpgradesData.js';
@@ -930,7 +932,8 @@ const update = (rawDt) => {
               scale: 1.2,
               isSunkenSafe: true,
               itemType: 'relic',
-              category: 'relic',
+              category: 'treasure',
+              isTreasure: true,
               unlocked: false,
               x: hook.x,
               y: hook.y - 20,
@@ -948,9 +951,7 @@ const update = (rawDt) => {
                 const sy = safeItem.y - camY;
                 ctx.save();
                 ctx.translate(sx, sy);
-                ctx.font = '24px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('🔒', 0, 0);
+                drawTreasureArtwork(ctx, safeItem, .85);
                 ctx.restore();
               }
             };
@@ -1432,7 +1433,8 @@ const render = () => {
   // 6. Fish (with dynamic size scaling, shapes, and uncalibrated sonar silhouettes)
   try {
     oceanWorld.entities.fish.forEach((fish) => {
-      if (fish.y - cameraY > -fish.scale * 130 && fish.y - cameraY < screenHeight + fish.scale * 130) {
+      const extent = fish.isMisleadingMonster && !fish._revealedSmall ? PIP_PROJECTION_EXTENT : fish.scale * 130;
+      if (fish.y - cameraY > -extent && fish.y - cameraY < screenHeight + extent) {
         ctx.save();
         try {
           fish.render(ctx, cameraY, hook);

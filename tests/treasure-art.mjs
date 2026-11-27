@@ -12,7 +12,7 @@ try {
     const { TREASURE_ITEMS } = await import('/src/data/TreasureData.js');
     const { drawTreasureArtwork, treasureSvg } = await import('/src/rendering/TreasureArtwork.js');
     const { Treasure } = await import('/src/entities/Treasure.js');
-    const items = TREASURE_ITEMS.filter(item => !item.isCrate), errors = [];
+    const items = [...TREASURE_ITEMS.filter(item => !item.isCrate), {id:'sunken_safe',name:'Sunken Iron Safe'}], errors = [];
     const sheet = document.createElement('canvas'); sheet.id='treasure-sheet';
     sheet.width=1200; sheet.height=Math.ceil(items.length/8)*130;
     sheet.style.cssText='position:absolute;inset:0;z-index:99999';document.body.append(sheet);
@@ -23,7 +23,10 @@ try {
       const before=p.getImageData(0,0,68,68).data;
       if([...before].filter((v,i)=>i%4===3&&v>30).length<80) errors.push(`${item.name} is blank`);
       const image=new Image();image.src=`data:image/svg+xml,${encodeURIComponent(treasureSvg(item))}`;await image.decode();
-      p.resetTransform();p.clearRect(0,0,68,68);p.drawImage(image,0,0,68,68);
+      // Both versions use the same double-resolution rasterization policy.
+      const high=document.createElement('canvas');high.width=136;high.height=136;
+      high.getContext('2d').drawImage(image,0,0,136,136);
+      p.resetTransform();p.clearRect(0,0,68,68);p.drawImage(high,0,0,68,68);
       const after=p.getImageData(0,0,68,68).data;
       let mismatch=0;for(let i=3;i<after.length;i+=4)if(Math.abs(before[i]-after[i])>30)mismatch++;
       if(mismatch>70)errors.push(`${item.name} differs between SVG and native art: ${mismatch}`);
@@ -37,6 +40,7 @@ try {
     const { save, uiManager }=window.layoutGame;
     const hourglass=TREASURE_ITEMS.find(i=>i.name==='Stopped Hourglass');
     const stored=save.addItemToInventory(new Treasure(hourglass,0,0));
+    save.addItemToInventory({id:'sunken_safe_legacy',speciesId:'sunken_safe',isSunkenSafe:true,name:'Sunken Iron Safe',rarity:'rare',value:180});
     sheet.remove();uiManager.openInventory();
     return {errors,count:items.length,instanceId:stored.instanceId,svg:treasureSvg(hourglass),sheet:sheet.toDataURL()};
   });
@@ -44,6 +48,7 @@ try {
   const { writeFile }=await import('node:fs/promises');
   await writeFile('.qa/treasure-contact-sheet.png',Buffer.from(result.sheet.split(',')[1],'base64'));
   assert.ok(await page.locator('.inventory-card svg[data-treasure="realm_7_treasure_0"]').isVisible());
+  assert.ok(await page.locator('.inventory-card svg[data-treasure="sunken_safe"]').isVisible());
   await page.evaluate(id=>window.layoutGame.uiManager.openInspectItemModal(id),result.instanceId);
   await page.locator('#inspect-specimen-canvas').waitFor({state:'visible'});
   await page.screenshot({path:'.qa/hourglass-inspect.png'});

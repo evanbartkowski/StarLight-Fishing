@@ -8,6 +8,8 @@ import { drawMarineCreature } from '../rendering/MarineCreatureSilhouettes.js';
 import { getFishAnatomy, drawDistinctFish } from '../rendering/FishAnatomy.js';
 import { renderFishEasterEggOverlay } from '../systems/EasterEggs.js';
 import { positionLineAttachment } from './LineAttachment.js';
+import { drawPipProjection } from '../rendering/LanternPipArtwork.js';
+import { drawShoalsFish, SHOALS_FISH_DESIGNS } from '../rendering/ShoalsFishArtwork.js';
 
 /**
  * Draws a brilliant faceted 4-point diamond star sparkle with needle flares,
@@ -75,6 +77,7 @@ export class Fish {
   constructor(species, x, y, options = {}) {
     this.species = species;
     this.speciesId = species.id;
+    this.isMisleadingMonster = species.id === 'easter_misleading_monster';
     this.name = species.name.replace(/^(?:sea|realm)[_ ]*\d+[_ :?-]+/i, '');
     this.zone = species.zone;
     this.rarity = species.rarity;
@@ -101,7 +104,8 @@ export class Fish {
     const crownMult = getCrownMultiplier(this.crown);
 
     this.shinyColors = shinyPalette(species.id);
-    this.bodyColors = [species.primaryColor || '#38bdf8', species.secondaryColor || '#93c5fd', species.finColor || '#0284c7'].map(color => reserveGold(color, species.rarity === 'legendary'));
+    // Natural orange bands and yellow fins stay intact; rarity still owns auras.
+    this.bodyColors = [species.primaryColor || '#38bdf8', species.secondaryColor || '#93c5fd', species.finColor || '#0284c7'].map(color => reserveGold(color, species.rarity === 'legendary' || !!SHOALS_FISH_DESIGNS[species.id]));
     // Rare alternate coloring; shiny status never changes rarity or aura.
     const shinyRoll = Math.random();
     const shinyThreshold = options.shinyChance ?? 0.002;
@@ -714,6 +718,8 @@ export class Fish {
       }
     }
 
+    if (this.isMisleadingMonster && drawPipProjection(ctx, this, hook)) return;
+
     const renderScale = isHooked
       ? Math.min(1.35, this.scale * (this.isLeviathan || this.scale > 2.2 ? 0.36 : 0.72))
       : this.scale;
@@ -1012,7 +1018,7 @@ export class Fish {
     ].includes(s.shape);
 
     const anatomy = getFishAnatomy(s);
-    const hasOwnAppendages = Boolean(anatomy) || isCustomTailLeviathan || [
+    const hasOwnAppendages = !!SHOALS_FISH_DESIGNS[s.id] || Boolean(anatomy) || isCustomTailLeviathan || [
       'mossback_turtle', 'sea_turtle', 'nautilus', 'dolphin', 'whale',
       'cuttlefish', 'salp', 'krill', 'copepod', 'seal', 'sea_lion', 'walrus',
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
@@ -1056,7 +1062,8 @@ export class Fish {
     ctx.fillStyle = primary;
     ctx.beginPath();
 
-    const isCustomMarine = drawDistinctFish(ctx, anatomy, primary, secondary, finColor, this.wiggleTimer) ||
+    const isCustomMarine = drawShoalsFish(ctx, s, primary, secondary, finColor, this.wiggleTimer) ||
+      drawDistinctFish(ctx, anatomy, primary, secondary, finColor, this.wiggleTimer) ||
       drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this);
     if (isCustomMarine) {
       // Specialized marine creature silhouette rendered
@@ -2430,7 +2437,7 @@ export class Fish {
         drawRainbowStarSparkle(ctx, bs.x, bs.y, size, rot, hue, alpha);
       }
     }
-    if (this.isFishingFish || this.isUnionFish || this.isMisleadingMonster) {
+    if (this.isFishingFish || this.isUnionFish) {
       renderFishEasterEggOverlay(ctx, this, hook, cameraY);
     }
     } finally {

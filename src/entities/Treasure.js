@@ -180,7 +180,8 @@ export class Treasure {
     this.x = x;
     this.y = y;
     this.baseY = y;
-    this.radius = itemConfig.radius || 18;
+    this.worldScale = itemConfig.worldScale || 1;
+    this.radius = (itemConfig.radius || 18) * this.worldScale;
     this.state = 'IDLE'; // 'IDLE' | 'HOOKED'
     this.hook = null;
     this.timer = Math.random() * Math.PI * 2;
@@ -232,7 +233,7 @@ export class Treasure {
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    if (!this.isCrate && drawTreasureArtwork(ctx, this.itemConfig)) {
+    if (!this.isCrate && drawTreasureArtwork(ctx, this.itemConfig, this.state === 'HOOKED' ? 1 : this.worldScale)) {
       // Shared original art also appears in the tackle box and specimen view.
     } else if (this.itemConfig.realmStyle && !this.isCrate) {
       drawRealmArtifact(ctx, this.itemConfig, this.timer);

@@ -26,6 +26,7 @@ import { HotspotManager } from '../entities/Hotspots.js';
 import { isConditionMet } from '../data/weather.config.js';
 import { InteractiveFlora, FLORA_TYPES } from '../entities/InteractiveFlora.js';
 import { Powerup, POWERUP_TYPES } from '../entities/Powerup.js';
+import { LANTERN_PIP } from '../data/SecretFishData.js';
 
 export class OceanWorld {
   constructor(canvas, trapSystem = null) {
@@ -444,7 +445,7 @@ export class OceanWorld {
     };
     // Absolute depth keeps existing waters consistent when the line is upgraded.
     const depthProgress = depth => depth / (depth + 350);
-    const fishPool = FISH_SPECIES.filter(species => belongsToRealm(species, this.currentSeaId)
+    const fishPool = FISH_SPECIES.filter(species => !species.secretEncounter && belongsToRealm(species, this.currentSeaId)
       && !species.isSpecialDeep && (!species.conditions || isConditionMet(species.conditions, environment)));
     const earlyRealmSpawnMult = this.currentSeaId <= 3 ? 0.8 : 1.0;
     populateBands(fishPool, depth => (5 / (1 + depth / 1800)) * 1.15 * ecology.fish * earlyRealmSpawnMult,
@@ -493,25 +494,9 @@ export class OceanWorld {
 
     if (Math.random() < 0.012) {
       const mDepth = Math.min(activeMaxDepth * 0.85, 22 + Math.random() * 75);
-      const shadowPip = new Fish({
-        id: 'easter_misleading_monster',
-        name: 'Tiny Lantern Pip',
-        zone: this.currentSeaId,
-        rarity: 'rare',
-        minDepth: 18,
-        maxDepth: 250,
-        baseValue: 550,
-        baseWeight: 0.25,
-        sizeRange: [6, 9],
-        scaleFactor: 0.65,
-        primaryColor: '#fde047',
-        secondaryColor: '#fb923c',
-        finColor: '#facc15',
-        eyeColor: '#ffffff',
-        swimSpeed: 0.55,
-        wiggleSpeed: 5,
-        lore: 'Projects a terrifying 40-foot leviathan shadow in the murk—until you get close and spot an 8cm minnow holding a brass lantern!',
-      }, 110 + Math.random() * Math.max(100, this.worldWidth - 220), this.surfaceY + mDepth * this.pixelsPerMeter, fishOptions);
+      const shadowPip = new Fish({ ...LANTERN_PIP, zone: this.currentSeaId },
+        110 + Math.random() * Math.max(100, this.worldWidth - 220),
+        this.surfaceY + mDepth * this.pixelsPerMeter, fishOptions);
       shadowPip.isMisleadingMonster = true;
       shadowPip._revealedSmall = false;
       this.entities.fish.push(shadowPip);

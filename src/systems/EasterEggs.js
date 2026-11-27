@@ -437,54 +437,6 @@ export const UNION_SIGNS = [
 export function renderFishEasterEggOverlay(ctx, fish, hook, cameraY) {
   if (!fish) return;
 
-  // 1. Misleading Monster: ominous giant shadow until hook approaches within 145px
-  if (fish.isMisleadingMonster) {
-    const dist = hook ? Math.hypot(hook.x - fish.x, hook.y - fish.y) : 999;
-    if (dist <= 145 || fish.state === 'HOOKED') {
-      fish._revealedSmall = true;
-    }
-    if (!fish._revealedSmall) {
-      // Looming colossal monster silhouette around the tiny minnow
-      ctx.save();
-      ctx.globalAlpha = 0.42;
-      ctx.fillStyle = '#020617';
-      ctx.beginPath();
-      ctx.ellipse(-8, 0, 110, 48, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(-108, 0);
-      ctx.lineTo(-142, -44);
-      ctx.lineTo(-128, 0);
-      ctx.lineTo(-142, 44);
-      ctx.closePath();
-      ctx.fill();
-      // Glowing red fake eyes
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(58, -14, 5.5, 0, Math.PI * 2);
-      ctx.arc(76, -10, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    } else {
-      // Adorable tiny brass lantern held on a miniature twig!
-      ctx.save();
-      ctx.strokeStyle = '#92400e';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(12, -2);
-      ctx.lineTo(26, -12);
-      ctx.lineTo(26, -4);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(254, 240, 138, 0.36)';
-      ctx.beginPath();
-      ctx.arc(26, -1, 12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#facc15';
-      ctx.fillRect(23, -4, 6, 7);
-      ctx.restore();
-    }
-  }
-
   // 2. Fish with a tiny fishing rod trying to catch YOU!
   if (fish.isFishingFish) {
     ctx.save();

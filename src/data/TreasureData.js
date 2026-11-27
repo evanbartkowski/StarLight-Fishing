@@ -396,6 +396,12 @@ TREASURE_ITEMS.push(...REALM_FOSSILS);
 // neighboring realms rather than appearing everywhere at sufficient depth.
 const legacySeas = { shell: [1], bottle: [1, 2], coin_bag: [2], pirate_chest: [4], giant_pearl: [5], royal_relic: [4], ocean_heart: [7], fossil_trilobite: [1], fossil_ammonite: [2], fossil_megalodon: [3], fossil_pliosaur: [6], fossil_atlantis: [4], crate_wood: [1], crate_iron: [2], crate_gold: [3, 4], crate_abyssal: [5, 6], crate_celestial: [7] };
 for (const item of TREASURE_ITEMS) if (!item.zone) item.seas = legacySeas[item.id] || [Math.min(7, item.crateRank || 1)];
+const shoalsObjectSizes = {
+  realm_1_treasure_0: 1.12, realm_1_treasure_1: 1.25, realm_1_treasure_2: 1.15,
+  realm_1_treasure_3: 1.2, realm_1_treasure_4: 1.3, realm_1_treasure_5: 1.25,
+  realm_1_cache: 1.2, shell: 1.2, driftwood_branch: 1.2, fossil_realm_1_1: 1.2,
+};
+for (const item of TREASURE_ITEMS) if (shoalsObjectSizes[item.id]) item.worldScale = shoalsObjectSizes[item.id];
 const hazardSeas = { boot: [4], driftwood: [1], pufferfish: [2], ghost_net: [2], electric_eel: [2], anchor: [4], jellyfish: [2], sea_mine: [4], urchin: [2], thermal_vent: [6], void_tentacle: [7], sunken_galleon_hull: [4], megalodon_ribcage: [3], deep_sea_minefield: [4], caldera_lava_pillar: [6], eldritch_monolith: [7], abyssal_black_hole: [7] };
 for (const hazard of HAZARD_TYPES) if (!hazard.zone) hazard.seas = hazardSeas[hazard.id] || [1];
 
