@@ -22,6 +22,7 @@ import { leaderboardManager } from './systems/LeaderboardManager.js';
 import { accountManager } from './systems/AccountManager.js';
 import { recordDerbyDive } from './systems/WeeklyDerby.js';
 import { GemShop } from './ui/GemShop.js';
+import { handleConstellationClick, createGhostCaptainEncounter } from './systems/EasterEggs.js';
 
 // Setup canvas and rendering context
 const canvas = document.querySelector('#game-canvas');
@@ -348,6 +349,30 @@ function handlePointerDown(e) {
   isMouseDown = true;
 
   if (gameState === 'SURFACE_IDLE') {
+    // Reset idle knitting progress on interaction
+    captainKnittingTimer = 0;
+    if (oceanWorld) oceanWorld.isAnglerKnitting = false;
+
+    // 0. Check Constellation Puzzle stars in the night sky
+    if (worldCycle.getSkyColors?.()?.isNight) {
+      const cRes = handleConstellationClick(worldCycle.constellationState, mousePos.x, mousePos.y, screenWidth, oceanWorld.surfaceY, cameraY);
+      if (cRes.hit) {
+        soundManager.playRareChime();
+        particles.emitSparkles(mousePos.x, mousePos.y + cameraY, cRes.completed ? 45 : 16, '#fde047');
+        if (cRes.completed) {
+          save.unlockBobber?.('constellation_bobber');
+          save.recordEasterEgg?.('constellation_puzzle');
+          save.data.gems = (save.data.gems || 0) + 1;
+          save.save();
+          hook.hasConstellationBobber = true;
+          uiManager.showToast('🌟 Celestial Fish Constellation Complete! Unlocked Glowing Constellation Bobber (+1 Gem)!');
+        } else if (cRes.wasNew) {
+          uiManager.showToast(`✨ Star ${cRes.clickedCount}/${cRes.total} aligned in the sky...`);
+        }
+        return;
+      }
+    }
+
     // 1. Check if user clicked a floating drift item (bottle / driftwood)
     if (oceanWorld.driftItems) {
       const picked = oceanWorld.driftItems.checkPickup(mousePos.x, mousePos.y + cameraY);
@@ -392,10 +417,17 @@ function handlePointerDown(e) {
           return;
         }
       }
-      oceanWorld.shipsCat.onClick(soundManager);
+      const petRes = oceanWorld.shipsCat.onClick(soundManager);
       if (questSystem) questSystem.dispatch({ type: 'pet_companion', pet: 'cat' });
-      particles.addFloatingText('Purr... ♪', oceanWorld.boat.x - 20, oceanWorld.boat.y - 30, '#f59e0b', 16);
-      uiManager.showToast("🐱 Angela the Cat purrs cozily as you stroke her warm fur.");
+      if (petRes?.pulledTinyRod) {
+        save.recordEasterEgg?.('cat_angler');
+        soundManager.playRareChime();
+        particles.emitSparkles(oceanWorld.boat.x - 20, oceanWorld.boat.y - 25, 24, '#fbbf24');
+        uiManager.showToast("🐱 After 7 pets, Angela pulled out her own tiny fishing rod! Look closely!");
+      } else {
+        particles.addFloatingText('Purr... ♪', oceanWorld.boat.x - 20, oceanWorld.boat.y - 30, '#f59e0b', 16);
+        uiManager.showToast("🐱 Angela the Cat purrs cozily as you stroke her warm fur.");
+      }
       return;
     }
 
@@ -602,6 +634,7 @@ function startDive() {
   targetCameraY = 0;
   oceanWorld.populateWorld(save);
   hook.applyUpgrades(save);
+  hook.hasConstellationBobber = Boolean(save.data.unlockedBobbers?.includes('constellation_bobber'));
   hook.reset(oceanWorld.rodTip.x, oceanWorld.rodTip.y);
   gameState = 'SURFACE_IDLE';
   isMouseDown = false;
@@ -616,6 +649,9 @@ function startDive() {
 }
 
 let surfaceIdleTimer = 0;
+let captainKnittingTimer = 0;
+let ufoCooldownTimer = 35;
+let consecutiveEmptyCasts = 0;
 let aquariumPlaytimeBatch = 0;
 let aquariumAutosaveTimer = 0;
 let hudElapsed = 0;
@@ -643,9 +679,26 @@ const update = (dt) => {
   // Update NPC director cooldowns
   npcSystem.update(dt);
 
-  // Track surface playtime to reward long cozy sessions with pet visits or wandering traders
-  if (gameState === 'SURFACE_IDLE') {
+  // Track surface playtime for cozy visits, idle knitting easter egg, & occasional alien UFO encounters
+  if (gameState === 'SURFACE_IDLE' && !uiManager?.activeModal) {
     surfaceIdleTimer += deltaSec;
+    captainKnittingTimer += deltaSec;
+    ufoCooldownTimer -= deltaSec;
+
+    if (captainKnittingTimer >= 28 && !oceanWorld.isAnglerKnitting) {
+      oceanWorld.isAnglerKnitting = true;
+      if (save.recordEasterEgg?.('patient_captain')) {
+        uiManager.showToast('🧶 The patient captain passed the time by knitting a tiny fish-shaped sweater!');
+      }
+    }
+
+    if (ufoCooldownTimer <= 0 && !oceanWorld.ufoState?.active) {
+      ufoCooldownTimer = 50 + Math.random() * 45;
+      if (Math.random() < 0.25) {
+        oceanWorld.ufoState = { active: true, x: -50, y: 74, phase: 'approach', timer: 0 };
+      }
+    }
+
     if (surfaceIdleTimer >= 90) {
       surfaceIdleTimer = 0;
       if (!npcSystem.checkRandomEncounter('travel')) {
@@ -654,6 +707,42 @@ const update = (dt) => {
     }
   } else {
     surfaceIdleTimer = 0;
+    captainKnittingTimer = 0;
+    if (oceanWorld) oceanWorld.isAnglerKnitting = false;
+  }
+
+  // Animate active UFO abduction or Ghost Ship timers
+  if (oceanWorld?.ufoState?.active) {
+    const ufo = oceanWorld.ufoState;
+    ufo.timer += deltaSec;
+    const targetX = oceanWorld.rodTip?.x || oceanWorld.boat.x;
+    if (ufo.phase === 'approach') {
+      ufo.x += (targetX - ufo.x) * Math.min(1, deltaSec * 2.5);
+      if (Math.abs(targetX - ufo.x) < 12) {
+        ufo.phase = 'beaming';
+        ufo.timer = 0;
+        soundManager.playRareChime();
+        save.recordEasterEgg?.('alien_encounter');
+        uiManager.showToast('🛸 Wait—a tiny UFO is trying to abduct your bobber!');
+      }
+    } else if (ufo.phase === 'beaming') {
+      ufo.x = targetX + Math.sin(ufo.timer * 8) * 3;
+      if (ufo.timer > 2.6) {
+        ufo.phase = 'flee';
+        ufo.timer = 0;
+        particles.emitSparkles(ufo.x, ufo.y, 18, '#4ade80');
+      }
+    } else {
+      ufo.x += 420 * deltaSec;
+      ufo.y -= 65 * deltaSec;
+      if (ufo.x > screenWidth + 100) ufo.active = false;
+    }
+  }
+  if (oceanWorld?.ghostShipState?.active) {
+    oceanWorld.ghostShipState.timer -= deltaSec;
+    if (oceanWorld.ghostShipState.timer <= 0) {
+      oceanWorld.ghostShipState.active = false;
+    }
   }
 
   touchControls.update(!uiManager.activeModal && ['DESCENDING', 'REELING'].includes(gameState));
@@ -703,6 +792,17 @@ const update = (dt) => {
     if (gameState === 'CASTING' && hook.state === 'DESCENDING') {
       gameState = 'DESCENDING';
       soundManager.setMusicMode('underwater');
+
+      // Ghost Ship Easter Egg: Casting into the moon's reflection at night summons a spectral captain!
+      if (worldCycle.getSkyColors?.()?.isNight && Math.abs(hook.x - oceanWorld.worldWidth * 0.2) <= 75) {
+        oceanWorld.ghostShipState = { active: true, x: hook.x, alpha: 0.88, timer: 24 };
+        oceanWorld._pendingGhostCaptain = true;
+        save.recordEasterEgg?.('ghost_ship');
+        soundManager.playRareChime();
+        particles.emitSparkles(hook.x, oceanWorld.surfaceY, 32, '#2dd4bf');
+        particles.addFloatingText('👻 GHOST SHIP SUMMONED!', hook.x, oceanWorld.surfaceY - 36, '#99f6e4', 20);
+        uiManager.showToast('👻 You cast straight into the midnight moon reflection! A spectral captain approaches...');
+      }
 
       // Check interactive surface hotspot strike
       if (oceanWorld.hotspotManager) {
@@ -822,6 +922,26 @@ const update = (dt) => {
       gameState = 'REELING';
     }
 
+    // Chest Impersonator (Mimic) triggers when attempting to reel in!
+    if ((gameState === 'REELING' || hook.state === 'REELING') && hook.caughtItems.length > 0) {
+      for (let mIdx = hook.caughtItems.length - 1; mIdx >= 0; mIdx--) {
+        const hookedItem = hook.caughtItems[mIdx];
+        if (hookedItem?.isMimic && !hookedItem.mimicBitten) {
+          hookedItem.mimicRevealed = true;
+          hookedItem.mimicBitten = true;
+          soundManager.playHazard();
+          save.recordEasterEgg?.('chest_mimic');
+          save.addCoins(75);
+          particles.addTrauma(0.35);
+          particles.emitSparkles(hookedItem.x, hookedItem.y, 18, '#ef4444');
+          particles.addFloatingText('CHOMP! MIMIC CHEST!', hookedItem.x, hookedItem.y - 26, '#ef4444', 20);
+          uiManager.showToast('😬 The treasure chest snapped open with sharp teeth and bit your line! (+$75 Gold Tooth dropped!)');
+          hook.vy *= 0.45;
+          hook.caughtItems.splice(mIdx, 1);
+        }
+      }
+    }
+
     // Surfaced
     if (gameState === 'REELING' && hook.state === 'SURFACED') {
       gameState = 'CATCH_SUMMARY';
@@ -829,6 +949,18 @@ const update = (dt) => {
       targetCameraY = 0;
       soundManager.setMusicMode('surface');
       checkRandomPetEncounter(save, particles, oceanWorld, uiManager, soundManager);
+
+      // Track empty casts to summon Unionized Fish pickets!
+      if (hook.caughtItems.length === 0) {
+        consecutiveEmptyCasts += 1;
+        if (consecutiveEmptyCasts >= 2 && (consecutiveEmptyCasts >= 3 || Math.random() < 0.45)) {
+          oceanWorld.spawnUnionPicket = true;
+          save.recordEasterEgg?.('unionized_fish');
+          uiManager.showToast('🪧 Down in the shallows... local fish appear to be forming a picket line!');
+        }
+      } else {
+        consecutiveEmptyCasts = 0;
+      }
 
       // Save atmospheric cycle to persistent save
       if (worldCycle && typeof worldCycle.serialize === 'function') {
@@ -909,8 +1041,20 @@ const update = (dt) => {
 
       const unpickedSafe = hook.caughtItems.find(i => i.isSunkenSafe && !i.unlocked);
       const showSummary = () => uiManager.openCatchSummary(hook, () => startDive(), ranOutOfStorage);
-      if (unpickedSafe) uiManager.openLockpickMinigame(unpickedSafe, showSummary);
-      else showSummary();
+      const afterSafe = () => {
+        if (oceanWorld._pendingGhostCaptain) {
+          oceanWorld._pendingGhostCaptain = false;
+          uiManager.showNPCModal(createGhostCaptainEncounter(), (opt) => {
+            const res = opt.action ? opt.action(save) : { success: true, message: '👻 The spectral captain vanishes into moonlit mist.' };
+            uiManager.showToast(res.message);
+            showSummary();
+          });
+        } else {
+          showSummary();
+        }
+      };
+      if (unpickedSafe) uiManager.openLockpickMinigame(unpickedSafe, afterSafe);
+      else afterSafe();
 
     }
 

@@ -5,6 +5,7 @@ import { calculateCrown, getCrownMultiplier } from '../data/legendaries.js';
 import { soundManager } from '../audio/SoundManager.js';
 import { rollCatchTraits, depthRewardMultiplier } from '../systems/CatchTraits.js';
 import { drawMarineCreature } from '../rendering/MarineCreatureSilhouettes.js';
+import { renderFishEasterEggOverlay } from '../systems/EasterEggs.js';
 
 /**
  * Draws a brilliant faceted 4-point diamond star sparkle with needle flares,
@@ -2481,6 +2482,9 @@ export class Fish {
         const alpha = Math.max(0.2, 0.82 + 0.18 * Math.cos(st));
         drawRainbowStarSparkle(ctx, bs.x, bs.y, size, rot, hue, alpha);
       }
+    }
+    if (this.isFishingFish || this.isUnionFish || this.isMisleadingMonster) {
+      renderFishEasterEggOverlay(ctx, this, hook, cameraY);
     }
     } finally {
       ctx.restore();

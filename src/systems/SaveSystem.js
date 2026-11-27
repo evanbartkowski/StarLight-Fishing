@@ -108,6 +108,8 @@ export class SaveSystem {
         lastTipCollectedAt: Date.now(),
       },
       unlockedBobbers: ['pelican_bobber'],
+      discoveredFrequency777: false,
+      easterEggsFound: [],
       worldTime: 600,
       currentWeather: 'CLEAR',
       zonePerks: {}, // perkId -> true
@@ -308,6 +310,8 @@ export class SaveSystem {
         skeletons: { ...def.skeletons, ...(parsed.skeletons || {}) },
         stats: { ...def.stats, ...(parsed.stats || {}) },
         unlockedBobbers: parsed.unlockedBobbers || def.unlockedBobbers || ['pelican_bobber'],
+        discoveredFrequency777: Boolean(parsed.discoveredFrequency777),
+        easterEggsFound: Array.isArray(parsed.easterEggsFound) ? parsed.easterEggsFound : [],
         inventory: (Array.isArray(parsed.inventory) ? parsed.inventory : []).map(item => {
           if (!item.type) {
             item.type = item.isRelic ? 'relic' : (item.isCrate ? 'crate' : (item.isTreasure || item.category === 'fossil' || item.category === 'treasure' ? 'trinket' : 'fish'));
@@ -1272,6 +1276,39 @@ export class SaveSystem {
     this.data.boatHullStyle = hullId;
     this.save();
     return { success: true };
+  }
+
+  unlockBobber(bobberId) {
+    if (!bobberId) return false;
+    this.data.unlockedBobbers ||= ['pelican_bobber'];
+    if (!this.data.unlockedBobbers.includes(bobberId)) {
+      this.data.unlockedBobbers.push(bobberId);
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  unlockFrequency777() {
+    const first = !this.data.discoveredFrequency777;
+    this.data.discoveredFrequency777 = true;
+    this.save();
+    return first;
+  }
+
+  hasFrequency777() {
+    return Boolean(this.data.discoveredFrequency777);
+  }
+
+  recordEasterEgg(eggId) {
+    if (!eggId) return false;
+    this.data.easterEggsFound ||= [];
+    if (!this.data.easterEggsFound.includes(eggId)) {
+      this.data.easterEggsFound.push(eggId);
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   setBoatHull(hullId) {

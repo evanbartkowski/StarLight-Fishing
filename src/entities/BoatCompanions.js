@@ -13,6 +13,8 @@ export class ShipsCat {
     this.hasMorningGift = false;
     this.lastGiftDay = -1;
     this.pendingGift = null;
+    this.petCount = 0;
+    this.hasTinyRod = false;
   }
 
   update(dt) {
@@ -65,9 +67,16 @@ export class ShipsCat {
   onClick(soundManager) {
     this.isPurring = true;
     this.purrTimer = 3.0;
+    this.petCount += 1;
+    let pulledTinyRod = false;
+    if (this.petCount >= 7 && !this.hasTinyRod) {
+      this.hasTinyRod = true;
+      pulledTinyRod = true;
+    }
     if (soundManager && typeof soundManager.playCatPurr === 'function') {
       soundManager.playCatPurr();
     }
+    return { petCount: this.petCount, pulledTinyRod };
   }
 
   // Coords relative to boat center
@@ -203,6 +212,28 @@ export class ShipsCat {
     ctx.moveTo(-13, -7 + tailWag * 6);
     ctx.lineTo(-13, -9 + tailWag * 6);
     ctx.stroke();
+
+    // Tiny miniature fishing rod when Angela reaches 7 pets!
+    if (this.hasTinyRod) {
+      ctx.save();
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(6, -1);
+      ctx.quadraticCurveTo(16, -14, 24, -15);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(24, -15);
+      ctx.lineTo(24, 3 + Math.sin(this.tailTimer * 2.2) * 2.5);
+      ctx.stroke();
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(24, 3 + Math.sin(this.tailTimer * 2.2) * 2.5, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     // Purring musical note or "z Z"
     if (this.isPurring) {

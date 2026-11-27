@@ -1203,6 +1203,12 @@ export class SoundManager {
   startRadioStation(stationId) {
     this.ensureAudio();
     this.stopRadioStation();
+    if (stationId === 'secret_777') {
+      this.activeStation = 'secret_777';
+      this.syncRecordedMusic();
+      this._startSecret777Station();
+      return;
+    }
     const stations = {
       harbor_breeze: '/sprites/seamusic.mp3', rainy_lighthouse: '/music/aquarain.mp3', deep_blue: '/sprites/oceanmusic2.mp3',
       peaceful_lagoon: '/music/viramiller-heavenly-calm-252015.mp3', zen_meditation: '/music/meditation.mp3', tropical_solitude: '/music/tropical.mp3',
@@ -1216,6 +1222,42 @@ export class SoundManager {
     this.radioTrack.loop = true;
     this.applyVolumes();
     this.radioTrack.play()?.catch(() => {});
+  }
+
+  _startSecret777Station() {
+    if (!this.audioCtx) return;
+    const ctx = this.audioCtx;
+    try {
+      this.radioGain = ctx.createGain();
+      this.radioGain.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume * 0.45, ctx.currentTime);
+      this.radioGain.connect(ctx.destination);
+
+      // Haunting deep whale-song pad + eerie numbers-station 7.77 chime intervals
+      const notes = [174.61, 220.0, 261.63, 329.63, 440.0, 523.25];
+      let step = 0;
+      const broadcastTimer = setInterval(() => {
+        if (!this.radioGain || this.activeStation !== 'secret_777' || ctx.state !== 'running') return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = step % 3 === 0 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(notes[step % notes.length], now);
+        osc.frequency.exponentialRampToValueAtTime(notes[(step + 2) % notes.length] * 0.98, now + 1.4);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+
+        osc.connect(gain);
+        gain.connect(this.radioGain);
+        try {
+          osc.start(now);
+          osc.stop(now + 1.85);
+        } catch (_) {}
+        step++;
+      }, 900);
+      this.radioTimers.push(broadcastTimer);
+    } catch (_) {}
   }
 
   _startHarborBreezeStation() {

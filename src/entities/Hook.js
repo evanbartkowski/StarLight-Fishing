@@ -594,6 +594,19 @@ export class Hook {
       ctx.fill();
     }
 
+    if (this.hasConstellationBobber) {
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.32)';
+      ctx.beginPath();
+      ctx.arc(0, 4, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(0, -4); ctx.lineTo(0, 12);
+      ctx.moveTo(-8, 4); ctx.lineTo(8, 4);
+      ctx.stroke();
+    }
+
     ctx.restore();
   }
 }

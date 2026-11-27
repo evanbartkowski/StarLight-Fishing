@@ -4,6 +4,7 @@ import { EXPEDITION_HAZARDS } from '../data/ExpeditionHazards.js';
 import { REALM_ECOLOGY } from '../data/RealmEcology.js';
 import { drawAngler, drawBoatTrinket, BOAT_SKIN_OPTIONS } from '../data/CustomizationData.js';
 import { drawVesselHull, getVesselLayout } from '../rendering/VesselRenderer.js';
+import { renderMoonReflectionAndGhostShip, renderAlienUfoEvent, UNION_SIGNS } from '../systems/EasterEggs.js';
 import { REALM_RELICS } from '../data/RelicsData.js';
 import { Relic } from '../entities/Relic.js';
 import { belongsToRealm, REALM_PROFILES } from '../data/RealmContent.js';
@@ -89,6 +90,10 @@ export class OceanWorld {
     // Pending bottle message for UI to display
     this.pendingBottleMessage = null;
     this.pendingDriftwoodBobber = null;
+    this.ghostShipState = { active: false, x: 240, alpha: 0, timer: 0 };
+    this.ufoState = { active: false, x: -60, y: 78, phase: 'idle', timer: 0 };
+    this.isAnglerKnitting = false;
+    this.spawnUnionPicket = false;
   }
 
   resize(width, height) {
@@ -235,6 +240,89 @@ export class OceanWorld {
         const species = shallow[Math.floor(Math.random() * shallow.length)];
         const depth = (species.minDepth + Math.min(25, species.maxDepth, activeMaxDepth)) / 2;
         this.entities.fish.push(new Fish(species, this.worldWidth / 2, this.surfaceY + depth * this.pixelsPerMeter, fishOptions));
+      }
+    }
+
+    // Easter Egg Fish: Role-Reversal Fishing Fish (~3%), Misleading Monster (~3%), & Unionized Fish picket line
+    if (Math.random() < 0.03) {
+      const fDepth = Math.min(activeMaxDepth * 0.7, 14 + Math.random() * 45);
+      const anglerFish = new Fish({
+        id: 'easter_fishing_fish',
+        name: 'Tackle-Toting Trout',
+        zone: this.currentSeaId,
+        rarity: 'rare',
+        minDepth: 8,
+        maxDepth: 120,
+        baseValue: 420,
+        baseWeight: 3.4,
+        sizeRange: [32, 48],
+        scaleFactor: 1.05,
+        primaryColor: '#38bdf8',
+        secondaryColor: '#bae6fd',
+        finColor: '#fbbf24',
+        eyeColor: '#ffffff',
+        swimSpeed: 0.75,
+        wiggleSpeed: 4,
+        lore: 'A bizarrely clever fish spotted casting a bamboo pole back at unsuspecting captains!',
+      }, 90 + Math.random() * Math.max(100, this.worldWidth - 180), this.surfaceY + fDepth * this.pixelsPerMeter, fishOptions);
+      anglerFish.isFishingFish = true;
+      this.entities.fish.push(anglerFish);
+    }
+
+    if (Math.random() < 0.03) {
+      const mDepth = Math.min(activeMaxDepth * 0.85, 22 + Math.random() * 75);
+      const shadowPip = new Fish({
+        id: 'easter_misleading_monster',
+        name: 'Tiny Lantern Pip',
+        zone: this.currentSeaId,
+        rarity: 'rare',
+        minDepth: 18,
+        maxDepth: 250,
+        baseValue: 550,
+        baseWeight: 0.25,
+        sizeRange: [6, 9],
+        scaleFactor: 0.65,
+        primaryColor: '#fde047',
+        secondaryColor: '#fb923c',
+        finColor: '#facc15',
+        eyeColor: '#ffffff',
+        swimSpeed: 0.55,
+        wiggleSpeed: 5,
+        lore: 'Projects a terrifying 40-foot leviathan shadow in the murk—until you get close and spot an 8cm minnow holding a brass lantern!',
+      }, 110 + Math.random() * Math.max(100, this.worldWidth - 220), this.surfaceY + mDepth * this.pixelsPerMeter, fishOptions);
+      shadowPip.isMisleadingMonster = true;
+      shadowPip._revealedSmall = false;
+      this.entities.fish.push(shadowPip);
+    }
+
+    if (this.spawnUnionPicket) {
+      this.spawnUnionPicket = false;
+      const basePickX = this.worldWidth * (0.28 + Math.random() * 0.44);
+      const basePickY = this.surfaceY + Math.min(activeMaxDepth * 0.5, 16) * this.pixelsPerMeter;
+      for (let u = 0; u < 3; u++) {
+        const unionSign = UNION_SIGNS[(u + Math.floor(Math.random() * UNION_SIGNS.length)) % UNION_SIGNS.length];
+        const picketer = new Fish({
+          id: `easter_union_fish_${u}`,
+          name: 'Striking Union Perch',
+          zone: this.currentSeaId,
+          rarity: 'uncommon',
+          minDepth: 5,
+          maxDepth: 80,
+          baseValue: 185,
+          baseWeight: 1.6,
+          sizeRange: [22, 30],
+          scaleFactor: 0.95,
+          primaryColor: '#f97316',
+          secondaryColor: '#fef3c7',
+          finColor: '#ef4444',
+          eyeColor: '#ffffff',
+          swimSpeed: 0.65,
+          wiggleSpeed: 4,
+          lore: `Picketed the surface reef waving a miniature sign reading "${unionSign}".`,
+        }, basePickX + (u - 1) * 75, basePickY + (u % 2) * 28, fishOptions);
+        picketer.isUnionFish = true;
+        picketer.unionSign = unionSign;
+        this.entities.fish.push(picketer);
       }
     }
 
@@ -1824,6 +1912,9 @@ export class OceanWorld {
     ctx.stroke();
     ctx.restore();
 
+    // Moon Reflection column & Summoned Spectral Ghost Ship on Night horizon
+    renderMoonReflectionAndGhostShip(ctx, this.worldWidth, this.surfaceY, cameraY, this.waveTimer || 0, worldCycle.getSkyColors(), this.ghostShipState);
+
     // Render Seabed Traps Buoys bobbing on water
     if (this.trapSystem && !this.saveSystem?.data?.settings?.hideSeabedTraps) {
       this.trapSystem.renderBuoys(ctx, this.boat.x, this.surfaceY, cameraY);
@@ -1997,7 +2088,19 @@ export class OceanWorld {
         const fX = vesselLayout.anglerPos?.x ?? -2;
         const fY = vesselLayout.anglerPos?.y ?? -12;
 
-        drawAngler(ctx, this.saveSystem?.data?.appearance, fX, fY);
+        drawAngler(ctx, this.saveSystem?.data?.appearance, fX, fY, {
+          isKnitting: Boolean(this.isAnglerKnitting),
+          time: this.waveTimer || 0,
+        });
+
+        if (this.isAnglerKnitting) {
+          ctx.save();
+          ctx.fillStyle = '#fda4af';
+          ctx.font = 'bold 11px Outfit, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🧶 Knitting fish sweater...', fX * aimDir, fY - 48 + Math.sin((this.waveTimer || 0) * 3) * 2);
+          ctx.restore();
+        }
 
         // 3. Fishing Rod
         ctx.strokeStyle = '#38bdf8';
@@ -2026,6 +2129,11 @@ export class OceanWorld {
     // Drift items on water surface (rendered in world space, not boat-relative)
     if (this.driftItems && effectiveCameraY <= this.surfaceY + 50) {
       this.driftItems.render(ctx, effectiveCameraY);
+    }
+
+    // Alien Saucer Abduction Easter Egg
+    if (this.ufoState?.active && effectiveCameraY <= this.surfaceY + 80) {
+      renderAlienUfoEvent(ctx, this.ufoState, this.rodTip?.x || this.boat.x, (this.rodTip?.y || this.surfaceY) + 12, effectiveCameraY, this.waveTimer || 0);
     }
   }
 

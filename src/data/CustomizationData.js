@@ -29,7 +29,7 @@ export function normalizeCustomization(options, values = {}) {
     ])
   );
 }
-export function drawAngler(ctx, appearance, x = 0, y = 0) {
+export function drawAngler(ctx, appearance, x = 0, y = 0, options = {}) {
   const safeX = Number.isFinite(x) ? x : 0;
   const safeY = Number.isFinite(y) ? y : 0;
   ctx.save();
@@ -47,7 +47,36 @@ export function drawAngler(ctx, appearance, x = 0, y = 0) {
       else { ctx.fillRect(-8, -36, 16, 4); ctx.beginPath(); ctx.arc(0, -45, 3, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(3, -32, 1, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = look.coat || '#eab308'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(22, -16); ctx.stroke();
+    if (options.isKnitting) {
+      const kTime = options.time || 0;
+      const needleBob = Math.sin(kTime * 8) * 2.5;
+      // Arm folded forward knitting
+      ctx.strokeStyle = look.coat || '#eab308';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(15, -14 + needleBob * 0.4); ctx.stroke();
+      // Crossed knitting needles
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(10, -18 + needleBob); ctx.lineTo(22, -10 - needleBob);
+      ctx.moveTo(11, -10 - needleBob); ctx.lineTo(22, -18 + needleBob);
+      ctx.stroke();
+      // Cozy coral-blue fish-shaped sweater draped from the needles!
+      ctx.fillStyle = '#fb7185';
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(16, -9, 6.5, 4, 0.15, 0, Math.PI * 2);
+      ctx.moveTo(9, -10); ctx.lineTo(5, -14); ctx.lineTo(6, -6); ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // Yarn ball resting by boots
+      ctx.fillStyle = '#f43f5e';
+      ctx.beginPath(); ctx.arc(14, -2, 3.2, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.strokeStyle = look.coat || '#eab308'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(22, -16); ctx.stroke();
+    }
   } catch (err) {
     console.warn('drawAngler render error:', err);
   } finally {

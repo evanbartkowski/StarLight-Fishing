@@ -149,6 +149,18 @@ export const DRIFT_MESSAGES = [
       'Keep your cat well-petted and your lantern trimmed before deep dives.',
     ],
   },
+  {
+    id: 'secret_freq_777',
+    title: 'Waterlogged Brass Radio Scrap',
+    author: 'Broadcast Phantom · Dead Channel',
+    type: 'lore',
+    unlocksFrequency: '7.77',
+    lines: [
+      'Scrawled hastily in fading blue grease-pencil along the cork margin:',
+      '"When the midnight ocean goes dead silent, tune your brass dial past Station 9...',
+      'Dial in frequency 7.77 MHz to hear what sings beneath the trench floor."',
+    ],
+  },
 ];
 
 export const DRIFTWOOD_BOBBERS = [
@@ -159,5 +171,9 @@ export const DRIFTWOOD_BOBBERS = [
 ];
 
 export function getRandomBottleMessage() {
-  return DRIFT_MESSAGES[Math.floor(Math.random() * DRIFT_MESSAGES.length)];
+  const msg = DRIFT_MESSAGES[Math.floor(Math.random() * DRIFT_MESSAGES.length)];
+  return {
+    ...msg,
+    text: Array.isArray(msg.lines) ? msg.lines.join('\n') : (msg.text || ''),
+  };
 }

@@ -252,3 +252,102 @@ test('Crate timed multipliers buff Coin sales & XP, crate SVG art renders, and S
   // Bottle poems present
   assert.ok(DRIFT_MESSAGES.length >= 10 && DRIFT_MESSAGES.every(m => m.lines.length >= 3));
 });
+
+test('All 11 Easter Eggs trigger, persist unlocks, and render with finite canvas geometry', async () => {
+  const { ShipsCat } = await import('../src/entities/BoatCompanions.js');
+  const { Treasure } = await import('../src/entities/Treasure.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { drawAngler } = await import('../src/data/CustomizationData.js');
+  const { DRIFT_MESSAGES } = await import('../src/data/DriftMessages.js');
+  const {
+    CONSTELLATION_FISH_STARS,
+    getConstellationScreenCoords,
+    handleConstellationClick,
+    renderFishConstellation,
+    renderMoonReflectionAndGhostShip,
+    createGhostCaptainEncounter,
+    renderAlienUfoEvent,
+    renderFishEasterEggOverlay,
+    renderAquariumFamiliarCaptain,
+  } = await import('../src/systems/EasterEggs.js');
+
+  let drawCalls = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key.includes('Gradient')) return () => ({ addColorStop() {} });
+      if (key === 'measureText') return () => ({ width: 50 });
+      return (...args) => {
+        drawCalls++;
+        for (const v of args) {
+          if (typeof v === 'number') assert.ok(Number.isFinite(v), `Non-finite number in easter egg ${String(key)}`);
+        }
+      };
+    },
+    set: () => true,
+  });
+
+  // 1. Cat Angler (7 pets unlocks tiny rod)
+  const cat = new ShipsCat();
+  for (let i = 1; i <= 6; i++) {
+    const r = cat.onClick(null);
+    assert.equal(r.pulledTinyRod, false);
+  }
+  const seventh = cat.onClick(null);
+  assert.equal(seventh.pulledTinyRod, true);
+  assert.equal(cat.hasTinyRod, true);
+  cat.render(mockCtx, 0);
+
+  // 2. Secret Radio 7.77 Bottle Clue + SaveSystem unlock
+  storage.clear();
+  const save = new SaveSystem();
+  const freqBottle = DRIFT_MESSAGES.find(m => m.unlocksFrequency === '7.77');
+  assert.ok(freqBottle, 'Secret 7.77 bottle clue exists');
+  assert.equal(save.hasFrequency777(), false);
+  save.unlockFrequency777();
+  assert.equal(save.hasFrequency777(), true);
+
+  // 3. Constellation Puzzle -> solves on clicking all 7 fish stars
+  const constState = { active: true, clicked: new Set(), solved: false };
+  const coords = getConstellationScreenCoords(1200, 220, 0);
+  assert.equal(coords.length, CONSTELLATION_FISH_STARS.length);
+  coords.forEach((pt, idx) => {
+    const res = handleConstellationClick(constState, pt.x, pt.y, 1200, 220, 0);
+    assert.equal(res.hit, true);
+    assert.equal(res.completed, idx === coords.length - 1);
+  });
+  renderFishConstellation(mockCtx, constState, 1200, 220, 0, 1.5);
+
+  // 4. Ghost Ship Moon Reflection & Encounter + Alien UFO + Familiar Captain + Knitting Captain
+  renderMoonReflectionAndGhostShip(mockCtx, 1200, 220, 0, 2.0, { isNight: true }, { active: true, x: 240, alpha: 0.85 });
+  const ghostNpc = createGhostCaptainEncounter();
+  const ghostRes = ghostNpc.options[0].action(save);
+  assert.equal(ghostRes.success, true);
+  assert.ok(save.getGemBalance() >= 2);
+
+  renderAlienUfoEvent(mockCtx, { active: true, x: 600, y: 74, phase: 'beaming' }, 600, 190, 0, 1.2);
+  renderAquariumFamiliarCaptain(mockCtx, { active: true, x: 220 }, 760, 1.4, 'CaptainEvan');
+  drawAngler(mockCtx, {}, 0, 0, { isKnitting: true, time: 3.1 });
+
+  // 5. Chest Impersonator (Mimic) + Fish with Rod + Unionized Fish + Misleading Monster
+  const mimicChest = new Treasure({ id: 'pirate_chest', name: 'Pirate Chest', rarity: 'rare', value: 200, isMimic: true }, 400, 500);
+  mimicChest.mimicRevealed = true;
+  mimicChest.render(mockCtx, 0);
+
+  const fWithRod = new Fish({ id: 'ff', name: 'Tackle-Toting Trout', rarity: 'rare', sizeRange: [20, 30], baseWeight: 1, baseValue: 100 }, 300, 400);
+  fWithRod.isFishingFish = true;
+  const unionFish = new Fish({ id: 'uf', name: 'Union Perch', rarity: 'uncommon', sizeRange: [18, 25], baseWeight: 1, baseValue: 80 }, 320, 400);
+  unionFish.isUnionFish = true;
+  unionFish.unionSign = 'BETTER BAIT!';
+  const miniMonster = new Fish({ id: 'mm', name: 'Tiny Lantern Pip', rarity: 'rare', sizeRange: [6, 9], baseWeight: 0.2, baseValue: 200 }, 500, 500);
+  miniMonster.isMisleadingMonster = true;
+  miniMonster._revealedSmall = false;
+
+  renderFishEasterEggOverlay(mockCtx, fWithRod, { x: 0, y: 0 }, 0);
+  renderFishEasterEggOverlay(mockCtx, unionFish, { x: 0, y: 0 }, 0);
+  renderFishEasterEggOverlay(mockCtx, miniMonster, { x: 0, y: 0 }, 0);
+  assert.equal(miniMonster._revealedSmall, false);
+  // Hook gets close -> reveals small lantern minnow
+  renderFishEasterEggOverlay(mockCtx, miniMonster, { x: 495, y: 495 }, 0);
+  assert.equal(miniMonster._revealedSmall, true);
+  assert.ok(drawCalls > 100);
+});

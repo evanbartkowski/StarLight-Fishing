@@ -29,6 +29,7 @@ import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt } from './CustomVectorArt.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 import { drawVesselHull, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
+import { renderAquariumFamiliarCaptain } from '../systems/EasterEggs.js';
 
 
 const escapeScoreboardText = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -1366,12 +1367,20 @@ export class UIManager {
       { id: 'midnight_current', name: 'Soundtrack: Midnight Current', desc: 'Dreamy night-tide synths drifting over dark water', icon: '🌙', cost: 15 },
       { id: 'celestial_disco', name: 'Soundtrack: Celestial Disco', desc: 'Upbeat cosmic funk groove and sparkling starlight basslines', icon: '🪩', cost: 5 },
     ];
+    if (save.hasFrequency777?.()) {
+      stations.push({ id: 'secret_777', name: 'Station 7.77: Phantom Frequency', desc: 'Strange numbers-station tones and deep trench whale-song unlocked from a drift bottle', icon: '📡', cost: 0 });
+    }
 
     let html = `
       <div class="radio-modal-container">
-        <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:14px;">
+        <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:10px;">
           Tune your vessel's vintage brass radio to atmospheric soundscapes. Every station plays its own unique track, looping while you sail and fish.
         </p>
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px; background:rgba(15,23,42,0.75); border:1px solid rgba(56,189,248,0.22); border-radius:10px; padding:8px 12px;">
+          <label for="radio-freq-input" style="font-size:0.8rem; color:#93c5fd; font-weight:700; white-space:nowrap;">Manual Dial (MHz):</label>
+          <input type="text" id="radio-freq-input" placeholder="e.g. 7.77" maxlength="10" style="flex:1; background:#020617; color:#fde047; border:1px solid #334155; border-radius:6px; padding:6px 10px; font-weight:700; font-family:monospace;" />
+          <button class="btn btn-secondary btn-sm" id="btn-tune-freq">Tune</button>
+        </div>
         <div style="display:flex; flex-direction:column; gap:10px;">
     `;
 
@@ -1421,11 +1430,35 @@ export class UIManager {
         this.openRadio();
       });
     });
+
+    document.getElementById('btn-tune-freq')?.addEventListener('click', () => {
+      const val = (document.getElementById('radio-freq-input')?.value || '').trim();
+      if (val === '7.77') {
+        if (!save.hasFrequency777?.()) {
+          this.showToast('📻 Static crackles on 7.77 MHz... Find a mysterious radio note in a drifting bottle first!');
+          return;
+        }
+        save.recordEasterEgg?.('secret_radio_777');
+        soundManager.startRadioStation('secret_777');
+        soundManager.playRareChime();
+        this.showToast('📡 Tuned into Secret Frequency 7.77 MHz!');
+        this.openRadio();
+      } else {
+        this.showToast(`📻 Only ocean static on ${val || 'that'} MHz.`);
+      }
+    });
   }
 
   showBottleMessage(message) {
     this.activeModal = 'bottleMessage';
     soundManager.playBottlePickup();
+    if (message?.unlocksFrequency === '7.77') {
+      const newlyFound = this.saveSystem.unlockFrequency777?.();
+      this.saveSystem.recordEasterEgg?.('secret_freq_clue');
+      if (newlyFound) {
+        this.showToast('📻 Clues unlocked! Tune your boat Radio to frequency 7.77 MHz!');
+      }
+    }
 
     const categoryMap = {
       nostalgic: { label: 'Nostalgic Memory', color: '#f472b6', icon: '🌅' },
@@ -4241,6 +4274,14 @@ export class UIManager {
     const ripples = [];
     const foodPellets = [];
     const bubbles = [];
+    const familiarCaptain = {
+      active: Math.random() < 0.16,
+      x: 80 + Math.random() * Math.max(120, canvas.width - 160),
+      vx: (Math.random() < 0.5 ? 1 : -1) * 20,
+    };
+    if (familiarCaptain.active) {
+      this.saveSystem.recordEasterEgg?.('familiar_captain');
+    }
 
     for (let i = 0; i < 20; i++) {
       bubbles.push({
@@ -4407,6 +4448,14 @@ export class UIManager {
         entity.render(ctx, 0);
         f.x = entity.x; f.y = entity.y;
       });
+
+      // A Familiar Captain Easter Egg: tiny miniature boat bearing your username
+      if (familiarCaptain.active) {
+        familiarCaptain.x += familiarCaptain.vx * (frameMs / 1000);
+        if (familiarCaptain.x > canvas.width - 36) familiarCaptain.vx = -Math.abs(familiarCaptain.vx);
+        if (familiarCaptain.x < 36) familiarCaptain.vx = Math.abs(familiarCaptain.vx);
+        renderAquariumFamiliarCaptain(ctx, familiarCaptain, canvas.width, decorTime, accountManager.getCurrentUser() || 'Captain');
+      }
 
       // Ripples
       for (let i = ripples.length - 1; i >= 0; i--) {

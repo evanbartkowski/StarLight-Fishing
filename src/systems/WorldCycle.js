@@ -1,5 +1,6 @@
 // Atmospheric World Cycle System: Day/Night Cycle, Dynamic Weather & Global Events
 // Synchronized global event cycle triggers every 35 minutes for 5 minutes duration
+import { renderFishConstellation } from './EasterEggs.js';
 
 export const GLOBAL_EVENTS = [
   {
@@ -74,9 +75,27 @@ export class WorldCycle {
     this.fogBanks = [];
     this.bioPlankton = [];
     this.surfaceRipples = [];
+    this.constellationState = { active: false, clicked: new Set(), solved: false, lastNightKey: -1 };
 
     this.initFog();
     this.initPlankton();
+  }
+
+  ensureNightConstellation(isNight) {
+    const nightKey = Math.floor((this._dayCount || 0));
+    if (!isNight) {
+      if (this.constellationState.active && !this.constellationState.solved) {
+        this.constellationState.active = false;
+      }
+      return;
+    }
+    if (this.constellationState.lastNightKey !== nightKey) {
+      this.constellationState.lastNightKey = nightKey;
+      // Rare starry fish constellation appears on ~38% of nights
+      this.constellationState.active = Math.random() < 0.38;
+      this.constellationState.clicked = new Set();
+      this.constellationState.solved = false;
+    }
   }
 
   initFog() {
@@ -333,6 +352,7 @@ export class WorldCycle {
     const isNight = this.getTimeOfDay() === 'NIGHT';
 
     // 1. Night Stars & Moon
+    this.ensureNightConstellation(isNight);
     if (isNight && cameraY < surfaceY) {
       ctx.save();
       // Draw subtle twinkling stars in the sky
@@ -345,6 +365,7 @@ export class WorldCycle {
         ctx.fillRect(sx, sy, 2, 2);
       }
       ctx.restore();
+      renderFishConstellation(ctx, this.constellationState, screenWidth, surfaceY, cameraY, this.timer);
     }
 
     // 2. Gentle Rain

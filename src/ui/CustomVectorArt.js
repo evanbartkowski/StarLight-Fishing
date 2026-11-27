@@ -748,6 +748,20 @@ export const RADIO_ART = {
     <circle cx="20" cy="20" r="1.5" fill="#ffffff"/>
     <circle cx="27" cy="26" r="1.5" fill="#ffffff"/>
   `),
+
+  secret_777: svgWrap(`
+    <defs>
+      <linearGradient id="rad_secret777" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#020617"/>
+        <stop offset="50%" stop-color="#0f292e"/>
+        <stop offset="100%" stop-color="#1e1b4b"/>
+      </linearGradient>
+    </defs>
+    <rect width="48" height="48" rx="10" fill="url(#rad_secret777)"/>
+    <path d="M4 26c4-9 8 9 12 0s8 9 12 0 8 9 16-2" stroke="#2dd4bf" stroke-width="2.2" fill="none"/>
+    <text x="24" y="16" text-anchor="middle" font-size="10" font-weight="900" fill="#fde047">7.77</text>
+    <circle cx="38" cy="11" r="2.2" fill="#4ade80"/>
+  `),
 };
 
 /**

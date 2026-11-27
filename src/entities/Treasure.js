@@ -181,6 +181,10 @@ export class Treasure {
     this.hook = null;
     this.hookOffset = { x: 0, y: 0 };
     this.timer = Math.random() * Math.PI * 2;
+    // Rare Chest Impersonator (Mimic) disguised as a pirate chest
+    this.isMimic = Boolean(itemConfig.isMimic) || (itemConfig.id === 'pirate_chest' && Math.random() < 0.09);
+    this.mimicRevealed = false;
+    this.mimicBitten = false;
   }
 
   update(dt, worldWidth, hook) {
@@ -361,14 +365,45 @@ export class Treasure {
     } else {
       // STANDARD SUNKEN TREASURES
       if (this.id === 'pirate_chest' || this.id === 'royal_relic') {
-        const isRoyal = this.id === 'royal_relic';
-        ctx.fillStyle = isRoyal ? '#b45309' : '#78350f';
-        ctx.fillRect(-15, -10, 30, 20);
+        if (this.isMimic && this.mimicRevealed) {
+          // Mimic chest snapped wide open revealing jagged fangs, tongue, and glowing eyes!
+          const chompGap = 6 + Math.abs(Math.sin(this.timer * 5)) * 5;
+          // Top lid & upper teeth
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(-16, -15 - chompGap * 0.5, 32, 9);
+          ctx.fillStyle = '#fbbf24';
+          ctx.fillRect(-16, -15 - chompGap * 0.5, 32, 2.5);
+          // Bottom jaw
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(-16, 4 + chompGap * 0.4, 32, 9);
+          // Inner maw + tongue
+          ctx.fillStyle = '#450a0a';
+          ctx.fillRect(-15, -6 - chompGap * 0.4, 30, 10 + chompGap);
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath(); ctx.ellipse(0, 3, 9, 4, 0, 0, Math.PI * 2); ctx.fill();
+          // Sharp teeth
+          ctx.fillStyle = '#ffffff';
+          for (let t = -12; t <= 12; t += 6) {
+            ctx.beginPath();
+            ctx.moveTo(t - 2, -6 - chompGap * 0.4); ctx.lineTo(t, -1); ctx.lineTo(t + 2, -6 - chompGap * 0.4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(t - 2, 5 + chompGap * 0.4); ctx.lineTo(t, 0); ctx.lineTo(t + 2, 5 + chompGap * 0.4);
+            ctx.fill();
+          }
+          // Glowing amber predator eyes inside the lid crease
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath(); ctx.arc(-7, -10 - chompGap * 0.4, 2.4, 0, Math.PI * 2); ctx.arc(7, -10 - chompGap * 0.4, 2.4, 0, Math.PI * 2); ctx.fill();
+        } else {
+          const isRoyal = this.id === 'royal_relic';
+          ctx.fillStyle = isRoyal ? '#b45309' : '#78350f';
+          ctx.fillRect(-15, -10, 30, 20);
 
-        ctx.fillStyle = isRoyal ? '#fef08a' : '#facc15';
-        ctx.fillRect(-15, -10, 30, 4);
-        ctx.fillRect(-15, 6, 30, 4);
-        ctx.fillRect(-3, -4, 6, 8); // Lock
+          ctx.fillStyle = isRoyal ? '#fef08a' : '#facc15';
+          ctx.fillRect(-15, -10, 30, 4);
+          ctx.fillRect(-15, 6, 30, 4);
+          ctx.fillRect(-3, -4, 6, 8); // Lock
+        }
       } else if (this.id === 'ocean_heart') {
         ctx.fillStyle = '#38bdf8';
         ctx.beginPath();
