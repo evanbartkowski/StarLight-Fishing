@@ -1,3 +1,4 @@
+import { treasureSvg } from '../rendering/TreasureArtwork.js';
 // CustomVectorArt.js — Detailed, bespoke vector illustrations for shop items, realm destinations, radio stations, and journal exhibits
 
 /**
@@ -1451,6 +1452,8 @@ export const DREDGED_TREASURE_ART = {
  * Returns matching bespoke vector artwork for any dredged treasure or salvage item
  */
 export function getTreasureArt(item) {
+  const shared = treasureSvg(item);
+  if (shared) return shared;
   if (!item) return DREDGED_TREASURE_ART.generic_treasure;
   const id = String(item.id || '').toLowerCase();
   const name = String(item.name || '').toLowerCase();

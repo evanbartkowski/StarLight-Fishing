@@ -923,12 +923,12 @@ test('Deep abyss fishing line stability, Realm 7 creature & treasure icons, and 
     set: (target, key, val) => { target[key] = val; return true; },
   });
 
-  // When rod is 34,700px off screen above viewport (cameraY = 34900), renderLine clips entry point at y=0
+  // Preserve the original curve; Canvas clips it without moving its control points.
   deepHook.renderLine(mockLineCtx, 600, 200, 34900);
   const moveToCall = lineDrawCalls.find(c => c.key === 'moveTo');
   assert.ok(moveToCall, 'Line must call moveTo for top entry');
   const entryY = moveToCall.args[1];
-  assert.ok(entryY >= -1 && entryY <= 1, `Line entry Y (${entryY}) must clip smoothly at viewport top`);
+  assert.equal(entryY, -34700, 'Line must keep the true rod position for native clipping');
 
   const quadCall = lineDrawCalls.find(c => c.key === 'quadraticCurveTo');
   assert.ok(quadCall, 'Must draw smooth curve in visible screen');

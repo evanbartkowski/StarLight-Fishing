@@ -30,6 +30,7 @@ import { ABERRATIONS_CATALOG } from '../data/aberrations.config.js';
 import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt, NPC_PORTRAITS, QUEST_ART } from './CustomVectorArt.js';
+import { drawTreasureArtwork, treasureSvg } from '../rendering/TreasureArtwork.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 import { drawVesselHull, drawVesselForeground, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
 import { renderAquariumFamiliarCaptain } from '../systems/EasterEggs.js';
@@ -1285,6 +1286,12 @@ export class UIManager {
   }
 
   closeModal() {
+    if (this.activeModal === 'bottleMessage' && this._bottleReturnAction) {
+      const returnAction = this._bottleReturnAction;
+      this._bottleReturnAction = null;
+      returnAction();
+      return;
+    }
     soundManager.playButtonClick();
     const cleanup = this._activeModalCleanup;
     this._activeModalCleanup = null;
@@ -1498,8 +1505,9 @@ export class UIManager {
     });
   }
 
-  showBottleMessage(message, returnToMessages = false) {
+  showBottleMessage(message, returnToMessages = false, onReturn = null) {
     message = normalizeBottleMessage(message);
+    this._bottleReturnAction = returnToMessages ? () => this.openJournalLogbook('journal', 'messages') : onReturn;
     this.activeModal = 'bottleMessage';
     soundManager.playBottlePickup();
     if (message?.unlocksFrequency === '7.77') {
@@ -1547,8 +1555,7 @@ export class UIManager {
     const closeBtn = document.getElementById('btn-bottle-close');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
-        if (returnToMessages) this.openJournalLogbook('journal', 'messages');
-        else this.closeModal();
+        this.closeModal();
       });
     }
   }
@@ -1719,7 +1726,7 @@ export class UIManager {
     let subtotal = 0;
     let listHtml = '<div class="catch-summary-list">';
     const hasUnrestoredRelic = hook.caughtItems.some(i => i.isRelic && !i.restored);
-    const soldIds = new Set();
+    const soldIds = new Set(hook.caughtItems.filter(item => item._isSold).map(item => item.inventoryRef?.instanceId || item.instanceId || item._summaryId));
     const isStorageFull = storageOverflow || this.saveSystem.isInventoryFull();
 
     if (hook.caughtItems.length === 0) {
@@ -1781,6 +1788,8 @@ export class UIManager {
           iconHtml = `<canvas class="catch-item-canvas" id="catch-summary-canvas-${itemIdx}" width="112" height="88"></canvas>`;
         } else if (isCrate) {
           iconHtml = `<img class="chest-small-art" src="${chestThumbnail(item)}" alt="" width="64" height="52">`;
+        } else if (treasureSvg(item)) {
+          iconHtml = `<div class="catch-item-art-icon">${treasureSvg(item)}</div>`;
         } else if (isSafe) {
           iconHtml = `<div class="catch-item-art-icon" style="font-size: 2.2rem; display: flex; align-items: center; justify-content: center;">🔒</div>`;
         } else if (isFossil) {
@@ -1973,9 +1982,9 @@ export class UIManager {
     document.querySelectorAll('.btn-catch-read-bottle').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const instId = e.currentTarget.dataset.id;
-        const caught = hook.caughtItems.find(i => (i.instanceId === instId || i._summaryId === instId || i.id === 'bottle'));
+        const caught = hook.caughtItems.find(i => (i.inventoryRef?.instanceId === instId || i.instanceId === instId || i._summaryId === instId));
         const msg = caught?.bottleMessage || getRandomBottleMessage();
-        this.showBottleMessage(msg);
+        this.showBottleMessage(msg, false, () => this.openCatchSummary(hook, onContinue, storageOverflow));
       });
     });
 
@@ -1983,7 +1992,7 @@ export class UIManager {
       const bottle = hook.caughtItems.find(i => i.isBottle || i.id === 'bottle');
       if (bottle) {
         const msg = bottle.bottleMessage || getRandomBottleMessage();
-        this.showBottleMessage(msg);
+        this.showBottleMessage(msg, false, () => this.openCatchSummary(hook, onContinue, storageOverflow));
       }
     });
 
@@ -3982,7 +3991,7 @@ export class UIManager {
       inhabitantsCardsHtml += `
         <div class="inhabitant-slot-card filled rarity-border-${item.rarity}">
           <div class="slot-icon" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
-            ${item.icon || (isRelic ? '🏺' : '🐟')}
+            ${treasureSvg(item) || item.icon || (isRelic ? '🏺' : '🐟')}
           </div>
           <div class="slot-info">
             <div class="slot-name">${shinyTag} ${crownTag} ${item.name}</div>
@@ -4315,7 +4324,9 @@ export class UIManager {
         ctx.font = '22px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(relic.icon || '🏺', rx, ry - 6);
+        ctx.save(); ctx.translate(rx, ry - 14);
+        if (!drawTreasureArtwork(ctx, relic, .75)) ctx.fillText(relic.icon || '🏺', 0, 8);
+        ctx.restore();
 
         ctx.font = '10px sans-serif';
         ctx.fillStyle = '#f8fafc';
@@ -4411,7 +4422,7 @@ export class UIManager {
         listHtml += `
           <div class="inventory-card rarity-border-${item.rarity}" style="padding: 10px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-              <span style="font-size: 1.8rem; color: ${item.primaryColor || '#38bdf8'};">${item.icon || (isRelic ? '🏺' : '🐟')}</span>
+              <span style="font-size: 1.8rem; color: ${item.primaryColor || '#38bdf8'};">${treasureSvg(item) || item.icon || (isRelic ? '🏺' : '🐟')}</span>
               <div style="flex: 1; overflow: hidden;">
                 <div style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                   ${shinyTag} ${crownTag} ${item.name}
@@ -4533,7 +4544,7 @@ export class UIManager {
           <div class="inventory-card rarity-border-${item.rarity} ${isLocked ? 'item-locked-border' : ''}">
             <div class="inv-card-header">
               <div class="inv-card-icon ${isFish ? 'inv-card-icon-canvas' : ''}" style="color: ${item.primaryColor || '#38bdf8'}; font-size: 1.8rem;">
-                ${isFish ? `<canvas id="inv-fish-canvas-${item.instanceId}" width="64" height="48" class="inv-specimen-canvas" aria-label="${item.name}"></canvas>` : item.isCrate || item.category === 'crate' ? `<img class="chest-small-art" src="${chestThumbnail(item)}" alt="" width="64" height="52">` : (item.icon || getSpeciesIcon(item))}
+                ${isFish ? `<canvas id="inv-fish-canvas-${item.instanceId}" width="64" height="48" class="inv-specimen-canvas" aria-label="${item.name}"></canvas>` : item.isCrate || item.category === 'crate' ? `<img class="chest-small-art" src="${chestThumbnail(item)}" alt="" width="64" height="52">` : (treasureSvg(item) || item.icon || getSpeciesIcon(item))}
               </div>
               <div class="inv-card-title-col">
                 <div class="inv-card-name">${item.name}</div>
@@ -4957,6 +4968,8 @@ export class UIManager {
 
           if (item.isCrate || item.category === 'crate') {
             ctx.save(); ctx.translate(170, 77); drawChest(ctx, item, 38); ctx.restore();
+          } else if (treasureSvg(item)) {
+            ctx.save(); ctx.translate(170, 70); drawTreasureArtwork(ctx, item, 1.8); ctx.restore();
           } else {
             ctx.font = '64px sans-serif';
             ctx.textAlign = 'center';
@@ -4968,8 +4981,9 @@ export class UIManager {
     }
 
     document.getElementById('btn-inspect-open-bottle')?.addEventListener('click', () => {
-      const msg = item.bottleMessage || getRandomBottleMessage();
-      this.showBottleMessage(msg);
+      item.bottleMessage = normalizeBottleMessage(item.bottleMessage || getRandomBottleMessage());
+      this.saveSystem.save();
+      this.showBottleMessage(item.bottleMessage, false, () => this.openInspectItemModal(instanceId, returnFilter));
     });
 
     document.getElementById('btn-inspect-open-crate')?.addEventListener('click', () => this.openCratesModal([item], null, null));

@@ -7,6 +7,7 @@ import { rollCatchTraits, depthRewardMultiplier } from '../systems/CatchTraits.j
 import { drawMarineCreature } from '../rendering/MarineCreatureSilhouettes.js';
 import { getFishAnatomy, drawDistinctFish } from '../rendering/FishAnatomy.js';
 import { renderFishEasterEggOverlay } from '../systems/EasterEggs.js';
+import { positionLineAttachment } from './LineAttachment.js';
 
 /**
  * Draws a brilliant faceted 4-point diamond star sparkle with needle flares,
@@ -532,12 +533,7 @@ export class Fish {
       this.isCamouflaged = false;
       this.deflectWave = 0;
 
-      // Firmly locked onto the line a bit above the hook and follows the hook
-      const sway = Math.sin(this.wiggleTimer * 1.5) * 1.5;
-      const offsetX = (this.hookOffset ? this.hookOffset.x : 0) + sway;
-      const offsetY = this.hookOffset ? this.hookOffset.y : -22;
-      this.x = hook.x + offsetX;
-      this.y = hook.y + offsetY;
+      positionLineAttachment(this);
       this.wiggleFreq = this.species.wiggleSpeed * 2.2;
     }
   }
@@ -645,19 +641,8 @@ export class Fish {
     this.isCamouflaged = false;
     this.deflectWave = 0;
 
-    // Fish stays on the line neatly spaced above the hook:
-    const verticalOffset = -18 - Math.min(slotIndex, 6) * 18 - Math.max(0, slotIndex - 6) * 8;
-    const side = slotIndex % 2 === 0 ? 1 : -1;
-    const horizontalOffset = side * 8; // clean alternation left and right of the line
-
-    this.hookOffset = {
-      x: horizontalOffset,
-      y: verticalOffset,
-    };
-
-    // Immediately snap to position on the line above the hook
-    this.x = hook.x + this.hookOffset.x;
-    this.y = hook.y + this.hookOffset.y;
+    this.hookIndex = slotIndex;
+    positionLineAttachment(this);
   }
 
   render(ctx, cameraY = 0, hook = null) {
@@ -667,12 +652,9 @@ export class Fish {
     let posX = this.x;
     let posY = this.y;
     if (isHooked && this.hook) {
-      const offsetX = this.hookOffset ? this.hookOffset.x : 0;
-      const offsetY = this.hookOffset ? this.hookOffset.y : -18;
-      posX = this.hook.x + offsetX;
-      posY = this.hook.y + offsetY;
-      this.x = posX;
-      this.y = posY;
+      positionLineAttachment(this);
+      posX = this.x;
+      posY = this.y;
     }
 
     if (!Number.isFinite(posX) || !Number.isFinite(posY)) return;
@@ -694,16 +676,9 @@ export class Fish {
       ctx.restore();
     }
 
-    // Leader branch line from main hook axis to fish clip
+    // A clip on the shared curve; no extra wire branching toward the hook axis.
     if (isHooked && this.hook) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(this.hook.x, drawY);
-      ctx.lineTo(posX, drawY);
-      ctx.stroke();
-
       // Shiny silver tackle clip where fish's mouth is secured to the line
       ctx.fillStyle = '#e2e8f0';
       ctx.beginPath();

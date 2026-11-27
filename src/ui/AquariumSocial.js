@@ -6,6 +6,7 @@ import { acceptServerSave } from '../systems/PremiumPurchases.js';
 import { drawAquariumDecor, normalizeCustomization, AQUARIUM_OPTIONS } from '../data/CustomizationData.js';
 import { TREASURE_ITEMS } from '../data/TreasureData.js';
 import { Treasure } from '../entities/Treasure.js';
+import { treasureSvg } from '../rendering/TreasureArtwork.js';
 
 const REACTION_STORAGE_KEY = 'starlight_aquarium_reactions_v1';
 const AQUARIUM_REACTIONS = [
@@ -270,7 +271,7 @@ export async function visitAquarium(ui, rawHost, fallbackHost = null) {
         ctx.font = '20px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(relic.icon || '🏺', rx, ry - 6);
+        if (!treasureSvg(relic)) ctx.fillText(relic.icon || '🏺', rx, ry - 6);
         ctx.font = '9px sans-serif';
         ctx.fillStyle = '#f8fafc';
         ctx.fillText((relic.name || 'Relic').substring(0, 12), rx, ry + 24);

@@ -18,14 +18,19 @@ self.addEventListener('install', event => {
         if (!response.ok) throw Error(`Offline download failed: ${url}`);
         await cache.put(url, response);
       }));
+      // Activate the complete pack without reloading any running voyage. This also
+      // upgrades legacy clients whose UI hid the waiting update inside a dialog.
+      await self.skipWaiting();
     }
     catch (error) { await caches.delete(CORE_CACHE); throw error; }
   })());
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    for (const name of await caches.keys()) {
-      if (name.startsWith('starlight-fishing-') && name !== CORE_CACHE && name !== AUDIO_CACHE) await caches.delete(name);
+    const names = await caches.keys();
+    const previous = names.filter(name => name !== CORE_CACHE && (name.startsWith('starlight-fishing-core-') || name === 'starlight-fishing-v1')).at(-1);
+    for (const name of names) {
+      if (name.startsWith('starlight-fishing-') && name !== CORE_CACHE && name !== AUDIO_CACHE && name !== previous) await caches.delete(name);
     }
     await self.clients.claim();
   })());
@@ -57,6 +62,11 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const cache = await caches.open(CORE_CACHE), cached = await cache.match(url.pathname);
       if (cached) return cached;
+      // A tab still playing the preceding release can finish loading its chunks.
+      if (url.pathname.startsWith('/assets/')) {
+        const prior = await caches.match(url.pathname);
+        if (prior) return prior;
+      }
       const response = await fetch(request);
       if (response.ok && response.type === 'basic') await cache.put(url.pathname, response.clone());
       return response;

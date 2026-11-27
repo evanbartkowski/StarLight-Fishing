@@ -7,7 +7,7 @@ import { UPGRADE_DEFINITIONS } from '../data/UpgradesData.js';
 import { ACHIEVEMENTS } from '../data/AchievementsData.js';
 import { FISH_SPECIES, getSpeciesIcon } from '../data/FishData.js';
 import { LEGENDARY_SPECIES } from '../data/legendaries.js';
-import { normalizeBottleMessage } from '../data/DriftMessages.js';
+import { getRandomBottleMessage, normalizeBottleMessage } from '../data/DriftMessages.js';
 import { calculateGradeTier, claimZonePerk } from '../data/almanac.config.js';
 import { accountManager } from './AccountManager.js';
 
@@ -314,6 +314,10 @@ export class SaveSystem {
         discoveredFrequency777: Boolean(parsed.discoveredFrequency777),
         easterEggsFound: Array.isArray(parsed.easterEggsFound) ? parsed.easterEggsFound : [],
         inventory: (Array.isArray(parsed.inventory) ? parsed.inventory : []).map(item => {
+          if (item.isBottle || item.id === 'bottle' || item.category === 'bottle') {
+            item.type = 'bottle'; item.isBottle = true;
+            item.bottleMessage = normalizeBottleMessage(item.bottleMessage || getRandomBottleMessage());
+          }
           if (!item.type) {
             item.type = item.isRelic ? 'relic' : (item.isCrate ? 'crate' : (item.isTreasure || item.category === 'fossil' || item.category === 'treasure' ? 'trinket' : 'fish'));
           }
@@ -340,6 +344,12 @@ export class SaveSystem {
         settings: { ...def.settings, ...(parsed.settings || {}) },
         hasSeenEndgame: Boolean(parsed.hasSeenEndgame),
       };
+
+      // Older versions kept the letter only inside an owned bottle. Recover it
+      // into the journal as well, without replacing its original text.
+      const letters = [...(Array.isArray(parsed.bottleMessages) ? parsed.bottleMessages : []),
+        ...this.data.inventory.filter(item => item.isBottle).map(item => item.bottleMessage)].map(normalizeBottleMessage);
+      this.data.bottleMessages = [...new Map(letters.map(letter => [letter.id || letter.text, letter])).values()].slice(0, 128);
 
       if (!parsed.gemEconomyVersion) {
         this.data.ownedAppearance = Object.entries(normalizeCustomization(ANGLER_OPTIONS, this.data.appearance)).map(([key, value]) => `${key}:${value}`);
@@ -522,6 +532,11 @@ export class SaveSystem {
   }
 
   recordCatchItem(item) {
+    if (item.isBottle || item.id === 'bottle' || item.category === 'bottle') {
+      // A letter belongs in the journal even when the player skips the haul popup.
+      item.bottleMessage = normalizeBottleMessage(item.bottleMessage);
+      this.keepBottleMessage(item.bottleMessage);
+    }
     if (item.isCrate || item.category === 'crate') {
       return;
     }

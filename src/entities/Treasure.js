@@ -3,6 +3,7 @@ import { RARITY_CONFIG } from '../data/FishData.js';
 import { getRandomBottleMessage } from '../data/DriftMessages.js';
 import { withCanvasState } from '../rendering/CanvasState.js';
 import { positionLineAttachment } from './LineAttachment.js';
+import { drawTreasureArtwork } from '../rendering/TreasureArtwork.js';
 
 function drawRealmArtifact(ctx, item, time) {
   const name = (item.name || '').toLowerCase();
@@ -231,7 +232,9 @@ export class Treasure {
     ctx.fill();
     ctx.globalAlpha = 1;
 
-    if (this.itemConfig.realmStyle && !this.isCrate) {
+    if (!this.isCrate && drawTreasureArtwork(ctx, this.itemConfig)) {
+      // Shared original art also appears in the tackle box and specimen view.
+    } else if (this.itemConfig.realmStyle && !this.isCrate) {
       drawRealmArtifact(ctx, this.itemConfig, this.timer);
     } else if (this.isCrate || this.category === 'crate') {
       drawChest(ctx, this.itemConfig, this.radius, this.timer, this.isMimic && this.mimicRevealed);

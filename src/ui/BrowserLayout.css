@@ -138,3 +138,4 @@
   body:has(#touch-controls:not([hidden])) #game-notices { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); }
 }
 @media (prefers-reduced-motion: reduce) { #toast-notification, .btn-reel-dive, #touch-controls button { transition: none; } }
+.inv-card-icon > svg[data-treasure] { display: block; width: 40px; height: 40px; flex-shrink: 0; }

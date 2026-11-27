@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "test": "node --test tests/*.test.js",
-    "test:browser": "node tests/browser-smoke.mjs && node tests/aura-browser.mjs && node tests/visual-polish.mjs && node tests/voyage-polish.mjs && node tests/rendering-matrix.mjs && node tests/asset-identity.mjs && node tests/harbor-polish.mjs && node tests/deep-ocean-polish.mjs && node tests/browser-layout.mjs && node tests/browser-notices.mjs",
+    "test:browser": "node tests/browser-smoke.mjs && node tests/aura-browser.mjs && node tests/visual-polish.mjs && node tests/voyage-polish.mjs && node tests/rendering-matrix.mjs && node tests/asset-identity.mjs && node tests/harbor-polish.mjs && node tests/deep-ocean-polish.mjs && node tests/browser-layout.mjs && node tests/browser-notices.mjs && node tests/treasure-bottles.mjs && node tests/treasure-art.mjs",
     "typecheck": "tsc --project tsconfig.json",
     "build": "vite build && npm run favicon:check",
     "favicon:generate": "node scripts/generate-favicons.mjs",
@@ -15,7 +15,7 @@
     "preview": "vite preview",
     "indexnow": "node scripts/notify-indexnow.js",
     "deploy:hosting": "npx firebase deploy --only hosting && npm run indexnow",
-    "test:offline": "node tests/offline-lifecycle.mjs && node tests/offline-app.mjs"
+    "test:offline": "node tests/offline-lifecycle.mjs && node tests/offline-updates.mjs && node tests/offline-app.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

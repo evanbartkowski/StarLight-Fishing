@@ -4,7 +4,7 @@ export function initializeInstallGame({ production = import.meta.env.PROD } = {}
   const status = document.getElementById('offline-status'), guidance = document.getElementById('install-guidance');
   const install = document.getElementById('install-native'), music = document.getElementById('offline-music');
   const retry = document.getElementById('offline-retry'), update = document.getElementById('offline-update');
-  let deferredPrompt = null, registration = null, musicBusy = false;
+  let deferredPrompt = null, registration = null, musicBusy = false, activatedUpdate = false;
   const standalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const refreshInstall = () => {
     install.hidden = !deferredPrompt || standalone();
@@ -30,6 +30,24 @@ export function initializeInstallGame({ production = import.meta.env.PROD } = {}
     catch { guidance.textContent = 'Use your browser’s Install app option to finish installation.'; }
   });
   const setStatus = (text, ready = false) => { status.textContent = text; status.dataset.ready = String(ready); };
+  let hadController = !!navigator.serviceWorker?.controller;
+  const refreshWelcome = () => {
+    const welcome = document.getElementById('welcome-popup');
+    // Don't erase a login being typed, or interrupt a game already in progress.
+    const editing = welcome?.querySelector('input:focus') || [...(welcome?.querySelectorAll('input') || [])].some(input => input.value);
+    if (activatedUpdate && welcome && getComputedStyle(welcome).display !== 'none' && !editing && !dialog.open) location.reload();
+  };
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    if (hadController) {
+      activatedUpdate = true;
+      update.hidden = false;
+      setStatus('An updated game is ready. Refresh to use it.');
+      button.title = 'Game update ready';
+      refreshWelcome();
+    }
+    hadController = true;
+  });
+  document.getElementById('welcome-popup')?.addEventListener('focusout', () => setTimeout(refreshWelcome, 0));
   const workerMessage = (worker, type) => new Promise((resolve, reject) => {
     const channel = new MessageChannel();
     const timer = setTimeout(() => { channel.port1.close(); reject(Error('The offline copy is still preparing. Try again in a moment.')); }, 12000);
@@ -41,7 +59,7 @@ export function initializeInstallGame({ production = import.meta.env.PROD } = {}
     if (registration.waiting) {
       update.hidden = false; setStatus('An updated offline game is ready. Refresh to use it.'); return;
     }
-    update.hidden = true;
+    update.hidden = !activatedUpdate;
     const result = await workerMessage(registration.active, 'OFFLINE_STATUS');
     setStatus(result.ready ? 'Ready for offline play. Your progress saves on this device.' : 'Preparing the offline game…', result.ready);
     music.hidden = !result.ready;
@@ -79,6 +97,7 @@ export function initializeInstallGame({ production = import.meta.env.PROD } = {}
   };
   retry.addEventListener('click', prepare);
   update.addEventListener('click', () => {
+    if (activatedUpdate) { location.reload(); return; }
     if (!registration?.waiting) return;
     navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
     registration.waiting.postMessage({ type: 'ACTIVATE_UPDATE' });
@@ -98,5 +117,8 @@ export function initializeInstallGame({ production = import.meta.env.PROD } = {}
     };
     registration.active.postMessage({ type: 'DOWNLOAD_MUSIC' }, [channel.port2]);
   });
+  const checkUpdate = () => { if (!document.hidden) registration?.update().catch(() => {}); };
+  window.addEventListener('online', checkUpdate);
+  window.addEventListener('focus', checkUpdate);
   refreshInstall(); prepare();
 }

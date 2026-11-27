@@ -512,30 +512,12 @@ export class Hook {
         const dragOffset = Math.max(-45, Math.min(45, -(this.vx || 0) * 0.035));
         const microSway = Math.sin((this.lineWaveTimer || 0) * 2.2) * 2.5;
 
-        // When diving deep (cameraY is large), rodTip is off-screen above the viewport (drawRodY < 0).
-        // Evaluate the exact Bezier entry point cleanly along the true curve so the line never jumps!
-        if (drawRodY < -20) {
-          const totalDy = (drawHookY - drawRodY) || 1;
-          const t = Math.max(0, Math.min(1, (0 - drawRodY) / totalDy));
-          const sagWorldX = (tipX + hookX) / 2 + dragOffset + microSway;
-          const sagWorldY = (drawRodY + drawHookY) / 2;
-          const oneMinusT = 1 - t;
-          const entryX = oneMinusT * oneMinusT * tipX + 2 * oneMinusT * t * sagWorldX + t * t * hookX;
-          const subCtrlX = (1 - t) * sagWorldX + t * hookX;
-          const subCtrlY = (1 - t) * sagWorldY + t * drawHookY;
-          const canvasW = (typeof window !== 'undefined' && window.innerWidth)
-            ? window.innerWidth
-            : (ctx.canvas ? ctx.canvas.width : 1200);
-          const clampedEntryX = Math.max(-60, Math.min(canvasW + 60, entryX));
-
-          ctx.moveTo(clampedEntryX, 0);
-          ctx.quadraticCurveTo(subCtrlX, Math.max(0, subCtrlY), hookX, drawHookY);
-        } else {
-          const sagX = (tipX + hookX) / 2 + dragOffset + microSway;
-          const sagY = (drawRodY + drawHookY) / 2;
-          ctx.moveTo(tipX, drawRodY);
-          ctx.quadraticCurveTo(sagX, sagY, hookX, drawHookY);
-        }
+        // Canvas clips the original curve itself. Clamping its entry point changes
+        // the curve and separates catches from the wire on narrow screens.
+        const sagX = (tipX + hookX) / 2 + dragOffset + microSway;
+        const sagY = (drawRodY + drawHookY) / 2;
+        ctx.moveTo(tipX, drawRodY);
+        ctx.quadraticCurveTo(sagX, sagY, hookX, drawHookY);
       }
 
       // High-visibility braided line with subtle clean sheen

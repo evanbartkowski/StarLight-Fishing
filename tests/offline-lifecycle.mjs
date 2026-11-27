@@ -56,21 +56,18 @@ try {
   assert.deepEqual(ranges, [{ status: 206, text: 'cdef', range: 'bytes 2-5/12' },
     { status: 206, text: 'ijkl', range: 'bytes 8-11/12' }, { status: 416, text: '', range: 'bytes */12' }]);
   release = 'two';
-  await page.evaluate(async () => (await navigator.serviceWorker.getRegistration()).update());
-  await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration()).waiting);
+  await page.evaluate(async () => {
+    const changed = new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }));
+    await (await navigator.serviceWorker.getRegistration()).update(); await changed;
+  });
   assert.equal(await page.evaluate(() => window.gameRelease), 'one', 'updates must not interrupt the running game');
   await context.setOffline(true); await page.reload();
-  assert.equal(await page.evaluate(() => window.gameRelease), 'one', 'a waiting update must preserve the current offline release');
+  assert.equal(await page.evaluate(() => window.gameRelease), 'two', 'reopening must use the complete updated offline release');
   await context.setOffline(false);
-  await page.evaluate(async () => {
-    const registration = await navigator.serviceWorker.getRegistration();
-    const activated = new Promise(resolve => navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true }));
-    registration.waiting.postMessage({ type: 'ACTIVATE_UPDATE' }); await activated;
-  });
   await page.reload();
   assert.equal(await page.evaluate(() => window.gameRelease), 'two');
   assert.deepEqual((await page.evaluate(() => caches.keys())).sort(),
-    ['starlight-fishing-audio-qa-audio', 'starlight-fishing-core-two', 'unrelated-app']);
+    ['starlight-fishing-audio-qa-audio', 'starlight-fishing-core-one', 'starlight-fishing-core-two', 'unrelated-app']);
   release = 'broken';
   await page.evaluate(async () => {
     const registration = await navigator.serviceWorker.getRegistration();
@@ -84,5 +81,5 @@ try {
   await context.setOffline(true); await page.reload();
   assert.equal(await page.evaluate(() => window.gameRelease), 'two', 'failed downloads must leave a working offline game');
   assert.ok(!(await page.evaluate(() => caches.keys())).includes('starlight-fishing-core-broken'));
-  console.log('PASS offline lifecycle: atomic downloads, safe waiting updates, explicit activation, failed-update recovery, unrelated cache preservation, music reuse and audio range requests');
+  console.log('PASS offline lifecycle: atomic downloads, uninterrupted running game, current offline reload, failed-update recovery, previous bundle retention, unrelated cache preservation, music reuse and audio ranges');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
