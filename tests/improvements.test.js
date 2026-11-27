@@ -576,3 +576,17 @@ test('Casual Chrono Void fish have reduced swirl/dots and Realm 1 corner Gambler
   assert.equal(bjRes.outcome, 'blackjack');
   assert.equal(bjRes.payout, 10);
 });
+
+test('Welcome screen keeps single Instant Guest Sail CTA and centers Log In and Register tabs', async () => {
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  assert.ok(html.includes('Play Free Now (Instant Guest Sail) ⛵'));
+  assert.ok(html.includes('id="btn-guest-start"'));
+  assert.ok(!html.includes('id="tab-auth-guest"'));
+  assert.ok(!html.includes('id="panel-auth-guest"'));
+  assert.ok(!html.includes('Continue as Guest'));
+  assert.ok(html.includes('id="tab-auth-login"'));
+  assert.ok(html.includes('id="tab-auth-register"'));
+  assert.ok(/\.auth-nav-tabs\s*\{[^}]*justify-content:\s*center/.test(css));
+});

@@ -250,22 +250,17 @@
 
           <!-- Guest vs Login/Register Selector (shown if not logged in or switching) -->
           <div class="auth-form-view" id="auth-form-view">
-            <div class="auth-nav-tabs">
-              <button type="button" class="auth-nav-tab active" id="tab-auth-guest" data-tab="guest">⛵ Guest</button>
-              <button type="button" class="auth-nav-tab" id="tab-auth-login" data-tab="login">🔑 Log In</button>
-              <button type="button" class="auth-nav-tab" id="tab-auth-register" data-tab="register">✍️ Register</button>
+            <button type="button" class="btn btn-primary btn-welcome-instant" id="btn-guest-start">
+              Play Free Now (Instant Guest Sail) ⛵
+            </button>
+
+            <div class="auth-nav-tabs" role="tablist" aria-label="Account options">
+              <button type="button" class="auth-nav-tab active" id="tab-auth-login" data-tab="login" role="tab" aria-selected="true">🔑 Log In</button>
+              <button type="button" class="auth-nav-tab" id="tab-auth-register" data-tab="register" role="tab" aria-selected="false">✍️ Register</button>
             </div>
 
-            <!-- Tab 1: Guest Mode -->
-            <div class="auth-tab-panel active" id="panel-auth-guest">
-              <p class="auth-tab-desc">Play immediately without an account. Progress saves locally to this browser.</p>
-              <button class="btn btn-primary btn-welcome-start" id="btn-guest-start">
-                Continue as Guest ⛵
-              </button>
-            </div>
-
-            <!-- Tab 2: Log In Mode -->
-            <div class="auth-tab-panel" id="panel-auth-login" style="display: none;">
+            <!-- Tab 1: Log In Mode -->
+            <div class="auth-tab-panel active" id="panel-auth-login">
               <p class="auth-tab-desc">Log into your Captain account to load your saved ocean career.</p>
               <form class="auth-inputs-form" id="form-auth-login" onsubmit="return false;">
                 <div class="auth-input-group">

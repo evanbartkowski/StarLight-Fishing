@@ -488,11 +488,9 @@ export class UIManager {
     const formView = document.getElementById('auth-form-view');
     const currentUsernameEl = document.getElementById('auth-current-username');
 
-    const tabGuest = document.getElementById('tab-auth-guest');
     const tabLogin = document.getElementById('tab-auth-login');
     const tabRegister = document.getElementById('tab-auth-register');
 
-    const panelGuest = document.getElementById('panel-auth-guest');
     const panelLogin = document.getElementById('panel-auth-login');
     const panelRegister = document.getElementById('panel-auth-register');
 
@@ -557,12 +555,16 @@ export class UIManager {
       }
     };
 
-    const switchTab = (tabName) => {
-      [tabGuest, tabLogin, tabRegister].forEach(t => t?.classList.remove('active'));
-      [panelGuest, panelLogin, panelRegister].forEach(p => {
+    const switchTab = (tabName, focusInput = false) => {
+      const targetTab = tabName === 'register' ? 'register' : 'login';
+      [tabLogin, tabRegister].forEach(t => {
+        t?.classList?.remove('active');
+        t?.setAttribute?.('aria-selected', 'false');
+      });
+      [panelLogin, panelRegister].forEach(p => {
         if (p) {
-          p.classList.remove('active');
-          p.style.display = 'none';
+          p.classList?.remove('active');
+          if (p.style) p.style.display = 'none';
         }
       });
 
@@ -575,18 +577,21 @@ export class UIManager {
         regFeedback.className = 'auth-feedback';
       }
 
-      if (tabName === 'guest') {
-        tabGuest?.classList.add('active');
-        if (panelGuest) {
-          panelGuest.classList.add('active');
-          panelGuest.style.display = 'flex';
+      if (targetTab === 'register') {
+        tabRegister?.classList?.add('active');
+        tabRegister?.setAttribute?.('aria-selected', 'true');
+        if (panelRegister) {
+          panelRegister.classList?.add('active');
+          if (panelRegister.style) panelRegister.style.display = 'flex';
         }
-        updatePreviewStats(null);
-      } else if (tabName === 'login') {
-        tabLogin?.classList.add('active');
+        updatePreviewStats('__new_account__');
+        if (focusInput) setTimeout(() => regUser?.focus(), 50);
+      } else {
+        tabLogin?.classList?.add('active');
+        tabLogin?.setAttribute?.('aria-selected', 'true');
         if (panelLogin) {
-          panelLogin.classList.add('active');
-          panelLogin.style.display = 'flex';
+          panelLogin.classList?.add('active');
+          if (panelLogin.style) panelLogin.style.display = 'flex';
         }
         const val = loginUser?.value?.trim();
         if (val && accountManager.hasAccount(val)) {
@@ -594,21 +599,12 @@ export class UIManager {
         } else {
           updatePreviewStats(null);
         }
-        setTimeout(() => loginUser?.focus(), 50);
-      } else if (tabName === 'register') {
-        tabRegister?.classList.add('active');
-        if (panelRegister) {
-          panelRegister.classList.add('active');
-          panelRegister.style.display = 'flex';
-        }
-        updatePreviewStats('__new_account__');
-        setTimeout(() => regUser?.focus(), 50);
+        if (focusInput) setTimeout(() => loginUser?.focus(), 50);
       }
     };
 
-    tabGuest?.addEventListener('click', () => switchTab('guest'));
-    tabLogin?.addEventListener('click', () => switchTab('login'));
-    tabRegister?.addEventListener('click', () => switchTab('register'));
+    tabLogin?.addEventListener('click', () => switchTab('login', true));
+    tabRegister?.addEventListener('click', () => switchTab('register', true));
 
     loginUser?.addEventListener('input', () => {
       const val = loginUser.value.trim();
@@ -667,7 +663,7 @@ export class UIManager {
     } else {
       if (loggedInView) loggedInView.style.display = 'none';
       if (formView) formView.style.display = 'flex';
-      switchTab('guest');
+      switchTab('login');
     }
 
     document.getElementById('btn-welcome-start')?.addEventListener('click', async () => {

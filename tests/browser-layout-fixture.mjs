@@ -5,7 +5,8 @@ export async function openLayoutGame(page, base = process.env.GAME_TEST_URL || '
     await route.fulfill({ response, body: `${await response.text()}\nwindow.layoutGame={save,uiManager,hook,oceanWorld,gameLoop,touchControls,npcSystem,update,render,setState:s=>{gameState=s;hook.state=s;}};` });
   });
   await page.goto(base); await page.waitForFunction(() => window.layoutGame);
-  if (await page.locator('#btn-instant-play').count()) throw Error('The duplicate guest entry must be removed');
+  if (await page.locator('#tab-auth-guest, #panel-auth-guest').count()) throw Error('The duplicate guest entry must be removed');
+  if (await page.locator('#btn-guest-start').count() !== 1) throw Error('Single Instant Guest Sail entry must be present');
   if (await page.locator('#touch-controls').isVisible()) throw Error('Reel controls must stay hidden on the welcome screen');
   await page.evaluate(() => {
     const { save, npcSystem } = window.layoutGame;
