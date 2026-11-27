@@ -148,12 +148,12 @@ export function drawChronoVoidFish(ctx, species, primary, secondary, finColor, t
       }
       ctx.fillRect(wx - 14, wy - 12, 28, 24);
 
-      // Rotating spiral spacetime arms pulled into singularity
+      // Rotating spiral spacetime arms pulled into singularity (calm hypnotic rotation)
       ctx.strokeStyle = 'rgba(224, 242, 254, 0.85)';
       ctx.lineWidth = 1.15;
       for (let arm = 0; arm < 4; arm++) {
         ctx.beginPath();
-        const baseA = time * 2.8 + arm * (Math.PI / 2);
+        const baseA = time * 0.72 + arm * (Math.PI / 2);
         for (let r = 1.5; r <= 11; r += 1.6) {
           const a = baseA + r * 0.38;
           const px = wx + Math.cos(a) * r * 1.1;

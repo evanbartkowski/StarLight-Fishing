@@ -1,0 +1,467 @@
+// Bespoke high-craft artwork for requested signature species across all realms.
+const TAU = Math.PI * 2;
+
+function drawEye(ctx, x, y, r = 2.5, iris = '#38bdf8', glow = false) {
+  ctx.save();
+  if (glow) {
+    ctx.fillStyle = `${iris}44`;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 1.85, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#f8fafc';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = iris;
+  ctx.beginPath();
+  ctx.arc(x + r * 0.18, y, r * 0.62, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath();
+  ctx.arc(x + r * 0.24, y, r * 0.34, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(x + r * 0.3, y - r * 0.3, Math.max(0.5, r * 0.25), 0, TAU);
+  ctx.fill();
+  ctx.restore();
+}
+
+export const BESPOKE_SPECIES_IDS = new Set([
+  'realm_7_visitor_2',          // Upside-Down Oracle
+  'realm_6_basalt_glassfish',   // Basalt Glassfish
+  'realm_6_flarecrest_marlin',  // Flarecrest Marlin
+  'realm_5_dewdrop_glassfish',  // Dewdrop Glassfish
+  'realm_5_aether_sail_emperor',// Aether Sail Emperor
+  'realm_7_quantum_veil_ray',   // Quantum Veil Ray
+  'realm_3_moonring_discus',    // Moonring Discus
+  'realm_3_sundial_seahorse',   // Sundial Seahorse
+  'realm_1_visitor_1',          // Sunbeam Whale
+]);
+
+export function isBespokeSpecies(species) {
+  return Boolean(species && BESPOKE_SPECIES_IDS.has(species.id));
+}
+
+export function drawBespokeSpecies(ctx, species, primary, secondary, finColor, time = 0) {
+  if (!isBespokeSpecies(species)) return false;
+  const id = species.id;
+  const wave = Math.sin(time * 2.4) * 2.6;
+  const pCol = typeof primary === 'string' ? primary : (species.primaryColor || '#38bdf8');
+  const sCol = typeof secondary === 'string' ? secondary : (species.secondaryColor || '#bae6fd');
+  const fCol = typeof finColor === 'string' ? finColor : (species.finColor || '#f59e0b');
+
+  ctx.save();
+  try {
+    // 1. Upside-Down Oracle (Chrono Void inverted cosmic seahorse with floating aura veil)
+    if (id === 'realm_7_visitor_2') {
+      ctx.save();
+      ctx.scale(1, -1); // Inverted orientation signature!
+      // Ethereal cyan veil fins
+      ctx.fillStyle = 'rgba(34, 211, 238, 0.42)';
+      ctx.strokeStyle = '#67e8f9';
+      ctx.lineWidth = 0.9;
+      ctx.beginPath();
+      ctx.moveTo(-6, -4);
+      ctx.bezierCurveTo(-18, -14 + wave, -22, 6 + wave, -9, 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Curled prehensile spiral tail
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 4.2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-2, 10);
+      ctx.bezierCurveTo(-14, 24, 10, 30, 8, 18);
+      ctx.stroke();
+
+      // Sleek cosmic seahorse torso & crown
+      let grad = pCol;
+      try {
+        grad = ctx.createLinearGradient(-8, -22, 14, 14);
+        grad.addColorStop(0, '#c084fc');
+        grad.addColorStop(0.5, pCol);
+        grad.addColorStop(1, '#22d3ee');
+      } catch { /* fallback */ }
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = '#e0e7ff';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(-4, 12);
+      ctx.bezierCurveTo(-14, 0, -9, -15, 2, -20);
+      ctx.lineTo(14, -17);
+      ctx.lineTo(17, -13);
+      ctx.lineTo(6, -11);
+      ctx.bezierCurveTo(10, -2, 8, 8, -4, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Glowing Third-Eye Diamond Halo on Forehead
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.arc(2, -21, 5.5, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.arc(2, -21, 1.8, 0, TAU);
+      ctx.fill();
+
+      drawEye(ctx, 6, -15.5, 2.3, '#22d3ee', true);
+      ctx.restore();
+      return true;
+    }
+
+    // 2. Basalt Glassfish & Dewdrop Glassfish (Translucent crystal body revealing delicate glowing skeleton)
+    if (id === 'realm_6_basalt_glassfish' || id === 'realm_5_dewdrop_glassfish') {
+      const isBasalt = id === 'realm_6_basalt_glassfish';
+      const l = 21;
+      const h = 13.5;
+
+      // Swept translucent veil tail
+      ctx.save();
+      ctx.globalAlpha *= 0.65;
+      ctx.fillStyle = fCol;
+      ctx.strokeStyle = isBasalt ? '#fb923c' : '#e0e7ff';
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(-l + 3, -3);
+      ctx.quadraticCurveTo(-l - 9, -h * 0.85, -l - 15, -h * 0.9 - wave * 0.5);
+      ctx.quadraticCurveTo(-l - 8, 0, -l - 15, h * 0.9 - wave * 0.5);
+      ctx.quadraticCurveTo(-l - 9, h * 0.85, -l + 3, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Angular volcanic glass OR curved cloud-droplet silhouette
+      ctx.fillStyle = isBasalt ? 'rgba(239, 68, 68, 0.34)' : 'rgba(233, 213, 255, 0.38)';
+      ctx.strokeStyle = isBasalt ? '#f97316' : '#f8fafc';
+      ctx.lineWidth = 1.35;
+      ctx.beginPath();
+      if (isBasalt) {
+        ctx.moveTo(-l, 0);
+        ctx.lineTo(-l * 0.45, -h);
+        ctx.lineTo(l * 0.55, -h * 0.78);
+        ctx.lineTo(l + 2, -1);
+        ctx.lineTo(l * 0.55, h * 0.78);
+        ctx.lineTo(-l * 0.45, h);
+      } else {
+        ctx.moveTo(-l, 0);
+        ctx.bezierCurveTo(-l * 0.6, -h * 1.15, l * 0.5, -h * 1.1, l + 1, -1);
+        ctx.bezierCurveTo(l * 0.6, h * 1.08, -l * 0.6, h * 1.15, -l, 0);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Glowing crystal spine & ribs inside the translucent glass body!
+      ctx.strokeStyle = isBasalt ? '#fef08a' : '#f9a8d4';
+      ctx.lineWidth = 1.25;
+      ctx.beginPath();
+      ctx.moveTo(-l * 0.78, 0);
+      ctx.lineTo(l * 0.42, 0);
+      for (let r = -3; r <= 2; r++) {
+        const rx = r * 4.5;
+        ctx.moveTo(rx, -6.5);
+        ctx.quadraticCurveTo(rx - 1.5, 0, rx, 6.5);
+      }
+      ctx.stroke();
+
+      // Dewdrop pearl or ember heart
+      ctx.fillStyle = isBasalt ? '#fb923c' : '#e0f2fe';
+      ctx.beginPath();
+      ctx.arc(4, 0, 3.2, 0, TAU);
+      ctx.fill();
+
+      drawEye(ctx, l * 0.64, -3, 2.5, isBasalt ? '#fde047' : '#c084fc', true);
+      return true;
+    }
+
+    // 3. Flarecrest Marlin & Aether Sail Emperor (Regal towering sailfish crests)
+    if (id === 'realm_6_flarecrest_marlin' || id === 'realm_5_aether_sail_emperor') {
+      const isAether = id === 'realm_5_aether_sail_emperor';
+      const len = 29;
+      const h = 11.5;
+
+      // Deep forked billfish crescent tail
+      ctx.fillStyle = fCol;
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(-len + 2, -2.5);
+      ctx.quadraticCurveTo(-len - 10, -10, -len - 17, -15 + wave * 0.6);
+      ctx.quadraticCurveTo(-len - 8, 0, -len - 6, 0);
+      ctx.quadraticCurveTo(-len - 8, 0, -len - 17, 15 + wave * 0.6);
+      ctx.quadraticCurveTo(-len - 10, 10, -len + 2, 2.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Sweeping towering sail dorsal crest
+      let sailG = fCol;
+      try {
+        sailG = ctx.createLinearGradient(-18, -32, 16, -6);
+        sailG.addColorStop(0, isAether ? '#f0abfc' : '#fef08a');
+        sailG.addColorStop(0.55, isAether ? '#a5b4fc' : '#f97316');
+        sailG.addColorStop(1, isAether ? '#38bdf8' : '#dc2626');
+      } catch { /* fallback */ }
+      ctx.fillStyle = sailG;
+      ctx.beginPath();
+      ctx.moveTo(-18, -6);
+      ctx.quadraticCurveTo(-14, -32 + wave * 0.35, -2, -29 + wave * 0.25);
+      ctx.quadraticCurveTo(8, -26, 15, -18);
+      ctx.quadraticCurveTo(14, -9, 12, -7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Sail ray spines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 0.75;
+      for (let sr = 0; sr < 5; sr++) {
+        ctx.beginPath();
+        ctx.moveTo(-13 + sr * 5.8, -7);
+        ctx.lineTo(-10 + sr * 5.2, -26 + sr * 1.4);
+        ctx.stroke();
+      }
+
+      // Muscular marlin hull + tapered glowing spear bill
+      let bodyG = pCol;
+      try {
+        bodyG = ctx.createLinearGradient(0, -h, 0, h);
+        bodyG.addColorStop(0, pCol);
+        bodyG.addColorStop(0.65, sCol);
+        bodyG.addColorStop(1, '#f8fafc');
+      } catch { /* fallback */ }
+      ctx.fillStyle = bodyG;
+      ctx.beginPath();
+      ctx.moveTo(-len, 0);
+      ctx.bezierCurveTo(-len * 0.55, -h * 1.15, len * 0.45, -h * 1.1, len, -1.5);
+      ctx.lineTo(len + 22, -0.5);
+      ctx.lineTo(len, 2);
+      ctx.bezierCurveTo(len * 0.45, h * 1.05, -len * 0.55, h, -len, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Broad curved pectoral fin
+      ctx.fillStyle = fCol;
+      ctx.beginPath();
+      ctx.moveTo(8, 3);
+      ctx.quadraticCurveTo(10, 14, -2, 16 + wave * 0.35);
+      ctx.quadraticCurveTo(0, 8, 2, 3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      drawEye(ctx, len - 8, -3, 2.5, isAether ? '#c084fc' : '#fef08a', true);
+      return true;
+    }
+
+    // 4. Quantum Veil Ray (Manta wings tapering into trailing cosmic silk veil ribbons)
+    if (id === 'realm_7_quantum_veil_ray') {
+      const flap = Math.sin(time * 2.2) * 4;
+      // 3 trailing cosmic silk veil ribbons
+      for (let v = -1; v <= 1; v++) {
+        ctx.strokeStyle = v === 0 ? '#22d3ee' : fCol;
+        ctx.lineWidth = v === 0 ? 2.2 : 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-14, v * 4);
+        ctx.bezierCurveTo(-26, v * 8 + flap, -38, v * 5 - flap, -52, v * 7 + flap * 0.6);
+        ctx.stroke();
+      }
+
+      // Expansive silk manta wings
+      let rayG = pCol;
+      try {
+        rayG = ctx.createLinearGradient(-15, -26, 22, 26);
+        rayG.addColorStop(0, '#c084fc');
+        rayG.addColorStop(0.5, pCol);
+        rayG.addColorStop(1, sCol);
+      } catch { /* fallback */ }
+      ctx.fillStyle = rayG;
+      ctx.strokeStyle = '#e0e7ff';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(21, -4);
+      ctx.lineTo(27, -7);
+      ctx.quadraticCurveTo(11, -24, -4, -25 + flap);
+      ctx.quadraticCurveTo(-15, -12, -16, 0);
+      ctx.quadraticCurveTo(-15, 12, -4, 25 - flap);
+      ctx.quadraticCurveTo(11, 24, 27, 7);
+      ctx.lineTo(21, 4);
+      ctx.quadraticCurveTo(23, 0, 21, -4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Delicate arcane mandala ring on wings
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.72)';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.ellipse(-1, 0, 8, 12, 0, 0, TAU);
+      ctx.stroke();
+
+      drawEye(ctx, 11, -5, 2.0, '#67e8f9', true);
+      drawEye(ctx, 11, 5, 2.0, '#67e8f9', true);
+      return true;
+    }
+
+    // 5. Moonring Discus (Jewel discus with luminous silver moon-phase halos & veil fins)
+    if (id === 'realm_3_moonring_discus') {
+      const r = 17.5;
+      // Graceful moon-veil dorsal & anal trailing fins
+      ctx.fillStyle = 'rgba(196, 181, 253, 0.62)';
+      ctx.strokeStyle = '#e0e7ff';
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(-4, -r + 2);
+      ctx.quadraticCurveTo(-22, -r - 9 + wave * 0.4, -30, -8 + wave * 0.4);
+      ctx.quadraticCurveTo(-18, -4, -15, 0);
+      ctx.quadraticCurveTo(-18, 4, -30, 8 - wave * 0.4);
+      ctx.quadraticCurveTo(-22, r + 9 - wave * 0.4, -4, r - 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Discus circular jewel body
+      let discG = pCol;
+      try {
+        discG = ctx.createRadialGradient(4, -4, 2, 0, 0, r * 1.15);
+        discG.addColorStop(0, '#f0abfc');
+        discG.addColorStop(0.55, pCol);
+        discG.addColorStop(1, '#312e81');
+      } catch { /* fallback */ }
+      ctx.fillStyle = discG;
+      ctx.strokeStyle = '#e0e7ff';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.12, r, 0, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+
+      // Silver moon-ring halo motif + crescent moon
+      ctx.strokeStyle = 'rgba(254, 249, 195, 0.85)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(-3, 0, 9.5, 0.5, TAU - 0.5);
+      ctx.stroke();
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(-5, 0, 4.2, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = pCol;
+      ctx.beginPath();
+      ctx.arc(-3.5, -0.5, 3.4, 0, TAU);
+      ctx.fill();
+
+      drawEye(ctx, 11, -4, 2.6, '#fde047', true);
+      return true;
+    }
+
+    // 6. Sundial Seahorse (Graceful golden-lavender seahorse with brass sundial halo ring)
+    if (id === 'realm_3_sundial_seahorse') {
+      // Ornate radiating brass sundial halo behind spine
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(-4, -4, 14, 0, TAU);
+      ctx.stroke();
+      for (let hr = 0; hr < 8; hr++) {
+        const a = (hr / 8) * TAU;
+        ctx.beginPath();
+        ctx.moveTo(-4 + Math.cos(a) * 11.5, -4 + Math.sin(a) * 11.5);
+        ctx.lineTo(-4 + Math.cos(a) * 16.5, -4 + Math.sin(a) * 16.5);
+        ctx.stroke();
+      }
+      // Sundial gnomon pointer & curled seahorse silhouette
+      ctx.fillStyle = pCol;
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.15;
+      ctx.beginPath();
+      ctx.moveTo(-3, 14);
+      ctx.bezierCurveTo(-18, 28, 12, 32, 7, 19);
+      ctx.bezierCurveTo(1, 13, -7, 17, -3, 14);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(-4, 12);
+      ctx.bezierCurveTo(-15, -1, -9, -15, 2, -20);
+      ctx.lineTo(15, -16);
+      ctx.lineTo(16, -11);
+      ctx.lineTo(6, -10);
+      ctx.bezierCurveTo(10, -2, 7, 9, -4, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      drawEye(ctx, 6, -15, 2.2, '#fde047', true);
+      return true;
+    }
+
+    // 7. Sunbeam Whale (Majestic warm sunlit humpback with scalloped pectoral wings & sunburst belly)
+    if (id === 'realm_1_visitor_1') {
+      const tailWave = Math.sin(time * 1.8) * 3.5;
+      // Wide scalloped whale tail fluke
+      ctx.fillStyle = fCol;
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(-34, 0);
+      ctx.quadraticCurveTo(-46, -14 + tailWave, -56, -18 + tailWave);
+      ctx.quadraticCurveTo(-46, -3 + tailWave * 0.4, -44, tailWave * 0.2);
+      ctx.quadraticCurveTo(-46, 3 + tailWave * 0.4, -56, 18 + tailWave);
+      ctx.quadraticCurveTo(-46, 14 + tailWave, -34, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Humpback whale hull with warm golden-cream countershading
+      let whaleG = pCol;
+      try {
+        whaleG = ctx.createLinearGradient(0, -18, 0, 18);
+        whaleG.addColorStop(0, '#d97706');
+        whaleG.addColorStop(0.45, pCol);
+        whaleG.addColorStop(1, '#fffbeb');
+      } catch { /* fallback */ }
+      ctx.fillStyle = whaleG;
+      ctx.beginPath();
+      ctx.moveTo(-36, 0);
+      ctx.bezierCurveTo(-24, -16, 8, -20, 32, -8);
+      ctx.bezierCurveTo(40, -3, 38, 9, 26, 13);
+      ctx.bezierCurveTo(4, 18, -22, 12, -36, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Sunburst dorsal glint & scalloped humpback flipper
+      ctx.strokeStyle = '#fef3c7';
+      ctx.lineWidth = 1.0;
+      for (let p = 0; p < 5; p++) {
+        ctx.beginPath();
+        ctx.moveTo(4, 8 + p * 1.5);
+        ctx.quadraticCurveTo(16, 9 + p * 1.3, 28 - p * 2, 7 + p * 1.2);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#fef3c7';
+      ctx.beginPath();
+      ctx.moveTo(8, 6);
+      ctx.quadraticCurveTo(2, 24 + wave * 0.3, -12, 26 + wave * 0.4);
+      ctx.quadraticCurveTo(-4, 15, 0, 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      drawEye(ctx, 24, -2, 2.4, '#0284c7');
+      return true;
+    }
+  } finally {
+    ctx.restore();
+  }
+  return false;
+}

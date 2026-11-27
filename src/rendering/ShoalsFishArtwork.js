@@ -69,11 +69,11 @@ export function drawShoalsFish(ctx,species,primary,secondary,finColor,time){
   if(kind==='clown'){
    for(const x of [-14,0,15]){ctx.strokeStyle='#243447';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(x-2,-h-3);ctx.quadraticCurveTo(x+4,0,x-2,h+3);ctx.stroke();ctx.strokeStyle='#fff8e2';ctx.lineWidth=4;ctx.stroke();}
   }else if(kind==='tang'){
-   // Clean royal sapphire palette-surgeonfish saddle + golden surgical tail band
-   path(ctx,c=>{c.moveTo(-19,-7);c.bezierCurveTo(-6,-15,8,-12,17,-6);c.quadraticCurveTo(5,-1,-6,-1);c.bezierCurveTo(-11,0,-14,4,-19,4);},'#0f172a',null);
-   oval(ctx,-3,-5,8,4.2,'#38bdf8');
-   ctx.fillStyle='#facc15';ctx.fillRect(-l+1,-4,5,8);
-   ctx.strokeStyle='#bae6fd';ctx.lineWidth=.9;ctx.beginPath();ctx.moveTo(-15,8);ctx.quadraticCurveTo(0,11,13,3);ctx.stroke();
+   // Clean royal sapphire palette-surgeonfish saddle + bright blue cheek & crisp golden tail wedge
+   path(ctx,c=>{c.moveTo(-18,-6);c.bezierCurveTo(-4,-15,9,-12,17,-6);c.quadraticCurveTo(4,-1,-7,-1);c.bezierCurveTo(-11,0,-14,4,-18,4);},'#0f172a',null);
+   oval(ctx,-2,-5,8.5,4.2,'#38bdf8');
+   path(ctx,c=>{c.moveTo(-l+2,-3);c.lineTo(-l-12,-9+wave);c.lineTo(-l-10,9+wave);c.lineTo(-l+2,3);},'#facc15','#173f4c');
+   ctx.strokeStyle='#bae6fd';ctx.lineWidth=.95;ctx.beginPath();ctx.moveTo(-14,8);ctx.quadraticCurveTo(0,11,13,3);ctx.stroke();
   }else if(kind==='butterfly'){
    ctx.strokeStyle='#f6edbc';ctx.lineWidth=1;for(let x=-16;x<14;x+=5){ctx.beginPath();ctx.moveTo(x,-h);ctx.lineTo(x+9,h);ctx.stroke();}ctx.strokeStyle='#293638';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(13,-h);ctx.lineTo(18,h);ctx.stroke();oval(ctx,-11,-4,6,7,'#f9edbe');oval(ctx,-11,-4,4,5,'#253c4c');
   }else if(kind==='minnow'||kind==='sardine'){
@@ -81,7 +81,14 @@ export function drawShoalsFish(ctx,species,primary,secondary,finColor,time){
   }else if(kind==='mandarin'){
    ctx.lineWidth=2;ctx.strokeStyle='#153f79';for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(-15+i*9,Math.sin(i)*4,6,12,-.4,0,tau);ctx.stroke();ctx.strokeStyle='#57d8c5';ctx.lineWidth=1;ctx.stroke();ctx.strokeStyle='#153f79';ctx.lineWidth=2;}
   }else if(kind==='box'){
-   ctx.strokeStyle='rgba(146, 98, 28, 0.55)';ctx.lineWidth=.9;for(let row=0;row<3;row++)for(let col=0;col<4;col++){const x=-12+col*8+(row%2)*4,y=-7+row*7;ctx.beginPath();for(let i=0;i<6;i++){const a=i*tau/6;i?ctx.lineTo(x+Math.cos(a)*4.2,y+Math.sin(a)*4.2):ctx.moveTo(x+Math.cos(a)*4.2,y+Math.sin(a)*4.2);}ctx.closePath();ctx.stroke();oval(ctx,x,y,1.5,1.2,'#fef08a');}
+   // Subtle glossy amber honeycomb cells framed inside central saddle + rosy lip pout
+   oval(ctx,-2,-9,11,3.5,'rgba(255, 255, 255, 0.25)');
+   ctx.strokeStyle='rgba(180, 120, 32, 0.5)';ctx.lineWidth=.95;
+   for(let row=0;row<2;row++)for(let col=0;col<3;col++){
+    const x=-8+col*7.5+(row%2)*3.7,y=-3+row*6.5;
+    ctx.beginPath();for(let i=0;i<6;i++){const a=i*tau/6;i?ctx.lineTo(x+Math.cos(a)*3.8,y+Math.sin(a)*3.8):ctx.moveTo(x+Math.cos(a)*3.8,y+Math.sin(a)*3.8);}
+    ctx.closePath();ctx.stroke();oval(ctx,x,y,1.3,1.1,'rgba(254, 240, 138, 0.85)');
+   }
   }else if(kind==='parrot'){
    for(let row=0;row<4;row++)for(let col=0;col<5;col++){const x=-21+col*8+(row%2)*4,y=-11+row*7;path(ctx,c=>{c.moveTo(x-3,y-3);c.quadraticCurveTo(x+7,y-1,x,y+4);c.quadraticCurveTo(x-5,y+1,x-3,y-3);},['#48b5ab','#819ee3','#e8be8a','#b1dfbe'][row], '#28587a88',.6);}
   }else if(kind==='flounder'){

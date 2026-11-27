@@ -1432,11 +1432,6 @@ export class UIManager {
         <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:10px;">
           Tune your vessel's vintage brass radio to atmospheric soundscapes. Every station plays its own unique track, looping while you sail and fish.
         </p>
-        <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px; background:rgba(15,23,42,0.75); border:1px solid rgba(56,189,248,0.22); border-radius:10px; padding:8px 12px;">
-          <label for="radio-freq-input" style="font-size:0.8rem; color:#93c5fd; font-weight:700; white-space:nowrap;">Manual Dial (MHz):</label>
-          <input type="text" id="radio-freq-input" placeholder="e.g. 7.77" maxlength="10" style="flex:1; background:#020617; color:#fde047; border:1px solid #334155; border-radius:6px; padding:6px 10px; font-weight:700; font-family:monospace;" />
-          <button class="btn btn-secondary btn-sm" id="btn-tune-freq">Tune</button>
-        </div>
         <div style="display:flex; flex-direction:column; gap:10px;">
     `;
 
@@ -1486,23 +1481,6 @@ export class UIManager {
         this.openRadio();
       });
     });
-
-    document.getElementById('btn-tune-freq')?.addEventListener('click', () => {
-      const val = (document.getElementById('radio-freq-input')?.value || '').trim();
-      if (val === '7.77') {
-        if (!save.hasFrequency777?.()) {
-          this.showToast('📻 Static crackles on 7.77 MHz... Find a mysterious radio note in a drifting bottle first!');
-          return;
-        }
-        save.recordEasterEgg?.('secret_radio_777');
-        soundManager.startRadioStation('secret_777');
-        soundManager.playRareChime();
-        this.showToast('📡 Tuned into Secret Frequency 7.77 MHz!');
-        this.openRadio();
-      } else {
-        this.showToast(`📻 Only ocean static on ${val || 'that'} MHz.`);
-      }
-    });
   }
 
   showBottleMessage(message, returnToMessages = false, onReturn = null) {
@@ -1514,7 +1492,7 @@ export class UIManager {
       const newlyFound = this.saveSystem.unlockFrequency777?.();
       this.saveSystem.recordEasterEgg?.('secret_freq_clue');
       if (newlyFound) {
-        this.showToast('📻 Clues unlocked! Tune your boat Radio to frequency 7.77 MHz!');
+        this.showToast('📻 Phantom Frequency unlocked! Select Station 7.77 in your Coastal Radio!');
       }
     }
 

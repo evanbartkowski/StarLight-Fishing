@@ -12,6 +12,7 @@ import { drawPipProjection } from '../rendering/LanternPipArtwork.js';
 import { drawShoalsFish, SHOALS_FISH_DESIGNS } from '../rendering/ShoalsFishArtwork.js';
 import { ENHANCED_FISH_VISUALS, isEnhancedFishShape, drawEnhancedFish, renderCalderaEnhancedAccent } from '../rendering/FishVisualUpgrade.js';
 import { isChronoVoidSpecial, drawChronoVoidFish, isRareEncounterShape, drawRareEncounterCreature } from '../rendering/ChronoVoidArtwork.js';
+import { isBespokeSpecies, drawBespokeSpecies } from '../rendering/BespokeSpeciesArtwork.js';
 
 /**
  * Draws a brilliant faceted 4-point diamond star sparkle with needle flares,
@@ -152,10 +153,17 @@ export class Fish {
     this.size = Math.round(this.size * realmSize * 10) / 10;
     this.weight = Math.round(this.weight * realmSize ** 2.2 * 100) / 100;
 
-    // Visual scale based on species base scale + individual fish size (super large for leviathans)
+    // Visual scale based on species base scale + individual fish size (noticeably larger in Whispering Aether, especially smaller fish; mild boost in all realms)
     const baseScale = species.scaleFactor || 1.0;
-    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 4.5;
-    this.scale = Math.min(maxScaleCap, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55) * realmSize));
+    const isAetherRealm = this.zone === 5 || species.zone === 5 || species.realmId === 5 || (species.id && species.id.startsWith('realm_5_'));
+    const realmVisualBoost = species.isLeviathan
+      ? 1.0
+      : isAetherRealm
+      ? (baseScale <= 0.85 ? 1.78 : baseScale <= 1.2 ? 1.56 : 1.34)
+      : 1.15;
+    this.realmVisualBoost = realmVisualBoost;
+    const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 4.8;
+    this.scale = Math.min(maxScaleCap, Math.max(0.55, baseScale * (0.8 + (sizeRatio - 1) * 0.55) * realmSize * realmVisualBoost));
 
     // Special species classifications & behaviors
     this.isCephalopod = ['squid', 'octopus', 'flying_squid', 'cuttlefish'].includes(species.shape) || species.movementType === 'jet_burst';
@@ -1075,7 +1083,7 @@ export class Fish {
     ].includes(s.shape);
 
     const anatomy = getFishAnatomy(s);
-    const hasOwnAppendages = !!SHOALS_FISH_DESIGNS[s.id] || Boolean(anatomy) || isEnhancedFishShape(s) || isChronoVoidSpecial(s) || isRareEncounterShape(s) || isCustomTailLeviathan || [
+    const hasOwnAppendages = !!SHOALS_FISH_DESIGNS[s.id] || isBespokeSpecies(s) || Boolean(anatomy) || isEnhancedFishShape(s) || isChronoVoidSpecial(s) || isRareEncounterShape(s) || isCustomTailLeviathan || [
       'mossback_turtle', 'sea_turtle', 'nautilus', 'dolphin', 'whale',
       'cuttlefish', 'salp', 'krill', 'copepod', 'seal', 'sea_lion', 'walrus',
       'sea_snake', 'manatee', 'dugong', 'sea_otter', 'penguin', 'albatross',
@@ -1120,10 +1128,11 @@ export class Fish {
     ctx.beginPath();
 
     const isCustomMarine = drawShoalsFish(ctx, s, primary, secondary, finColor, this.wiggleTimer) ||
-      drawDistinctFish(ctx, anatomy, primary, secondary, finColor, this.wiggleTimer) ||
-      drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this) ||
+      drawBespokeSpecies(ctx, s, primary, secondary, finColor, this.wiggleTimer) ||
       drawChronoVoidFish(ctx, s, primary, secondary, finColor, this.wiggleTimer, this) ||
       drawRareEncounterCreature(ctx, s, primary, secondary, finColor, this.wiggleTimer, this) ||
+      drawDistinctFish(ctx, anatomy, primary, secondary, finColor, this.wiggleTimer) ||
+      drawMarineCreature(ctx, s.shape, primary, secondary, finColor, wiggle, this.wiggleTimer, s, this) ||
       drawEnhancedFish(ctx, s, primary, secondary, finColor, this.wiggleTimer, this);
     if (isCustomMarine) {
       // Specialized marine creature silhouette rendered

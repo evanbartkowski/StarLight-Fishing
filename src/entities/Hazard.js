@@ -527,93 +527,78 @@ export class Hazard {
         }
         ctx.restore();
       } else if (lavaVariant === 2) {
-        // 2. Chained Molten Planetary Core: Fractured incandescent magma sphere tightly bound by heavy titan forged iron chains
+        // 2. Volcanic Obsidian Magma Cluster: Jagged basalt core split by fiery lava veins & solid forged iron bands (no bead dots)
         ctx.save();
-        const coreR = r * 0.72;
+        const coreR = r * 0.8;
 
-        // Searing liquid magma core with intense thermal glow
-        const coreGrad = ctx.createRadialGradient(0, 0, coreR * 0.1, 0, 0, coreR);
-        coreGrad.addColorStop(0, '#ffffff');
-        coreGrad.addColorStop(0.25, '#fef08a');
-        coreGrad.addColorStop(0.55, '#f97316');
-        coreGrad.addColorStop(0.85, '#dc2626');
-        coreGrad.addColorStop(1, '#450a0a');
-        ctx.fillStyle = coreGrad;
-        ctx.shadowColor = '#ea580c';
-        ctx.shadowBlur = 18;
+        // Soft glowing magma aura underneath jagged rock
+        const auraG = ctx.createRadialGradient(0, 0, coreR * 0.15, 0, 0, coreR * 1.18);
+        auraG.addColorStop(0, 'rgba(254, 240, 138, 0.72)');
+        auraG.addColorStop(0.55, 'rgba(249, 115, 22, 0.42)');
+        auraG.addColorStop(1, 'rgba(127, 29, 29, 0)');
+        ctx.fillStyle = auraG;
         ctx.beginPath();
-        ctx.arc(0, 0, coreR, 0, Math.PI * 2);
+        ctx.arc(0, 0, coreR * 1.18, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
 
-        // Hardened jagged basalt tectonic crust plates floating over magma
-        const plates = [
-          { x: -coreR * 0.45, y: -coreR * 0.35, r: coreR * 0.42 },
-          { x: coreR * 0.42, y: -coreR * 0.28, r: coreR * 0.38 },
-          { x: -coreR * 0.25, y: coreR * 0.42, r: coreR * 0.45 },
-          { x: coreR * 0.38, y: coreR * 0.36, r: coreR * 0.40 },
-          { x: 0, y: 0, r: coreR * 0.32 },
-        ];
+        // Angular volcanic magma core silhouette
+        const coreG = ctx.createRadialGradient(-coreR * 0.2, -coreR * 0.2, coreR * 0.1, 0, 0, coreR);
+        coreG.addColorStop(0, '#fef08a');
+        coreG.addColorStop(0.5, '#f97316');
+        coreG.addColorStop(1, '#7f1d1d');
+        ctx.fillStyle = coreG;
+        ctx.beginPath();
+        for (let pt = 0; pt < 10; pt++) {
+          const ang = (pt / 10) * Math.PI * 2;
+          const rad = coreR * (pt % 2 === 0 ? 0.98 : 0.78);
+          const vx = Math.cos(ang) * rad;
+          const vy = Math.sin(ang) * rad;
+          if (pt === 0) ctx.moveTo(vx, vy);
+          else ctx.lineTo(vx, vy);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Hardened faceted basalt tectonic crust shards over the magma core (clean polygonal plates, no circles)
         ctx.fillStyle = '#1c1917';
         ctx.strokeStyle = '#44403c';
-        ctx.lineWidth = 1.8;
-        for (const plate of plates) {
+        ctx.lineWidth = 1.6;
+        const shards = [
+          [[-0.78, -0.2], [-0.45, -0.78], [0.05, -0.58], [-0.15, -0.05]],
+          [[0.15, -0.72], [0.76, -0.35], [0.58, 0.12], [0.08, -0.1]],
+          [[-0.72, 0.15], [-0.12, 0.08], [0.04, 0.72], [-0.52, 0.68]],
+          [[0.18, 0.08], [0.74, 0.22], [0.46, 0.76], [0.1, 0.56]],
+        ];
+        for (const poly of shards) {
           ctx.beginPath();
-          ctx.arc(plate.x, plate.y, plate.r, 0, Math.PI * 2);
+          poly.forEach(([px, py], idx) => {
+            if (idx === 0) ctx.moveTo(px * coreR, py * coreR);
+            else ctx.lineTo(px * coreR, py * coreR);
+          });
+          ctx.closePath();
           ctx.fill();
           ctx.stroke();
         }
 
-        // Molten lava fissures glowing between the crust plates
-        ctx.strokeStyle = '#fde047';
-        ctx.shadowColor = '#f97316';
-        ctx.shadowBlur = 8;
-        ctx.lineWidth = 2.0;
+        // Solid forged iron anchor straps & angular rectangular link bands binding the volcanic boulder
+        ctx.strokeStyle = '#3f3f46';
+        ctx.lineWidth = 5.5;
+        ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.moveTo(-coreR * 0.6, 0); ctx.lineTo(-coreR * 0.15, -coreR * 0.1); ctx.lineTo(coreR * 0.2, coreR * 0.1); ctx.lineTo(coreR * 0.65, 0);
-        ctx.moveTo(0, -coreR * 0.6); ctx.lineTo(-coreR * 0.08, 0); ctx.lineTo(0, coreR * 0.6);
+        ctx.moveTo(-coreR * 0.72, -coreR * 0.28);
+        ctx.quadraticCurveTo(0, -coreR * 0.05, coreR * 0.72, -coreR * 0.28);
+        ctx.moveTo(-coreR * 0.68, coreR * 0.34);
+        ctx.quadraticCurveTo(0, coreR * 0.55, coreR * 0.68, coreR * 0.34);
         ctx.stroke();
-        ctx.shadowBlur = 0;
 
-        // Heavy titan forged iron chains binding the magma core
-        const chainPaths = [
-          [-coreR * 0.85, -coreR * 0.3, 0, -coreR * 0.55, coreR * 0.85, -coreR * 0.2],
-          [-coreR * 0.8, coreR * 0.35, 0, coreR * 0.6, coreR * 0.8, coreR * 0.3],
-          [-coreR * 0.3, -coreR * 0.85, 0, 0, coreR * 0.35, coreR * 0.85],
-        ];
-
-        for (const [x1, y1, cx, cy, x2, y2] of chainPaths) {
-          // Glow beneath chain
-          ctx.strokeStyle = 'rgba(234, 88, 12, 0.7)';
-          ctx.lineWidth = 5.0;
-          ctx.beginPath();
-          ctx.moveTo(x1, y1);
-          ctx.quadraticCurveTo(cx, cy, x2, y2);
-          ctx.stroke();
-
-          // Dark iron chain body
-          ctx.strokeStyle = '#27272a';
-          ctx.lineWidth = 3.6;
-          ctx.beginPath();
-          ctx.moveTo(x1, y1);
-          ctx.quadraticCurveTo(cx, cy, x2, y2);
-          ctx.stroke();
-
-          // Individual interlocking chain links and rivets
-          const steps = 7;
-          for (let st = 0; st <= steps; st++) {
-            const ratio = st / steps;
-            const lx = (1 - ratio) * (1 - ratio) * x1 + 2 * (1 - ratio) * ratio * cx + ratio * ratio * x2;
-            const ly = (1 - ratio) * (1 - ratio) * y1 + 2 * (1 - ratio) * ratio * cy + ratio * ratio * y2;
-            ctx.fillStyle = st % 2 === 0 ? '#ea580c' : '#71717a';
-            ctx.beginPath();
-            ctx.arc(lx, ly, 3.4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#09090b';
-            ctx.lineWidth = 1.0;
-            ctx.stroke();
-          }
-        }
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-coreR * 0.55, -coreR * 0.18);
+        ctx.lineTo(coreR * 0.55, -coreR * 0.18);
+        ctx.moveTo(-coreR * 0.1, -coreR * 0.65);
+        ctx.lineTo(coreR * 0.08, coreR * 0.65);
+        ctx.stroke();
         ctx.restore();
       } else {
         // 3. Colossal Hydrothermal Black Smoker Spire: Towering deepsea volcanic chimney with billowing black smoker plumes & lava flumes

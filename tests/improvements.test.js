@@ -785,3 +785,87 @@ test('Wormhole Sturgeon, Causality Ribbonfish, upgraded Mermaids, and all 9 rare
   assert.ok(wreck.wakeProgress > startWake, 'Living Shipwreck awakens when hook approaches');
   assert.equal(finiteErrs, 0);
 });
+
+test('bespoke species art, Wormhole slow spin, Aether & realm scale boosts, bead-free Caldera obstacle, Obsidian Scepter SVG, and Coastal Radio dial removal', async () => {
+  const fs = await import('node:fs');
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { TREASURE_ITEMS } = await import('../src/data/TreasureData.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { Hazard } = await import('../src/entities/Hazard.js');
+  const { BESPOKE_SPECIES_IDS, isBespokeSpecies } = await import('../src/rendering/BespokeSpeciesArtwork.js');
+  const { treasureSvg } = await import('../src/rendering/TreasureArtwork.js');
+
+  const { ctx, calls } = finiteMockCtx();
+  const expectedBespoke = [
+    'realm_7_visitor_2',
+    'realm_6_basalt_glassfish',
+    'realm_6_flarecrest_marlin',
+    'realm_5_dewdrop_glassfish',
+    'realm_5_aether_sail_emperor',
+    'realm_7_quantum_veil_ray',
+    'realm_3_moonring_discus',
+    'realm_3_sundial_seahorse',
+    'realm_1_visitor_1',
+  ];
+  for (const id of expectedBespoke) {
+    assert.ok(BESPOKE_SPECIES_IDS.has(id), `Expected bespoke ID ${id}`);
+    const sp = FISH_SPECIES.find(s => s.id === id);
+    assert.ok(sp, `Missing species ${id}`);
+    assert.equal(isBespokeSpecies(sp), true);
+    const f = new Fish(sp, 320, 420);
+    f.render(ctx, 1.25);
+  }
+
+  for (const id of ['realm_1_honeycomb_boxfish', 'realm_1_shoals_blue_tang']) {
+    const sp = FISH_SPECIES.find(s => s.id === id);
+    assert.ok(sp, `Missing species ${id}`);
+    const f = new Fish(sp, 320, 420);
+    f.render(ctx, 1.25);
+  }
+  assert.ok(calls.count > 50, 'Bespoke and Shoals species issued finite draw calls');
+
+  // Obsidian Scepter renders bespoke volcanic ember SVG
+  const scepter = TREASURE_ITEMS.find(t => t.id === 'realm_6_treasure_1');
+  assert.ok(scepter && /obsidian scepter/i.test(scepter.name));
+  const svg = treasureSvg(scepter);
+  assert.ok(svg.includes('#f97316') && svg.includes('#fde047'), 'Obsidian Scepter uses ember-opal accents');
+
+  // Whispering Aether Sea fish scale boost (especially small fish) & cross-realm moderate boost
+  const nimbus = FISH_SPECIES.find(s => s.id === 'realm_5_nimbus_ribbonfish');
+  const smallNim = new Fish(nimbus, 200, 300);
+  assert.equal(smallNim.realmVisualBoost, 1.78, 'Small Zone 5 fish receive strong 1.78x visual boost');
+
+  const dewdrop = FISH_SPECIES.find(s => s.id === 'realm_5_dewdrop_glassfish');
+  const aetherMed = new Fish(dewdrop, 200, 300);
+  assert.equal(aetherMed.realmVisualBoost, 1.34, 'Other Zone 5 non-leviathan fish receive 1.34x visual boost');
+
+  const tang = FISH_SPECIES.find(s => s.id === 'realm_1_shoals_blue_tang');
+  const reefFish = new Fish(tang, 200, 300);
+  assert.equal(reefFish.realmVisualBoost, 1.15, 'Other non-leviathan realms receive moderate 1.15x visual boost');
+
+  // Wormhole Sturgeon vortex rotation slowed down
+  const chronoSrc = fs.readFileSync(new URL('../src/rendering/ChronoVoidArtwork.js', import.meta.url), 'utf8');
+  const wormholeSection = chronoSrc.slice(chronoSrc.indexOf('WORMHOLE APERTURE'), chronoSrc.indexOf('Glowing accretion ring'));
+  assert.ok(wormholeSection.includes('time * 0.72'), 'Wormhole Sturgeon vortex rotation slowed down');
+  assert.ok(!wormholeSection.includes('time * 2.8'), 'Fast Wormhole spin removed from Wormhole Sturgeon');
+
+  // Caldera lava obstacle (variant 2 -> lavaVariant 2) renders cleanly without bead chains
+  const calderaHazard = new Hazard({
+    id: 'caldera_obsidian_snag',
+    name: 'Obsidian Fracture',
+    realmStyle: 'caldera',
+    zone: 6,
+    variant: 1, // -> (1 % 3) + 1 === 2
+    damage: 15,
+    knockback: 25,
+    color: '#ea580c',
+  }, 400, 600);
+  calderaHazard.render(ctx, 1.5);
+
+  // Coastal Radio manual dial removed while Station 7.77 remains
+  const uiSrc = fs.readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
+  assert.ok(!uiSrc.includes('Manual Dial (MHz)'), 'Manual Dial (MHz) removed from UIManager');
+  assert.ok(!uiSrc.includes('radio-freq-input'), 'radio-freq-input removed from UIManager');
+  assert.ok(!uiSrc.includes('btn-tune-freq'), 'btn-tune-freq removed from UIManager');
+  assert.ok(uiSrc.includes('secret_777'), 'Station 7.77 remains in Coastal Radio');
+});

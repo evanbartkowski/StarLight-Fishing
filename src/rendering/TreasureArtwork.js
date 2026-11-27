@@ -72,8 +72,18 @@ function design(item) {
     a = [p('M-20-21Q-2-12 18-20L11 21H-17L-20-21Z', '#b7e6e8', gold, 3),
       ...[-12,-6,0,6,12].map((x,i)=>lines(`M${x} ${-16-i*.4}L${x-2} 17`, '#d6c3f1', 1)), p('M-20 18H13V23H-20Z',gold)];
   } else if (/\bkey\b|scepter|staff/.test(n)) {
-    a = [lines('M-14 22L10-5',gold,5), /key/.test(n)?ellipse(14,-12,9,9,'none',gold,4):p('M5-6L1-16L13-25L24-15L21-5Z', '#293444', gold),
-      ...gem(13,-13,5,c), /\bkey\b/.test(n) ? lines('M-8 13L0 19M-12 18L-5 24',gold,4) : lines('M3-22L3-28M20-23L26-25M24-8L29-7M-15 23L-11 26',gold,2)];
+    if (/obsidian scepter/.test(n)) {
+      a = [
+        lines('M-16 23L8 -4', '#1c1917', 6),
+        lines('M-16 23L8 -4', '#f97316', 1.4),
+        p('M3 -5L0 -17L12 -27L24 -16L19 -3Z', '#18181b', '#facc15', 1.6),
+        ...gem(12, -14, 6, '#f97316'),
+        lines('M4 -17L1 -25M12 -27L12 -32M21 -18L28 -22', '#fde047', 1.8),
+      ];
+    } else {
+      a = [lines('M-14 22L10-5',gold,5), /key/.test(n)?ellipse(14,-12,9,9,'none',gold,4):p('M5-6L1-16L13-25L24-15L21-5Z', '#293444', gold),
+        ...gem(13,-13,5,c), /\bkey\b/.test(n) ? lines('M-8 13L0 19M-12 18L-5 24',gold,4) : lines('M3-22L3-28M20-23L26-25M24-8L29-7M-15 23L-11 26',gold,2)];
+    }
   } else if (/spool/.test(n)) {
     a = [p('M-13-15H13V15H-13Z','#d6e3ff',gold), ellipse(0,-16,21,6,gold), ellipse(0,16,21,6,gold),
       ...[-10,-5,0,5,10].map(y=>lines(`M-13 ${y}Q0 ${y+5} 13 ${y}`, '#b496e8',1.5)), lines('M13 7Q28 13 20 24L28 26', '#e3ccff',2)];
