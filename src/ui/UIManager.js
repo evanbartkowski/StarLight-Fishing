@@ -32,6 +32,7 @@ import { accountManager } from '../systems/AccountManager.js';
 import { leaderboardManager } from '../systems/LeaderboardManager.js';
 import { SHOP_ART, REALM_ART, RADIO_ART, JOURNAL_TAB_ART, CREW_ART, FOSSIL_ART, MISC_ART, SETTINGS_ART, INV_FILTER_ART, getTreasureArt, BOAT_UI_ART, TRINKET_ART, HULL_ART, getCrateLootArt, NPC_PORTRAITS, QUEST_ART } from './CustomVectorArt.js';
 import { drawTreasureArtwork, treasureSvg } from '../rendering/TreasureArtwork.js';
+import { drawRelicArtifact } from '../rendering/RelicArtwork.js';
 import { TRAP_LOOT_TABLE } from '../systems/TrapSystem.js';
 import { drawVesselHull, drawVesselForeground, getVesselLayout, VESSEL_NAMES } from '../rendering/VesselRenderer.js';
 import { renderAquariumFamiliarCaptain } from '../systems/EasterEggs.js';
@@ -1792,7 +1793,7 @@ export class UIManager {
         } else if (isFossil) {
           iconHtml = `<div class="catch-item-art-icon">${FOSSIL_ART.boneFragment || JOURNAL_TAB_ART.fossils}</div>`;
         } else if (isRelic) {
-          iconHtml = `<div class="catch-item-art-icon">${JOURNAL_TAB_ART.relics}</div>`;
+          iconHtml = `<canvas class="catch-item-canvas catch-relic-canvas" id="catch-summary-canvas-${itemIdx}" width="112" height="88"></canvas>`;
         } else if (isTreasure) {
           iconHtml = `<div class="catch-item-art-icon">${getTreasureArt(item) || `<span style="font-size:2.2rem;">${getSpeciesIcon(item)}</span>`}</div>`;
         } else {
@@ -1932,12 +1933,24 @@ export class UIManager {
 
       let drawn = false;
       try {
-        const fish = specimen(item, canvas.width / 2, canvas.height / 2);
-        if (fish) {
-          fish.scale = 1.35;
-          fish.direction = 1;
-          fish.render(ctx, 0);
-          drawn = true;
+        if (item.isRelic || item.category === 'relic') {
+          const relicType = item.relicType || RELIC_TYPES.find(r => r.id === (item.relicId || item.id) || r.name === item.name);
+          if (relicType?.drawRestored) {
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(1.15, 1.15);
+            drawRelicArtifact(ctx, relicType, 0, !item.restored);
+            ctx.restore();
+            drawn = true;
+          }
+        } else {
+          const fish = specimen(item, canvas.width / 2, canvas.height / 2);
+          if (fish) {
+            fish.scale = 1.35;
+            fish.direction = 1;
+            fish.render(ctx, 0);
+            drawn = true;
+          }
         }
       } catch (err) {
         console.warn('Error drawing catch summary specimen canvas:', err);

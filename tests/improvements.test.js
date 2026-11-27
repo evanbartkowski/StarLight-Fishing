@@ -653,4 +653,19 @@ test('Enhanced fish visuals and Magma Caldera overhaul render all 294 species cl
   ]) {
     assert.equal(drawEnhancedFish(makeCtx(), sample, '#ef4444', '#fde047', '#f97316', 1.2), true);
   }
+
+  // Updated Shoals creatures & flying squid render cleanly without error
+  for (const id of ['realm_1_reef_octopus', 'realm_1_honeycomb_boxfish', 'realm_1_sunlit_flying_squid', 'realm_1_shoals_blue_tang']) {
+    const sp = FISH_SPECIES.find(s => s.id === id);
+    assert.ok(sp, `Species ${id} exists`);
+    const fish = new Fish(sp, 200, 300, { currentSeaId: 1 });
+    assert.doesNotThrow(() => fish.render(makeCtx(), 0));
+  }
+});
+
+test('Dive Completed modal uses actual relic canvas preview instead of generic static icon', async () => {
+  const { readFileSync } = await import('node:fs');
+  const uiCode = readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
+  assert.ok(uiCode.includes('drawRelicArtifact'), 'UIManager imports and calls drawRelicArtifact for summary relics');
+  assert.ok(uiCode.includes('catch-relic-canvas'), 'Dive Completed renders a canvas element for caught relics');
 });

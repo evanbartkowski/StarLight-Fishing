@@ -962,44 +962,76 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'flying_squid': {
-      // Sleek missile mantle with broad rhomboid fins
+      // Aerodynamic gliding wing-fins + streamlined sunlit mantle + trailing curved arms
+      const finFlutter = Math.sin(t * 4.2) * 2.2;
+      let wingGrad = finColor;
+      let mantleGrad = primary;
+      try {
+        wingGrad = ctx.createLinearGradient(-24, -14, -6, 14);
+        wingGrad.addColorStop(0, finColor);
+        wingGrad.addColorStop(1, secondary);
+        mantleGrad = ctx.createLinearGradient(-22, -7, 16, 7);
+        mantleGrad.addColorStop(0, primary);
+        mantleGrad.addColorStop(0.6, secondary);
+        mantleGrad.addColorStop(1, primary);
+      } catch { /* fallback */ }
+
+      // Graceful gliding wings along the rear mantle
+      ctx.fillStyle = wingGrad;
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+      ctx.lineWidth = 0.85;
       ctx.beginPath();
-      ctx.moveTo(18, 0);
-      ctx.lineTo(6, -8);
-      ctx.lineTo(-24, 0);
-      ctx.lineTo(6, 8);
+      ctx.moveTo(-4, -3);
+      ctx.bezierCurveTo(-12, -16 + finFlutter, -24, -14 + finFlutter, -25, 0);
+      ctx.bezierCurveTo(-24, 14 - finFlutter, -12, 16 - finFlutter, -4, 3);
       ctx.closePath();
       ctx.fill();
-
-      // Rhomboid stabilizing fins
-      const finFlutter = Math.sin(t * 5) * 1.5;
-      ctx.fillStyle = finColor;
-      ctx.beginPath();
-      ctx.moveTo(-8, 0);
-      ctx.lineTo(-22, -14 + finFlutter);
-      ctx.lineTo(-24, 0);
-      ctx.lineTo(-22, 14 - finFlutter);
-      ctx.closePath();
-      ctx.fill();
-
-      // Arms (batched)
-      ctx.strokeStyle = primary;
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      for (let a = -2; a <= 2; a++) {
-        ctx.moveTo(18, a * 2.5);
-        ctx.quadraticCurveTo(26, a * 3 + wiggle, 34, a * 2);
-      }
       ctx.stroke();
 
-      // Eye
+      // Trailing curved tentacles & feeding clubs
+      for (let a = -2; a <= 2; a++) {
+        const isClub = Math.abs(a) === 1;
+        ctx.strokeStyle = isClub ? finColor : primary;
+        ctx.lineWidth = isClub ? 2.1 : 1.5;
+        ctx.beginPath();
+        ctx.moveTo(14, a * 2);
+        ctx.bezierCurveTo(22, a * 3 + wiggle * 0.4, 28, a * 2 - wiggle * 0.3, isClub ? 35 : 30, a * 2.4 + wiggle * 0.25);
+        ctx.stroke();
+      }
+
+      // Streamlined squid mantle & collar head
+      ctx.fillStyle = mantleGrad;
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.55)';
+      ctx.lineWidth = 1.05;
+      ctx.beginPath();
+      ctx.moveTo(-24, 0);
+      ctx.bezierCurveTo(-16, -8.5, 4, -8.5, 14, -4.5);
+      ctx.quadraticCurveTo(18, 0, 14, 4.5);
+      ctx.bezierCurveTo(4, 8.5, -16, 8.5, -24, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Luminous photophore dots along flank
+      ctx.fillStyle = '#fef08a';
+      for (let d = 0; d < 4; d++) {
+        ctx.beginPath();
+        ctx.arc(-10 + d * 5.5, 0, 1.0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Crisp eye with cyan iris ring
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(12, -2, 2.2, 0, Math.PI * 2);
+      ctx.arc(10.5, -2.2, 2.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
-      ctx.arc(12.5, -2, 1.2, 0, Math.PI * 2);
+      ctx.arc(11.1, -2.2, 1.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(11.5, -2.8, 0.55, 0, Math.PI * 2);
       ctx.fill();
       return true;
     }

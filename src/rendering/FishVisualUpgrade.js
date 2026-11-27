@@ -75,30 +75,42 @@ function drawEye(ctx, x, y, r = 2.6, eyeColor = '#f8fafc', fierce = false) {
 
 function drawFin(ctx, x, y, width, height, color, strokeColor = 'rgba(15, 23, 42, 0.45)') {
   ctx.save();
+  const baseHalf = Math.max(4.5, Math.abs(width) * 0.42);
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.quadraticCurveTo(x - width * 0.45, y + height * 0.45, x - width, y + height);
-  ctx.quadraticCurveTo(x - width * 0.45, y + height * 0.75, x - width * 0.22, y + height * 0.15);
+  ctx.moveTo(x + baseHalf * 0.65, y);
+  ctx.quadraticCurveTo(x + baseHalf * 0.25, y + height * 0.85, x - width * 0.55, y + height);
+  ctx.quadraticCurveTo(x - width * 1.05, y + height * 0.72, x - baseHalf * 1.15, y);
   ctx.closePath();
   ctx.fill();
   ctx.strokeStyle = strokeColor;
-  ctx.lineWidth = 0.75;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Subtle translucent fin rays for real fin texture
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
+  ctx.lineWidth = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(x, y + height * 0.08);
+  ctx.lineTo(x - width * 0.42, y + height * 0.78);
+  ctx.moveTo(x - baseHalf * 0.4, y + height * 0.08);
+  ctx.lineTo(x - width * 0.72, y + height * 0.62);
   ctx.stroke();
   ctx.restore();
 }
 
 function drawForkedTail(ctx, x, halfH, span, color, wave = 0, upperBias = 1) {
   ctx.save();
+  const baseY = Math.max(2.6, halfH * 0.28);
   ctx.fillStyle = color;
-  ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
-  ctx.lineWidth = 0.8;
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.48)';
+  ctx.lineWidth = 0.85;
   ctx.beginPath();
-  ctx.moveTo(x + 2, 0);
-  ctx.quadraticCurveTo(x - span * 0.45, -halfH * 0.35 * upperBias, x - span, -halfH * upperBias + wave * 0.7);
-  ctx.quadraticCurveTo(x - span * 0.55, wave * 0.25, x - span * 0.45, wave * 0.3);
-  ctx.quadraticCurveTo(x - span * 0.55, halfH * 0.25, x - span * (upperBias > 1 ? 0.78 : 1), halfH + wave * 0.7);
-  ctx.quadraticCurveTo(x - span * 0.45, halfH * 0.35, x + 2, 0);
+  ctx.moveTo(x + 3, -baseY);
+  ctx.quadraticCurveTo(x - span * 0.45, -halfH * 0.52 * upperBias, x - span, -halfH * upperBias + wave * 0.65);
+  ctx.quadraticCurveTo(x - span * 0.62, -halfH * 0.12 + wave * 0.25, x - span * 0.42, wave * 0.25);
+  ctx.quadraticCurveTo(x - span * 0.62, halfH * 0.14 + wave * 0.25, x - span * (upperBias > 1 ? 0.8 : 1), halfH + wave * 0.65);
+  ctx.quadraticCurveTo(x - span * 0.45, halfH * 0.52, x + 3, baseY);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();

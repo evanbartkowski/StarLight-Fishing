@@ -30,9 +30,31 @@ function eye(ctx, x, y, radius = 2.6) {
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + .5, y - .8, .7, 0, Math.PI * 2); ctx.fill();
 }
 function fin(ctx, x, y, width, height, color) {
-  ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y);
-  ctx.quadraticCurveTo(x - width * .45, y + height * .4, x - width, y + height);
-  ctx.lineTo(x - width * .3, y + height * .85); ctx.closePath(); ctx.fill();
+  if (!ENHANCED_FISH_VISUALS) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x - width * .45, y + height * .4, x - width, y + height);
+    ctx.lineTo(x - width * .3, y + height * .85); ctx.closePath(); ctx.fill();
+    return;
+  }
+  const baseHalf = Math.max(4.5, Math.abs(width) * 0.44);
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x + baseHalf * 0.65, y);
+  ctx.quadraticCurveTo(x + baseHalf * 0.22, y + height * 0.86, x - width * 0.55, y + height);
+  ctx.quadraticCurveTo(x - width * 1.04, y + height * 0.7, x - baseHalf * 1.15, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.38)';
+  ctx.lineWidth = 0.75;
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+  ctx.lineWidth = 0.55;
+  ctx.beginPath();
+  ctx.moveTo(x, y + height * 0.1);
+  ctx.lineTo(x - width * 0.45, y + height * 0.75);
+  ctx.stroke();
+  ctx.restore();
 }
 function bodyPath(ctx, length, height, kind) {
   ctx.beginPath(); ctx.moveTo(-length, 0);
@@ -112,22 +134,33 @@ export function drawDistinctFish(ctx, anatomy, primary, secondary, finColor, tim
     // Silhouettes differ before markings: deep discus, flat sole, slender tetra,
     // broad-jawed grouper, angular glassfish, and individual reef proportions.
     if (ENHANCED_FISH_VISUALS && (kind === 'tetra' || kind === 'glass')) {
-      ctx.fillStyle = finColor; ctx.beginPath(); ctx.moveTo(-l + 2, 0);
-      ctx.quadraticCurveTo(-l - 7, -h * 0.45, -l - 13, -h * 0.9 - wave * 0.6);
-      ctx.lineTo(-l - 6, -wave * 0.2);
-      ctx.lineTo(-l - 13, h * 0.9 - wave * 0.6);
-      ctx.quadraticCurveTo(-l - 7, h * 0.45, -l + 2, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = finColor; ctx.strokeStyle = 'rgba(15, 23, 42, 0.38)'; ctx.lineWidth = 0.75;
+      ctx.beginPath(); ctx.moveTo(-l + 3, -Math.max(2.6, h * 0.32));
+      ctx.quadraticCurveTo(-l - 6, -h * 0.55, -l - 13, -h * 0.9 - wave * 0.55);
+      ctx.quadraticCurveTo(-l - 8, -h * 0.18, -l - 5.5, -wave * 0.2);
+      ctx.quadraticCurveTo(-l - 8, h * 0.18, -l - 13, h * 0.9 - wave * 0.55);
+      ctx.quadraticCurveTo(-l - 6, h * 0.55, -l + 3, Math.max(2.6, h * 0.32));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
     } else if (ENHANCED_FISH_VISUALS && (kind === 'crown' || kind === 'discus')) {
-      ctx.fillStyle = finColor; ctx.beginPath(); ctx.moveTo(-l + 2, -2);
+      ctx.fillStyle = finColor; ctx.strokeStyle = 'rgba(15, 23, 42, 0.38)'; ctx.lineWidth = 0.75;
+      ctx.beginPath(); ctx.moveTo(-l + 3, -3.5);
       ctx.bezierCurveTo(-l - 9, -h * 0.95 - wave, -l - 18, -h * 0.4, -l - 16, -wave * 0.3);
-      ctx.bezierCurveTo(-l - 18, h * 0.4, -l - 9, h * 0.95 - wave, -l + 2, 2);
-      ctx.closePath(); ctx.fill();
+      ctx.bezierCurveTo(-l - 18, h * 0.4, -l - 9, h * 0.95 - wave, -l + 3, 3.5);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if (ENHANCED_FISH_VISUALS) {
+      ctx.fillStyle = finColor; ctx.strokeStyle = 'rgba(15, 23, 42, 0.38)'; ctx.lineWidth = 0.75;
+      ctx.beginPath(); ctx.moveTo(-l + 3, -Math.max(3, h * 0.34));
+      ctx.quadraticCurveTo(-l - 7, -h * 0.75 - wave * 0.5, -l - 14, -h * 0.85 - wave * 0.5);
+      ctx.quadraticCurveTo(-l - 10, -wave * 0.25, -l - 7, -wave * 0.2);
+      ctx.quadraticCurveTo(-l - 10, wave * 0.25, -l - 14, h * 0.85 - wave * 0.5);
+      ctx.quadraticCurveTo(-l - 7, h * 0.75 - wave * 0.5, -l + 3, Math.max(3, h * 0.34));
+      ctx.closePath(); ctx.fill(); ctx.stroke();
     } else {
       fin(ctx, -l + 1, 0, 12 + seed % 5, -9 - wave, finColor);
       fin(ctx, -l + 1, 0, 12 + seed % 5, 9 - wave, finColor);
     }
-    fin(ctx, 1, -h * .65, 12, kind === 'crown' ? -17 : -6 - seed % 7, finColor);
-    fin(ctx, -1, h * .6, 9, kind === 'sole' ? 3 : 8 + seed % 4, finColor);
+    fin(ctx, 1, -h * .65, 13, kind === 'crown' ? -16 : -8 - seed % 5, finColor);
+    fin(ctx, -1, h * .6, 10, kind === 'sole' ? 4 : 8 + seed % 4, finColor);
     if (kind === 'glass') ctx.globalAlpha *= .75;
     if (ENHANCED_FISH_VISUALS && typeof primary === 'string' && typeof secondary === 'string') {
       try {
