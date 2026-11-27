@@ -1,0 +1,132 @@
+/* Browser HUD: one row of counters, then status and dive controls in normal flow. */
+#game-hud {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "stats menu" "status status";
+  align-items: start;
+  gap: 6px 12px;
+  padding: max(10px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 0 max(18px, env(safe-area-inset-left));
+}
+#game-hud .hud-left { grid-area: stats; min-width: 0; height: 44px; overflow: visible; }
+#game-hud .hud-right { grid-area: menu; min-width: 0; height: 44px; }
+#game-hud .hud-right #btn-mobile-menu-toggle.mobile-menu-toggle-btn { min-height: 44px; }
+#game-hud .hud-secondary {
+  grid-area: status;
+  position: static;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hud-status-row { display: flex; align-items: flex-start; gap: 10px; width: 100%; min-width: 0; }
+#game-hud .hud-buffs-container:not(:empty) { flex: 0 1 auto; max-width: min(560px, 100%); }
+#game-hud .hud-secondary .hud-center {
+  position: static;
+  transform: none;
+  margin: 0 0 0 auto;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  max-width: 100%;
+  width: auto;
+}
+.depth-meter-container { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.depth-number { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.zone-badge { min-width: 0; }
+.btn-reel-dive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 12px;
+  margin: 0;
+  border-radius: 10px;
+  font: 700 13px Outfit, sans-serif;
+  white-space: nowrap;
+}
+.btn-reel-dive svg, .touch-reel-btn svg { display: block; flex-shrink: 0; }
+#hud-hint { max-width: min(470px, 100%); box-sizing: border-box; color: #dbeef6; background: #102538eb; border: 1px solid #3d6980; border-radius: 10px; padding: 6px 10px; font-size: 12px; line-height: 1.4; }
+#hud-hint[hidden] { display: none; }
+#touch-controls { right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); }
+#touch-controls .touch-reel-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 12px 20px; font: 700 16px Outfit, sans-serif; letter-spacing: 0; border-radius: 16px; background: #0b5271; backdrop-filter: none; box-shadow: 0 4px 12px #0005; }
+.btn-reel-dive:focus-visible, .touch-reel-btn:focus-visible { outline: 3px solid #fef3c7; outline-offset: 3px; }
+
+@media (max-width: 1100px) {
+  #game-hud { column-gap: 8px; }
+  #game-hud .hud-left { gap: 4px; }
+  #game-hud .hud-wallet { gap: 4px; }
+  #touch-controls:not([hidden]) { display: flex; }
+  #game-hud #btn-manual-reel-up { display: none !important; }
+}
+@media (pointer: coarse) {
+  #game-hud #btn-manual-reel-up { display: none !important; }
+}
+@media (max-width: 900px) {
+  .hud-status-row { flex-direction: column; gap: 6px; }
+  #game-hud .hud-secondary .hud-center { margin-left: 0; flex: 0 1 auto; width: 100%; }
+}
+@media (max-width: 800px) {
+  #game-hud { padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); gap: 6px; }
+}
+@media (max-width: 600px) {
+  #game-hud #hud-weather-badge { display: none !important; }
+  #game-hud .hud-left { gap: 3px; }
+  #game-hud .hud-wallet { gap: 3px; }
+  #hud-hint { font-size: 11px; }
+}
+@media (max-width: 380px) {
+  #game-hud .mobile-menu-toggle-label, #game-hud .mobile-menu-chevron { display: none; }
+  #game-hud .hud-right #btn-mobile-menu-toggle.mobile-menu-toggle-btn { width: 44px; padding: 8px; }
+}
+
+/* A single catch scroller and a separate, always reachable action footer. */
+.catch-summary-modal .modal-body { display: flex; flex: 1 1 auto; min-height: 0; overflow: hidden; padding: 0; }
+.catch-summary-modal .summary-container { flex: 1 1 auto; min-width: 0; min-height: 0; gap: 0; overflow: hidden; }
+.catch-summary-modal .summary-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.catch-summary-modal .summary-scroll > * { flex-shrink: 0; }
+.catch-summary-modal .summary-header-stats { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+.catch-summary-modal .stat-box { min-width: 0; padding: 10px 8px; }
+.catch-summary-modal .stat-value { font-size: 1.05rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.catch-summary-modal .stat-label { font-size: .66rem; }
+.catch-summary-modal .catch-summary-list { max-height: none; overflow: visible; padding: 0; gap: 10px; }
+.catch-summary-modal .catch-item-card { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 12px; padding: 12px; min-width: 0; }
+.catch-summary-modal .catch-item-details { min-width: 0; }
+.catch-summary-modal .catch-item-name { display: block; font-size: .9rem; }
+.catch-summary-modal .catch-item-title { display: block; margin-bottom: 6px; }
+.catch-summary-modal .catch-item-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.catch-summary-modal .catch-item-price-side { min-width: 0; max-width: 100%; margin: 0; }
+.catch-summary-modal .catch-item-price { font-size: 1rem; overflow-wrap: anywhere; white-space: normal; }
+.catch-summary-modal .catch-item-actions-row { gap: 6px; }
+.catch-summary-modal .catch-item-actions-row .btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; font-size: .78rem; }
+.catch-summary-modal .catch-action-art { margin: 0; }
+.catch-summary-modal .summary-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.catch-summary-modal .summary-tools .btn { flex: 1 1 145px; min-width: 0; min-height: 44px; font-size: .82rem; }
+.catch-summary-modal .summary-footer { position: static; flex: 0 0 auto; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin: 0; padding: 12px 18px; backdrop-filter: none; background: #0f1c30; }
+.catch-summary-modal .total-earnings { flex-direction: row; flex-wrap: wrap; gap: 8px; min-width: 0; padding: 8px 10px; border-width: 1px; box-shadow: none; }
+.catch-summary-modal .total-earnings span { font-size: .65rem; }
+.catch-summary-modal .total-cash { font-size: 1.1rem; overflow-wrap: anywhere; }
+.catch-summary-modal .summary-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.catch-summary-modal .summary-actions .btn { min-width: 0; min-height: 44px; width: 100%; padding: 8px 10px; white-space: normal; font-size: .82rem; gap: 6px; }
+.catch-summary-modal .summary-btn-art { width: 20px; height: 20px; margin: 0; filter: none; }
+@media (max-width: 700px) {
+  .catch-summary-modal .summary-scroll { padding: 12px; gap: 12px; }
+  .catch-summary-modal .catch-item-card { grid-template-columns: 58px minmax(0, 1fr); gap: 10px; }
+  .catch-summary-modal .catch-item-price-side { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .catch-summary-modal .summary-footer { grid-template-columns: minmax(0, 1fr); padding: 10px 12px; gap: 8px; }
+  .catch-summary-modal .total-earnings { justify-content: space-between; }
+  .catch-summary-modal .summary-btn-art { display: none; }
+  .catch-summary-modal .summary-header-stats:has(> .stat-box:nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-height: 440px) {
+  .catch-summary-modal .summary-scroll { padding: 10px 12px; }
+  .catch-summary-modal .summary-footer { padding: 8px 12px; gap: 6px; }
+  .catch-summary-modal .total-earnings { padding: 4px 8px; }
+}
+
+/* Notifications no longer cover the status row or dive controls. */
+#toast-notification { position: fixed; top: auto; bottom: max(18px, env(safe-area-inset-bottom)); box-sizing: border-box; width: max-content; max-width: min(480px, calc(100vw - 24px)); padding: 10px 16px; border-radius: 14px; text-align: center; font-size: .84rem; line-height: 1.4; transition-property: opacity, transform; backdrop-filter: none; }
+#toast-notification.toast-hidden { transform: translate(-50%, 12px); }
+body:has(#touch-controls:not([hidden])) #toast-notification { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); }
+@media (prefers-reduced-motion: reduce) { #toast-notification, .btn-reel-dive, #touch-controls button { transition: none; } }

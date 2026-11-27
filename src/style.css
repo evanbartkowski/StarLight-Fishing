@@ -716,11 +716,6 @@ html, body {
   transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-#game-hud.hud-diving-mode {
-  justify-content: flex-start;
-  gap: 8px;
-}
-
 #game-hud.hud-diving-mode .hud-right {
   opacity: 0;
   pointer-events: none !important;
@@ -6063,7 +6058,7 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   #game-hud {
     padding: 6px 8px;
     gap: 6px;
@@ -6230,15 +6225,6 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 /* =========================================
    Instant Launch, Daily Mystery Vault, Quest Loot, Boat Paint Swatches & Derby UI
    ========================================= */
-.btn-welcome-instant {
-  width: 100%;
-  margin-bottom: 10px;
-  font-weight: 800;
-  font-size: 0.98rem;
-  background: linear-gradient(135deg, #0284c7, #38bdf8);
-  border: 1px solid rgba(186, 230, 253, 0.55);
-  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
-}
 
 .daily-rewards-hero {
   background: linear-gradient(145deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.85));

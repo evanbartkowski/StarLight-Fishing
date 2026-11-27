@@ -1,11 +1,14 @@
 export class GameLoop {
-  constructor(update, render) {
+  constructor(update, render, getRenderInterval = () => 0) {
     this.lastFrameTime = null;
     this.accumulatedTime = 0;
     this.timeStep = 1000 / 60; // 60 updates per second
 
     this.update = update;
     this.render = render;
+    this.getRenderInterval = getRenderInterval;
+    this.lastRenderTime = null;
+    this.lastRenderInterval = 0;
 
     this.rafId = null;
     this.isRunning = false;
@@ -48,11 +51,20 @@ export class GameLoop {
       this.accumulatedTime = 0;
     }
 
-    // Render current frame
-    try {
-      this.render();
-    } catch (err) {
-      console.error('Error during GameLoop render:', err);
+    // Covered scenes can draw less often while fixed-step simulation continues.
+    const requested = this.getRenderInterval();
+    const interval = Number.isFinite(requested) ? Math.max(0, requested) : 0;
+    if (interval !== this.lastRenderInterval) this.lastRenderTime = null;
+    this.lastRenderInterval = interval;
+    const elapsed = this.lastRenderTime === null ? Infinity : timestamp - this.lastRenderTime;
+    if (!interval || elapsed + .01 >= interval) {
+      this.lastRenderTime = interval && Number.isFinite(elapsed)
+        ? this.lastRenderTime + Math.floor((elapsed + .01) / interval) * interval : timestamp;
+      try {
+        this.render();
+      } catch (err) {
+        console.error('Error during GameLoop render:', err);
+      }
     }
 
     // Request next frame
@@ -66,6 +78,7 @@ export class GameLoop {
       this.isRunning = true;
       this.generation++;
       this.lastFrameTime = null;
+      this.lastRenderTime = null;
       this.accumulatedTime = 0;
       this.rafId = requestAnimationFrame(this.mainLoop);
     }

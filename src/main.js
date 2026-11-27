@@ -3,6 +3,7 @@ import { createTouchControls } from './ui/TouchControls.js';
 import { serverOffset } from './systems/SocialFirebase.js';
 import { visitAquarium } from './ui/AquariumSocial.js';
 import './style.css';
+import './ui/BrowserLayout.css';
 import { GameLoop } from './GameLoop.js';
 import { soundManager } from './audio/SoundManager.js';
 import { saveSystem } from './systems/SaveSystem.js';
@@ -139,7 +140,7 @@ let targetCameraY = 0;
 const mousePos = { x: screenWidth * 0.5, y: screenHeight * 0.5 };
 let isMouseDown = false;
 const keysDown = {};
-const touchControls = createTouchControls(keysDown, () => { if (gameState === 'DESCENDING') hook.startReel(); });
+const touchControls = createTouchControls(() => { if (gameState === 'DESCENDING') hook.startReel(); });
 let lastSteerMode = 'mouse'; // 'keyboard' | 'mouse'
 const lastPointerPos = { x: 0, y: 0 };
 
@@ -808,7 +809,7 @@ const update = (rawDt) => {
     }
   }
 
-  touchControls.update(!uiManager.activeModal && ['DESCENDING', 'REELING'].includes(gameState));
+  touchControls.update(!uiManager.activeModal && gameState === 'DESCENDING' && hook.state === 'DESCENDING');
 
   // Keyboard steering (arrow keys take precedence over stationary mouse)
   const isArrowLeft = keysDown['a'] || keysDown['arrowleft'];
@@ -1516,35 +1517,6 @@ const render = () => {
     }
   }
 
-  // 13. Lightweight first-dive onboarding ghost hint for new players
-  const totalCasts = save.data.stats?.totalCasts || 0;
-  const totalCaught = save.data.stats?.totalFishCaught || 0;
-  if (totalCasts <= 2 && totalCaught < 3 && !uiManager?.activeModal) {
-    let hintText = null;
-    if (gameState === 'SURFACE_IDLE') hintText = '🎣 Click or tap the water to aim & cast your line!';
-    else if (gameState === 'DESCENDING') hintText = '↔️ Move mouse / drag to steer hook onto fish!';
-    else if (gameState === 'REELING') hintText = '⚠️ Dodge hazards while reeling catches up!';
-    if (hintText) {
-      ctx.save();
-      ctx.font = '700 13px Outfit, sans-serif';
-      const tw = ctx.measureText(hintText).width;
-      const bx = screenWidth * 0.5 - tw * 0.5 - 16;
-      const by = gameState === 'SURFACE_IDLE' ? Math.max(96, oceanWorld.surfaceY - cameraY - 125) : 92;
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.84)';
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx, by, tw + 32, 32, 16);
-      else ctx.rect(bx, by, tw + 32, 32);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#e0f2fe';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(hintText, screenWidth * 0.5, by + 16);
-      ctx.restore();
-    }
-  }
 
   ctx.restore();
 };
@@ -1612,7 +1584,7 @@ setTimeout(() => {
 }, 350);
 
 // Start game loop
-const gameLoop = new GameLoop(update, render);
+const gameLoop = new GameLoop(update, render, () => uiManager.activeModal ? 1000 / 15 : 0);
 gameLoop.start();
 
 // Global audio gesture unlock: ensure music starts seamlessly on any user interaction or window focus

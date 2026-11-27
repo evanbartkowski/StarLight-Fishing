@@ -1,4 +1,5 @@
 import { openRestorationDesk as openRelicWorkshop } from './RestorationDesk.js';
+import { REEL_ICON } from './TouchControls.js';
 import { getRandomBottleMessage, normalizeBottleMessage } from '../data/DriftMessages.js';
 import { getRealmDepthZone as getDepthSubZone } from '../data/RealmDepths.js';
 import { crateArtwork, crateRewardGallery } from './CratePresentation.js';
@@ -51,6 +52,13 @@ const HUD_ICONS = {
   menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
 };
 const hudIcon = name => `<span class="hud-icon" aria-hidden="true">${HUD_ICONS[name]}</span>`;
+const compactHudNumber = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
+const formatHudNumber = value => value >= 100000 ? compactHudNumber.format(value) : value.toLocaleString('en-US');
+const fishingHints = {
+  SURFACE_IDLE: 'Click or tap the water to aim and cast your line.',
+  DESCENDING: 'Move the mouse or drag to steer. Click again, press Space, or use Reel Up to return.',
+  REELING: 'Steer around hazards while bringing your catches to the boat.',
+};
 
 export class UIManager {
   constructor(saveSystem, onCastTrigger, onStartDive, trapSystem = null, questSystem = null) {
@@ -348,6 +356,7 @@ export class UIManager {
       </div>
 
       <div class="hud-secondary">
+      <div class="hud-status-row">
       <div class="hud-buffs-container" id="hud-buffs" role="region" aria-label="Active effects" tabindex="0"></div>
 
       <div class="hud-center">
@@ -357,7 +366,7 @@ export class UIManager {
           <div class="depth-bar-track">
             <div class="depth-bar-fill" id="hud-depth-fill"></div>
           </div>
-          <button class="btn-reel-dive" id="btn-manual-reel-up" style="display: none;" title="Reel Up (or press Space)">⬆️ Reel Up</button>
+          <button type="button" class="btn-reel-dive" id="btn-manual-reel-up" style="display: none;" title="Reel up (Space or click the water again)">${REEL_ICON}<span>Reel Up</span></button>
         </div>
 
         <!-- Line Tension Meter during Reeling -->
@@ -372,11 +381,13 @@ export class UIManager {
         </div>
       </div>
 
+      </div>
       <div id="world-event-banner" hidden role="status"></div>
+      <div id="hud-hint" hidden></div>
       </div>
 
       <div class="hud-right" id="hud-right">
-        <button type="button" class="icon-btn mobile-menu-toggle-btn" id="btn-mobile-menu-toggle" aria-expanded="false" aria-controls="hud-right-dropdown" title="Open Menu">
+        <button type="button" class="icon-btn mobile-menu-toggle-btn" id="btn-mobile-menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="hud-right-dropdown" title="Open Menu">
           ${hudIcon('menu')} <span class="mobile-menu-toggle-label">Menu</span> <span class="mobile-menu-chevron" aria-hidden="true">▾</span>
         </button>
         <div class="hud-right-dropdown" id="hud-right-dropdown">
@@ -673,7 +684,6 @@ export class UIManager {
       launchGame();
     };
 
-    document.getElementById('btn-instant-play')?.addEventListener('click', startAsGuest);
     btnGuestStart?.addEventListener('click', startAsGuest);
     btnAuthPlayGuest?.addEventListener('click', startAsGuest);
 
@@ -841,6 +851,7 @@ export class UIManager {
     hudRight.classList?.toggle?.('mobile-menu-open', isOpen);
     dropdown.classList?.toggle?.('open', isOpen);
     toggleBtn.setAttribute?.('aria-expanded', String(isOpen));
+    toggleBtn.setAttribute?.('aria-label', isOpen ? 'Close menu' : 'Open menu');
     return isOpen;
   }
 
@@ -935,6 +946,10 @@ export class UIManager {
     }
     if (!captain) this._focusedCaptain = null;
     const isDiving = (gameState === 'CASTING' || gameState === 'DESCENDING' || gameState === 'REELING');
+    const isBeginner = (this.saveSystem.data.stats?.totalCasts || 0) <= 2 && (this.saveSystem.data.stats?.totalFishCaught || 0) < 3;
+    const hint = isBeginner && !this.activeModal ? fishingHints[gameState] || '' : '';
+    this._setText('hud-hint', hint);
+    this._setHidden('hud-hint', !hint);
     if (isDiving) {
       this.closeMobileMenu();
     }
@@ -968,8 +983,19 @@ export class UIManager {
     const xpPct = Math.min(100, (currentXp / xpReq) * 100);
     this._setWidth('hud-xp-fill', `${xpPct}%`);
 
-    this._setText('coin-amount', `$${this.saveSystem.data.coins.toLocaleString()}`);
-    this._setText('gem-amount', this.saveSystem.getGemBalance().toLocaleString());
+    const coins = this.saveSystem.data.coins, gems = this.saveSystem.getGemBalance();
+    if (this._lastHudCoinValue !== coins) {
+      this._lastHudCoinValue = coins;
+      this._setText('coin-amount', `$${formatHudNumber(coins)}`);
+      const coinDisplay = this._getEl('hud-coins');
+      if (coinDisplay) coinDisplay.title = `Gold: $${coins.toLocaleString('en-US')}`;
+    }
+    if (this._lastHudGemValue !== gems) {
+      this._lastHudGemValue = gems;
+      this._setText('gem-amount', formatHudNumber(gems));
+      const gemDisplay = this._getEl('hud-gems');
+      if (gemDisplay) gemDisplay.title = `${gems.toLocaleString('en-US')} Gems - daily login reward`;
+    }
 
     const hudNow = performance.now();
     const runSlowHud = !this._lastHudSlowCheck || (hudNow - this._lastHudSlowCheck >= 250) || (this._lastHudGameState !== gameState);
@@ -1240,7 +1266,7 @@ export class UIManager {
     }, 4500);
   }
 
-  openModal(title, contentHtml) {
+  openModal(title, contentHtml, layout = '') {
     if (typeof this._activeModalCleanup === 'function') {
       const cleanup = this._activeModalCleanup;
       this._activeModalCleanup = null;
@@ -1249,6 +1275,7 @@ export class UIManager {
     soundManager.playButtonClick();
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-content').innerHTML = contentHtml;
+    this._getEl('modal-container')?.classList.toggle('catch-summary-modal', layout === 'catch-summary');
     document.getElementById('modal-overlay').className = 'modal-overlay-visible';
   }
 
@@ -1767,14 +1794,14 @@ export class UIManager {
               ${iconHtml}
             </div>
             <div class="catch-item-details">
-              <div class="catch-item-name">${item.name} ${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div>
+              <div class="catch-item-name"><span class="catch-item-title">${escapeScoreboardText(item.name)}</span><div class="catch-item-badges">${aberrationTag} ${gradeBadge} ${shinyTag} ${mythicTag} ${crownTag} ${fossilTag} ${relicTag} ${crateTag} ${rarityBadge}</div></div>
               <div class="catch-item-specs">
                 ${
                   isCrate
                     ? `<span>Rank ${item.crateRank || 1} Mystery Loot Crate • ${item.unboxed ? `Loot: <strong>${item.loot?.name || 'Claimed'}</strong>` : 'Crack open to claim loot!'}</span>`
                     : item.isBottle || item.id === 'bottle'
                     ? `<span>Drift Message in a Bottle • Uncork to read secret note!</span>`
-                    : !isTreasure && !isRelic && !isSafe
+                    : !isTreasure && !isRelic && !isSafe && !isFossil
                     ? `<span><strong>${item.size || 0} cm</strong></span> <span>${item.weight || 0} kg</span> ${item.crown ? `<span>• Size Record</span>` : ''}`
                     : isRelic
                     ? `<span>Archaeological Artifact (${item.relicType?.era || 'Ancient'}) • ${item.restored ? 'Restored' : 'Needs Cleaning'}</span>`
@@ -1834,6 +1861,7 @@ export class UIManager {
 
     const modalBody = `
       <div class="summary-container">
+      <div class="summary-scroll">
         ${isStorageFull ? `
           <div style="background: rgba(239, 68, 68, 0.22); border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; text-align: center; color: #fecaca; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
             You ran out of storage and need to sell items!
@@ -1859,26 +1887,29 @@ export class UIManager {
           </div>` : ''}
         </div>
 
+        <div class="summary-tools">
+          ${hasBottles ? '<button type="button" class="btn btn-secondary" id="btn-read-dive-bottles">Read Message</button>' : ''}
+          ${unboxedCrates.length > 0 ? '<button type="button" class="btn btn-secondary" id="btn-open-crates">Open Crates</button>' : ''}
+          ${hasUnrestoredRelic ? '<button type="button" class="btn btn-secondary" id="btn-restore-relic">Restoration Desk</button>' : ''}
+          ${hook.caughtItems.some(item => item.species && (item.rarity === 'legendary' || item.isMythic || item.isGodTier)) ? `<button type="button" class="btn btn-secondary" id="share-best-catch"><span class="catch-action-art">${MISC_ART.trophyCup}</span> Create Catch Card</button>` : ''}
+        </div>
         ${listHtml}
-
-        ${hook.caughtItems.some(item => item.species && (item.rarity === 'legendary' || item.isMythic || item.isGodTier)) ? '<div style="text-align:center;margin:10px 0;"><button class="btn btn-secondary" id="share-best-catch" style="border-color:#eab308;color:#fef08a;"><span style="display:inline-block;width:14px;height:14px;vertical-align:middle;margin-right:4px;">${MISC_ART.trophyCup}</span> Create Catch Card</button></div>' : ''}
+        </div>
         <div class="summary-footer">
           <div class="total-earnings">
             <span>Haul Value:</span>
             <strong class="total-cash" id="summary-total-cash">+$${remainingGold.toLocaleString()}</strong>
           </div>
           <div class="summary-actions">
-            ${hasBottles ? `<button class="btn btn-warning" id="btn-read-dive-bottles" style="background:#06b6d4; color:#ffffff; font-weight:800; border-color:#0891b2;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">🍾</span> Read Message</button>` : ''}
-            ${unboxedCrates.length > 0 ? `<button class="btn btn-warning" id="btn-open-crates" style="background:#eab308; color:#1e293b; font-weight:800; border-color:#ca8a04;"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${HUD_ICONS.inventory}</span> Open Crates</button>` : ''}
-            ${hasUnrestoredRelic ? `<button class="btn btn-warning" id="btn-restore-relic"><span style="display:inline-block;width:15px;height:15px;vertical-align:middle;margin-right:4px;">${JOURNAL_TAB_ART.relics}</span> Restoration Desk</button>` : ''}
             <button class="btn btn-primary" id="btn-keep-all-catches"><span class="summary-btn-art">${MISC_ART.keepAll}</span> Keep All</button>
             <button class="btn btn-buy" id="btn-sell-all-catches"><span class="summary-btn-art">${MISC_ART.sellAll}</span> Sell All</button>
             <button class="btn btn-secondary" id="btn-summary-inventory"><span class="summary-btn-art">${MISC_ART.viewInventory}</span> View Inventory</button>
           </div>
+        </div>
       </div>
     `;
 
-    this.openModal('Dive Completed', modalBody);
+    this.openModal('Dive Completed', modalBody, 'catch-summary');
 
     // Render authentic fish previews onto summary canvases with bulletproof fallback icon
     hook.caughtItems.forEach((item, itemIdx) => {
