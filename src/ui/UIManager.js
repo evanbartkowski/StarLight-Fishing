@@ -6,6 +6,7 @@ import { crateArtwork, crateRewardGallery } from './CratePresentation.js';
 import { chestThumbnail, drawChest } from '../rendering/ChestArtwork.js';
 import { displaySpeciesName } from '../systems/CatchTraits.js';
 import { openCatchCard, specimen } from './CatchCard.js';
+import { openIslandCasinoModal } from './IslandCasino.js';
 import { shareAquarium, visitAquarium, getAquariumReactionSummary } from './AquariumSocial.js';
 import { premiumPurchase } from '../systems/PremiumPurchases.js';
 import { DAILY_REWARDS, achievementGems } from '../data/GemEconomy.js';
@@ -6102,6 +6103,10 @@ export class UIManager {
     document.getElementById('btn-afk-resume')?.addEventListener('click', () => {
       this.closeModal();
     });
+  }
+
+  openGamblerIslandModal(islandState) {
+    openIslandCasinoModal(this, this.saveSystem, soundManager, islandState);
   }
 
   async triggerEndgameScene(onComplete) {

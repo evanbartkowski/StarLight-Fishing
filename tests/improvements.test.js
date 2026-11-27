@@ -503,3 +503,76 @@ test('Submarine seating & dome overlay, 5m silent AFK knitting, 30m AFK pause, m
   assert.ok(MISC_ART.keepItem.includes('#0ea5e9') && !MISC_ART.keepItem.includes('currentColor'));
   assert.ok(MISC_ART.sellCoin.includes('#fde047') && !MISC_ART.sellCoin.includes('currentColor'));
 });
+
+test('Casual Chrono Void fish have reduced swirl/dots and Realm 1 corner Gambler Island stays 5m with Roulette & Blackjack', async () => {
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { OceanWorld } = await import('../src/world/OceanWorld.js');
+  const { resolveRouletteSpin, evaluateBlackjackHand, resolveBlackjackRound, getRouletteColor } = await import('../src/ui/IslandCasino.js');
+
+  // 1. Casual Chrono Void fish should not have orbiting stars
+  const casualVoid = new Fish({
+    id: 'realm_7_common_test', name: 'Void Minnow', zone: 7, rarity: 'common',
+    sizeRange: [15, 22], baseWeight: 1, baseValue: 50,
+    primaryColor: '#4f46e5', secondaryColor: '#818cf8', finColor: '#38bdf8',
+  }, 300, 400);
+  assert.equal(casualVoid.hasOrbitingStars, false);
+
+  let finiteErrors = 0;
+  const mockCtx = new Proxy({}, {
+    get: (_, key) => {
+      if (key === 'createRadialGradient' || key === 'createLinearGradient') {
+        return () => ({ addColorStop: () => {} });
+      }
+      if (key === 'measureText') return () => ({ width: 90 });
+      return (...args) => {
+        for (const v of args) {
+          if (typeof v === 'number' && !Number.isFinite(v)) finiteErrors++;
+        }
+      };
+    },
+    set: () => true,
+  });
+  casualVoid.render(mockCtx, 0);
+
+  // 2. Realm 1 Gambler Island spawns in corner, stays 5 minutes (300s), hit-tests & renders cleanly, and vanishes on expiry or realm change
+  const world = new OceanWorld({ width: 1200, height: 720, getContext: () => mockCtx });
+  world.currentSeaId = 1;
+  const island = world.spawnGamblerIsland('right');
+  assert.equal(island.active, true);
+  assert.equal(island.timer, 300);
+  world.updateGamblerIsland(2, 1);
+  assert.ok(world.hitTestGamblerIsland(island.x, world.surfaceY - 22));
+  world.renderGamblerIsland(mockCtx, 0);
+  assert.equal(finiteErrors, 0);
+
+  // Departs after 5 minutes total
+  world.updateGamblerIsland(299, 1);
+  assert.equal(world.gamblerIsland.active, false);
+
+  // Immediately leaves if captain travels out of Realm 1
+  world.spawnGamblerIsland('right');
+  world.updateGamblerIsland(1, 2);
+  assert.equal(world.gamblerIsland.active, false);
+
+  // 3. Roulette & Blackjack rules + Coins/Gems payout verification
+  assert.equal(getRouletteColor(0), 'green');
+  assert.equal(getRouletteColor(7), 'red');
+  const redWin = resolveRouletteSpin('red', 100, 'coins', null, 7);
+  assert.equal(redWin.won, true);
+  assert.equal(redWin.payout, 200);
+  const zeroWin = resolveRouletteSpin('green', 2, 'gems', null, 0);
+  assert.equal(zeroWin.won, true);
+  assert.equal(zeroWin.payout, 36);
+
+  const bjHand = evaluateBlackjackHand([{ rank: 'A', suit: '♠' }, { rank: 'K', suit: '♥' }]);
+  assert.equal(bjHand.total, 21);
+  assert.equal(bjHand.isBlackjack, true);
+  const bjRes = resolveBlackjackRound(
+    [{ rank: 'A', suit: '♠' }, { rank: 'K', suit: '♥' }],
+    [{ rank: '9', suit: '♣' }, { rank: '10', suit: '♦' }],
+    4,
+    'gems'
+  );
+  assert.equal(bjRes.outcome, 'blackjack');
+  assert.equal(bjRes.payout, 10);
+});

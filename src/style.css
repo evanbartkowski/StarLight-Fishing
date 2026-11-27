@@ -6477,3 +6477,60 @@ canvas.journal-fish-preview { width: 240px; height: 100px; max-width: 100%; obje
 .offline-game-status:has([data-ready=true]) .offline-status-dot { background: #5eead4; }
 .install-dialog .install-online-note { font-size: .79rem; color: #9cb4c1; margin-top: 20px; }
 @media (max-height: 650px) and (min-width: 600px) { .install-game-icon { top: 8px; right: 8px; } }
+
+/* =========================================
+   Drift-Isle Casino & Mobile Responsive Hardening
+   ========================================= */
+.casino-panel { display: flex; flex-direction: column; gap: 12px; }
+.casino-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(250, 204, 21, 0.35); border-radius: 12px; padding: 10px 12px; }
+.casino-npc-badge { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.casino-isle-icon { font-size: 1.75rem; flex-shrink: 0; }
+.casino-npc-badge strong { display: block; color: #fde047; font-size: 0.96rem; }
+.casino-npc-badge small { display: block; color: #94a3b8; font-size: 0.78rem; }
+.casino-balances { display: flex; gap: 6px; flex-wrap: wrap; }
+.casino-bal-pill { background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(250, 204, 21, 0.4); border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; font-weight: 800; color: #fde68a; white-space: nowrap; }
+.casino-bal-pill.is-gems { border-color: rgba(56, 189, 248, 0.45); color: #67e8f9; }
+.casino-tabs { display: flex; gap: 8px; }
+.casino-tabs .tab-btn { flex: 1; }
+.casino-wager-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 8px 10px; }
+.casino-currency-toggle, .casino-bet-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.casino-bet-row input { width: 76px; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.4); color: #f8fafc; border-radius: 8px; padding: 6px 8px; font-weight: 700; text-align: center; }
+.casino-game-box { display: flex; flex-direction: column; gap: 10px; background: rgba(6, 78, 59, 0.25); border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 12px; padding: 12px; }
+.roulette-options-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.roulette-opt { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 10px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-weight: 700; font-size: 0.84rem; cursor: pointer; min-height: 44px; }
+.roulette-opt.is-red { border-color: rgba(239, 68, 68, 0.5); }
+.roulette-opt.is-black { border-color: rgba(148, 163, 184, 0.45); }
+.roulette-opt.is-green { border-color: rgba(34, 197, 94, 0.55); }
+.roulette-opt.selected { border-color: #facc15; box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.38); background: rgba(30, 41, 59, 0.98); }
+.roulette-opt span { color: #fde047; font-size: 0.78rem; }
+.casino-result-banner { min-height: 36px; display: flex; align-items: center; justify-content: center; text-align: center; background: rgba(15, 23, 42, 0.72); border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; }
+.casino-muted { color: #94a3b8; font-size: 0.84rem; }
+.casino-play-btn { width: 100%; font-weight: 800; padding: 11px 16px; }
+.blackjack-table { display: flex; flex-direction: column; gap: 10px; }
+.bj-hand-section { background: rgba(15, 23, 42, 0.55); border-radius: 10px; padding: 10px; }
+.bj-label { font-size: 0.82rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px; }
+.bj-cards { display: flex; flex-wrap: wrap; gap: 8px; min-height: 58px; align-items: center; }
+.playing-card { width: 46px; height: 64px; border-radius: 8px; background: #f8fafc; border: 1.5px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 10px rgba(0,0,0,0.45); }
+.playing-card.card-red { color: #dc2626; }
+.playing-card.card-black { color: #0f172a; }
+.playing-card.card-back { background: linear-gradient(135deg, #1e3a8a, #0f172a); border-color: #38bdf8; color: #facc15; font-size: 1.3rem; }
+.card-rank { font-size: 0.95rem; line-height: 1; }
+.card-suit { font-size: 1.05rem; line-height: 1.1; }
+.bj-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.bj-actions .btn { flex: 1 1 90px; }
+
+@media (max-width: 600px) {
+  .modal-header { padding: 12px 14px; gap: 8px; }
+  .modal-header h2 { font-size: 1.05rem; line-height: 1.25; overflow-wrap: anywhere; }
+  #modal-close { width: 38px; height: 38px; min-width: 38px; min-height: 38px; flex-shrink: 0; }
+  .boat-preview-container canvas, #boat-preview-canvas { width: 100% !important; max-width: 100% !important; height: auto !important; }
+  .summary-footer { flex-direction: column; align-items: stretch; gap: 10px; }
+  .summary-actions { justify-content: stretch; width: 100%; }
+  .summary-actions .btn { flex: 1 1 46%; min-width: 0; font-size: 0.82rem; padding: 8px 8px; }
+  .roulette-options-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .casino-wager-bar { flex-direction: column; align-items: stretch; }
+  .casino-bet-row input { flex: 1 1 70px; }
+  #touch-controls { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
+  #game-hud .hud-left { gap: 4px; }
+  .hud-secondary { pointer-events: none; }
+}

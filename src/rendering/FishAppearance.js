@@ -24,7 +24,7 @@ export function hasFantasyTrail(species) {
   if (fantasyTrails.has(species)) return fantasyTrails.get(species);
   const enabled = Boolean(species.fantasyTrail && (
     species.isMythic || species.isGodTier || species.isLeviathan || species.rarity === 'legendary' ||
-    (['rare', 'epic'].includes(species.rarity) && /starlight|aurora|prism|comet|luminous|lantern|glow|ember|phoenix|rift|celestial|aether|oracle/i.test(species.name))
+    (['rare', 'epic'].includes(species.rarity) && /starlight|aurora|prism|comet|luminous|lantern|glow|ember|phoenix|rift|celestial|aether|oracle/i.test(species.name || ''))
   ));
   fantasyTrails.set(species, enabled);
   return enabled;

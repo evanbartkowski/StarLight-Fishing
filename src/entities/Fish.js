@@ -129,9 +129,14 @@ export class Fish {
     this.isCaldera = isCaldera;
     const isVoidRealm = this.zone === 7 || species.zone === 7 || species.realmId === 7 || (species.id && species.id.startsWith('realm_7_')) || (species.id && species.id.includes('chrono'));
     this.isVoidRealm = isVoidRealm;
-    // Subset (~20%) of normal Chrono Void fish have orbiting stars to eliminate lag
+    // Select rare+ Chrono Void fish carry orbiting cosmic stardust motes; casual common/uncommon ones swim calmly
     const starSeed = Math.abs(Math.sin((this.x * 12.9898 + this.y * 78.233)) * 43758.5453);
-    this.hasOrbitingStars = (starSeed % 1) < 0.22;
+    const isRareOrHigherSpecies = ['rare', 'epic', 'legendary'].includes(species.rarity) || this.isMythic || this.isGodTier || !!species.isLeviathan;
+    this.hasOrbitingStars = isVoidRealm
+      ? (isRareOrHigherSpecies ? (starSeed % 1) < 0.65 : (starSeed % 1) < 0.25)
+      : (isRareOrHigherSpecies && (starSeed % 1) < 0.35);
+    // Only a small portion (~18%) of fish carry subtle trailing bubble/sparkle dots behind them
+    this.hasDotTrail = (starSeed % 1) < 0.18;
     const calderaFishMult = isCaldera ? 1.6 : 1.0;
 
     const isFirst3Realms = (this.zone >= 1 && this.zone <= 3) || (species.zone >= 1 && species.zone <= 3) || (species.realmId >= 1 && species.realmId <= 3);
@@ -747,8 +752,9 @@ export class Fish {
     const isRare = s.rarity === 'rare';
     const isLegendary = this.isLegendary || s.rarity === 'legendary' || this.rarity === 'legendary' || !!s.isLegendary || !!this.isMythic || !!s.isMythic || !!this.isGodTier || !!s.isLeviathan;
     const isVoidFish = this.isVoidRealm || s.zone === 7 || this.zone === 7 || s.realmId === 7 || (s.id && s.id.startsWith('realm_7_'));
+    const isRareOrHigher = isRare || isEpic || isLegendary || isRainbow || !!this.isMythic;
 
-    if (!isHooked && (s.rarity !== 'common' || isRainbow || this.isMythic || this.isSpecialDeep || s.glowColor)) {
+    if (!isHooked && (!isVoidFish ? (s.rarity !== 'common' || isRainbow || this.isMythic || this.isSpecialDeep || s.glowColor) : isRareOrHigher)) {
       const color = RARITY_CONFIG[s.rarity]?.color || '#a78bfa';
       const auraRadius = s.isLeviathan ? (isLegendary ? 115 : 77) : (isLegendary ? 90 : 60);
       drawAura(ctx, this.auraTime, isLegendary ? '#facc15' : color, auraRadius, 0.64);
@@ -829,18 +835,18 @@ export class Fish {
       ctx.restore();
     }
 
-    // Super mythical ethereal celestial aura and selective orbiting stardust motes for Realm 7 normal fish
-    if (isVoidFish && !isLegendary && !isHooked) {
+    // Ethereal celestial aura and selective orbiting stardust motes reserved for rarer Chrono Void species
+    if (isVoidFish && isRareOrHigher && !isLegendary && !isHooked) {
       ctx.save();
-      const auraRadius = s.isLeviathan ? 88 : 46;
+      const auraRadius = s.isLeviathan ? 88 : 44;
       const t = this.wiggleTimer;
 
-      // 1. Iridescent undulating cosmic bloom
+      // 1. Subtle cosmic bloom
       const voidGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, auraRadius);
-      const cycleHue = (t * 45) % 360;
-      voidGrad.addColorStop(0, `hsla(${cycleHue}, 90%, 85%, 0.38)`);
-      voidGrad.addColorStop(0.4, `hsla(${(cycleHue + 60) % 360}, 95%, 70%, 0.22)`);
-      voidGrad.addColorStop(0.8, `hsla(${(cycleHue + 140) % 360}, 85%, 60%, 0.1)`);
+      const cycleHue = (t * 28) % 360;
+      voidGrad.addColorStop(0, `hsla(${cycleHue}, 90%, 85%, 0.34)`);
+      voidGrad.addColorStop(0.4, `hsla(${(cycleHue + 60) % 360}, 95%, 70%, 0.18)`);
+      voidGrad.addColorStop(0.8, `hsla(${(cycleHue + 140) % 360}, 85%, 60%, 0.08)`);
       voidGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
 
       ctx.save();
@@ -851,19 +857,19 @@ export class Fish {
       ctx.fill();
       ctx.restore();
 
-      // 2. Orbiting stardust motes & prismatic celestial sparks (only a select few normal fish carry these!)
+      // 2. Orbiting stardust motes for rare+ selected void fish
       if (this.hasOrbitingStars && !this.isAquarium && !this._inTank) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        for (let m = 0; m < 4; m++) {
-          const moteAngle = m * (Math.PI * 2 / 4) + t * 0.9;
-          const moteDistX = (auraRadius * 0.72) + Math.sin(t * 2 + m) * 6;
-          const moteDistY = (auraRadius * 0.42) + Math.cos(t * 1.8 + m) * 4;
+        for (let m = 0; m < 3; m++) {
+          const moteAngle = m * (Math.PI * 2 / 3) + t * 0.7;
+          const moteDistX = (auraRadius * 0.72) + Math.sin(t * 1.6 + m) * 5;
+          const moteDistY = (auraRadius * 0.42) + Math.cos(t * 1.4 + m) * 3.5;
           const mx = Math.cos(moteAngle) * moteDistX;
           const my = Math.sin(moteAngle) * moteDistY;
-          const mHue = (t * 70 + m * 90) % 360;
-          const mSize = 2.4 + Math.sin(t * 3.5 + m) * 0.8;
-          drawRainbowStarSparkle(ctx, mx, my, mSize, t * 1.2 + m, mHue, 0.75);
+          const mHue = (t * 60 + m * 110) % 360;
+          const mSize = 2.4 + Math.sin(t * 3 + m) * 0.7;
+          drawRainbowStarSparkle(ctx, mx, my, mSize, t * 1.0 + m, mHue, 0.75);
         }
         ctx.restore();
       }
@@ -882,96 +888,54 @@ export class Fish {
       }
       ctx.restore();
     }
-    // Trailing rainbow/stardust star sparkles for rare/epic/legendary fish
+    // Trailing rainbow stars reserved for legendary/rainbow; only a select few other fish show subtle dots
     if (!isHooked && (isRainbow || isLegendary)) {
       ctx.save();
       const t = this.wiggleTimer;
-      for (let p = 0; p < 4; p++) {
-        const px = -28 - p * 9 + Math.sin(t * 3 + p) * 4;
-        const py = Math.sin(t * 4 + p * 2) * 7;
-        const sparkHue = (this.wiggleTimer * 80 + p * 60) % 360;
+      for (let p = 0; p < 3; p++) {
+        const px = -28 - p * 10 + Math.sin(t * 3 + p) * 3;
+        const py = Math.sin(t * 4 + p * 2) * 6;
+        const sparkHue = (this.wiggleTimer * 80 + p * 70) % 360;
         const pSize = 4.2 + Math.sin(t * 4 + p) * 1.4;
         const pRot = t * 1.5 + p;
         drawRainbowStarSparkle(ctx, px, py, pSize, pRot, sparkHue, 0.85);
       }
       ctx.restore();
-    } else if (!isHooked && isEpic) {
+    } else if (!isHooked && this.hasDotTrail && isRareOrHigher) {
       ctx.save();
       const t = this.wiggleTimer;
-      ctx.fillStyle = '#f472b6';
-      ctx.shadowColor = '#d946ef';
-      ctx.shadowBlur = 0;
-      for (let p = 0; p < 3; p++) {
-        const px = -26 - p * 8 + Math.sin(t * 2.5 + p) * 3;
-        const py = Math.cos(t * 3 + p) * 6;
-        ctx.beginPath();
-        ctx.arc(px, py, 2.0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    } else if (!isHooked && isRare) {
-      ctx.save();
-      const t = this.wiggleTimer;
-      ctx.fillStyle = '#67e8f9';
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 0;
+      ctx.fillStyle = isEpic ? '#f472b6' : '#67e8f9';
       for (let p = 0; p < 2; p++) {
-        const px = -24 - p * 7 + Math.sin(t * 3 + p) * 2;
-        const py = Math.sin(t * 2 + p) * 5;
+        const px = -26 - p * 8 + Math.sin(t * 2.4 + p) * 2.5;
+        const py = Math.sin(t * 2.8 + p) * 4.5;
         ctx.beginPath();
-        ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+        ctx.arc(px, py, 1.9, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
     }
 
-    // Fantasy species particle trail & aura
-    if (!isHooked && hasFantasyTrail(s)) {
+    // Fantasy species particle trail (only select showcase species)
+    if (!isHooked && this.hasDotTrail && hasFantasyTrail(s)) {
       ctx.save();
       const trail = s.fantasyTrail;
       const t = this.wiggleTimer;
       if (trail === 'starlight' || trail === 'sparkle' || trail === 'rainbow') {
         ctx.fillStyle = trail === 'rainbow' ? '#f43f5e' : (s.rarity === 'legendary' ? '#fef08a' : '#c4b5fd');
-        ctx.shadowColor = s.rarity === 'legendary' ? '#facc15' : '#c4b5fd';
-        ctx.shadowBlur = 0;
-        for (let p = 0; p < 3; p++) {
-          const px = -25 - p * 8 + Math.sin(t * 2 + p) * 3;
-          const py = Math.sin(t * 3 + p) * 5;
+        for (let p = 0; p < 2; p++) {
+          const px = -25 - p * 9 + Math.sin(t * 2 + p) * 2.5;
+          const py = Math.sin(t * 3 + p) * 4;
           ctx.beginPath();
           ctx.arc(px, py, 1.8, 0, Math.PI * 2);
           ctx.fill();
         }
-      } else if (trail === 'biolum' || trail === 'neon') {
-        ctx.fillStyle = '#38bdf8';
-        ctx.shadowColor = '#22d3ee';
-        ctx.shadowBlur = 0;
-        for (let p = 0; p < 3; p++) {
-          const px = -24 - p * 7;
-          const py = Math.cos(t * 2.5 + p) * 4;
+      } else if (trail === 'biolum' || trail === 'neon' || trail === 'embers' || trail === 'aether' || trail === 'aurora' || trail === 'emerald') {
+        ctx.fillStyle = trail === 'embers' ? '#f97316' : trail === 'aether' ? '#e879f9' : trail === 'emerald' ? '#34d399' : '#38bdf8';
+        for (let p = 0; p < 2; p++) {
+          const px = -24 - p * 8;
+          const py = Math.sin(t * 2.2 + p * 1.5) * 4.5;
           ctx.beginPath();
-          ctx.arc(px, py, 2.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else if (trail === 'embers') {
-        ctx.fillStyle = '#f97316';
-        ctx.shadowColor = '#ef4444';
-        ctx.shadowBlur = 0;
-        for (let p = 0; p < 3; p++) {
-          const px = -22 - p * 6;
-          const py = Math.sin(t * 3 + p) * 6;
-          ctx.beginPath();
-          ctx.arc(px, py, 2.0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else if (trail === 'aether' || trail === 'aurora' || trail === 'emerald') {
-        ctx.fillStyle = trail === 'aether' ? '#e879f9' : (trail === 'emerald' ? '#34d399' : '#38bdf8');
-        ctx.shadowColor = trail === 'aether' ? '#c026d3' : (trail === 'emerald' ? '#059669' : '#a855f7');
-        ctx.shadowBlur = 0;
-        for (let p = 0; p < 4; p++) {
-          const px = -24 - p * 6;
-          const py = Math.sin(t * 2 + p * 1.5) * 5;
-          ctx.beginPath();
-          ctx.arc(px, py, 2.0, 0, Math.PI * 2);
+          ctx.arc(px, py, 1.9, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -1020,8 +984,8 @@ export class Fish {
       gradient.addColorStop(.5, '#38bdf8');
       gradient.addColorStop(1, this.bodyColors[1]);
       primary = gradient;
-    } else if (isVoidFish && !s.isLeviathan && !this.mutation && !this.isShiny) {
-      const vHue = (((this.wiggleTimer || 0) * 50 + (this.x || 0) * 0.12) % 360 + 360) % 360;
+    } else if (isVoidFish && isRareOrHigher && !s.isLeviathan && !this.mutation && !this.isShiny) {
+      const vHue = (((this.wiggleTimer || 0) * 32 + (this.x || 0) * 0.12) % 360 + 360) % 360;
       const gradient = ctx.createLinearGradient(-28, -14, 28, 14);
       gradient.addColorStop(0.0, `hsl(${vHue}, 92%, 56%)`);
       gradient.addColorStop(0.2, `hsl(${(vHue + 60) % 360}, 95%, 62%)`);
@@ -1032,6 +996,11 @@ export class Fish {
       primary = gradient;
       secondary = `hsl(${(vHue + 180) % 360}, 95%, 78%)`;
       finColor = `hsla(${(vHue + 80) % 360}, 95%, 72%, 0.85)`;
+    } else if (isVoidFish && !s.isLeviathan && !this.mutation && !this.isShiny) {
+      // Calm cosmic sheen for casual common/uncommon Chrono Void fish (no rapid swirl)
+      primary = this.bodyColors[0] || '#4f46e5';
+      secondary = this.bodyColors[1] || '#818cf8';
+      finColor = this.bodyColors[2] || '#38bdf8';
     }
 
     const isCustomTailLeviathan = [

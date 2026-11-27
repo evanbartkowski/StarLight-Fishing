@@ -376,6 +376,14 @@ function handlePointerDown(e) {
       }
     }
 
+    // 0b. Check very rare Realm 1 Drift-Isle Gambler NPC click
+    if (oceanWorld.hitTestGamblerIsland?.(mousePos.x, mousePos.y + cameraY)) {
+      soundManager.playRareChime();
+      isMouseDown = false;
+      uiManager.openGamblerIslandModal(oceanWorld.gamblerIsland);
+      return;
+    }
+
     // 1. Check if user clicked a floating drift item (bottle / driftwood)
     if (oceanWorld.driftItems) {
       const picked = oceanWorld.driftItems.checkPickup(mousePos.x, mousePos.y + cameraY);
@@ -499,6 +507,11 @@ function handlePointerMove(e) {
     } else {
       oceanWorld.hoveredCompanion = null;
       if (oceanWorld.dolphin) oceanWorld.dolphin.isHovered = false;
+    }
+
+    if (canvas) {
+      const hoveringIsland = oceanWorld.hitTestGamblerIsland?.(mousePos.x, mousePos.y + cameraY);
+      canvas.style.cursor = (hoveringIsland || oceanWorld.hoveredCompanion) ? 'pointer' : 'crosshair';
     }
 
     // Dynamically update fisherman orientation (left or right side of boat) with hysteresis
@@ -1374,10 +1387,10 @@ const render = () => {
   // 4. Hazards (reactive flora drawn first so it sits behind obstacles)
   try {
     (oceanWorld.entities.flora || []).forEach((flora) => {
-      if (flora.y - cameraY > -80 && flora.y - cameraY < screenHeight + 80) flora.render(ctx, cameraY);
+      if (flora.y - cameraY > -80 && flora.y - cameraY < screenHeight + 80) { ctx.save(); try { flora.render(ctx, cameraY); } finally { ctx.restore(); } }
     });
     (oceanWorld.entities.powerups || []).forEach((p) => {
-      if (p.y - cameraY > -40 && p.y - cameraY < screenHeight + 40) p.render(ctx, cameraY);
+      if (p.y - cameraY > -40 && p.y - cameraY < screenHeight + 40) { ctx.save(); try { p.render(ctx, cameraY); } finally { ctx.restore(); } }
     });
     oceanWorld.entities.hazards.forEach((hazard) => {
       hazard.renderAttacks(ctx, cameraY, screenHeight);
@@ -1402,13 +1415,13 @@ const render = () => {
   try {
     oceanWorld.entities.treasures.forEach((treasure) => {
       if (treasure.y - cameraY > -60 && treasure.y - cameraY < screenHeight + 60) {
-        treasure.render(ctx, cameraY);
+        ctx.save(); try { treasure.render(ctx, cameraY); } finally { ctx.restore(); }
       }
     });
     if (oceanWorld.entities.relics) {
       oceanWorld.entities.relics.forEach((relic) => {
         if (relic.y - cameraY > -60 && relic.y - cameraY < screenHeight + 60) {
-          relic.render(ctx, cameraY);
+          ctx.save(); try { relic.render(ctx, cameraY); } finally { ctx.restore(); }
         }
       });
     }

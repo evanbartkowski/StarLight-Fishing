@@ -93,8 +93,227 @@ export class OceanWorld {
     this.pendingDriftwoodBobber = null;
     this.ghostShipState = { active: false, x: 240, alpha: 0, timer: 0 };
     this.ufoState = { active: false, x: -60, y: 78, phase: 'idle', timer: 0 };
+    // Very rare Drift-Isle Gambler NPC spawning in Realm 1 corner for 5 minutes (300s)
+    this.gamblerIsland = {
+      active: false,
+      corner: 'right',
+      x: 0,
+      timer: 0,
+      maxTimer: 300,
+      alpha: 0,
+      checkCooldown: 120,
+    };
     this.isAnglerKnitting = false;
     this.spawnUnionPicket = false;
+  }
+
+  spawnGamblerIsland(corner = null) {
+    const w = Number.isFinite(this.worldWidth) && this.worldWidth > 200 ? this.worldWidth : 1200;
+    const chosenCorner = corner || (Math.random() < 0.72 ? 'right' : 'left');
+    const margin = Math.max(76, Math.min(115, w * 0.11));
+    this.gamblerIsland = {
+      active: true,
+      corner: chosenCorner,
+      x: chosenCorner === 'left' ? margin : Math.max(220, w - margin),
+      timer: 300,
+      maxTimer: 300,
+      alpha: 0.05,
+      checkCooldown: 240,
+    };
+    return this.gamblerIsland;
+  }
+
+  updateGamblerIsland(deltaSec, seaId) {
+    const island = this.gamblerIsland;
+    if (!island || !Number.isFinite(deltaSec) || deltaSec <= 0) return;
+    if (seaId !== 1) {
+      if (island.active) {
+        island.active = false;
+        island.timer = 0;
+        island.alpha = 0;
+      }
+      return;
+    }
+    if (island.active) {
+      island.timer = Math.max(0, island.timer - deltaSec);
+      const elapsed = (island.maxTimer || 300) - island.timer;
+      if (elapsed < 1.5) {
+        island.alpha = Math.min(1, elapsed / 1.5);
+      } else if (island.timer < 8) {
+        island.alpha = Math.max(0, island.timer / 8);
+      } else {
+        island.alpha = 1;
+      }
+      if (island.timer <= 0) {
+        island.active = false;
+        island.alpha = 0;
+      }
+    } else {
+      island.checkCooldown = (island.checkCooldown ?? 120) - deltaSec;
+      if (island.checkCooldown <= 0) {
+        island.checkCooldown = 140 + Math.random() * 140;
+        if (Math.random() < 0.06) {
+          this.spawnGamblerIsland();
+        }
+      }
+    }
+  }
+
+  hitTestGamblerIsland(worldX, worldY) {
+    const island = this.gamblerIsland;
+    if (!island?.active || this.currentSeaId !== 1) return false;
+    const w = Number.isFinite(this.worldWidth) && this.worldWidth > 200 ? this.worldWidth : 1200;
+    const margin = Math.max(76, Math.min(115, w * 0.11));
+    const ix = island.corner === 'left' ? margin : Math.max(220, w - margin);
+    island.x = ix;
+    const iy = this.surfaceY - 22;
+    return Math.abs(worldX - ix) <= 68 && worldY >= iy - 65 && worldY <= this.surfaceY + 26;
+  }
+
+  renderGamblerIsland(ctx, cameraY = 0) {
+    const island = this.gamblerIsland;
+    if (!island?.active || this.currentSeaId !== 1) return;
+    const drawY = (this.surfaceY - cameraY) + 4;
+    if (drawY < -90 || drawY > (this.worldHeight || 900) + 120) return;
+
+    const w = Number.isFinite(this.worldWidth) && this.worldWidth > 200 ? this.worldWidth : 1200;
+    const margin = Math.max(76, Math.min(115, w * 0.11));
+    const ix = island.corner === 'left' ? margin : Math.max(220, w - margin);
+    island.x = ix;
+    const t = this.waveTimer || 0;
+    const bob = Math.sin(t * 1.4) * 1.5;
+    const alpha = Math.max(0, Math.min(1, Number.isFinite(island.alpha) ? island.alpha : 1));
+    if (alpha <= 0.01) return;
+
+    ctx.save();
+    try {
+      ctx.globalAlpha *= alpha;
+      ctx.translate(ix, drawY + bob);
+
+      // Gentle surf foam around island shoal
+      ctx.strokeStyle = 'rgba(224, 242, 254, 0.55)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 4, 62 + Math.sin(t * 2) * 2.5, 8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Golden tropical sandbar mound
+      const sandGrad = ctx.createLinearGradient(0, -18, 0, 10);
+      sandGrad.addColorStop(0, '#fde68a');
+      sandGrad.addColorStop(1, '#d97706');
+      ctx.fillStyle = sandGrad;
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-56, 4);
+      ctx.quadraticCurveTo(-22, -18, 0, -18);
+      ctx.quadraticCurveTo(26, -18, 56, 4);
+      ctx.quadraticCurveTo(0, 11, -56, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Curved palm trunk behind NPC
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-26, -12);
+      ctx.quadraticCurveTo(-36, -42, -20, -64);
+      ctx.stroke();
+
+      // Swaying palm fronds
+      const sway = Math.sin(t * 1.8) * 3;
+      ctx.strokeStyle = '#15803d';
+      ctx.lineWidth = 3.2;
+      for (const [dx, dy] of [[-24, -4], [-18, -16], [2, -18], [22, -10], [20, 4]]) {
+        ctx.beginPath();
+        ctx.moveTo(-20, -64);
+        ctx.quadraticCurveTo(-20 + dx * 0.5, -68 + dy * 0.4, -20 + dx + sway, -62 + dy);
+        ctx.stroke();
+      }
+
+      // Velvet Casino Table & Glowing Brass Lantern
+      ctx.fillStyle = '#451a03';
+      ctx.fillRect(10, -24, 24, 12);
+      ctx.fillStyle = '#b91c1c';
+      ctx.fillRect(8, -26, 28, 4);
+      ctx.fillStyle = '#facc15';
+      ctx.beginPath();
+      ctx.arc(27, -28, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(37, -14);
+      ctx.lineTo(37, -44);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.25)';
+      ctx.beginPath();
+      ctx.arc(37, -46, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.arc(37, -46, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Captain Lucky NPC standing on sandbar
+      ctx.fillStyle = '#991b1b';
+      if (typeof ctx.roundRect === 'function') {
+        ctx.beginPath();
+        ctx.roundRect(-8, -38, 15, 22, 3);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-8, -38, 15, 22);
+      }
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(-2, -37, 3, 18);
+      ctx.fillStyle = '#fde6c8';
+      ctx.beginPath();
+      ctx.arc(-0.5, -45, 6.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(-10, -51, 19, 3);
+      ctx.fillRect(-6, -59, 11, 8);
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(-6, -53, 11, 2);
+
+      // Waving card hand
+      const wave = Math.sin(t * 3.5) * 2.5;
+      ctx.strokeStyle = '#991b1b';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(7, -33);
+      ctx.lineTo(15, -36 + wave);
+      ctx.stroke();
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(14, -42 + wave, 6, 8);
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(16, -40 + wave, 2, 3);
+
+      // Compact clickable tag + 5m timer badge
+      const secs = Math.max(0, Math.ceil(island.timer || 0));
+      const m = Math.floor(secs / 60);
+      const s = String(secs % 60).padStart(2, '0');
+      const label = `🎲 Lucky Isle · ${m}:${s}`;
+      ctx.font = 'bold 10px Outfit, sans-serif';
+      const tw = ctx.measureText(label).width + 14;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(-tw * 0.5, -77, tw, 17, 7);
+      else ctx.rect(-tw * 0.5, -77, tw, 17);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#fef08a';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 0, -68.5);
+    } finally {
+      ctx.restore();
+    }
   }
 
   resize(width, height) {
@@ -572,6 +791,7 @@ export class OceanWorld {
     if (this.driftItems) {
       this.driftItems.update(dt, this.surfaceY);
     }
+    this.updateGamblerIsland(deltaSec, this.currentSeaId);
   }
 
   renderSky(ctx, cameraY = 0) {
@@ -1929,6 +2149,7 @@ export class OceanWorld {
     if (this.hotspotManager) {
       this.hotspotManager.render(ctx, cameraY, this.worldWidth, this.worldHeight);
     }
+    this.renderGamblerIsland(ctx, cameraY);
   }
 
   renderBoatAndFisherman(ctx, cameraY = 0, isSurface = false) {
