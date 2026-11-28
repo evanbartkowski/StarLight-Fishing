@@ -55,7 +55,13 @@ Use the small download icon in the top-right corner of the start screen. Support
 
 The core download includes all game code, artwork and fonts. The full soundtrack is an optional **153 MB** download with progress and resumable retries. Updates download in the background and wait for an explicit refresh so they cannot replace a running game with mismatched files.
 
-Fish with shared oval/disc bodies now have species-specific anatomy, fins and markings, including amphora handles, a temple-bell clapper, gear spokes, lantern lures, broad grouper jaws and flatfish eyes. The eight chest ranks have different silhouettes and hardware; realm caches have native materials. Chest artwork is 16% larger, with unchanged catch collision sizes. Pet perches, scales and hit areas follow the chosen boat, including swim and flight positions.
+Fish with shared oval/disc bodies now have species-specific anatomy, fins and markings, including amphora handles, a temple-bell clapper, gear spokes, lantern lures, broad grouper jaws, flatfish eyes, glowing krill swarms, coastal sea lions, and volcanic/void bespoke silhouettes. The eight chest ranks have different silhouettes and hardware; realm caches have native materials. Chest artwork is 16% larger, with unchanged catch collision sizes. Pet perches, scales and hit areas follow the chosen boat, including swim and flight positions.
+
+## Dynamic Time, Weather & Events
+
+- Hovering or tapping active HUD pills (including **Survey Mark**, **2x Gold**, **2x XP**, **Siren's Grace**, **Starlight Sight**, **Barnacle Drag**, and **Brine Mist**), **Time of Day** badges, **Weather** indicators, and **Global Event** banners displays detailed descriptions and active gameplay modifiers.
+- Dedicated time-of-day and global-event species (**Dawnbreak Rayfin**, **Noonlight Sailfish**, **Moonbeam Koi**, **Amber Sunset Discus**, **Rosemist Angelfish**, **Duskveil Ribbon Eel**, **Nocturne Star-Ray**, **Eventide Cometfish**, **Crimson Eclipse Shark**, **Tempest Bolt Pike**, and **Borealis Mirage Eel**) spawn strictly during their matching time window or global event (**Blood Moon**, **Abyssal Storm**, **Aurora Borealis**).
+- Abyssal exploration features four distinct deep-sea submarine varieties (**Abyssal Survey Sub**, **Golden Bathyscaphe**, **Obsidian Trench Interceptor**, and **Clockwork Nautilus Submersible**), while bottled ocean letters carry deeper philosophical seafaring poetry alongside haikus and lore.
 
 ## Make it your own
 
@@ -187,7 +193,7 @@ The noticeboard now holds four missions, with six additional short contracts. Th
 
 ### Realm specialties and gems
 
-Sunlit Shoals offers relaxed fishing, Bioluminescent Trench has dense schools and jellyfish, Astral Shimmerfall favors rare catches, Atlantis has abundant treasure, Aether has sparse oversized fish, Magma is packed with obstacles, and the Void has the most predators. The chart describes each realm.
+Sunlit Shoals offers relaxed fishing, Bioluminescent Trench has dense schools and jellyfish, Astral Shimmerfall favors rare catches, Atlantis has abundant treasure with slightly larger, less frequent fish, Aether has sparse cloud-born oversized fish, Magma is packed with obstacles, and the Void has the most predators. The chart describes each realm.
 
 The diamond beside gold opens daily login rewards for captain accounts: a 30-day streak with 1 gem on days 1-10, 2 on days 11-20, 3 on days 21-29, and 5 on day 30. The cycle restarts after day 30; missing a day restarts at day 1. Claims reset at midnight UTC. Achievements award 1-3 gems once; crates have a 2% chance of one gem. Gems do not come from selling fish or normal gold rewards. Aquarium styles and angler options are permanent gem purchases; previews are free and owned options can be reused at no cost. Existing styles are preserved, and completed achievements receive their gems once when older saves migrate.
 

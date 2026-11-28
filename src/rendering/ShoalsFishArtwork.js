@@ -18,7 +18,9 @@ function fan(ctx,x,y,w,h,color){const b=Math.max(4.5,w*0.42);path(ctx,c=>{c.move
 
 export function drawShoalsFish(ctx,species,primary,secondary,finColor,time){
  const kind=SHOALS_FISH_DESIGNS[species.id];if(!kind)return false;
- if(typeof primary!=='string')primary=species.primaryColor;
+ if(typeof primary!=='string')primary=species.primaryColor||'#38bdf8';
+ if(typeof secondary!=='string')secondary=species.secondaryColor||'#bae6fd';
+ if(typeof finColor!=='string')finColor=species.finColor||'#f59e0b';
  const wave=Math.sin(time*2)*1.8;ctx.save();
  try{
   ctx.lineJoin='round';ctx.lineCap='round';ctx.lineWidth=1;
@@ -54,25 +56,57 @@ export function drawShoalsFish(ctx,species,primary,secondary,finColor,time){
    path(ctx,c=>{c.moveTo(33,0);c.quadraticCurveTo(13,-9,-4,-22);c.quadraticCurveTo(-12,-17,-18,-7);c.lineTo(-39,-3+wave);c.lineTo(-43,-11+wave);c.lineTo(-49,-4+wave);c.lineTo(-39,4+wave);c.lineTo(-17,8);c.quadraticCurveTo(-8,22,-4,22);c.quadraticCurveTo(15,8,33,0);},shade,'#405d5b');
    ctx.strokeStyle=secondary;ctx.beginPath();ctx.moveTo(26,0);ctx.lineTo(-27,0);ctx.stroke();for(let i=0;i<9;i++)oval(ctx,-9+i%3*9,-9+Math.floor(i/3)*8,1,.7,'#81745f');eye(ctx,11,-5,1.6);eye(ctx,11,5,1.6);return true;
   }
-  if(kind==='sapphire_tang'){
-   // Sleek oval-teardrop surgeonfish silhouette, swept royal-blue dorsal/anal fins, glowing canary tail & palette marking
-   path(ctx,c=>{c.moveTo(-22,-3);c.lineTo(-35,-12+wave);c.quadraticCurveTo(-29,wave,-35,12+wave);c.lineTo(-22,3);},'#facc15','#1e3a8a',1.1);
-   path(ctx,c=>{c.moveTo(-14,-10);c.quadraticCurveTo(-2,-20,11,-12);c.quadraticCurveTo(0,-7,-12,-8);},'#1d4ed8','#172554',.9);
-   path(ctx,c=>{c.moveTo(-14,9);c.quadraticCurveTo(-2,18,10,11);c.quadraticCurveTo(-1,7,-12,7);},'#1d4ed8','#172554',.9);
-   const tangGrad=ctx.createLinearGradient(0,-14,0,14);tangGrad.addColorStop(0,'#2563eb');tangGrad.addColorStop(.55,'#1d4ed8');tangGrad.addColorStop(1,'#38bdf8');
-   path(ctx,c=>{c.moveTo(-23,0);c.bezierCurveTo(-18,-13,-4,-15,12,-10.5);c.quadraticCurveTo(23,-6,25,1);c.quadraticCurveTo(22,7,11,11);c.bezierCurveTo(-4,15,-18,12,-23,0);},tangGrad,'#172554',1.15);
-   ctx.save();ctx.beginPath();ctx.moveTo(-23,0);ctx.bezierCurveTo(-18,-13,-4,-15,12,-10.5);ctx.quadraticCurveTo(23,-6,25,1);ctx.quadraticCurveTo(22,7,11,11);ctx.bezierCurveTo(-4,15,-18,12,-23,0);ctx.clip();
-   path(ctx,c=>{c.moveTo(-23,-4);c.bezierCurveTo(-8,-13,8,-11,16,-4);c.quadraticCurveTo(5,1,-7,0);c.bezierCurveTo(-12,1,-16,5,-23,4);},'#0f172a',null);
-   oval(ctx,-1,-4.5,7.5,3.8,'#38bdf8');
+  if(kind==='tang'||kind==='sapphire_tang'){
+   // Cute chubby rounded-oval Shoals Blue Tang / Sapphire Tang with petal fins, blush & glowing yellow paddle tail
+   path(ctx,c=>{c.moveTo(-19,-2.5);c.bezierCurveTo(-24,-9,-33,-12+wave,-33,-5+wave*0.5);c.quadraticCurveTo(-29,wave,-33,5+wave*0.5);c.bezierCurveTo(-33,12+wave,-24,9,-19,2.5);},'#facc15','#1e3a8a',1.05);
+   path(ctx,c=>{c.moveTo(-12,-8.5);c.bezierCurveTo(-6,-17.5,7,-17,11,-8);c.closePath();},'#1d4ed8','#172554',.9);
+   path(ctx,c=>{c.moveTo(-11,8);c.bezierCurveTo(-5,15.5,6,15,9,7.5);c.closePath();},'#1d4ed8','#172554',.9);
+   const tangGrad=ctx.createLinearGradient(0,-13,0,13);tangGrad.addColorStop(0,'#38bdf8');tangGrad.addColorStop(.5,'#2563eb');tangGrad.addColorStop(1,'#1d4ed8');
+   path(ctx,c=>{c.moveTo(-20,0);c.bezierCurveTo(-17,-12,-4,-13.5,10,-10.5);c.bezierCurveTo(20,-8,22,-1,20,3.5);c.bezierCurveTo(18,9.5,6,13,-8,11.5);c.bezierCurveTo(-16,10.5,-20,5,-20,0);},tangGrad,'#172554',1.1);
+   ctx.save();ctx.beginPath();ctx.moveTo(-20,0);ctx.bezierCurveTo(-17,-12,-4,-13.5,10,-10.5);ctx.bezierCurveTo(20,-8,22,-1,20,3.5);ctx.bezierCurveTo(18,9.5,6,13,-8,11.5);ctx.bezierCurveTo(-16,10.5,-20,5,-20,0);ctx.clip();
+   path(ctx,c=>{c.moveTo(-20,-3);c.bezierCurveTo(-8,-11,7,-9.5,13,-4);c.quadraticCurveTo(3,0,-6,-0.5);c.bezierCurveTo(-11,0,-15,3.5,-20,3);},'#0f172a',null);
+   oval(ctx,-1,-4,6.5,3.4,'#7dd3fc');
+   oval(ctx,12,3.5,2.6,1.6,'rgba(251,113,133,0.48)');
    ctx.restore();
-   fan(ctx,6,4,8,7+wave,'#facc15');
-   path(ctx,c=>{c.moveTo(-19,0);c.lineTo(-14,-1.5);c.lineTo(-14,1.5);},'#fef08a',null);
-   eye(ctx,16.5,-2.2,2.4);return true;
+   path(ctx,c=>{c.moveTo(4,2);c.bezierCurveTo(-2,5,-3,11,3,10+wave*0.3);c.bezierCurveTo(7,9,8,4,4,2);},'#facc15','#172554',.85);
+   ctx.strokeStyle='#172554';ctx.lineWidth=.9;ctx.beginPath();ctx.arc(17.5,2.6,2.2,0.15,1.7);ctx.stroke();
+   eye(ctx,13,-2.5,3.0);return true;
+  }
+  if(kind==='clown'){
+   // Cute chubby storybook Striped Clownfish with plump coral body, rounded petal fins & curvy creamy bands
+   path(ctx,c=>{c.moveTo(-18,-3);c.bezierCurveTo(-24,-10,-32,-10+wave,-31,-2+wave*0.5);c.quadraticCurveTo(-28,wave,-31,3+wave*0.5);c.bezierCurveTo(-32,10+wave,-24,10,-18,3);},'#fb923c','#1e293b',1.05);
+   path(ctx,c=>{c.moveTo(-11,-8);c.bezierCurveTo(-6,-16.5,5,-16,8,-8.5);c.closePath();},'#f97316','#1e293b',.95);
+   path(ctx,c=>{c.moveTo(-9,8);c.bezierCurveTo(-4,14.5,4,14,6,8);c.closePath();},'#ea580c','#1e293b',.9);
+   const clownG=ctx.createLinearGradient(0,-13,0,13);clownG.addColorStop(0,'#fb923c');clownG.addColorStop(.55,'#f97316');clownG.addColorStop(1,'#ffd58b');
+   path(ctx,c=>{c.moveTo(-19,0);c.bezierCurveTo(-16,-12.5,-2,-14,11,-10);c.bezierCurveTo(20,-7.5,22,-0.5,20,4);c.bezierCurveTo(18,10,5,13.5,-8,11.5);c.bezierCurveTo(-16,10,-19,5,-19,0);},clownG,'#1e293b',1.1);
+   ctx.save();ctx.beginPath();ctx.moveTo(-19,0);ctx.bezierCurveTo(-16,-12.5,-2,-14,11,-10);ctx.bezierCurveTo(20,-7.5,22,-0.5,20,4);ctx.bezierCurveTo(18,10,5,13.5,-8,11.5);ctx.bezierCurveTo(-16,10,-19,5,-19,0);ctx.clip();
+   for(const x of [-12,-0.5,10]){ctx.strokeStyle='#1e293b';ctx.lineWidth=6.2;ctx.beginPath();ctx.moveTo(x,-14);ctx.quadraticCurveTo(x+3.8,0,x-1,14);ctx.stroke();ctx.strokeStyle='#fffbeb';ctx.lineWidth=3.6;ctx.stroke();}
+   oval(ctx,12.5,3.5,2.5,1.5,'rgba(244,63,94,0.45)');
+   ctx.restore();
+   path(ctx,c=>{c.moveTo(4,2);c.bezierCurveTo(-2,4,-2.5,10.5,3,10+wave*0.3);c.bezierCurveTo(7.5,9,8,4.5,4,2);},'#fffbeb','#1e293b',.9);
+   ctx.strokeStyle='#1e293b';ctx.lineWidth=.9;ctx.beginPath();ctx.arc(17.2,2.4,2,0.1,1.6);ctx.stroke();
+   eye(ctx,13.2,-2.4,3.1);return true;
+  }
+  if(kind==='butterfly'){
+   // Cute plump Sun-Dusted Butterflyfish with soft scalloped amber wings, golden sparkles, warm mask & tail beauty heart
+   path(ctx,c=>{c.moveTo(-18,-2.5);c.bezierCurveTo(-24,-9,-30,-8+wave,-29,-2+wave*0.5);c.quadraticCurveTo(-26,wave,-29,3+wave*0.5);c.bezierCurveTo(-30,9+wave,-23,9,-18,2.5);},'#fde047','#854d0e',1);
+   path(ctx,c=>{c.moveTo(-14,-8);c.bezierCurveTo(-8,-18,4,-17,9,-9);c.closePath();},'#facc15','#854d0e',.95);
+   path(ctx,c=>{c.moveTo(-12,8.5);c.bezierCurveTo(-6,16.5,4,15.5,7,8.5);c.closePath();},'#f59e0b','#854d0e',.9);
+   const bflyG=ctx.createLinearGradient(0,-14,0,14);bflyG.addColorStop(0,'#fef9c3');bflyG.addColorStop(.5,'#fde047');bflyG.addColorStop(1,'#fbbf24');
+   path(ctx,c=>{c.moveTo(-19,0);c.bezierCurveTo(-16,-13.5,-2,-15,11,-10.5);c.bezierCurveTo(19,-7,21,0,18.5,4.5);c.bezierCurveTo(16,10.5,4,14,-9,12);c.bezierCurveTo(-16.5,10.5,-19,5,-19,0);},bflyG,'#78350f',1.1);
+   ctx.save();ctx.beginPath();ctx.moveTo(-19,0);ctx.bezierCurveTo(-16,-13.5,-2,-15,11,-10.5);ctx.bezierCurveTo(19,-7,21,0,18.5,4.5);ctx.bezierCurveTo(16,10.5,4,14,-9,12);ctx.bezierCurveTo(-16.5,10.5,-19,5,-19,0);ctx.clip();
+   ctx.strokeStyle='rgba(217,119,6,0.28)';ctx.lineWidth=1.2;for(let x=-14;x<=8;x+=5.5){ctx.beginPath();ctx.moveTo(x,-14);ctx.quadraticCurveTo(x+3,0,x-1,14);ctx.stroke();}
+   ctx.strokeStyle='#92400e';ctx.lineWidth=3.6;ctx.beginPath();ctx.moveTo(11.5,-13);ctx.quadraticCurveTo(14,-2,12,11);ctx.stroke();
+   oval(ctx,-10,-2,4.2,4.4,'#fef9c3','#92400e');oval(ctx,-10,-2,2.3,2.5,'#78350f');
+   oval(ctx,14.5,3.2,2.4,1.5,'rgba(251,113,133,0.48)');
+   ctx.restore();
+   path(ctx,c=>{c.moveTo(3,2);c.bezierCurveTo(-2,4,-2.5,10,2.5,9.5+wave*0.3);c.bezierCurveTo(6.5,8.5,7,4,3,2);},'#fef3c7','#92400e',.85);
+   ctx.strokeStyle='#78350f';ctx.lineWidth=.9;ctx.beginPath();ctx.arc(16.5,2.5,1.8,0.1,1.6);ctx.stroke();
+   eye(ctx,12.5,-2.6,3.0);return true;
   }
   let l=23,h=12;
-  if(kind==='minnow'||kind==='sardine'){l=26;h=7;}if(kind==='butterfly'||kind==='tang'){l=22;h=15;}if(kind==='flounder'){l=27;h=12;}if(kind==='box'){l=20;h=16;}if(kind==='parrot'){l=29;h=17;}if(kind==='pip'){l=19;h=11;}
-  if(kind==='tang'){path(ctx,c=>{c.moveTo(-l+2,-3);c.lineTo(-l-13,-10+wave);c.quadraticCurveTo(-l-8,wave,-l-13,10+wave);c.lineTo(-l+2,3);},'#facc15','#173f4c',1);}
-  else tail(ctx,l,h,finColor,wave);
+  if(kind==='minnow'||kind==='sardine'){l=26;h=7;}if(kind==='flounder'){l=27;h=12;}if(kind==='box'){l=20;h=16;}if(kind==='parrot'){l=29;h=17;}if(kind==='pip'){l=19;h=11;}
+  tail(ctx,l,h,finColor,wave);
   fan(ctx,-4,-h*.65,15,-(kind==='butterfly'?12:8)+wave,finColor);fan(ctx,-2,h*.7,10,7+wave,finColor);
   if(kind==='box'){
    path(ctx,c=>{c.moveTo(-18,-3);c.bezierCurveTo(-18,-15,-6,-16,6,-14);c.bezierCurveTo(19,-12,23,-3,21,4);c.bezierCurveTo(20,13,6,16,-8,14);c.bezierCurveTo(-18,12,-18,4,-18,-3);},shade,'#7c5c26',1.2);

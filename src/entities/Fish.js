@@ -153,8 +153,9 @@ export class Fish {
     this.size = Math.round(this.size * realmSize * 10) / 10;
     this.weight = Math.round(this.weight * realmSize ** 2.2 * 100) / 100;
 
-    // Visual scale based on species base scale + individual fish size (noticeably larger across realms, keeping Aether & Magma Trench unchanged)
+    // Visual scale based on species base scale + individual fish size (Atlantis boosted slightly; Aether & Magma Trench unchanged)
     const baseScale = species.scaleFactor || 1.0;
+    const isAtlantisRealm = this.zone === 4 || species.zone === 4 || species.realmId === 4 || (species.id && species.id.startsWith('realm_4_'));
     const isAetherRealm = this.zone === 5 || species.zone === 5 || species.realmId === 5 || (species.id && species.id.startsWith('realm_5_'));
     const realmVisualBoost = species.isLeviathan
       ? 1.0
@@ -162,6 +163,8 @@ export class Fish {
       ? (baseScale <= 0.85 ? 1.78 : baseScale <= 1.2 ? 1.56 : 1.34)
       : isCaldera
       ? 1.15
+      : isAtlantisRealm
+      ? 1.44
       : 1.28;
     this.realmVisualBoost = realmVisualBoost;
     const maxScaleCap = (species.isLeviathan || baseScale >= 3.8 || realmSize > 1.5) ? 6.5 : 5.2;

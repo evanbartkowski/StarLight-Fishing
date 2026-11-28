@@ -69,39 +69,82 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
     }
 
     case 'krill': {
-      // Euphausiid shrimp with luminous photophores, feathery pleopods and curved rostrum
-      ctx.beginPath();
-      ctx.moveTo(-16, -2);
-      ctx.quadraticCurveTo(-6, -7, 12, -4);
-      ctx.lineTo(16, 0);
-      ctx.quadraticCurveTo(8, 6, -8, 5);
-      ctx.closePath();
-      ctx.fill();
+      // Coordinated Swarm of Luminous Translucent Euphausiid Krill with waving pleopods, tail fans & photophores
+      const krillBase = safeColor(primary, species?.primaryColor || '#fb7185');
+      const krillSec = safeColor(secondary, species?.secondaryColor || '#fde68a');
+      const krillFin = safeColor(finColor, species?.finColor || '#f97316');
+      const members = [
+        { x: -12, y: -9, sc: 0.56, ph: 0.6 },
+        { x: 9, y: -7, sc: 0.62, ph: 1.9 },
+        { x: -10, y: 9, sc: 0.58, ph: 3.1 },
+        { x: 11, y: 8, sc: 0.52, ph: 4.3 },
+        { x: 0, y: 0, sc: 0.92, ph: 0.0 },
+      ];
+      for (const m of members) {
+        const bobY = m.y + Math.sin(t * 2.8 + m.ph) * 1.8;
+        const kick = Math.sin(t * 7 + m.ph) * 2.4;
+        ctx.save();
+        ctx.translate(m.x, bobY);
+        ctx.scale(m.sc, m.sc);
+        ctx.globalAlpha *= m.sc > 0.8 ? 0.96 : 0.78;
 
-      // Rostrum horn & antennae (batched)
-      ctx.strokeStyle = finColor;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(14, -3); ctx.lineTo(24, -6);
-      ctx.moveTo(14, -1); ctx.lineTo(26, 3);
-      ctx.stroke();
+        // Fanning translucent tail uropods
+        ctx.fillStyle = krillFin;
+        ctx.beginPath();
+        ctx.moveTo(-14, 0);
+        ctx.lineTo(-22, -5 + kick * 0.4);
+        ctx.lineTo(-20, 0);
+        ctx.lineTo(-22, 5 + kick * 0.4);
+        ctx.closePath();
+        ctx.fill();
 
-      // Swimming pleopods (batched)
-      const kick = Math.sin(t * 7) * 3.5;
-      ctx.strokeStyle = secondary;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      for (let p = -10; p <= 4; p += 4) {
-        ctx.moveTo(p, 4);
-        ctx.lineTo(p - 3, 9 + kick);
+        // Segmented pearlescent shrimp body
+        ctx.fillStyle = krillBase;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.lineWidth = 0.85;
+        ctx.beginPath();
+        ctx.moveTo(-15, -1);
+        ctx.bezierCurveTo(-8, -7, 5, -7.5, 14, -3);
+        ctx.lineTo(17, 0);
+        ctx.bezierCurveTo(10, 5.5, -6, 6, -15, 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Carapace segment ribs & delicate curved whisker antennae
+        ctx.strokeStyle = krillSec;
+        ctx.lineWidth = 0.85;
+        for (let seg = -9; seg <= 3; seg += 4) {
+          ctx.beginPath();
+          ctx.moveTo(seg, -4.5);
+          ctx.quadraticCurveTo(seg - 1.2, 0, seg, 4);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.moveTo(15, -2); ctx.quadraticCurveTo(22, -7, 27, -5 + kick * 0.3);
+        ctx.moveTo(15, 0.5); ctx.quadraticCurveTo(22, 4, 27, 6 - kick * 0.2);
+        ctx.stroke();
+
+        // Fluttering swimmeret pleopods
+        for (let p = -8; p <= 4; p += 4) {
+          ctx.beginPath();
+          ctx.moveTo(p, 3.5);
+          ctx.lineTo(p - 3.5, 8.5 + kick);
+          ctx.stroke();
+        }
+
+        // Crisp compound eye & soft amber photophore glint
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(13, -1.5, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(2, 1.5, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
       }
-      ctx.stroke();
-
-      // Photophore bead
-      ctx.fillStyle = '#ef4444';
-      ctx.beginPath();
-      ctx.arc(2, 2, 1.6, 0, Math.PI * 2);
-      ctx.fill();
       return true;
     }
 
@@ -266,8 +309,11 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.fill();
       ctx.restore();
 
-      // Twin splayed hind flippers
-      ctx.fillStyle = finColor || '#4a372b';
+      // Twin splayed hind flippers (uses safeColor so epic/rare CanvasGradients never break fill/gradient stops)
+      const slPrimary = '#6b4731';
+      const slSecondary = '#9a6c4e';
+      const slFin = '#4f3322';
+      ctx.fillStyle = slFin;
       for (const side of [-1, 1]) {
         ctx.beginPath();
         ctx.moveTo(-19, side * 1.5);
@@ -277,11 +323,16 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
         ctx.fill();
       }
 
-      // Sleek arched torso & raised neck silhouette with warm chestnut->tawny shading
-      const coatGrad = ctx.createLinearGradient(0, -14, 0, 12);
-      coatGrad.addColorStop(0, primary || '#5c4033');
-      coatGrad.addColorStop(0.58, secondary || '#8b634b');
-      coatGrad.addColorStop(1, '#c8a88d');
+      // Sleek arched torso & raised neck silhouette with warm chestnut->tawny->creamy-chest shading
+      let coatGrad = slPrimary;
+      try {
+        coatGrad = ctx.createLinearGradient(0, -14, 0, 12);
+        coatGrad.addColorStop(0, slPrimary);
+        coatGrad.addColorStop(0.58, slSecondary);
+        coatGrad.addColorStop(1, '#e7d1b6');
+      } catch {
+        coatGrad = slPrimary;
+      }
       ctx.fillStyle = coatGrad;
       ctx.strokeStyle = '#38251a';
       ctx.lineWidth = 1.15;
@@ -301,7 +352,7 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       ctx.save();
       ctx.translate(6, 4.5);
       ctx.rotate(-0.18 + strokeSwim * 0.24);
-      ctx.fillStyle = primary || '#4f372b';
+      ctx.fillStyle = slFin;
       ctx.strokeStyle = '#2d1e15';
       ctx.lineWidth = 1.0;
       ctx.beginPath();
@@ -1022,12 +1073,12 @@ export function drawMarineCreature(ctx, shape, primary, secondary, finColor, wig
       let mantleGrad = primary;
       try {
         wingGrad = ctx.createLinearGradient(-24, -14, -6, 14);
-        wingGrad.addColorStop(0, finColor);
-        wingGrad.addColorStop(1, secondary);
+        wingGrad.addColorStop(0, safeColor(finColor, species?.finColor || '#0284c7'));
+        wingGrad.addColorStop(1, safeColor(secondary, species?.secondaryColor || '#bae6fd'));
         mantleGrad = ctx.createLinearGradient(-22, -7, 16, 7);
-        mantleGrad.addColorStop(0, primary);
-        mantleGrad.addColorStop(0.6, secondary);
-        mantleGrad.addColorStop(1, primary);
+        mantleGrad.addColorStop(0, safeColor(primary, species?.primaryColor || '#38bdf8'));
+        mantleGrad.addColorStop(0.6, safeColor(secondary, species?.secondaryColor || '#bae6fd'));
+        mantleGrad.addColorStop(1, safeColor(primary, species?.primaryColor || '#38bdf8'));
       } catch { /* fallback */ }
 
       // Graceful gliding wings along the rear mantle

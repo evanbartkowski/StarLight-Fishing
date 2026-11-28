@@ -1042,3 +1042,59 @@ test('HUD hover tooltips for Survey Mark, Weather, Time of Day, and time/event-e
   assert.ok(uiSrc.includes('Dawn Twilight —'), 'Time of Day includes descriptive hover details');
   assert.ok(uiSrc.includes('Clear Waters —'), 'Weather Conditions include descriptive hover details');
 });
+
+test('cute reef tang/clown/butterfly, California Sea Lion CanvasGradient fix, Krill Swarm, Atlantis scale/spawn tuning, and bespoke Magma/Void signatures', async () => {
+  const { FISH_SPECIES } = await import('../src/data/FishData.js');
+  const { REALM_ECOLOGY } = await import('../src/data/RealmEcology.js');
+  const { Fish } = await import('../src/entities/Fish.js');
+  const { BESPOKE_SPECIES_IDS } = await import('../src/rendering/BespokeSpeciesArtwork.js');
+  const { drawMarineCreature } = await import('../src/rendering/MarineCreatureSilhouettes.js');
+
+  const { ctx, calls } = finiteMockCtx();
+
+  // 1. Cute Shoals Blue Tang, Striped Clownfish, Sun-Dusted Butterflyfish render cleanly
+  for (const id of ['realm_1_shoals_blue_tang', 'clownfish', 'coral_butterfly']) {
+    const sp = FISH_SPECIES.find(s => s.id === id);
+    assert.ok(sp, `Missing ${id}`);
+    const f = new Fish(sp, 250, 350);
+    f.render(ctx, 1.2);
+  }
+
+  // 2. California Sea Lion renders cleanly even with CanvasGradient epic/rare shading (no addColorStop TypeError)
+  const seaLionSp = FISH_SPECIES.find(s => s.id === 'realm_1_california_sea_lion');
+  assert.ok(seaLionSp && seaLionSp.shape === 'sea_lion');
+  const gradObj = { addColorStop() { throw new Error('Should not call on non-string gradient'); } };
+  const slCountBefore = calls.count;
+  const renderedSeaLion = drawMarineCreature(ctx, 'sea_lion', gradObj, gradObj, gradObj, 1, 0.8, seaLionSp);
+  assert.equal(renderedSeaLion, true, 'California Sea Lion returns true even when passed gradient objects');
+  assert.ok(calls.count > slCountBefore + 10, 'California Sea Lion issues real draw calls instead of failing');
+
+  // 3. Sunlit Krill Swarm draws multi-member swarm cleanly
+  const krillSp = FISH_SPECIES.find(s => s.id === 'realm_1_sunlit_krill_swarm');
+  assert.ok(krillSp);
+  const krillBefore = calls.count;
+  const krillOk = drawMarineCreature(ctx, 'krill', krillSp.primaryColor, krillSp.secondaryColor, krillSp.finColor, 1, 0.5, krillSp);
+  assert.equal(krillOk, true);
+  assert.ok(calls.count > krillBefore + 40, 'Sunlit Krill Swarm renders multi-shrimp swarm');
+
+  // 4. Sunken Atlantis fish slightly larger visually & less frequent spawns
+  const tilefish = FISH_SPECIES.find(s => s.id === 'realm_4_mosaic_tilefish');
+  const atlantisFish = new Fish(tilefish, 200, 300);
+  assert.equal(atlantisFish.realmVisualBoost, 1.44, 'Sunken Atlantis visual scale boosted slightly to 1.44x');
+  assert.equal(REALM_ECOLOGY[4].fish, 0.55, 'Sunken Atlantis fish spawn multiplier lowered to 0.55');
+
+  // 5. Unique yet cute Magma & Chrono Void signatures
+  for (const id of [
+    'realm_6_sootfin_perch',
+    'realm_6_molten_copper_eel',
+    'realm_6_caldera_crownfish',
+    'chrono_whale',
+    'realm_7_eternity_sail_emperor',
+  ]) {
+    assert.ok(BESPOKE_SPECIES_IDS.has(id), `Expected bespoke ID ${id}`);
+    const sp = FISH_SPECIES.find(s => s.id === id);
+    assert.ok(sp, `Missing ${id}`);
+    const f = new Fish(sp, 300, 420);
+    f.render(ctx, 1.4);
+  }
+});
