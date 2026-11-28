@@ -114,14 +114,18 @@ export function drawChronoVoidFish(ctx, species, primary, secondary, finColor, t
       ctx.fill();
       ctx.stroke();
 
-      // Armored sturgeon scutes along back glowing like temporal stars
+      // Armored sturgeon scutes along back glowing like temporal stars (tucked cleanly inside dorsal ridge)
       ctx.fillStyle = '#fde047';
-      for (let sc = -2; sc <= 2; sc++) {
-        const sx = sc * 9 - 2;
+      for (const [sx, sy, sr] of [[-17, -5.0, 2.0], [-8.5, -7.2, 2.2], [0, -7.4, 2.3], [8.5, -6.2, 2.0], [16.5, -3.9, 1.7]]) {
         ctx.beginPath();
-        ctx.moveTo(sx - 3, -10);
-        ctx.lineTo(sx + 1, -14);
-        ctx.lineTo(sx + 4, -9.5);
+        ctx.moveTo(sx, sy - sr);
+        ctx.lineTo(sx + sr * 0.42, sy - sr * 0.38);
+        ctx.lineTo(sx + sr * 1.15, sy);
+        ctx.lineTo(sx + sr * 0.42, sy + sr * 0.38);
+        ctx.lineTo(sx, sy + sr);
+        ctx.lineTo(sx - sr * 0.42, sy + sr * 0.38);
+        ctx.lineTo(sx - sr * 1.15, sy);
+        ctx.lineTo(sx - sr * 0.42, sy - sr * 0.38);
         ctx.closePath();
         ctx.fill();
       }

@@ -56,8 +56,16 @@ self.addEventListener('fetch', event => {
   let decodedPath;
   try { decodedPath = decodeURIComponent(url.pathname); } catch { return; }
   if (request.mode === 'navigate') {
-    // A cached document and its complete bundle set always belong to one release.
-    event.respondWith((async () => (await (await caches.open(CORE_CACHE)).match('/index.html')) || fetch(request))());
+    // Prefer fresh online HTML so newly deployed updates take effect on reload, falling back to this release's cached shell when offline.
+    event.respondWith((async () => {
+      try {
+        const networkResponse = await fetch(request);
+        if (networkResponse && networkResponse.ok) return networkResponse;
+      } catch {
+        // Offline or unreachable network falls through to cached release shell.
+      }
+      return (await (await caches.open(CORE_CACHE)).match('/index.html')) || fetch(request);
+    })());
   } else if (CORE_ASSETS.includes(url.pathname) || url.pathname.startsWith('/assets/')) {
     event.respondWith((async () => {
       const cache = await caches.open(CORE_CACHE), cached = await cache.match(url.pathname);

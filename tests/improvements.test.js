@@ -1097,4 +1097,31 @@ test('cute reef tang/clown/butterfly, California Sea Lion CanvasGradient fix, Kr
     const f = new Fish(sp, 300, 420);
     f.render(ctx, 1.4);
   }
+
+  // 6. Wormhole Sturgeon dorsal star scutes stay tucked cleanly inside the upper dorsal silhouette
+  const { drawChronoVoidFish } = await import('../src/rendering/ChronoVoidArtwork.js');
+  const sturgeonSp = FISH_SPECIES.find(s => s.id === 'realm_7_wormhole_sturgeon');
+  assert.ok(sturgeonSp, 'Missing realm_7_wormhole_sturgeon');
+  const starYCoords = [];
+  let currentFill = '';
+  const starTrackCtx = new Proxy(ctx, {
+    set(target, prop, value) {
+      if (prop === 'fillStyle') currentFill = value;
+      target[prop] = value;
+      return true;
+    },
+    get(target, prop) {
+      if (prop === 'moveTo' || prop === 'lineTo') {
+        const fn = target[prop];
+        return (x, y) => {
+          if (currentFill === '#fde047') starYCoords.push(y);
+          return typeof fn === 'function' ? fn.call(target, x, y) : undefined;
+        };
+      }
+      return target[prop];
+    },
+  });
+  assert.equal(drawChronoVoidFish(starTrackCtx, sturgeonSp, '#1e1b4b', '#f8fafc', '#c084fc', 0.4), true);
+  assert.equal(starYCoords.length, 40, 'Wormhole Sturgeon renders 5 eight-point temporal star scutes inside dorsal hull');
+  assert.ok(Math.min(...starYCoords) >= -10, `All Wormhole Sturgeon dorsal star scutes stay inside body (minY=${Math.min(...starYCoords)})`);
 });
